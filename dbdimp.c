@@ -132,6 +132,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
     char testchar;
     imp_sth_ph_t* ph;
     int slen = *slenPtr;
+    bool seen_neg, seen_dec;
 
     if (numParams == 0) {
         return NULL;
@@ -158,16 +159,30 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
 	        if ( bind_type_guessing > 1 ) {
 		    valbuf = SvPV(ph->value, vallen);
 		    ph->type = SQL_INTEGER;
-		    for (i = 0; i < vallen; ++i) {
-		        testchar = *(valbuf+i);
-		    	if ('-' != testchar  && !isdigit(testchar) && 
-			    '.' != testchar) 
-			{
+
+		    seen_neg = 0; seen_dec = 0;
+		    for (j = 0; j < vallen; ++j) {
+		        testchar = *(valbuf+j);
+			if ('-' == testchar) {
+			    if (seen_neg) {
+		  	        ph->type = SQL_VARCHAR;
+			        break;
+			    } else if (j) {
+			        ph->type = SQL_VARCHAR;
+			        break;
+			    }
+			    seen_neg = 1;
+			} else if ('.' == testchar) {
+			    if (seen_dec) {
+			        ph->type = SQL_VARCHAR;
+				break;
+			    }
+			    seen_dec = 1;
+			} else if (!isdigit(testchar)) {
 			    ph->type = SQL_VARCHAR;
 		            break;
 		        }
 		    }
-		    
 		} else if (bind_type_guessing) {
 		    ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
 		} else {
