@@ -1,4 +1,14 @@
 Dev-3_0
+	* removed re-implentation of do(). Cleaning up 
+	  prepare()/bind()/execute() allowed me to dispense with it so, 
+	  do() is() now the default DBI do(). woo_hoo()!
+	* Named place holder support added.
+	 TODO: (it is broken for server-side prepare *** FIX *** )
+	* ***NOTE*** calling execute without binding all placeholders is now
+	  an error. Before this version, unbound placeholders would silently
+	  be converted to NULLs in violation of the DBI sepc. This may cause
+	  some applions to thow errors if they had been relying on this
+	  behaviour
 	* Read my.conf file by default even when neither 
 	  msql_read_default_group nor mysq_read_default_file are specified. 
 	  If mysql_read default_group is not specified, the group "dbd_mysql" 
