@@ -122,6 +122,9 @@ struct imp_dbh_st {
 };
 
 
+
+
+
 /*
  *  The bind_param method internally uses this structure for storing
  *  parameters.
@@ -165,6 +168,32 @@ typedef struct imp_sth_fbind_st {
 
 
 
+
+/* 
+		MOVED FROM DBD::Pg to assist in getting prescan_stmt to
+		compile before refactoring.
+*/
+
+
+typedef struct phs_st phs_t;    /* scalar placeholder   */
+
+struct phs_st {         /* scalar placeholder EXPERIMENTAL      */
+    int ftype;          /* field type */
+    char *quoted;       /* Quoted value bound to placeholder*/
+    size_t quoted_len;
+    unsigned int count;
+    bool is_bound;
+
+    char name[1];       /* struct is malloc'd bigger as needed  */
+};
+
+/*
+				END MOVED
+ */
+
+
+
+
 /*
  *  Finally our part of the statement handle. We receive the handle as
  *  an "SV*", say "dbh", and receive a pointer to the structure below
@@ -188,6 +217,7 @@ struct imp_sth_st {
 	int has_protocol41;	/* does server support new binary protocol */
 #endif
 
+	char *statement;
 	MYSQL_RES *cda;		/* result                                 */
 	int currow;		/* number of current row                  */
 	int fetch_done;		/* mark that fetch done                   */
@@ -198,10 +228,14 @@ struct imp_sth_st {
 	bool long_trunc_ok;	/* is truncating a long an error          */
 	unsigned long insertid;	/* ID of auto insert                      */
 	imp_sth_ph_t *params;	/* Pointer to parameter array             */
-	AV *av_attr[AV_ATTRIB_LAST];	/*  For caching array attributes        */
+	AV *av_attr[AV_ATTRIB_LAST];/*  For caching array attributes        */
 	int use_mysql_use_result;	/*  TRUE if execute should use     */
-	/* mysql_use_result rather than           */
-	/* mysql_store_result */
+					/* mysql_use_result rather than    */
+					/* mysql_store_result */
+
+	HV *all_params_hv;
+	phs_t **place_holders;
+	unsigned int phc;
 };
 
 
@@ -241,9 +275,10 @@ void do_error(SV * h, int rc, const char *what);
 SV *dbd_db_fieldlist(MYSQL_RES * res);
 
 void dbd_preparse(imp_sth_t * imp_sth, SV * statement);
-long mysql_st_internal_execute(SV *, SV *, SV *, int, imp_sth_ph_t *,
+//XXX TODO
+/* long mysql_st_internal_execute(SV *, SV *, SV *, int, imp_sth_ph_t *, 
 			       MYSQL_RES **, MYSQL *, int);
-
+*/
 #if MYSQL_VERSION_ID>=40101
 long mysql_st_internal_execute41(SV *, SV *, SV *, int, imp_sth_ph_t *,
 				 MYSQL_RES **, MYSQL *, int, MYSQL_STMT *,

@@ -45,7 +45,7 @@ QUERY
   #
   my $sth;
   Test($state or ($sth = $dbh->prepare($q)));
-  Test($state or $sth->execute());
+  Test($state or $sth->execute("Jochen"));
   Test($state or $sth->{'mysql_insertid'} eq 2);
   Test($state or $dbh->{'mysql_insertid'} eq 2);
   Test($state or $sth->finish());

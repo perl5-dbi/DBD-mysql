@@ -25,7 +25,7 @@
 typedef short WORD;
 #endif
 
-
+SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type);
 
 DBISTATE_DECLARE;
 
@@ -207,6 +207,10 @@ static char *ParseParam(MYSQL * sock,
 	imp_sth_ph_t *ph;
 	int slen = *slenPtr;
 	int limit_flag = 0;
+
+
+
+
 
 	while (isspace(*statement)) {
 		++statement;
@@ -1453,8 +1457,43 @@ dbd_st_prepare(SV * sth,
 	int col_type;
 #endif
 
+
+	unsigned int phc;
+	STRLEN stmt_len;
+
+	prescan_stmt(statement, &stmt_len, &phc);
+	/* no real need to calc_ph space since we are only going to collapse
+	   :foo down to ? and not inflate ? to :n */
+	stmt_len += calc_ph_space(phc);
+	++stmt_len; /* \0 */
+
+        Newc(908, imp_sth->statement, stmt_len, char, char);
+
+        if (phc) {
+                /* +1 so we can use a 1 based idx (placeholders start from 1)*/
+                Newc(0, imp_sth->place_holders, phc+1,
+                                 phs_t**, phs_t*);
+        } else {
+                imp_sth->place_holders = 0;
+        }
+
+
+
+	phc = rewrite_placeholders(imp_sth, statement, imp_sth->statement, 0);
+        imp_sth->phc = phc;
+
+	//fprintf(stderr, "Statement: %s\n", imp_sth->statement);
+	//fprintf(stderr, "Stmtlen: %i, Malloc Len %i\n", strlen(imp_sth->statement), stmt_len);
+	
+        assert(strlen(imp_sth->statement)+1 <= stmt_len);
+
+
+
+/* ========================================== */
+
 	svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_use_result", 16);
 	imp_sth->use_mysql_use_result = svp && SvTRUE(*svp);
+
 
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP, "Setting mysql_use_result to %d\n",
@@ -1496,10 +1535,10 @@ dbd_st_prepare(SV * sth,
 		imp_sth->av_attr[i] = Nullav;
 	}
 
-	if (imp_sth->has_protocol41 == 0) {
-		/* Count the number of parameters, the same way mysql_param_count does for server side prepares */
-		DBIc_NUM_PARAMS(imp_sth) = CountParam(statement);
-	}
+//	if (imp_sth->has_protocol41 == 0) {
+//		/* Count the number of parameters, the same way mysql_param_count does for server side prepares */
+//		DBIc_NUM_PARAMS(imp_sth) = CountParam(statement);
+//	} 
 #if MYSQL_VERSION_ID >=40101
 	/*
 	 *  Perform check for LISTFIELDS command
@@ -1723,47 +1762,29 @@ dbd_st_prepare(SV * sth,
  *
  **************************************************************************/
 
-long mysql_st_internal_execute(SV * h,
-			       SV * statement,
-			       SV * attribs,
-			       int numParams,
-			       imp_sth_ph_t * params,
-			       MYSQL_RES ** cdaPtr,
-			       MYSQL * svsock, int use_mysql_use_result)
+int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 {
 	STRLEN slen;
-	char *sbuf = SvPV(statement, slen);
-	char *salloc = ParseParam(svsock, sbuf, &slen, params, numParams);
+	// char *sbuf = SvPV(statement, slen); 
+	// char *salloc = ParseParam(svsock, sbuf, &slen, params, numParams);
+	char *statement;
+        int ret = -2;
+        int max_len =0;
+	D_imp_dbh_from_sth;
+	STRLEN stmt_len;
+	char *sbuf;
 
-	if (salloc) {
-		sbuf = salloc;
-		if (dbis->debug >= 2) {
-			PerlIO_printf(DBILOGFP, "Binding parameters: %s\n",
-				      sbuf);
-		}
-	}
 
-	if (*cdaPtr) {
-		mysql_free_result(*cdaPtr);
-		*cdaPtr = NULL;
-	}
-	//if (slen >= 10
-	// &&  tolower(sbuf[0]) == 'l'
-	// &&  tolower(sbuf[1]) == 'i'
-	// &&  tolower(sbuf[2]) == 's'
-	// &&  tolower(sbuf[3]) == 't') 
-	//{
-	// if (slen >= 11
-	//    &&  tolower(sbuf[4]) == 'f'
-	//   &&  tolower(sbuf[5]) == 'i'
-	//   &&  tolower(sbuf[6]) == 'e'
-	//  &&  tolower(sbuf[7]) == 'l'
-	//    &&  tolower(sbuf[8]) == 'd'
-	//    &&  tolower(sbuf[9]) == 's'
-	//    &&  isspace(sbuf[10])) 
-	// did a test comparing the above code vs. using strncasecmp, and found
-	// the latter has better performance
-	if (slen >= 11 && !strncasecmp(sbuf, "listfields ", 11)) {
+        if (!imp_sth->statement) {
+		/* not prepared */
+                return 0;
+        }
+
+
+	slen = max_len = strlen(imp_sth->statement);
+	sbuf= imp_sth->statement;
+
+	if (slen  >= 11 && !strncasecmp(sbuf, "listfields ", 11)) {
 		char *table;
 
 		slen -= 10;
@@ -1774,11 +1795,11 @@ long mysql_st_internal_execute(SV * h,
 		}
 
 		if (!slen) {
-			do_error(h, JW_ERR_QUERY, "Missing table name");
+			do_error(sth, JW_ERR_QUERY, "Missing table name");
 			return -2;
 		}
 		if (!(table = malloc(slen + 1))) {
-			do_error(h, JW_ERR_MEM, "Out of memory");
+			do_error(sth, JW_ERR_MEM, "Out of memory");
 			return -2;
 		}
 
@@ -1791,18 +1812,103 @@ long mysql_st_internal_execute(SV * h,
 		}
 		*sbuf++ = '\0';
 
-		*cdaPtr = mysql_list_fields(svsock, table, NULL);
+		imp_sth->cda = mysql_list_fields(&imp_dbh->mysql, table, NULL);
 		free(table);
 
-		if (!(*cdaPtr)) {
-			do_error(h, mysql_errno(svsock),
-				 mysql_error(svsock));
+		if (!imp_sth->cda) {
+			do_error(sth, mysql_errno(&imp_dbh->mysql),
+				 mysql_error(&imp_dbh->mysql));
 			return -2;
 		}
 
 		return 0;
 	}
-	//}
+        if ((int)DBIc_NUM_PARAMS(imp_sth) > 0) {
+                /* How much do we need to malloc to hold resultant string */
+                HV *hv = imp_sth->all_params_hv;
+                SV *sv;
+                char *key;
+                I32 retlen;
+                hv_iterinit(hv);
+                /* //PerlIO_printf(DBILOGFP, "b4 max_len: %i\n", max_len); */
+                while( (sv = hv_iternextsv(hv, &key, &retlen)) != NULL ) {
+                        if (sv != &sv_undef) {
+                                phs_t *phs_tpl = (phs_t*)(void*)SvPVX(sv);
+                                if (!phs_tpl->is_bound) {
+                                       do_error(sth, -2,
+                                    "Execute called with unbound placeholder");
+					return -2;
+                                }
+                                max_len += phs_tpl->quoted_len * phs_tpl->count;
+                        }
+                }
+                Newc(0, statement, max_len, char, char);
+
+                /* scan statement for placeholders and replace with values */
+                if ((ret = rewrite_execute_stmt(sth, imp_sth, statement)) < 0)
+                        return ret;
+	/*fprintf(stderr, "Show STMT:\n");
+	fprintf(stderr, "Stament Rewrite:%s\n", statement); */
+        } else {
+                statement = imp_sth->statement;
+        }
+        assert(strlen(statement)+1 <= max_len);
+
+	/*TODO:  Clean up and free old result */
+
+
+	stmt_len = strlen(statement);
+
+	if ((mysql_real_query(&imp_dbh->mysql, statement, strlen(statement))) &&
+	    (!mysql_db_reconnect(sth) ||
+	     (mysql_real_query(&imp_dbh->mysql,statement, strlen(statement))))){
+
+       		if ((int)DBIc_NUM_PARAMS(imp_sth) > 0)
+			Safefree(statement);
+
+		do_error(sth, mysql_errno(&imp_dbh->mysql), 
+			mysql_error(&imp_dbh->mysql));
+		return -2;
+	}
+        if ((int)DBIc_NUM_PARAMS(imp_sth) > 0)
+		Safefree(statement);
+
+	/* Store the result from the Query */
+	imp_sth->cda = imp_sth->use_mysql_use_result ?
+	    mysql_use_result(&imp_dbh->mysql) : 
+			mysql_store_result(&imp_dbh->mysql);
+
+	if (mysql_errno(&imp_dbh->mysql)) {
+		do_error(sth, mysql_errno(&imp_dbh->mysql),
+			 mysql_error(&imp_dbh->mysql));
+	}
+
+	if (!imp_sth->cda) {
+		return mysql_affected_rows(&imp_dbh->mysql);
+	} else {
+		/*TODO: mysql_affect_rowsi */
+		return mysql_num_rows(imp_sth->cda);
+	}
+
+
+
+
+
+#if 0
+	if (salloc) {
+		sbuf = salloc;
+		if (dbis->debug >= 2) {
+			PerlIO_printf(DBILOGFP, "Binding parameters: %s\n",
+				      sbuf);
+		}
+	}
+
+	if (*cdaPtr) {
+		mysql_free_result(*cdaPtr);
+		*cdaPtr = NULL;
+	}
+
+
 
 	if ((mysql_real_query(svsock, sbuf, slen)) &&
 	    (!mysql_db_reconnect(h) ||
@@ -1826,6 +1932,8 @@ long mysql_st_internal_execute(SV * h,
 	} else {
 		return mysql_num_rows(*cdaPtr);
 	}
+#endif
+
 }
 
 /***************************************************************************
@@ -1953,9 +2061,12 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 	D_imp_dbh_from_sth;
 	SV **statement;
 	int i;
+	int ret;
+
 #if defined (dTHR)
 	dTHR;
 #endif
+	char *stmt;
 
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP,
@@ -1991,6 +2102,7 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 			return 0;
 		}
 
+
 		imp_sth->row_num = mysql_st_internal_execute41(sth,
 							       *statement,
 							       NULL,
@@ -2012,18 +2124,7 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 							       has_binded);
 	} else {
 #endif
-		imp_sth->row_num = mysql_st_internal_execute(sth,
-							     *statement,
-							     NULL,
-							     DBIc_NUM_PARAMS
-							     (imp_sth),
-							     imp_sth->
-							     params,
-							     &imp_sth->cda,
-							     &imp_dbh->
-							     mysql,
-							     imp_sth->
-							     use_mysql_use_result);
+		imp_sth->row_num = mysql_st_internal_execute(sth,  imp_sth);
 
 #if MYSQL_VERSION_ID >=40101
 	}
@@ -3005,6 +3106,8 @@ int dbd_st_blob_read(SV * sth,
 int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 		IV sql_type, SV * attribs, int is_inout, IV maxlen)
 {
+	SV *ph_namesv = param;
+	SV *newvalue = value;
 	int rc;
 	int paramNum = SvIV(param);
 	int idx = paramNum - 1;
@@ -3012,6 +3115,111 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 #if MYSQL_VERSION_ID >=40101
 	STRLEN slen;
 #endif
+
+        SV **phs_svp;
+        SV **svp;
+        STRLEN name_len;
+        char *name = Nullch;
+        char namebuf[30];
+        phs_t *phs;
+        sql_type_info_t *sql_type_info;
+        int pg_type = 0;
+        int bind_type;
+        char *value_string;
+        STRLEN value_len;
+	D_imp_dbh_from_sth;
+
+
+        if (is_inout)
+                croak("bind_inout not supported by this driver");
+
+
+        if (SvGMAGICAL(ph_namesv))
+                mg_get(ph_namesv);
+
+        if (!SvNIOKp(ph_namesv))
+                name = SvPV(ph_namesv, name_len);
+
+        if (SvNIOKp(ph_namesv) || (name && isDIGIT(name[0]))) {
+                sprintf(namebuf, "$%d", (int)SvIV(ph_namesv));
+                name = namebuf;
+                name_len = strlen(name);
+                assert(name_len < sizeof(namebuf));
+        }
+        assert(name != Nullch);
+
+       /* get the place holder */
+        phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
+        if (phs_svp == NULL) {
+                croak("Can't bind unknown placeholder '%s' (%s)",
+                                        name, neatsvpv(ph_namesv,0));
+        }
+        phs = (phs_t*)(void*)SvPVX(*phs_svp);
+
+
+        /* if (phs->is_bound && phs->ftype != bind_type) {
+                croak("Can't change TYPE of param %s to %d after initial bind",
+                                        phs->name, sql_type);
+        } else { */
+                phs->ftype = bind_type;
+        /*}*/
+
+        /* convert to a string ASAP */
+        if (!SvPOK(newvalue) && SvOK(newvalue)) {
+                sv_2pv(newvalue, &na);
+        }
+        /* phs->sv is copy of real variable, upgrade to at least string */
+        (void)SvUPGRADE(newvalue, SVt_PV);
+
+
+        if (phs->quoted)
+                Safefree(phs->quoted);
+
+        if (!SvOK(newvalue)) {
+                phs->quoted = safemalloc(sizeof("NULL"));
+                if (NULL == phs->quoted)
+                        croak("No memory");
+                strcpy(phs->quoted, "NULL");
+                phs->quoted_len = strlen(phs->quoted);
+        } else {
+		SV * quoted;
+                value_string = SvPV(newvalue, value_len);
+                quoted = internal_quote(imp_dbh, value, 0);
+		phs->quoted = SvPV(quoted, (phs->quoted_len));
+ 
+ /* assert(strlen(phs->quoted) == phs->quoted_len);
+ fprintf(stderr, "\nnquoted PHS: %s\n", value_string);
+ fprintf(stderr, "QUOTED PHS: %s\n", phs->quoted); */
+		/*sql_type_info->quote(value_string, value_len, &phs->quoted_len);*/
+        }
+
+        phs->is_bound = 1;
+        return 1;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 	if (paramNum <= 0 || paramNum > DBIc_NUM_PARAMS(imp_sth)) {
 		do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM,
@@ -3191,11 +3399,12 @@ AV *dbd_db_type_info_all(SV * dbh, imp_dbh_t * imp_dbh)
 
 SV *dbd_db_quote(SV * dbh, SV * str, SV * type)
 {
+	imp_dbh_t imp_dbh;
 	SV *result;
 	char *ptr;
 	char *sptr;
 	STRLEN len;
-
+	D_imp_xxh(dbh);
 
 	if (SvGMAGICAL(str))
 		mg_get(str);
@@ -3203,7 +3412,7 @@ SV *dbd_db_quote(SV * dbh, SV * str, SV * type)
 	if (!SvOK(str)) {
 		result = newSVpv("NULL", 4);
 	} else {
-		D_imp_dbh(dbh);
+		 D_imp_dbh(dbh);
 		if (type && SvOK(type)) {
 			int i;
 			int tp = SvIV(type);
@@ -3229,3 +3438,44 @@ SV *dbd_db_quote(SV * dbh, SV * str, SV * type)
 	}
 	return result;
 }
+
+SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type)
+{
+	SV *result;
+	char *ptr;
+	char *sptr;
+	STRLEN len;
+
+	if (SvGMAGICAL(str))
+		mg_get(str);
+
+	if (!SvOK(str)) {
+		result = newSVpv("NULL", 4);
+	} else {
+		if (type && SvOK(type)) {
+			int i;
+			int tp = SvIV(type);
+			const sql_type_info_t *t = sql_type_data(tp);
+			if (t && (!t->literal_prefix)) {
+					return Nullsv;
+			}
+		}
+
+		ptr = SvPV(str, len);
+		result = newSV(len * 2 + 3);
+		sptr = SvPVX(result);
+
+		*sptr++ = '\'';
+		sptr += mysql_real_escape_string(&imp_dbh->mysql, sptr,
+						 ptr, len);
+		*sptr++ = '\'';
+		SvPOK_on(result);
+		SvCUR_set(result, sptr - SvPVX(result));
+		*sptr++ = '\0';	/*  Never hurts NUL terminating a Perl
+				 *      string ...
+				 */
+	}
+	return result;
+}
+
+
