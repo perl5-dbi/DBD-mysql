@@ -45,7 +45,11 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - save points
 - better tracing support
 - Get caught up with DBI-1.41 with supported features
-
+- Fix name_buff[20] stuff  in rewrite_plcaeholders
+- Merge name_buff changes to rewrite_placeholders into DBD::Pg. this should be
+  in there because make ? place holder handling a little cleaner. With this
+  you can swtich underlying forms (?/$1/whatever) with a 2 line code change.
+  
 
 
 
