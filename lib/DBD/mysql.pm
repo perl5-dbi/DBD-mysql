@@ -171,6 +171,7 @@ sub admin {
 
 package DBD::mysql::db; # ====== DATABASE ======
 use strict;
+use DBI qw(:sql_types);
 
 %DBD::mysql::db::db2ANSI = ("INT"   =>  "INTEGER",
 			   "CHAR"  =>  "CHAR",
