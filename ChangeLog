@@ -1,4 +1,7 @@
-2005-03-28  Patrick Galbraith <patg@mysql.com> (2.9005_6)
+2005-04-04 Rudolf Lippan <rlippan@remotelinux.com> (2.9006)
+	* Fixed a bug in mysql_auto_reconnect whereby only the fist reconnect 
+	  would take place. The setting of mysql_auto_reconnect was getting 
+	  reset to the default of false during the reconnect.
         * Fixed a bug with AutoCommit that manifested itself when you would
           start the database with autocommit turned off (with my.cnf
           init-connect    = 'set autocommit=0'), setting AutoCommit in
@@ -6,29 +9,22 @@
           via $dbh->{AutoCommit}=1 work. Also added logic which uses the
           mysql client API functions for rollback and commit if the server
           version is 4.1.0 and above, old version logic cleaned up as well
-          and still functional.
+          and still functional.  [Patrick Galbraith <patg@mysql.com>]
         * Found that mysql_internal_execute needed to return a type of
           my_longlong, which caused type warnings and still resulted in the 
           fix described in 2.9005_4 not working.
-          
-
-2005-03-17  Patrick Galbraith <patg@mysql.com> (2.9005_5)
-        * Various type cast warnings fixed
-
-2005-03-16  Patrick Galbraith <patg@mysql.com> (2.9005_4)
+	  [Patrick Galbraith <patg@mysql.com>]
+        * Various type cast warnings fixed [Patrick Galbraith <patg@mysql.com>]
         * Fix for rows - changed num_rows to my_ulonglong in dbdimp.h and
           how the buffer that contains the value returned from
           mysql_affected_rows is printed to from %lu to %lli if an error
           (-1) and %llu otherwise. This will now allow the number from rows
           to be able to be the maximum that mysql_affected_rows is able to
           return, where before was limitted to %lu max value. (CNET).
-
+	  [Patrick Galbraith <patg@mysql.com>]
         * insert_id now a my_ulonglong (CNET) 
-
-2004-10-27  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_3)
+	  [Patrick Galbraith <patg@mysql.com>]
 	* Removed requirement that mysql.mtest be included in the distribution.
-	* DBI 1.43 is required -- It is needed for support of 
-	  $dbh->last_insert_id().
 	* Added $dbh->{mysql_unsafe_bind_type_guessing} = 2 which will look at
 	  each bind_param and make guess based on whether it looks like a 
 	  number, and if the parameter looks like a number, it will not be 
