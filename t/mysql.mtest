@@ -1,16 +1,20 @@
 { local $opt = {
-         'testhost' => '127.0.0.1',
-         'testpassword' => 'jwi',
+         'testhost' => '',
+         'testsocket' => '',
+         'testuser' => '',
          'ssl' => 0,
-         'testuser' => 'jwi',
          'nocatchstderr' => 0,
-         'libs' => '-L/usr/lib/mysql -lmysqlclient -lz -lcrypt -lnsl -lm',
-         'cflags' => '-I\'/usr/include/mysql\'',
-         'testdb' => 'test'
+         'testpassword' => '',
+         'libs' => '-L/usr/local/mysql/lib -lmysqlclient -lz -lcrypt -lnsl -lm -lc -lnss_files -lnss_dns -lresolv -lc -lnss_files -lnss_dns -lresolv',
+         'mysql_config' => 'mysql_config',
+         'nofoundrows' => 0,
+         'testdb' => 'test',
+         'cflags' => '-I/usr/local/mysql/include -mcpu=pentiumpro'
        };
 $::test_host = $opt->{'testhost'};
 $::test_port = $opt->{'testport'};
 $::test_user = $opt->{'testuser'};
+$::test_socket = $opt->{'testsocket'};
 $::test_password = $opt->{'testpassword'};
 $::test_db = $opt->{'testdb'};
 $::test_dsn = "DBI:mysql:$::test_db";

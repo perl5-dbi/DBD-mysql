@@ -58,7 +58,7 @@ static int CountParam(char* statement) {
     int numParam = 0;
     char c;
 
-    while (c = *ptr++) {
+    while ( (c = *ptr++) ) {
         switch (c) {
 	  case '`':
 	  case '"':
@@ -238,7 +238,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
 		      case SQL_LONGVARBINARY:
 			isNum = FALSE;
 			break;
-		      Default:
+		      default:
 			isNum = FALSE;
 			break;
 		    }

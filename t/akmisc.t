@@ -767,7 +767,7 @@ while (Testing()) {
     Test($state or ($sth = $dbh->query("drop table $table1")))
 	or test_error($dbh);
     if ($mdriver eq 'mysql') {
-	Test($state or ($sth->numfields == 0))
+	Test($state or ( (! defined $sth->numfields) || $sth->numfields == 0))
 	    or printf("Expected num fields being zero, not %s.\n",
 				   $sth->numfields);
     }

@@ -150,7 +150,7 @@ struct imp_sth_st {
     int   done_desc;      /* have we described this sth yet ?	    */
     long  long_buflen;    /* length for long/longraw (if >0)	    */
     bool  long_trunc_ok;  /* is truncating a long an error	    */
-    unsigned long insertid; /* ID of auto insert                      */
+    my_ulonglong insertid; /* ID of auto insert                      */
     imp_sth_ph_t* params; /* Pointer to parameter array             */
     AV* av_attr[AV_ATTRIB_LAST];/*  For caching array attributes        */
     int   use_mysql_use_result;  /*  TRUE if execute should use     */

@@ -18,23 +18,70 @@ use Config ();
 use Getopt::Long();
 use ExtUtils::MakeMaker();
 use Data::Dumper ();
+use File::Path;
+use File::Copy;
 
 my $TESTDB = "test";
 
 use vars qw($opt);
-$opt =
-  { "help" => \&Usage,
-  };
-Getopt::Long::GetOptions($opt, "help", "testdb=s", "testhost=s",
-			 "testport=s",
-			 "testuser=s", "testpassword=s",
-			 "cflags=s", "libs=s", "verbose",
-			 "nocatchstderr",
-			 "ssl!","nofoundrows!") || die Usage();
+$opt = { "help" => \&Usage, };
+
+Getopt::Long::GetOptions(
+    $opt,
+    "help",
+    "testdb=s",
+    "testhost=s",
+    "testport=s",
+    "testuser=s",
+    "testpassword=s",
+    "testsocket=s",
+    "cflags=s",
+    "libs=s",
+    "verbose",
+    "nocatchstderr",
+    "ssl!",
+    "nofoundrows!",
+    "mysql_config=s",
+    "force_embedded"
+    ) || die Usage();
+
 my $source = {};
 
-foreach my $key (qw/testdb testhost testuser testpassword cflags libs
-                    nocatchstderr ssl nofoundrows/) {
+#Check for mysql_config first
+$source->{'mysql_config'}="guessed";
+if ($opt->{'mysql_config'})
+{  
+  if (-f $opt->{'mysql_config'})
+  {
+    $source->{'mysql_config'} = "Users choice";
+  }
+  else
+  {
+    print <<"MSG";
+
+Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist. 
+Please check path/permissions. Will try to use default mysql_config 
+script found through PATH.
+MSG
+    $opt->{'mysql_config'}= "mysql_config";
+  }
+}
+else
+{
+  if (! `mysql_config`)
+  {
+    print <<MSG;
+
+Cannot find the file 'mysql_config'! Your execution PATH doesn't seem 
+not contain the path to mysql_config. Resorting to guessed values!
+MSG
+  }
+  $opt->{'mysql_config'} = "mysql_config";
+}
+
+foreach my $key (qw/testdb testhost testuser testpassword testsocket 
+                    cflags libs nocatchstderr ssl nofoundrows/)
+{
   Configure($opt, $source, $key);
 }
 
@@ -45,14 +92,18 @@ MSG
 
 delete $opt->{'help'};
 my $keylen = 0;
-foreach my $key (keys %$opt) {
+foreach my $key (keys %$opt)
+{
   $keylen = length($key) if length($key) > $keylen;
 }
 my $slen = 0;
-foreach my $val (values %$source) {
+foreach my $val (values %$source)
+{
   $slen = length($val) if length($val) > $slen;
 }
-foreach my $key (sort { $a cmp $b} keys %$opt) {
+
+foreach my $key (sort { $a cmp $b} keys %$opt)
+{
   printf("  %-" . $keylen . "s (%-" . $slen . "s) = %s\n",
 	 $key, $source->{$key}, $opt->{$key})
 }
@@ -75,6 +126,7 @@ die "Failed to determine location of $fileName" unless -f $fileName;
 	      "\$::test_host = \$opt->{'testhost'};\n" .
 	      "\$::test_port = \$opt->{'testport'};\n" .
 	      "\$::test_user = \$opt->{'testuser'};\n" .
+              "\$::test_socket = \$opt->{'testsocket'};\n" .
 	      "\$::test_password = \$opt->{'testpassword'};\n" .
 	      "\$::test_db = \$opt->{'testdb'};\n" .
 	      "\$::test_dsn = \"DBI:mysql:\$::test_db\";\n" .
@@ -87,12 +139,15 @@ die "Failed to determine location of $fileName" unless -f $fileName;
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
+$cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
 	  'INC' => $cflags,
 	  'dist'         => { 'SUFFIX'       => ".gz",
 			      'DIST_DEFAULT' => 'all installhtml tardist',
 			      'COMPRESS'     => "gzip -9f" },
 	  'clean' => { 'FILES' => '*.xsi' },
+          'C' => ["dbdimp.c", "mysql.c"],
+          'XS' => {'mysql.xs' => 'mysql.c'},
 	  'OBJECT' => '$(O_FILES)',
 	  'LIBS' => $opt->{'libs'},
 	  'VERSION_FROM' => 'lib/DBD/mysql.pm'
@@ -140,6 +195,7 @@ Possible options are:
   --testport=<port>      Use <port> as the port number of the database;
                          by default the port number is choosen from the
                          mysqlclient library
+  --mysql_config=<path>  Specify <path> for mysql_config script
   --nocatchstderr        Supress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavoiur of \$sth->rows() so that it
@@ -173,49 +229,71 @@ USAGE
 #
 ############################################################################
 
-sub Configure {
+sub Configure
+{
   my($opt, $source, $param) = @_;
 
-  if (exists($opt->{$param})) {
+  if (exists($opt->{$param}))
+  {
     $source->{$param} = "Users choice";
     return;
   }
 
-  # First try mysql_config
-  open(PIPE, "mysql_config --$param |");
-  my $str = "";
-  while (defined(my $line = <PIPE>)) {
-    $str .= $line;
+  # First try to get options values from mysql_config
+  my $command = $opt->{'mysql_config'} . " --$param";
+  eval 
+  {
+    open(PIPE, "$command |") or die "Can't find mysql_config.";
+  };
+
+  if (!$@)
+  {
+    my $str = "";
+    while (defined(my $line = <PIPE>)) 
+    {
+      $str .= $line;
+    }
+    if ($str ne ""  &&  $str !~ /Options:/) 
+    {
+      $str =~ s/\s+$//s;
+      $str =~ s/^\s+//s;
+
+      # Unfortunately ExtUtils::MakeMaker doesn't deal very well
+      # with -L'...'
+      $str =~ s/\-L\'(.*?)\'/-L$1/sg;
+      $str =~ s/\-L\"(.*?)\"/-L$1/sg;
+
+      $opt->{$param} = $str;
+      $source->{$param} = "mysql_config";
+      return;
+    }
   }
-  if ($str ne ""  &&  $str !~ /Options:/) {
-    $str =~ s/\s+$//s;
-    $str =~ s/^\s+//s;
-
-    # Unfortunately ExtUtils::MakeMaker doesn't deal very well
-    # with -L'...'
-    $str =~ s/\-L\'(.*?)\'/-L$1/sg;
-    $str =~ s/\-L\"(.*?)\"/-L$1/sg;
-
-    $opt->{$param} = $str;
-    $source->{$param} = "mysql_config";
-    return;
+  else
+  {
+    # need to do something here...
+    #print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
   }
 
   # Ok, mysql_config doesn't work. We need to do our best
-  if ($param eq "nocatchstderr") {
+  if ($param eq "nocatchstderr" || $param eq "nofoundrows")
+  {
     $source->{$param} = "default";
     $opt->{$param} = 0;
-  } elsif ($param eq "nofoundrows") {
-    $source->{$param} = "default";
-    $opt->{$param} = 0;
-  } elsif ($param eq "testdb") {
+  }
+  elsif ($param eq "testdb") 
+  {
     $source->{$param} = "default";
     $opt->{$param} = $TESTDB;
-  } elsif ($param eq "testhost"  ||  $param eq "testuser"  ||
-	   $param eq "testport"  ||  $param eq "testpassword") {
+  }
+  elsif ($param eq "testhost"  ||  $param eq "testuser"  ||
+         $param eq "testport"  ||  $param eq "testpassword" || 
+         $param eq "testsocket")
+  {
     $source->{$param} = "default";
     $opt->{$param} = "";
-  } elsif ($param eq "cflags") {
+  }
+  elsif ($param eq "cflags") 
+  {
     $source->{$param} = "guessed";
     my $dir = SearchFor('include', 'mysql.h');
     if ($dir) {
@@ -232,31 +310,41 @@ section "C Compiler flags" or type
 
   perl Makefile.PL --help
 MSG
-  } elsif ($param eq "libs") {
+  }
+  elsif ($param eq "libs") 
+  {
     $source->{$param} = "guessed";
-    my @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-			qw(libmysqlclient.a libmysqlclient.so);
+
+    my @files=();
+    my $default_libs= "-lmysqlclient -lz -lm -lcrypt -lnsl";
+    @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
+      qw(libmysqlclient.a libmysqlclient.so);
+
     my $dir = SearchFor('lib', @files);
+
     if ($dir) {
-      $opt->{$param} = "-L$dir -lmysqlclient -lz -lgz";
+        $opt->{$param} = "-L$dir $default_libs";
       return;
     }
     my $f = join("|", @files);
     die <<"MSG";
 Failed to determine directory of $f. Use
 
-  perl Makefile.PL "--libs=-L<dir> -lmysqlclient"
+  perl Makefile.PL "--$param=-L<dir> $default_libs"
 
 to set this directory. For details see the INSTALL.html file,
 section "Linker flags" or type
 
   perl Makefile.PL --help
 MSG
-  } elsif ($param eq "ssl") {
+  } 
+  elsif ($param eq "ssl") 
+  {
     $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
     $source->{$param} = "guessed";
-  }  elsif ($param eq "nofoundrows") {
-  } else {
+  } 
+  else 
+  {
     die "Unknown configuration parameter: $param";
   }
 }
@@ -292,12 +380,11 @@ sub SearchFor {
   }
 }
 
-
 package MY;
 
 sub libscan {
     my($self, $path) = @_;
-    if ($path =~ /~$/) { return undef; }
+    if ($path =~ /~$|SCCS/) { return undef; }
     $path;
 }
 
