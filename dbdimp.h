@@ -263,7 +263,7 @@ extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
 
 extern int mysql_db_reconnect(SV *);
 
-SV *mysql_db_last_insert_id(SV* dbh, SV *imp_dbh,
+SV *mysql_db_last_insert_id(SV* dbh, imp_dbh_t *imp_dbh,
         SV *catalog, SV *schema, SV *table, SV *field,SV *attr);
 
 
