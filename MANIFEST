@@ -18,7 +18,6 @@ t/40blobs.t
 t/akmisc.t
 t/50chopblanks.t
 t/ak-dbd.t
-t/mysql.mtest
 t/mysql2.t
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
