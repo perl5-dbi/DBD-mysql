@@ -1,9 +1,20 @@
 # -*- cperl -*-
 
+BEGIN {
+    use Config;
 
+    if ($] == 5.008 && $ENV{"LANG"} ne "C") {
+	$ENV{LANG} = "C";
+	print STDERR "\n\n\n\$ENV{LANG} is not 'C' execing 'perl Makefile.PL'".
+	" with ENV{LANG} == 'C'\n You can skip this check by: 'export ".
+	"LANG='C' before running 'perl Makefile.PL or by upgrading your Perl'\n\n\n";
+
+	sleep(5);
+        exec ("$Config{perlpath} $0", @ARGV )|| die $!;
+    }
+}
 use strict;
 BEGIN { $^W = 1; }
-use Config();
 use Getopt::Long();
 use ExtUtils::MakeMaker();
 use Data::Dumper ();
@@ -37,7 +48,6 @@ Getopt::Long::GetOptions(
     ) || die Usage();
 
 my $source = {};
-
 
 #Check for mysql_config first
 $source->{'mysql_config'}="guessed";
@@ -147,7 +157,6 @@ foreach my $key (keys %$opt)
   $keylen = length($key) if length($key) > $keylen;
 }
 my $slen = 0;
-
 foreach my $val (values %$source)
 {
   $slen = length($val) if length($val) > $slen;
@@ -171,7 +180,6 @@ sleep 5;
 eval { require File::Spec };
 my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
-die "Failed to determine location of $fileName" unless -f $fileName;
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
 	      "\$::test_host = \$opt->{'testhost'};\n" .
@@ -340,8 +348,7 @@ if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'AUTHOR'} = 'Rudy Lippan <rlippan@remotelinux.com>';
   $o{'ABSTRACT'} =
     'A MySQL driver for the Perl5 Database Interface (DBI)';
-
-  $o{'PREREQ_PM'} = { 'DBI' => 1.08,
+  $o{'PREREQ_PM'} = { 'DBI' => 1.43,
 		      'Data::Dumper' => 0 };
 }
 
