@@ -471,7 +471,8 @@ rewrite_execute_stmt(sth, imp_sth, output)
 int has_limit_clause(char *statement)
 {
 	/* This is just a quick ugly test for LIMIT statements use FBM?  */
-	while (statement++)
+
+	while (*(statement++))
 		if (!strncasecmp(statement,"limit ",6) && '?' == *(statement+6))
 			return 1;
 
