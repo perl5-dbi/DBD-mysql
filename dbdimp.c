@@ -1629,12 +1629,16 @@ my_ulonglong mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
     D_imp_sth(h);
     D_imp_dbh_from_sth;
     STRLEN slen;
+    my_ulonglong rows;
 
     char* sbuf = SvPV(statement, slen);
 
     char* salloc = ParseParam(
         svsock, sbuf, &slen, params, numParams, imp_dbh->bind_type_guessing
     );
+
+    if (dbis->debug >= 2) 
+	    PerlIO_printf(DBILOGFP, "      -> mysql_st_interal_execute\n");
 
     if (salloc) {
         sbuf = salloc;
@@ -1705,11 +1709,23 @@ my_ulonglong mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
     if (mysql_errno(svsock)) {
       do_error(h, mysql_errno(svsock), mysql_error(svsock));
     }
-    if (!*cdaPtr) {
-      return mysql_affected_rows(svsock);
-    } else {
-      return mysql_num_rows(*cdaPtr);
+
+    if (!*cdaPtr)
+       rows= mysql_affected_rows(svsock);
+    else
+      rows= mysql_num_rows(*cdaPtr);
+
+    if ((long long)rows == -1)
+    {      
+      if (dbis->debug >= 2) 
+	    PerlIO_printf(DBILOGFP,
+                         "      <- mysql_st_internal_execute ERROR: returning -1\n");
+         return(-1);
     }
+    if (dbis->debug >= 2) 
+      PerlIO_printf(DBILOGFP,
+              "      <- mysql_st_internal_execute ERROR: returning -1\n");
+    return(rows);
 }
 
 
@@ -1779,10 +1795,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 		      imp_sth->row_num);
     }
 
-    if (imp_sth->row_num == (my_ulonglong) -1)
-    	return -1;
+    if ((long long) imp_sth->row_num == -1)
+      return -1;
     else
-	return (int) imp_sth->row_num;
+      return (int) imp_sth->row_num;
 }
 
 
