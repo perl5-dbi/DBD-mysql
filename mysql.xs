@@ -188,9 +188,8 @@ _ListDBs(dbh)
     }
  
 
-#define suppress_do_warings do
 void
-suppress_do_warnings(dbh, statement, attr=Nullsv, ...)
+do(dbh, statement, attr=Nullsv, ...)
     SV *        dbh
     SV *	statement
     SV *        attr
@@ -335,7 +334,6 @@ suppress_do_warnings(dbh, statement, attr=Nullsv, ...)
     else
 	XST_mIV(0, retval);	/* typically 1, rowcount or -1	*/
 }
-#undef suppress_do_warings
 
 
 SV*
@@ -424,16 +422,14 @@ dataseek(sth, pos)
     RETVAL
 
 
-#define suppress_rows_warning rows
 void
-suppress_rows_warning(sth)
+rows(sth)
     SV* sth
   CODE:
     D_imp_sth(sth);
     char buf[64];
     sprintf(buf, "%lu", imp_sth->row_num);
     ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
-#undef suppress_rows_warning
 
 
 MODULE = DBD::mysql    PACKAGE = DBD::mysql::GetInfo
