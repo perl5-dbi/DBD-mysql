@@ -80,6 +80,7 @@ while (Testing()) {
 	   or DbiError($dbh->err, $dbh->errstr);
 
 
+
     Test($state or $cursor = $dbh->prepare("INSERT INTO $table"
 	                                   . " VALUES (?, ?)"))
 	   or DbiError($dbh->err, $dbh->errstr);

@@ -20,6 +20,7 @@ use ExtUtils::MakeMaker();
 use Data::Dumper ();
 use File::Path;
 use File::Copy;
+require DBI::DBD;
 
 my $TESTDB = "test";
 
@@ -38,7 +39,7 @@ Getopt::Long::GetOptions(
     "cflags=s",
     "libs=s",
     "verbose",
-    "mysql_server_prepare",
+    "ps-protocol",
     "nocatchstderr",
     "ssl!",
     "nofoundrows!",
@@ -83,7 +84,7 @@ MSG
 
 foreach my $key (qw/testdb testhost testuser testpassword testsocket 
                     cflags embedded libs nocatchstderr ssl nofoundrows
-                    mysql_server_prepare force_embedded/)
+                    ps-protocol force_embedded/)
 {
   Configure($opt, $source, $key);
 }
@@ -192,13 +193,14 @@ my $fileName = $@ ?
 	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n" .
-              "\$::test_dsn .= \":mysql_server_prepare=1\" if \$opt->{'mysql_server_prepare'} || \$ENV{'MYSQL_SERVER_PREPARE'};\n" .
+              "\$::test_dsn .= \":mysql_server_prepare=1\" if \$opt->{'ps-protcol'} || \$ENV{'MYSQL_SERVER_PREPARE'};\n" .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
 
 
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
+$cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
@@ -348,7 +350,7 @@ if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'AUTHOR'} = 'Rudy Lippan <rlippan@remotelinux.com>';
   $o{'ABSTRACT'} =
     'A MySQL driver for the Perl5 Database Interface (DBI)';
-  $o{'PREREQ_PM'} = { 'DBI' => 1.43,
+  $o{'PREREQ_PM'} = { 'DBI' => 1.08,
 		      'Data::Dumper' => 0 };
 }
 
@@ -394,7 +396,7 @@ Possible options are:
   --nofoundrows          Change the behavoiur of \$sth->rows() so that it
   			 returns the number of rows physically modified 
 			 instead of the rows matched
-  --mysql_server_prepare Toggle the use of server-side prepare, requires 
+  --ps-protocol          Toggle the use of server-side prepare, requires 
                          MySQL server version 4.1.3 
   --force_embedded       Force to build embedded version of driver
   --ssl			 Enable SSL support
@@ -483,11 +485,15 @@ sub Configure
   }
   elsif ($param eq "testhost"  ||  $param eq "testuser"  ||
          $param eq "testport"  ||  $param eq "testpassword" || 
-         $param eq "testsocket" || $param eq "force_embedded" ||
-         $param eq "mysql_server_prepare")
+         $param eq "testsocket" 
+         )
   {
     $source->{$param} = "default";
     $opt->{$param} = "";
+  }
+  elsif($param eq 'ps-protocol' || $param eq 'force_embedded')
+  {
+    $source->{$param} = $opt->{$param} ? "default" : 'not set';
   }
   elsif ($param eq "cflags") 
   {
@@ -707,7 +713,6 @@ sub libscan {
 }
 
 sub postamble {
-  require DBI::DBD;
   "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
 
 installhtml: lib/DBD/mysql/INSTALL.pod

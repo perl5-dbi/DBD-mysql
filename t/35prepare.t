@@ -52,15 +52,22 @@ Test($state or ($def = TableDefinition($table,
   $dbh->do($def)))
   or DbiError($dbh->err, $dbh->errstr);
 
-  #print "Creating table $table.\n";
-	#Test($state or $sth = $dbh->prepare($create)) or
-  #  DbiError($dbh->err, $dbh->errstr);
-	
-  #Test($state or $sth->execute()) or 
-  #  DbiError($dbh->err, $dbh->errstr);
+  #
+  # test SHOW command - 'prepare' should not be used (check db log)
+  # 
+  Test($state or $cursor = $dbh->prepare("SHOW TABLES LIKE '$table'"))
+        or DbiError($dbh->err, $dbh->errstr);
+  Test($state or $cursor->execute())
+	   or DbiError($dbh->err, $dbh->errstr);
+  my ($row, $errstr);
+  Test(
+    $state or 
+    (defined($row= $cursor->fetchrow_arrayref)  &&
+    (!defined($errstr = $cursor->errstr) || $cursor->errstr eq '')))
+         or DbiError($cursor->err, $cursor->errstr);
 
-  #Test($state or $sth->finish) or 
-  #  DbiError($dbh->err, $dbh->errstr);
+  Test ($state or ($row->[0] eq "$table")) 
+      or print "results not equal to '$table' \n";
 
   print "inserting values into $table without placeholders.\n";
   my $no_bind_insert = "INSERT INTO $table VALUES (1,'foo first value')";

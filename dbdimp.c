@@ -53,20 +53,20 @@ typedef struct sql_type_info_s {
 } sql_type_info_t;
 
 
-/* {{{ static int count_params(char* statement) 
+/* {{{ static int count_params(char* statement)
 
 This function manually counts the number of placeholders in an SQL statement,
 used for emulated prepare statements < 4.1.3
 
 */
-static int 
+static int
 count_params(char* statement)
 {
   char* ptr = statement;
   int num_params = 0;
   char c;
 
-  while ( (c = *ptr++) ) 
+  while ( (c = *ptr++) )
   {
     switch (c) {
     case '`':
@@ -77,13 +77,13 @@ count_params(char* statement)
         char end_token = c;
         while ((c = *ptr)  &&  c != end_token)
         {
-          if (c == '\\') 
+          if (c == '\\')
           {
-            if (! *ptr) 
+            if (! *ptr)
             {
               continue;
             }
-          } 
+          }
           ++ptr;
         }
         if (c) {
@@ -98,15 +98,14 @@ count_params(char* statement)
 
     default:
       break;
-    } 
+    }
   }
   return num_params;
 }
-/* }}} */
 
-/* {{{ static imp_sth_ph_t* alloc_param(int num_params)
+/* 
 
-  allocate memory in statement handle per number of placeholders 
+  allocate memory in statement handle per number of placeholders
 */
 static imp_sth_ph_t*
 alloc_param(int num_params)
@@ -125,14 +124,14 @@ alloc_param(int num_params)
 }
 /* }}} */
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
 /* {{{ static MYSQL_BIND* alloc_bind(int num_params)
 
-  allocate memory in MYSQL_BIND bind structure per 
+  allocate memory in MYSQL_BIND bind structure per
   number of placeholders
 */
-static MYSQL_BIND* 
+static MYSQL_BIND*
 alloc_bind(int num_params)
 {
   MYSQL_BIND* bind;
@@ -146,11 +145,10 @@ alloc_bind(int num_params)
   }
   return bind;
 }
-/* }}} */
 
-/* {{{ static imp_sth_phb_t* alloc_fbind(int num_params)
+/* 
 
-  allocate memory in fbind imp_sth_phb_t structure per 
+  allocate memory in fbind imp_sth_phb_t structure per
   number of placeholders
 */
 static imp_sth_phb_t*
@@ -168,7 +166,6 @@ alloc_fbind(int num_params)
   }
   return fbind;
 }
-/* }}} */
 
 /* {{{ static imp_sth_fbh_t* alloc_fbuffer(int num_fields)
 
@@ -189,10 +186,8 @@ alloc_fbuffer(int num_fields)
   }
   return fbh;
 }
-/* }}} */
 
-/* {{{ static void FreeBind(MYSQL_BIND* bind)
-
+/* 
   free MYSQL_BIND bind struct
 */
 static void
@@ -207,7 +202,6 @@ FreeBind(MYSQL_BIND* bind)
     fprintf(stderr,"FREE ERROR BIND!");
   }
 }
-/* }}} */
 
 /* {{{ static void FreeFBind(imp_sth_phb_t * fbind)
 
@@ -225,9 +219,8 @@ FreeFBind(imp_sth_phb_t * fbind)
     fprintf(stderr,"FREE ERROR  FBIND!");
   }
 }
-/* }}} */
 
-/* {{{ static void FreeFBuffer(imp_sth_fbh_t * fbh)
+/* 
   free imp_sth_fbh_t fbh structure
 */
 static void
@@ -242,7 +235,6 @@ FreeFBuffer(imp_sth_fbh_t * fbh)
     fprintf(stderr,"FREE ERROR FBUFFER!");
   }
 }
-/* }}} */
 
 #endif
 
@@ -268,9 +260,8 @@ FreeParam(imp_sth_ph_t* params, int num_params)
     Safefree(params);
   }
 }
-/* }}} */
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /* {{{ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   Convert a MySQL type to a type that perl can handle
 
@@ -306,7 +297,7 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
     return MYSQL_TYPE_STRING;
 
   default:
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
     {
       PerlIO_printf(DBILOGFP, "case default for col_type => %d\n", type);
     }
@@ -317,7 +308,7 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 #endif
 
 #if defined(DBD_MYSQL_EMBEDDED)
-/* {{{ int count_embedded_options(char * st) 
+/* {{{ int count_embedded_options(char * st)
 
   count embedded options
 */
@@ -439,15 +430,15 @@ char ** fill_out_embedded_options(char * options, int options_type, int slen, in
 
 /* {{{ static char* parse_params(MYSQL* sock, char* statement, STRLEN *slenPtr, imp_sth_ph_t* params, int num_params, bool bind_type_guessing)
 
-  constructs an SQL statement previously prepared with 
+  constructs an SQL statement previously prepared with
   actual values replacing placeholders
 */
 static char*
-parse_params(MYSQL* sock, 
-	   char* statement, 
+parse_params(MYSQL* sock,
+	   char* statement,
 	   STRLEN *slenPtr,
-	   imp_sth_ph_t* params, 
-	   int num_params, 
+	   imp_sth_ph_t* params,
+	   int num_params,
            bool bind_type_guessing)
 {
 
@@ -480,12 +471,12 @@ parse_params(MYSQL* sock,
     if (!ph->value  ||  !SvOK(ph->value))
     {
       alen += 3;  /* Erase '?', insert 'NULL' */
-    } 
+    }
     else
     {
-      valbuf = SvPV(ph->value, vallen);
-      alen += 2+vallen+1;
-      /* this will most likely not happen since line 214 */ 
+      valbuf= SvPV(ph->value, vallen);
+      alen+= 2+vallen+1;
+      /* this will most likely not happen since line 214 */
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
@@ -493,41 +484,49 @@ parse_params(MYSQL* sock,
           valbuf = SvPV(ph->value, vallen);
           ph->type = SQL_INTEGER;
 
-          seen_neg = 0; seen_dec = 0;
+          /* patch from Dragonchild */
+          seen_neg= 0;
+          seen_dec= 0;
           for (j = 0; j < vallen; ++j) {
             testchar = *(valbuf+j);
-            if ('-' == testchar) {
-              if (seen_neg) {
-                ph->type = SQL_VARCHAR;
-                break;
-              } else if (j) {
-                ph->type = SQL_VARCHAR;
+            if ('-' == testchar)
+            {
+              if (seen_neg)
+              {
+                ph->type= SQL_VARCHAR;
                 break;
               }
-              seen_neg = 1;
+              else if (j)
+              {
+                ph->type= SQL_VARCHAR;
+                break;
+              }
+              seen_neg= 1;
             } else if ('.' == testchar) {
               if (seen_dec) {
-                ph->type = SQL_VARCHAR;
+                ph->type= SQL_VARCHAR;
                 break;
               }
               seen_dec = 1;
-            } else if (!isdigit(testchar)) {
-              ph->type = SQL_VARCHAR;
+            }
+            else if (!isdigit(testchar))
+            {
+              ph->type= SQL_VARCHAR;
               break;
             }
           }
-        } else if (bind_type_guessing) {
-          ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
-        } else {
-          ph->type= SQL_VARCHAR;
         }
+        else if(bind_type_guessing)
+          ph->type= SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
+        else
+          ph->type= SQL_VARCHAR;
       }
     }
-  } 
+  }
 
   /* Allocate memory */
   New(908, salloc, alen+1, char);
-  ptr = salloc;
+  ptr= salloc;
 
  /* Now create the statement string; compare count_params above */
   i= 0;
@@ -587,7 +586,7 @@ parse_params(MYSQL* sock,
           int isNum = FALSE;
           int c;
 
-          valbuf = SvPV(ph->value, vallen);		    
+          valbuf= SvPV(ph->value, vallen);
           if (valbuf)
           {
             switch (ph->type)
@@ -635,14 +634,14 @@ parse_params(MYSQL* sock,
       case ')':
         limit_flag = 0;
 	*ptr++ = *statement_ptr++;
-        break; 
+        break;
 
       default:
         *ptr++ = *statement_ptr++;
         break;
 
-    } /* end of switch(*statement_ptr) */ 
-  } /* end of while (j < slen) */ 
+    } /* end of switch(*statement_ptr) */
+  } /* end of while (j < slen) */
 
   *slenPtr = ptr - salloc;
   *ptr++ = '\0';
@@ -675,56 +674,56 @@ bind_param(imp_sth_ph_t* ph, SV* value, IV sql_type)
 static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
   { "varchar",    SQL_VARCHAR,                    255, "'",  "'",  "max length",
     1, 0, 3, 0, 0, 0, "variable length string",
-    0, 0, 0, 
-    SQL_VARCHAR, 0, 0, 
+    0, 0, 0,
+    SQL_VARCHAR, 0, 0,
     FIELD_TYPE_VAR_STRING,  0,
     /* 0 */
   },
   { "decimal",   SQL_DECIMAL,                      15, NULL, NULL, "precision,scale",
     1, 0, 3, 0, 0, 0, "double",
-    0, 6, 2, 
+    0, 6, 2,
     SQL_DECIMAL, 0, 0,
     FIELD_TYPE_DECIMAL,     1
     /* 1 */
   },
   { "tinyint",   SQL_TINYINT,                       3, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "Tiny integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_TINYINT, 0, 0,
     FIELD_TYPE_TINY,        1
     /* 2 */
   },
   { "smallint",  SQL_SMALLINT,                      5, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "Short integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_SMALLINT, 0, 0,
     FIELD_TYPE_SHORT,       1
     /* 3 */
   },
   { "integer",   SQL_INTEGER,                      10, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_LONG,        1
     /* 4 */
   },
   { "float",     SQL_REAL,                          7,  NULL, NULL, NULL,
     1, 0, 0, 0, 0, 0, "float",
-    0, 2, 10, 
+    0, 2, 10,
     SQL_FLOAT, 0, 0,
     FIELD_TYPE_FLOAT,       1
     /* 5 */
   },
   { "double",    SQL_FLOAT,                       15,  NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "double",
-    0, 4, 2, 
+    0, 4, 2,
     SQL_FLOAT, 0, 0,
     FIELD_TYPE_DOUBLE,      1
     /* 6 */
   },
   { "double",    SQL_DOUBLE,                       15,  NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "double",
-    0, 4, 10, 
+    0, 4, 10,
     SQL_DOUBLE, 0, 0,
     FIELD_TYPE_DOUBLE,      1
     /* 6 */
@@ -741,98 +740,98 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
   },
   { "bigint",    SQL_BIGINT,                       19, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "Longlong integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_BIGINT, 0, 0,
     FIELD_TYPE_LONGLONG,    1
     /* 8 */
   },
   { "middleint", SQL_INTEGER,                       8, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "Medium integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_INT24,       1
     /* 9 */
   },
   { "date",      SQL_DATE,                         10, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "date",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_DATE, 0, 0,
     FIELD_TYPE_DATE,        0
     /* 10 */
   },
   { "time",      SQL_TIME,                          6, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "time",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_TIME, 0, 0,
     FIELD_TYPE_TIME,        0
     /* 11 */
   },
   { "datetime",  SQL_TIMESTAMP,                    21, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "datetime",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_TIMESTAMP, 0, 0,
     FIELD_TYPE_DATETIME,    0
     /* 12 */
   },
   { "year",      SQL_SMALLINT,                      4, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "year",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_SMALLINT, 0, 0,
     FIELD_TYPE_YEAR,        0
     /* 13 */
   },
   { "date",      SQL_DATE,                         10, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "date",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_DATE, 0, 0,
     FIELD_TYPE_NEWDATE,     0
     /* 14 */
   },
   { "enum",      SQL_VARCHAR,                     255, "'",  "'",  NULL,
     1, 0, 1, 0, 0, 0, "enum(value1,value2,value3...)",
-    0, 0, 0, 
+    0, 0, 0,
     0, 0, 0,
     FIELD_TYPE_ENUM,        0
     /* 15 */
   },
   { "set",       SQL_VARCHAR,                     255, "'",  "'",  NULL,
     1, 0, 1, 0, 0, 0, "set(value1,value2,value3...)",
-    0, 0, 0, 
+    0, 0, 0,
     0, 0, 0,
     FIELD_TYPE_SET,         0
     /* 16 */
   },
   { "blob",       SQL_LONGVARBINARY,              65535, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "binary large object (0-65535)",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_LONGVARBINARY, 0, 0,
     FIELD_TYPE_BLOB,        0
     /* 17 */
   },
   { "tinyblob",  SQL_VARBINARY,                 255, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "binary large object (0-255) ",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_VARBINARY, 0, 0,
     FIELD_TYPE_TINY_BLOB,   0
     /* 18 */
   },
   { "mediumblob", SQL_LONGVARBINARY,           16777215, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "binary large object",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_LONGVARBINARY, 0, 0,
     FIELD_TYPE_MEDIUM_BLOB, 0
     /* 19 */
   },
   { "longblob",   SQL_LONGVARBINARY,         2147483647, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "binary large object, use mediumblob instead",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_LONGVARBINARY, 0, 0,
     FIELD_TYPE_LONG_BLOB,   0
     /* 20 */
   },
   { "char",       SQL_CHAR,                       255, "'",  "'",  "max length",
     1, 0, 3, 0, 0, 0, "string",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_CHAR, 0, 0,
     FIELD_TYPE_STRING,      0
     /* 21 */
@@ -840,7 +839,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 
   { "decimal",            SQL_NUMERIC,            15,  NULL, NULL, "precision,scale",
     1, 0, 3, 0, 0, 0, "double",
-    0, 6, 2, 
+    0, 6, 2,
     SQL_NUMERIC, 0, 0,
     FIELD_TYPE_DECIMAL,     1
   },
@@ -852,55 +851,55 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
   */
   { "tinyint unsigned",   SQL_TINYINT,              3, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "Tiny integer unsigned",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_TINYINT, 0, 0,
     FIELD_TYPE_TINY,        1
   },
   { "smallint unsigned",  SQL_SMALLINT,             5, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "Short integer unsigned",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_SMALLINT, 0, 0,
     FIELD_TYPE_SHORT,       1
   },
   { "middleint unsigned", SQL_INTEGER,              8, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "Medium integer unsigned",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_INT24,       1
   },
   { "int unsigned",       SQL_INTEGER,             10, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "integer unsigned",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_LONG,        1
   },
   { "int",                SQL_INTEGER,             10, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_LONG,        1
   },
   { "integer unsigned",   SQL_INTEGER,             10, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "integer",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_INTEGER, 0, 0,
     FIELD_TYPE_LONG,        1
   },
   { "bigint unsigned",    SQL_BIGINT,              20, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "Longlong integer unsigned",
-    0, 0, 10, 
+    0, 0, 10,
     SQL_BIGINT, 0, 0,
     FIELD_TYPE_LONGLONG,    1
   },
   { "text",               SQL_LONGVARCHAR,      65535, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "large text object (0-65535)",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_LONGVARCHAR, 0, 0,
     FIELD_TYPE_BLOB,        0
   },
   { "mediumtext",         SQL_LONGVARCHAR,   16777215, "'",  "'",  NULL,
     1, 0, 3, 0, 0, 0, "large text object",
-    0, 0, 0, 
+    0, 0, 0,
     SQL_LONGVARCHAR, 0, 0,
     FIELD_TYPE_MEDIUM_BLOB, 0
   }
@@ -911,7 +910,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 
 
   { "mediumint unsigned auto_increment", SQL_INTEGER, 8, NULL, NULL, NULL,
-    0, 0, 3, 1, 0, 1, "Medium integer unsigned auto_increment", 0, 0, 10, 
+    0, 0, 3, 1, 0, 1, "Medium integer unsigned auto_increment", 0, 0, 10,
     SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1,
   },
 
@@ -941,7 +940,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
   },
 
   { "numeric", SQL_NUMERIC, 19, NULL, NULL, "precision,scale",
-    1, 0, 3, 0, 0, 0, "numeric", 0, 19, 10, 
+    1, 0, 3, 0, 0, 0, "numeric", 0, 19, 10,
     SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1,
   },
 
@@ -1024,7 +1023,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 };
 /* }}} */
 
-/* {{{ static const sql_type_info_t* native2sql (int t) 
+/* {{{ static const sql_type_info_t* native2sql (int t)
 
 */
 static const sql_type_info_t* native2sql (int t) {
@@ -1110,7 +1109,7 @@ void do_error(SV* h, int rc, const char* what) {
 }
 /* }}} */
 
-/* {{{ void do_warn(SV* h, int rc, char* what) 
+/* {{{ void do_warn(SV* h, int rc, char* what)
 
 */
 void do_warn(SV* h, int rc, char* what) {
@@ -1183,7 +1182,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
   /* per Monty, already in client.c in API */
   /* but still not exist in libmysqld.c */
 #if defined(DBD_MYSQL_EMBEDDED)
-   if (host && !*host) host = NULL; 
+   if (host && !*host) host = NULL;
 #endif
 
   portNr= (port && *port) ? atoi(port) : 0;
@@ -1191,7 +1190,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
   /* already in client.c in API */
   /* if (user && !*user) user = NULL; */
   /* if (password && !*password) password = NULL; */
-  
+ 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP,
 		  "imp_dbh->mysql_dr_connect: host = |%s|, port = %d," \
@@ -1199,7 +1198,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
 		  host ? host : "NULL", portNr,
 		  user ? user : "NULL",
 		  password ? password : "NULL");
-  
+ 
   {
 
 #if defined(DBD_MYSQL_EMBEDDED)
@@ -1208,7 +1207,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
       D_imp_drh_from_dbh;
       SV* sv = DBIc_IMP_DATA(imp_dbh);
 
-      if (sv  &&  SvROK(sv)) 
+      if (sv  &&  SvROK(sv))
       {
         SV** svp;
         STRLEN lna;
@@ -1230,7 +1229,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
         {
           //Init embedded server
           if ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE))  &&
-              *svp  &&  SvTRUE(*svp)) 
+              *svp  &&  SvTRUE(*svp))
           {
             options = SvPV(*svp, lna);
             imp_drh->embedded.groups=newSVsv(*svp);
@@ -1246,9 +1245,9 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
               }
             }
           }
-  
+ 
           if ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE))  &&
-              *svp  &&  SvTRUE(*svp)) 
+              *svp  &&  SvTRUE(*svp))
           {
             options = SvPV(*svp, lna);
             imp_drh->embedded.args=newSVsv(*svp);
@@ -1266,11 +1265,11 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
           }
           if (mysql_server_init(server_args_cnt, server_args, server_groups))
           {
-            do_warn(dbh, AS_ERR_EMBEDDED, "Embedded server was not started. Could not initialize environment."); 
-            return NULL;             
+            do_warn(dbh, AS_ERR_EMBEDDED, "Embedded server was not started. Could not initialize environment.");
+            return NULL;            
           }
           imp_drh->embedded.state=1;
-  
+ 
           if (server_args_cnt)
             free_embedded_options(server_args, server_args_cnt);
           if (server_groups_cnt)
@@ -1278,8 +1277,8 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
         }
         else
         {
-         /* 
-          * Check if embedded parameters passed to connect() differ from 
+         /*
+          * Check if embedded parameters passed to connect() differ from
           * first ones
           */
 
@@ -1296,7 +1295,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
           }
           if (rc)
           {
-            do_warn(dbh, AS_ERR_EMBEDDED, "Embedded server was already started. You cannot pass init parameters to embedded server once"); 
+            do_warn(dbh, AS_ERR_EMBEDDED, "Embedded server was already started. You cannot pass init parameters to embedded server once");
             return NULL;
           }
         }
@@ -1310,14 +1309,10 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
     unsigned int client_flag = CLIENT_FOUND_ROWS;
 #endif
     mysql_init(sock);
-    
-    if (imp_dbh) 
+   
+    if (imp_dbh)
     {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
-      imp_dbh->bind_type_guessing = FALSE;
-      imp_dbh->has_transactions = TRUE;
-      imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
-                                         if we detect a mod_perl env. */
 
       DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
       if (sv  &&  SvROK(sv)) {
@@ -1371,7 +1366,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
 	    client_flag &= ~CLIENT_FOUND_ROWS;
 	  }
 	}
-	if ((svp = hv_fetch(hv, "mysql_use_result", 16, FALSE)) && *svp) 
+	if ((svp = hv_fetch(hv, "mysql_use_result", 16, FALSE)) && *svp)
         {
           imp_dbh->use_mysql_use_result = SvTRUE(*svp);
 	  if (dbis->debug >= 2)
@@ -1383,7 +1378,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
 	/* took out  client_flag |= CLIENT_PROTOCOL_41; */
 	/* because libmysql.c already sets this no matter what */
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
 
 	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20,
 			    FALSE))  &&  *svp) {
@@ -1441,11 +1436,11 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
 	 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use
 	 * mysql_local_infile=1 in the DSN to enable it.
 	 */
-     if ((svp = hv_fetch( hv, "mysql_local_infile", 18, FALSE))  &&  *svp) 
+     if ((svp = hv_fetch( hv, "mysql_local_infile", 18, FALSE))  &&  *svp)
      {
 	  unsigned int flag = SvTRUE(*svp);
 	  if (dbis->debug >= 2)
-	    PerlIO_printf(DBILOGFP, 
+	    PerlIO_printf(DBILOGFP,
         "imp_dbh->mysql_dr_connect: Using" \
         " local infile %u.\n", flag);
 	  mysql_options(sock, MYSQL_OPT_LOCAL_INFILE, (const char *) &flag);
@@ -1461,17 +1456,17 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: <-");
 
-    if (result) 
+    if (result)
     {
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
       /* connection succeeded. */
       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
-         functions (_admin_internal(),_ListDBs()). */ 
+         functions (_admin_internal(),_ListDBs()). */
       if (!(result->client_flag & CLIENT_PROTOCOL_41) && imp_dbh)
         imp_dbh->use_server_side_prepare = FALSE;
 #endif
 
-      /* 
+      /*
         we turn off Mysql's auto reconnect and handle re-connecting ourselves
         so that we can keep track of when this happens.
       */
@@ -1583,6 +1578,10 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
   imp_dbh->stats.auto_reconnects_ok = 0;
   imp_dbh->stats.auto_reconnects_failed = 0;
+  imp_dbh->bind_type_guessing = FALSE;
+  imp_dbh->has_transactions = TRUE;
+ /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
+  imp_dbh->auto_reconnect = FALSE;
 
   if (!_MyLogin(dbh, imp_dbh)) {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
@@ -1595,16 +1594,14 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
      */
     DBIc_ACTIVE_on(imp_dbh);
 
-    /*
-     *  Tell DBI, that dbh->destroy should be called for this handle
-     */
+    /* Tell DBI, that dbh->destroy should be called for this handle */
     DBIc_on(imp_dbh, DBIcf_IMPSET);
 
     return TRUE;
 }
-/* }}} */
+/* 
 
-/* {{{ int dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
+/* 
 ***************************************************************************
  *
  *  Name:    dbd_db_commit
@@ -1634,7 +1631,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION                  
+#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION                 
     if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6))
 #else
       if (mysql_commit(&imp_dbh->mysql))
@@ -1644,7 +1641,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
                  mysql_error(&imp_dbh->mysql));
         return FALSE;
       }
-  } 
+  }
   else
     do_warn(dbh, JW_ERR_NOT_IMPLEMENTED,
             "Commmit ineffective while AutoCommit is on");
@@ -1653,7 +1650,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 /* }}} */
 
 /* {{{ int dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh)
- dbd_db_rollback 
+ dbd_db_rollback
 */
 int
 dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
@@ -1667,7 +1664,7 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
     if (mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8))
 #else
       if (mysql_rollback(&imp_dbh->mysql))
@@ -1720,7 +1717,7 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh) {
 /* }}} */
 
 
-/* {{{ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) 
+/* {{{ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh)
  **************************************************************************
  *
  *  Name:    dbd_discon_all
@@ -1780,7 +1777,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 /* }}} */
 
 
-/* {{{ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) 
+/* {{{ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh)
  ***************************************************************************
  *
  *  Name:    dbd_db_destroy
@@ -1799,31 +1796,26 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
     /*
      *  Being on the safe side never hurts ...
      */
-  if (DBIc_ACTIVE(imp_dbh)) 
+  if (DBIc_ACTIVE(imp_dbh))
   {
-    if (imp_dbh->has_transactions) 
+    if (imp_dbh->has_transactions)
     {
-      if (!DBIc_has(imp_dbh, DBIcf_AutoCommit)) 
-      {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION 
+      if (!DBIc_has(imp_dbh, DBIcf_AutoCommit))
+#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
         if ( mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8))
 #else
-          if (mysql_rollback(&imp_dbh->mysql))
+        if (mysql_rollback(&imp_dbh->mysql))
 #endif
             do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed");
-      }
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
 
-    /*
-     *  Tell DBI, that dbh->destroy must no longer be called
-     */
+  /* Tell DBI, that dbh->destroy must no longer be called */
   DBIc_off(imp_dbh, DBIcf_IMPSET);
 }
-/* }}} */
 
-/* {{{ int dbd_db_STORE_attrib( SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv)
+/* 
  ***************************************************************************
  *
  *  Name:    dbd_db_STORE_attrib
@@ -1839,7 +1831,7 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
  *  Returns: TRUE for success, FALSE otherwise
  *
  **************************************************************************/
-int 
+int
 dbd_db_STORE_attrib(
                     SV* dbh,
                     imp_dbh_t* imp_dbh,
@@ -1862,7 +1854,7 @@ dbd_db_STORE_attrib(
       if (bool_value == oldval)
         return TRUE;
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION                  
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION                 
       if (mysql_autocommit(&imp_dbh->mysql, bool_value))
       {
         do_error(dbh, TX_ERR_AUTOCOMMIT,
@@ -1906,18 +1898,14 @@ dbd_db_STORE_attrib(
     }
   }
   else if (kl == 16 && strEQ(key,"mysql_use_result"))
-  {
     imp_dbh->use_mysql_use_result = bool_value;
-  }
   else if (kl == 20 && strEQ(key,"mysql_auto_reconnect"))
-  {
     /*XXX: Does DBI handle the magic ? */
     imp_dbh->auto_reconnect = bool_value;
-  }
   else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
     imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
 
-  else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing")) 
+  else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing"))
 	imp_dbh->bind_type_guessing = SvIV(valuesv);
   else
     return FALSE;				/* Unknown key */
@@ -1926,10 +1914,8 @@ dbd_db_STORE_attrib(
     hv_store((HV*)SvRV(dbh), key, kl, cachesv, 0);
   return TRUE;
 }
-/* }}} */
 
-/* {{{ static SV* my_ulonglong2str(my_ulonglong val)
- **************************************************************************
+/***************************************************************************
  *
  *  Name:    dbd_db_FETCH_attrib
  *
@@ -2001,7 +1987,7 @@ dbd_db_FETCH_attrib(
       result= sv_2mortal(newSViv(imp_dbh->auto_reconnect));
     break;
   case 'u':
-    if (kl == strlen("unsafe_bind_type_guessing") && 
+    if (kl == strlen("unsafe_bind_type_guessing") &&
         strEQ(key, "unsafe_bind_type_guessing"))
       result = sv_2mortal(newSViv(imp_dbh->bind_type_guessing));
     break;
@@ -2058,7 +2044,7 @@ dbd_db_FETCH_attrib(
     else if (kl == 8  &&  strEQ(key, "insertid"))
     {
       /* We cannot return an IV, because the insertid is a long. */
-      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(&imp_dbh->mysql))); 
+      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(&imp_dbh->mysql)));
     }
     break;
 
@@ -2077,13 +2063,9 @@ dbd_db_FETCH_attrib(
         sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &sv_undef;
     }
     else if (strEQ(key, "sock"))
-    {
       result= sv_2mortal(newSViv((IV) &imp_dbh->mysql));
-    }
     else if (strEQ(key, "sockfd"))
-    {
       result= sv_2mortal(newSViv((IV) imp_dbh->mysql.net.fd));
-    }
     else if (strEQ(key, "stat"))
     {
       const char* stats = mysql_stat(&imp_dbh->mysql);
@@ -2098,31 +2080,23 @@ dbd_db_FETCH_attrib(
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
     else if (kl == 14 && strEQ(key,"server_prepare"))
-    {
       result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
-    }
     break;
 
   case 't':
     if (kl == 9  &&  strEQ(key, "thread_id"))
-    {
       result= sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
-    }
     break;
   }
 
-  if (result== NULL) {
+  if (result== NULL)
     return Nullsv;
-  }
-  if (!fine_key) {
-    /* Obsolete, as of 2.09 */
-  }
+
   return result;
 }
-/* }}} */
 
 
-/* {{{ int dbd_st_prepare( SV* sth, imp_sth_t* imp_sth, char* statement, SV* attribs)
+/* 
  **************************************************************************
  *
  *  Name:    dbd_st_prepare
@@ -2139,34 +2113,30 @@ dbd_db_FETCH_attrib(
  *           be called in the latter case
  *
  **************************************************************************/
-int 
+int
 dbd_st_prepare(
   SV* sth,
   imp_sth_t* imp_sth,
   char* statement,
   SV* attribs)
 {
- /* 
-  * Initialize our data
-  */
+ /* Initialize our data */
   int i;
   SV** svp;
   D_imp_dbh_from_sth;
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   int limit_flag = 0;
   int statement_length = 0;
   char *searchptr;
-  MYSQL_BIND *bind, *bind_end; 
+  MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
   int col_type;
 
   statement_length = strlen(statement);
   imp_sth->fetch_done = 0;
 #else
-  /*
-   *  Count the number of parameters (driver, vs server-side)
-   */
+  /* Count the number of parameters (driver, vs server-side) */
   DBIc_NUM_PARAMS(imp_sth) = count_params(statement);
 #endif
 
@@ -2174,33 +2144,32 @@ dbd_st_prepare(
   imp_sth->result = NULL;
   imp_sth->currow = 0;
 
- /*
-  * Set default value of 'mysql_use_result' attribute for sth from dbh
-  */
+ /* Set default value of 'mysql_use_result' attribute for sth from dbh */
   svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_use_result", 16);
   imp_sth->use_mysql_use_result= svp ? SvTRUE(*svp) : imp_dbh->use_mysql_use_result;
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
- /*
-  * Set default value of 'mysql_server_prepare' attribute for sth from dbh
-  */
+ /* Set default value of 'mysql_server_prepare' attribute for sth from dbh */
   svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);
   imp_sth->use_server_side_prepare = svp ? SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
 
-  if (imp_sth->use_server_side_prepare ) 
+  if (imp_sth->use_server_side_prepare )
   {
     /* This block is for the situation where there is a LIMIT statement
-    * with placeholders, which MySQL currently doesn't support, so we 
-    * need to just parse the values and build an SQL statement with the 
-    * limit values replacing the placeholders */ 
+    * with placeholders, which MySQL currently doesn't support, so we
+    * need to just parse the values and build an SQL statement with the
+    * limit values replacing the placeholders */
     for ( i = 0; i < statement_length - 1; i++) {
-      searchptr = &statement[i];
+      searchptr= &statement[i];
+      /* prepared statements for SHOW commands are not supported */
+      if (!strncasecmp(searchptr, "SHOW ", 5))
+        imp_sth->use_server_side_prepare = 0;
       /* if there is a 'limit' in the statement... */
-      if (!limit_flag && !strncasecmp(searchptr, "limit ", 6)) 
-      { 
+      if (!limit_flag && !strncasecmp(searchptr, "limit ", 6))
+      {
         limit_flag = 1;
         i += 6;
-      } 
+      }
       if( limit_flag)
       {
         /* ... and place holders after the limit flag is set... */
@@ -2211,22 +2180,22 @@ dbd_st_prepare(
           break;
         }
       }
-    } 
+    }
   }
 #endif
 
-  for (i = 0; i < AV_ATTRIB_LAST; i++) 
+  for (i = 0; i < AV_ATTRIB_LAST; i++)
   {
     imp_sth->av_attr[i] = Nullav;
   }
 
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
-  if (imp_sth->use_server_side_prepare == 0) 
+  if (imp_sth->use_server_side_prepare == 0)
   {
     /* Count the number of parameters, the same way mysql_param_count does for server side prepares */
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "dbd_st_prepare calling count_params (counting params emulation)\n");
 
     DBIc_NUM_PARAMS(imp_sth) = count_params(statement);
@@ -2234,41 +2203,41 @@ dbd_st_prepare(
 
  /*
   *  Perform check for LISTFIELDS command
-  *  and if we met it then mark as uncompatible with new 4.1 protocol 
-  *  i.e. we leave imp_sth->use_server_side_prepare=0 for this stmt 
+  *  and if we met it then mark as uncompatible with new 4.1 protocol
+  *  i.e. we leave imp_sth->use_server_side_prepare=0 for this stmt
   *  and it will be executed later in mysql_st_internal_execute()
   *  TODO: I think we can replace LISTFIELDS with SHOW COLUMNS [LIKE ...]
   *        to remove this extension hack
   */
 
     /* this is a better way to do this */
-  if ( !strncasecmp(statement, "listfields ", 11) && imp_sth->use_server_side_prepare ) 
+  if ( !strncasecmp(statement, "listfields ", 11) && imp_sth->use_server_side_prepare )
   {
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "\"listfields\" Statement: %s\n setting use_server_side_prepare to 0\n", statement);
 
     imp_sth->use_server_side_prepare = 0;
   }
 
-  if (imp_sth->use_server_side_prepare) 
+  if (imp_sth->use_server_side_prepare)
   {
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "-->> dbd_st_prepare prepared statement query: %s\n", statement);
     /* do we really need this? If we do, we should return, not just continue */
-    if (imp_sth->stmt) 
+    if (imp_sth->stmt)
       fprintf(stderr, "ERROR: Trying to prepare new stmt while we have already not closed one \n");
 
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "dbd_st_prepare calling mysql_stmt_init\n");
 
     imp_sth->stmt = mysql_stmt_init(&imp_dbh->mysql);
 
-    if (! imp_sth->stmt) 
+    if (! imp_sth->stmt)
     {
       PerlIO_printf(DBILOGFP, "ERROR: Unable to return MYSQL_STMT structure from mysql_stmt_init(): ERROR NO: %d ERROR MSG:%s\n", mysql_errno(&imp_dbh->mysql) , mysql_error(&imp_dbh->mysql));
     }
-    
-    if (dbis->debug >= 2) 
+   
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "dbd_st_prepare calling mysql_stmt_prepare using statement %s length %d\n", statement, statement_length);
 
     if (mysql_stmt_prepare(imp_sth->stmt, statement, statement_length))
@@ -2280,19 +2249,15 @@ dbd_st_prepare(
 
       /* For commands that are not supported by server side prepared statement
          mechanism lets try to pass them through regular API */
-             
+            
       if (mysql_errno(&imp_dbh->mysql) == ER_UNSUPPORTED_PS)
-      {
         imp_sth->use_server_side_prepare=0;
-      }
       else
-      {
         return FALSE;
-      }
     }
     else
     {
-      if (dbis->debug >= 2) 
+      if (dbis->debug >= 2)
         PerlIO_printf(DBILOGFP, "dbd_st_prepare called mysql_stmt_prepare, with %d params", DBIc_NUM_PARAMS(imp_sth));
 
       DBIc_NUM_PARAMS(imp_sth)= mysql_stmt_param_count(imp_sth->stmt);
@@ -2307,7 +2272,7 @@ dbd_st_prepare(
         imp_sth->has_binded = 0;
 
         /* Initialize ph variables with  NULL values */
-        for (bind = imp_sth->bind, fbind = imp_sth->fbind, 
+        for (bind = imp_sth->bind, fbind = imp_sth->fbind,
              bind_end= bind+DBIc_NUM_PARAMS(imp_sth);
              bind < bind_end ;
              bind++, fbind++ )
@@ -2321,16 +2286,16 @@ dbd_st_prepare(
           col_type = (has_statement_fields ? imp_sth->stmt->fields[i].type :
             MYSQL_TYPE_STRING);
 
-          bind->buffer_type = mysql_to_perl_type(col_type);
+          bind->buffer_type= mysql_to_perl_type(col_type);
           bind->buffer= NULL;
           bind->length= &(fbind->length);
           bind->is_null= (char*) &(fbind->is_null);
           fbind->is_null= 1;
           fbind->length= 0;
-        } 
+        }
       }
     }
-  } 
+  }
 #endif
 
   /* Allocate memory for parameters */
@@ -2339,10 +2304,7 @@ dbd_st_prepare(
 
   return 1;
 }
-/* }}} */
-
-/* {{{ long mysql_st_internal_execute( SV* h, SV* statement, SV* attribs, int num_params, imp_sth_ph_t* params, MYSQL_RES** result, MYSQL* svsock, int use_mysql_use_result) 
- **************************************************************************
+/**************************************************************************
  *
  *  Name:    mysql_st_internal_execute
  *
@@ -2359,17 +2321,17 @@ dbd_st_prepare(
  *
  **************************************************************************/
 
-long
-mysql_st_internal_execute(
-                          SV* h, 
-                          SV* statement, 
+
+my_ulonglong mysql_st_internal_execute(
+                          SV* h,
+                          SV* statement,
                           SV* attribs,
                           int num_params,
                           imp_sth_ph_t* params,
                           MYSQL_RES** result,
                           MYSQL* svsock,
                           int use_mysql_use_result
-                         ) 
+                         )
 {
   D_imp_sth(h);
   D_imp_dbh_from_sth;
@@ -2377,35 +2339,36 @@ mysql_st_internal_execute(
   char* sbuf = SvPV(statement, slen);
   char* salloc = parse_params(svsock, sbuf, &slen, params, num_params, imp_dbh->bind_type_guessing);
   char* table;
+  my_ulonglong rows;
 
-  if (salloc) 
+  if (salloc)
   {
     sbuf = salloc;
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
     {
       PerlIO_printf(DBILOGFP, "Binding parameters: %s\n", sbuf);
     }
   }
 
-  if (*result) 
-  { 
+  if (*result)
+  {
     mysql_free_result(*result);
-    *result = NULL; 
+    *result= NULL;
   }
 
-  if (slen >= 11 && !strncasecmp(sbuf, "listfields ", 11)) 
+  if (slen >= 11 && !strncasecmp(sbuf, "listfields ", 11))
   {
     /* remove pre-space */
     slen -= 10;
     sbuf += 10;
     while (slen && isspace(*sbuf)) { --slen;  ++sbuf; }
 
-    if (!slen) 
+    if (!slen)
     {
       do_error(h, JW_ERR_QUERY, "Missing table name");
       return -2;
     }
-    if (!(table = malloc(slen+1))) 
+    if (!(table = malloc(slen+1)))
     {
       do_error(h, JW_ERR_MEM, "Out of memory");
       return -2;
@@ -2414,8 +2377,8 @@ mysql_st_internal_execute(
     strncpy(table, sbuf, slen);
     sbuf = table;
 
-    while (slen && !isspace(*sbuf)) 
-    { 
+    while (slen && !isspace(*sbuf))
+    {
       --slen;
       ++sbuf;
     }
@@ -2424,7 +2387,7 @@ mysql_st_internal_execute(
     *result = mysql_list_fields(svsock, table, NULL);
     free(table);
 
-    if (!(*result)) 
+    if (!(*result))
     {
       do_error(h, mysql_errno(svsock), mysql_error(svsock));
       return -2;
@@ -2435,7 +2398,7 @@ mysql_st_internal_execute(
 
   if ((mysql_real_query(svsock, sbuf, slen))  &&
       (!mysql_db_reconnect(h)  ||
-       (mysql_real_query(svsock, sbuf, slen)))) 
+       (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
     do_error(h, mysql_errno(svsock), mysql_error(svsock));
@@ -2444,33 +2407,30 @@ mysql_st_internal_execute(
   Safefree(salloc);
 
   /** Store the result from the Query */
-  *result = use_mysql_use_result ?  
+  *result = use_mysql_use_result ?
     mysql_use_result(svsock) : mysql_store_result(svsock);
 
-  if (mysql_errno(svsock)) 
-  {
+  if (mysql_errno(svsock))
     do_error(h, mysql_errno(svsock), mysql_error(svsock));
-  }
 
-  if (!*result) 
-  {
-    return mysql_affected_rows(svsock);
-  } 
-  else 
-  {
-    return mysql_num_rows(*result);
-  }
+  if (!*result)
+    rows= mysql_affected_rows(svsock);
+  else
+    rows= mysql_num_rows(*result);
+
+  if ((long long)rows == -1)
+    return(-1);
+
+  return(rows);
 }
-/* }}} */
 
-/* {{{ long mysql_st_internal_execute41 ( SV* h, SV* statement, SV* attribs, int num_params, imp_sth_ph_t* params, MYSQL_RES** result, MYSQL* svsock, int use_mysql_use_result, MYSQL_STMT * stmt, MYSQL_BIND * bind, int * has_binded) 
- **************************************************************************
+ /**************************************************************************
  *
  *  Name:    mysql_st_internal_execute41
  *
  *  Purpose: Internal version for executing a prepared statement, called both from
  *           within the "do" and the "execute" method.
- *           MYSQL 4.1 API           
+ *           MYSQL 4.1 API          
  *
  *
  *  Inputs:  h - object handle, for storing error messages
@@ -2483,10 +2443,9 @@ mysql_st_internal_execute(
  *
  **************************************************************************/
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
-long
-mysql_st_internal_execute41 (
+my_ulonglong mysql_st_internal_execute41(
                              SV* h,
                              SV* statement,
                              SV* attribs,
@@ -2498,17 +2457,19 @@ mysql_st_internal_execute41 (
                              MYSQL_STMT * stmt,
                              MYSQL_BIND * bind,
                              int * has_binded
-                            ) 
+                            )
 {
+  my_ulonglong rows;
+
   if (*result) /* do we free metadata info */
   {
     mysql_free_result(*result); /* free it if not */
     *result = NULL;
   }
 
-  /* 
-    If were performed any changes with ph variables 
-    we have to rebind them 
+  /*
+    If were performed any changes with ph variables
+    we have to rebind them
   */
 
   if (num_params > 0 && !(*has_binded))
@@ -2519,26 +2480,14 @@ mysql_st_internal_execute41 (
       do_error(h, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
       return -2;
     }
-    *has_binded = 1;     
+    *has_binded= 1;
   }
 
-  if (dbis->debug >= 2) 
+  if (dbis->debug >= 2)
   {
     PerlIO_printf(DBILOGFP, "mysql_st_internal_execute41 calling mysql_execute\n");
   }
 
-  /* PerlIO_printf(DBILOGFP, "external_execute41 for statement %s, num_params in statement %d sizeof params %d\n", SvPV(statement, slen), num_params, sizeof(params)); */
-  /* Konstantin, help! */
-  /* for (i = 0; i < num_params; i++)
-  {
-    PerlIO_printf(DBILOGFP, "checking param %d\n", i);
-    if (! (SvOK(params[i].value) && ! params[i].value ))
-    {
-      PerlIO_printf(DBILOGFP, "external_execute41 param # %d type %d bind type %d NOT SET, SETTING TO %d\n", i, params[i].type, bind[i].buffer_type, MYSQL_TYPE_NULL );
-      bind[i].buffer_type=MYSQL_TYPE_NULL;
-    }
-  }
-  */
   if (mysql_stmt_execute(stmt))
   {
     do_error(h, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
@@ -2556,43 +2505,38 @@ mysql_st_internal_execute41 (
       return -2;
     }
     /* PerlIO_printf(DBILOGFP, "no result set metadata for statement %s\n", SvPV(statement, slen));*/
-  } 
+  }
   /*
    * This statement returns a result set (SELECT...)
   */
   else
   {
       if (use_mysql_use_result)
-      {
-        return mysql_num_rows(*result);
-      }
+        rows= mysql_num_rows(*result);
       else
       {
-        /* 
+        /*
         * Get the total rows affected and return
-        */   
+        */  
         if (mysql_stmt_store_result(stmt))
         {
           do_error(h, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
           return -2;
         }
         else
-        {
-         /*PerlIO_printf(DBILOGFP, "result set metadata for statement %s, num_rows %d\n", SvPV(statement, slen), result_val);*/
-         return (long) mysql_stmt_num_rows(stmt);
-        }
+         rows= mysql_stmt_num_rows(stmt);
       }
   }
-  return mysql_stmt_affected_rows(stmt);
+  if ((long long)rows == -1)
+    return(-1);
+  return(rows);
 
 }
-/* }}} */
 
 #endif
 
 
-/* {{{ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) 
- **************************************************************************
+/***************************************************************************
  *
  *  Name:    dbd_st_execute
  *
@@ -2607,7 +2551,7 @@ mysql_st_internal_execute41 (
  *
  **************************************************************************/
 
-int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) 
+int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 {
   D_imp_dbh_from_sth;
   SV** statement;
@@ -2616,19 +2560,19 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   dTHR;
 #endif
 
-  if (dbis->debug >= 2) 
+  if (dbis->debug >= 2)
   {
     PerlIO_printf(DBILOGFP,
       "    -> dbd_st_execute for %08lx\n", (u_long) sth);
   }
 
-  if (!SvROK(sth)  ||  SvTYPE(SvRV(sth)) != SVt_PVHV) 
+  if (!SvROK(sth)  ||  SvTYPE(SvRV(sth)) != SVt_PVHV)
   {
     croak("Expected hash array");
   }
 
   /* Free cached array attributes */
-  for (i = 0;  i < AV_ATTRIB_LAST;  i++) 
+  for (i = 0;  i < AV_ATTRIB_LAST;  i++)
   {
     if (imp_sth->av_attr[i]) {
       SvREFCNT_dec(imp_sth->av_attr[i]);
@@ -2638,8 +2582,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
   statement = hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
-   
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+  
   if (imp_sth->use_server_side_prepare)
   {
     if (DBIc_ACTIVE(imp_sth) && !(mysql_st_clean_cursor(sth, imp_sth)))
@@ -2650,7 +2594,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
     imp_sth->row_num = mysql_st_internal_execute41(
       sth,
-      *statement, 
+      *statement,
       NULL,
       DBIc_NUM_PARAMS(imp_sth),
       imp_sth->params,
@@ -2665,7 +2609,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   else
 #endif
     imp_sth->row_num = mysql_st_internal_execute(
-      sth, 
+      sth,
       *statement,
       NULL,
       DBIc_NUM_PARAMS(imp_sth),
@@ -2677,10 +2621,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
   if (imp_sth->row_num != -2 )
   {
-    if (!imp_sth->result) 
+    if (!imp_sth->result)
     {
       imp_sth->insertid = mysql_insert_id(&imp_dbh->mysql);
-    } 
+    }
     else
     {
       /** Store the result in the current statement handle */
@@ -2691,18 +2635,19 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
     }
   }
 
-  if (dbis->debug >= 2) 
+  if (dbis->debug >= 2)
   {
     PerlIO_printf(DBILOGFP, "    <- dbd_st_execute %ld rows\n",
                   imp_sth->row_num);
   }
 
-  return imp_sth->row_num;
+  if ((long long) imp_sth->row_num == -1)
+    return -1;
+  else
+    return (int) imp_sth->row_num;
 }
-/* }}} */
 
-/* {{{ int dbd_describe(SV* sth, imp_sth_t* imp_sth) 
- **************************************************************************
+ /**************************************************************************
  *
  *  Name:    dbd_describe
  *
@@ -2717,13 +2662,13 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
  *
  **************************************************************************/
 
-int dbd_describe(SV* sth, imp_sth_t* imp_sth) 
+int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 {
 
-  if (dbis->debug >= 2) 
+  if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "** dbd_describe() **\n");
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   if (imp_sth->use_server_side_prepare)
   {
@@ -2734,7 +2679,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     MYSQL_BIND *bind;
     MYSQL_FIELD *fields;
 
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "** dbd_describe() num_fields %d**\n", num_fields);
 
     if (imp_sth->done_desc)
@@ -2749,8 +2694,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       return 0;
     }
 
-    /* allocate fields buffers  */  
-    if (  !(imp_sth->fbh = alloc_fbuffer(num_fields)) 
+    /* allocate fields buffers  */ 
+    if (  !(imp_sth->fbh = alloc_fbuffer(num_fields))
           || !(imp_sth->buffer = alloc_bind(num_fields)) )
     {
       /* Out of memory */
@@ -2761,10 +2706,10 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     fields = mysql_fetch_fields(imp_sth->result);
 
     for (
-         fbh = imp_sth->fbh, bind = (MYSQL_BIND*)imp_sth->buffer, i = 0; 
-         i < num_fields; 
+         fbh = imp_sth->fbh, bind = (MYSQL_BIND*)imp_sth->buffer, i = 0;
+         i < num_fields;
          i++, fbh++, bind++
-        ) 
+        )
     {
       /* get the column type */
       col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
@@ -2834,10 +2779,10 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
   MYSQL_ROW cols;
   unsigned long* lengths;
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
-  if (imp_sth->use_server_side_prepare) 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+  if (imp_sth->use_server_side_prepare)
   {
-    if (!DBIc_ACTIVE(imp_sth) ) 
+    if (!DBIc_ACTIVE(imp_sth) )
     {
       do_error(sth, JW_ERR_SEQUENCE, "no statement executing\n");
       return Nullav;
@@ -2855,7 +2800,7 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
       {
         do_error(sth, JW_ERR_SEQUENCE, "Error while describe result set.");
         return Nullav;
-      } 
+      }
     }
   }
 #endif
@@ -2874,30 +2819,30 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
     return Nullav;
   }
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   int rc;
-  imp_sth_fbh_t * fbh;    
+  imp_sth_fbh_t * fbh;   
   MYSQL_BIND *bind;
-  if (imp_sth->use_server_side_prepare) 
+  if (imp_sth->use_server_side_prepare)
   {
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "dbd_st_fetch calling mysql_fetch\n");
 
-    if ((rc = mysql_stmt_fetch(imp_sth->stmt))) 
+    if ((rc = mysql_stmt_fetch(imp_sth->stmt)))
     {
-      if (rc == 1) 
+      if (rc == 1)
       {
         do_error(sth, mysql_stmt_errno(imp_sth->stmt), mysql_stmt_error(imp_sth->stmt));
       }
 
-      if (rc == 100) 
+      if (rc == 100)
       {
         /* Update row_num to affected_rows value */
         imp_sth->row_num = (long)  mysql_stmt_affected_rows(imp_sth->stmt);
         imp_sth->fetch_done=1;
       }
 
-      if (!DBIc_COMPAT(imp_sth)) 
+      if (!DBIc_COMPAT(imp_sth))
       {
         dbd_st_finish(sth, imp_sth);
       }
@@ -2909,30 +2854,30 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
 
     av = DBIS->get_fbav(imp_sth);
     num_fields = av_len(av)+1;
-    if (dbis->debug >= 2) 
+    if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "dbd_st_fetch called mysql_fetch, rc %d num_fields %d\n", rc, num_fields);
 
     for (
-         bind = imp_sth->buffer, 
-         fbh = imp_sth->fbh, 
-         i = 0; 
-         i < num_fields; 
-         i++, 
-         fbh++, 
+         bind = imp_sth->buffer,
+         fbh = imp_sth->fbh,
+         i = 0;
+         i < num_fields;
+         i++,
+         fbh++,
          bind++
         )
     {
       SV *sv = AvARRAY(av)[i]; /* Note: we (re)use the SV in the AV	*/
 
       /* This is wrong, null is not being set correctly
-       * This is not the way to determine length (this would break blobs!) 
+       * This is not the way to determine length (this would break blobs!)
        */
-      if (fbh->is_null) 
+      if (fbh->is_null)
         (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
-      else 
+      else
       {
         /* In case of BLOB/TEXT fields we allocate only 8192 bytes
-           in dbd_describe() for data. Here we know real size of field 
+           in dbd_describe() for data. Here we know real size of field
            so we should increase buffer size and refetch column value
         */
         if (fbh->length > bind->buffer_length)
@@ -2986,7 +2931,7 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
       PerlIO_printf(DBILOGFP, "<- dbd_st_fetch, %d cols\n", num_fields);
     }
     return av;
-  } 
+  }
   else
   {
 #endif
@@ -2995,22 +2940,22 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
 
     if (!(cols = mysql_fetch_row(imp_sth->result)))
     {
-      D_imp_dbh_from_sth;						          
-      if (mysql_errno(&imp_dbh->mysql)) 
-      {				          
-        do_error(sth, mysql_errno(&imp_dbh->mysql),			          
-                 mysql_error(&imp_dbh->mysql));				          
-      }								          
-      if (!DBIc_COMPAT(imp_sth)) 
+      D_imp_dbh_from_sth;						         
+      if (mysql_errno(&imp_dbh->mysql))
+      {				         
+        do_error(sth, mysql_errno(&imp_dbh->mysql),			         
+                 mysql_error(&imp_dbh->mysql));				         
+      }								         
+      if (!DBIc_COMPAT(imp_sth))
       {
-        dbd_st_finish(sth, imp_sth);					          
-      }								          
-      return Nullav;							          
+        dbd_st_finish(sth, imp_sth);					         
+      }								         
+      return Nullav;							         
     }
 
     lengths = mysql_fetch_lengths(imp_sth->result);
 
-    av = DBIS->get_fbav(imp_sth);					          
+    av = DBIS->get_fbav(imp_sth);					         
     num_fields = av_len(av)+1;
 
     for (i = 0;  i < num_fields; ++i)
@@ -3032,7 +2977,7 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
       {
         (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
       }
-    } 
+    }
 
     if (dbis->debug >= 2)
     {
@@ -3041,18 +2986,18 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
     return av;
 
 #if MYSQL_VERSION_ID  >= SERVER_PREPARE_VERSION
-  } 
+  }
 #endif
 
 }
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
-/* 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+/*
   We have to fetch all data from stmt
   There is may be usefull for 2 cases:
   1. st_finish when we have undef statement
   2. call st_execute again when we have some unfetched data in stmt
- */ 
+ */
 
 int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
 
@@ -3080,7 +3025,7 @@ int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
 
 int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   imp_sth_fbh_t * fbh;
   int i, num_fields;
 #endif
@@ -3089,7 +3034,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
   dTHR;
 #endif
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     if (imp_sth && imp_sth->stmt)
@@ -3118,13 +3063,13 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
       imp_sth->buffer=NULL;
       imp_sth->fbh=NULL;
     }
-  } 
+  }
 #endif
 
   /* Cancel further fetches from this cursor.  */
   /* We don't close the cursor till DESTROY. */
   /* The application may re execute it.  */
-  if (imp_sth && imp_sth->result) 
+  if (imp_sth && imp_sth->result)
   {
     mysql_free_result(imp_sth->result);
     imp_sth->result = NULL;
@@ -3152,7 +3097,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 void dbd_st_destroy(SV* sth, imp_sth_t* imp_sth) {
   int i;
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   int num_fields;
 
   if (imp_sth->use_server_side_prepare)
@@ -3193,7 +3138,7 @@ void dbd_st_destroy(SV* sth, imp_sth_t* imp_sth) {
 
   /* Free cached array attributes */
   for (i = 0;  i < AV_ATTRIB_LAST;  i++) {
-    if (imp_sth->av_attr[i]) 
+    if (imp_sth->av_attr[i])
     {
       SvREFCNT_dec(imp_sth->av_attr[i]);
     }
@@ -3206,7 +3151,7 @@ void dbd_st_destroy(SV* sth, imp_sth_t* imp_sth) {
 /* }}} */
 
 
-/* {{{ int dbd_st_STORE_attrib( SV* sth, imp_sth_t* imp_sth, SV* keysv, SV* valuesv) 
+/* {{{ int dbd_st_STORE_attrib( SV* sth, imp_sth_t* imp_sth, SV* keysv, SV* valuesv)
  **************************************************************************
  *
  *  Name:    dbd_st_STORE_attrib
@@ -3229,13 +3174,13 @@ dbd_st_STORE_attrib(
                     imp_sth_t* imp_sth,
                     SV* keysv,
                     SV* valuesv
-                   ) 
+                   )
 {
   STRLEN(kl);
   char* key = SvPV(keysv, kl);
   int retval = FALSE;
 
-  if (dbis->debug >= 2) 
+  if (dbis->debug >= 2)
   {
     PerlIO_printf(DBILOGFP,
                   "-> dbd_st_STORE_attrib for %08lx, key %s\n",
@@ -3259,7 +3204,7 @@ dbd_st_STORE_attrib(
 /* }}} */
 
 
-/* {{{ SV* dbd_st_FETCH_internal( SV* sth, int what, MYSQL_RES* res, int cacheit) 
+/* {{{ SV* dbd_st_FETCH_internal( SV* sth, int what, MYSQL_RES* res, int cacheit)
  **************************************************************************
  *
  *  Name:    dbd_st_FETCH_internal
@@ -3291,13 +3236,13 @@ dbd_st_STORE_attrib(
 #define IS_AUTO_INCREMENT(A) (((A) & AUTO_INCREMENT_FLAG) != 0)
 #endif
 
-SV* 
+SV*
 dbd_st_FETCH_internal(
   SV* sth,
   int what,
   MYSQL_RES* res,
   int cacheit
-) 
+)
 {
   D_imp_sth(sth);
   AV *av = Nullav;
@@ -3309,19 +3254,19 @@ dbd_st_FETCH_internal(
     do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented");
 
   /* Return cached value, if possible */
-  } 
-  else if (cacheit  &&  imp_sth->av_attr[what]) 
+  }
+  else if (cacheit  &&  imp_sth->av_attr[what])
   {
     av = imp_sth->av_attr[what];
 
   /* Does this sth really have a result? */
-  } 
-  else if (!res) 
+  }
+  else if (!res)
   {
     do_error(sth, JW_ERR_NOT_ACTIVE,
 	     "statement contains no result");
   /* Do the real work. */
-  } 
+  }
   else
   {
     av = newAV();
@@ -3408,12 +3353,12 @@ dbd_st_FETCH_internal(
 
     /* Ensure that this value is kept, decremented in
      *  dbd_st_destroy and dbd_st_execute.  */
-    if (!cacheit) 
+    if (!cacheit)
       return sv_2mortal(newRV_noinc((SV*)av));
     imp_sth->av_attr[what] = av;
   }
 
-  if (av == Nullav) 
+  if (av == Nullav)
     return &sv_undef;
 
   return sv_2mortal(newRV_inc((SV*)av));
@@ -3421,7 +3366,7 @@ dbd_st_FETCH_internal(
 /* }}} */
 
 
-/* {{{ SV* dbd_st_FETCH_attrib( SV* sth, imp_sth_t* imp_sth, SV* keysv) 
+/* {{{ SV* dbd_st_FETCH_attrib( SV* sth, imp_sth_t* imp_sth, SV* keysv)
  **************************************************************************
  *
  *  Name:    dbd_st_FETCH_attrib
@@ -3444,7 +3389,7 @@ SV* dbd_st_FETCH_attrib(
   SV* sth,
   imp_sth_t* imp_sth,
   SV* keysv
-) 
+)
 {
     STRLEN(kl);
     char* key = SvPV(keysv, kl);
@@ -3537,14 +3482,14 @@ SV* dbd_st_FETCH_attrib(
           break;
         case 20:
           if (strEQ(key, "mysql_server_prepare")) {
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
             retsv = sv_2mortal(newSViv((IV) imp_sth->use_server_side_prepare));
 #else
             retsv = boolSV(0);
 #endif
           }
             break;
-	  case 23:  
+	  case 23: 
 	    if (strEQ(key, "mysql_is_auto_increment")) {
 	        retsv = ST_FETCH_AV(AV_ATTRIB_IS_AUTO_INCREMENT);
 	    }
@@ -3558,7 +3503,7 @@ SV* dbd_st_FETCH_attrib(
 /* }}} */
 
 
-/* {{{ int dbd_st_blob_read ( SV *sth, imp_sth_t *imp_sth, int field, long offset, long len, SV *destrv, long destoffset) 
+/* {{{ int dbd_st_blob_read ( SV *sth, imp_sth_t *imp_sth, int field, long offset, long len, SV *destrv, long destoffset)
  **************************************************************************
  *
  *  Name:    dbd_st_blob_read
@@ -3581,13 +3526,13 @@ SV* dbd_st_FETCH_attrib(
  **************************************************************************/
 
 int dbd_st_blob_read (
-  SV *sth, 
+  SV *sth,
   imp_sth_t *imp_sth,
   int field,
   long offset,
   long len,
   SV *destrv,
-  long destoffset) 
+  long destoffset)
 {
     return FALSE;
 }
@@ -3620,9 +3565,9 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
   int rc;
   int paramNum = SvIV(param);
-  int idx = paramNum - 1;    
+  int idx = paramNum - 1;   
 
-#if MYSQL_VERSION_ID >=40101 
+#if MYSQL_VERSION_ID >=40101
   STRLEN slen;
   char *buffer;
   int buffer_is_null = 0;
@@ -3670,7 +3615,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_TINYINT:
           /* INT */
           buffer_type = MYSQL_TYPE_LONG;
-          if (dbis->debug) 
+          if (dbis->debug)
             PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A INT NUMBER\n", sql_type, buffer);
           break;
 
@@ -3680,7 +3625,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_REAL:
           /* FLOAT */
           buffer_type = MYSQL_TYPE_DOUBLE;
-          if (dbis->debug) 
+          if (dbis->debug)
             PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A FLOAT NUMBER\n", sql_type, buffer);
           break;
 
@@ -3694,13 +3639,13 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_VARBINARY:
         case SQL_LONGVARBINARY:
           buffer_type = MYSQL_TYPE_STRING;
-          if (dbis->debug) 
+          if (dbis->debug)
             PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A STRING\n", sql_type, buffer);
           break;
 
         default:
           buffer_type = MYSQL_TYPE_STRING;
-          if (dbis->debug) 
+          if (dbis->debug)
             PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A STRING\n", sql_type, buffer);
           break;
       }
@@ -3713,15 +3658,15 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
       if (imp_sth->has_binded == 0) /* prepare has not been called */
       {
-        imp_sth->bind[idx].buffer_type = buffer_type; 
-        imp_sth->bind[idx].buffer = buffer; 
-        imp_sth->bind[idx].buffer_length = buffer_length; 
+        imp_sth->bind[idx].buffer_type = buffer_type;
+        imp_sth->bind[idx].buffer = buffer;
+        imp_sth->bind[idx].buffer_length = buffer_length;
       }
       else /* prepare has been called */
       {
-        imp_sth->stmt->params[idx].buffer_type = buffer_type; 
-        imp_sth->stmt->params[idx].buffer = buffer; 
-        imp_sth->stmt->params[idx].buffer_length = buffer_length; 
+        imp_sth->stmt->params[idx].buffer_type = buffer_type;
+        imp_sth->stmt->params[idx].buffer = buffer;
+        imp_sth->stmt->params[idx].buffer_length = buffer_length;
       }
       imp_sth->fbind[idx].length = buffer_length;
       imp_sth->fbind[idx].is_null = buffer_is_null;
@@ -3729,10 +3674,9 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 #endif
     return rc;
 }
-/* }}} */
 
 
-/* {{{ int mysql_db_reconnect(SV* h)
+/* 
  **************************************************************************
  *
  *  Name:    mysql_db_reconnect
@@ -3784,7 +3728,7 @@ int mysql_db_reconnect(SV* h) {
     memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
-  } 
+  }
   ++imp_dbh->stats.auto_reconnects_ok;
   return TRUE;
 }
@@ -3848,13 +3792,13 @@ AV* dbd_db_type_info_all(SV* dbh, imp_dbh_t* imp_dbh) {
 
   hv = newHV();
   av_push(av, newRV_noinc((SV*) hv));
-  for (i = 0;  i < (sizeof(cols) / sizeof(const char*));  i++) {
+  for (i = 0;  i < (int)(sizeof(cols) / sizeof(const char*));  i++) {
     if (!hv_store(hv, (char*) cols[i], strlen(cols[i]), newSViv(i), 0)) {
       SvREFCNT_dec((SV*) av);
       return Nullav;
     }
   }
-  for (i = 0;  i < SQL_GET_TYPE_INFO_num;  i++) {
+  for (i = 0;  i < (int)SQL_GET_TYPE_INFO_num;  i++) {
     const sql_type_info_t* t = &SQL_GET_TYPE_INFO_values[i];
 
     row = newAV();
@@ -3891,7 +3835,7 @@ AV* dbd_db_type_info_all(SV* dbh, imp_dbh_t* imp_dbh) {
 
 
 /* {{{ SV* dbd_db_quote(SV* dbh, SV* str, SV* type) */
-SV* 
+SV*
 dbd_db_quote(SV* dbh, SV* str, SV* type)
 {
   SV* result;
@@ -3912,7 +3856,7 @@ dbd_db_quote(SV* dbh, SV* str, SV* type)
     {
       int i;
       int tp = SvIV(type);
-      for (i = 0;  i < SQL_GET_TYPE_INFO_num;  i++)
+      for (i = 0;  i < (int)SQL_GET_TYPE_INFO_num;  i++)
       {
         const sql_type_info_t* t = &SQL_GET_TYPE_INFO_values[i];
         if (t->data_type == tp)
@@ -3940,10 +3884,11 @@ dbd_db_quote(SV* dbh, SV* str, SV* type)
   }
   return result;
 }
-/* }}} */
 
+#ifdef DBD_MYSQL_INSERT_ID_IS_GOOD
 SV *mysql_db_last_insert_id(SV* dbh, imp_dbh_t *imp_dbh,
         SV *catalog, SV *schema, SV *table, SV *field,SV *attr)
 {
         return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
 }
+#endif

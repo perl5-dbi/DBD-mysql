@@ -563,8 +563,13 @@ rows(sth)
   CODE:
     D_imp_sth(sth);
     char buf[64];
-    sprintf(buf, "%lu", imp_sth->row_num);
-    ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
+
+  if ((long long)imp_sth->row_num ==  -1)
+    sprintf(buf, "%d", -1);
+  else
+    sprintf(buf, "%llu", imp_sth->row_num);
+
+  ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
 
 
 MODULE = DBD::mysql    PACKAGE = DBD::mysql::GetInfo
