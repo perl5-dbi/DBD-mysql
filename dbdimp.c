@@ -640,12 +640,12 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 
 	if (imp_dbh->has_protocol41) {
 #if MYSQL_VERSION_ID >=40101
-	    ret =  mysql_real_query (&imp_dbh->mysql, "ROLLBACK", 8);
+		ret =  mysql_rollback(&imp_dbh->mysql);
 #else
 		die("DBD::mysql Bug");
 #endif
-	} else
-	    ret =  mysql_rollback(&imp_dbh->mysql);
+	} else 
+		ret =  mysql_real_query (&imp_dbh->mysql, "ROLLBACK", 8);
 
 	if (ret) {
 		do_error(dbh, mysql_errno(&imp_dbh->mysql),
