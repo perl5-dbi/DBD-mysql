@@ -25,9 +25,6 @@ $dbdriver = $mdriver; # $dbdriver is usually just the same as $mdriver.
 #
 #   DSN being used; do not edit this, edit "$dbdriver.dbtest" instead
 #
-$test_dsn      = $ENV{'DBI_DSN'}   ||  'DBI:mysql:database=test';
-$test_user     = $ENV{'DBI_USER'}  ||  '';
-$test_password = $ENV{'DBI_PASS'}  ||  '';
 
 
 $::COL_NULLABLE = 1;
@@ -45,6 +42,9 @@ if (-f ($file = "t/$dbdriver.dbtest")  ||
 	print "1..0\n";
 	exit 0;
     }
+    $::test_dsn      = $::test_dsn || $ENV{'DBI_DSN'} || 'DBI:mysql:database=test';
+    $::test_user     = $::test_user|| $ENV{'DBI_USER'}  ||  '';
+    $::test_password = $::test_passowrd || $ENV{'DBI_PASS'}  ||  '';
 }
 if (-f ($file = "t/$mdriver.mtest")  ||
     -f ($file = "$mdriver.mtest")    ||
