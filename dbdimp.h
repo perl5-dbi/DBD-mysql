@@ -119,6 +119,11 @@ struct imp_dbh_st {
 			     *  TRUE for MySQL and always FALSE
 			     *  for mSQL.
 			     */
+    bool auto_reconnect;
+    struct {
+	    unsigned int auto_reconnects;
+	    unsigned int failed_auto_reconnects;
+    } stats;
 };
 
 
