@@ -179,7 +179,6 @@ struct imp_sth_st {
 #define dbd_db_commit		mysql_db_commit
 #define dbd_db_rollback		mysql_db_rollback
 #define dbd_db_disconnect	mysql_db_disconnect
-#define dbd_discon_all		mysql_db_discon_all
 #define dbd_db_destroy		mysql_db_destroy
 #define dbd_db_STORE_attrib	mysql_db_STORE_attrib
 #define dbd_db_FETCH_attrib	mysql_db_FETCH_attrib
