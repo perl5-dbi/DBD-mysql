@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9001';
+$VERSION = '2.9002';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -835,11 +835,11 @@ The following stats are being maintained:
 
 =over
 
-=item auto_reconnects
+=item auto_reconnects_ok
 
 the number of times that DBD::mysql had to reconnect to mysql
 
-=item failed_auto_reconnects
+=item failed_auto_reconnects_failed
 
 the number of times that DBD::mysql tried to reconnect to mysql but failed.
 

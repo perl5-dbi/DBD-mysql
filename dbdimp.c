@@ -1090,8 +1090,8 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 		  user ? user : "NULL",
 		  password ? password : "NULL");
 
-  imp_dbh->stats.auto_reconnects = 0;
-  imp_dbh->stats.failed_auto_reconnects = 0;
+  imp_dbh->stats.auto_reconnects_ok = 0;
+  imp_dbh->stats.auto_reconnects_failed = 0;
 
   if (!_MyLogin(imp_dbh)) {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
@@ -1429,10 +1429,10 @@ SV* dbd_db_FETCH_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv) {
     case 'd':
       if (strEQ(key, "dbd_stats")) {
           HV* hv = newHV();
-          hv_store(hv, "auto_reconnects", strlen("auto_reconnects"), 
-			  newSViv(imp_dbh->stats.auto_reconnects),0);
-          hv_store(hv,"failed_auto_reconnects",strlen("failed_auto_reconnects"),
-			  newSViv(imp_dbh->stats.failed_auto_reconnects),0);
+          hv_store(hv, "auto_reconnects_ok", strlen("auto_reconnects_ok"), 
+			  newSViv(imp_dbh->stats.auto_reconnects_ok),0);
+          hv_store(hv,"auto_reconnects_failed",strlen("auto_reconnects_failed"),
+			  newSViv(imp_dbh->stats.auto_reconnects_failed),0);
 
           result = (newRV_noinc((SV*)hv));
       }
@@ -2313,10 +2313,10 @@ int mysql_db_reconnect(SV* h) {
   if (!_MyLogin(imp_dbh)) {
     do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql));
     memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
-    ++imp_dbh->stats.failed_auto_reconnects;
+    ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
   } else {
-    ++imp_dbh->stats.auto_reconnects;
+    ++imp_dbh->stats.auto_reconnects_ok;
   }
   return TRUE;
 }

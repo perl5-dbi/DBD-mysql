@@ -1,4 +1,4 @@
-2003-06-22  Rudy Lippan  <rlippan@remotelinux.com> (2.9001)
+2003-06-22  Rudy Lippan  <rlippan@remotelinux.com> (2.9002)
 	* moved pod into mysql.pm from mysql.pod
 	* Changed the default behaviour of mysql_found_rows, so now
 	  'UPDATE table set field=?' will return the number of rows matched
@@ -21,8 +21,8 @@
 	  eval. The next tine DBD::mysql tried to reconnect, the process
 	  would segfault.
 	* Added statistics attribute, 'mysql_dbd_stats' which returns
-	  a hash ref that contains 2 keys 'auto_reconnects' and
-	  'failed_auto_reconnects'.
+	  a hash ref that contains 2 keys 'auto_reconnects_ok' and
+	  'auto_reconnects_failed'.
 	* Fixed bug where strings that were used in numeric
 	  context were not getting quoted on execute(). Now all
 	  parameters are bound as varchar by default.
