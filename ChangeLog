@@ -7,7 +7,7 @@
 	  to connect.
 	* Updated type_info_all() to be more inline with 
 	  what DBD::ODBC returns.
-	* Added attribute 'auto_reconnect' that allows the auto reconnect
+	* Added attribute 'mysql_auto_reconnect' that allows the auto reconnect
 	  behaviour to be toggled. :
 	  
 	  ** NOTE** The behaviour of auto reconnect has changed.  If 
