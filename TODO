@@ -28,3 +28,9 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - PramValues
 - Embedded mysql server.  make embedded => (DBD::mysqlEmbed? || DBD::SQLHeavy :)
 - Add tests for when autocommit is not supported
+- Tests for change to rollback behaviour where DESTROY calls mysql_db_rollback.
+- what is the return -2 for? Also look at making do_error return a false value
+  so that one can 'return do_error(...)'.
+- remove dbd_mysql_coomit and make the commit called from the hash key set
+  use mysq_db_commit.
+- remove goto hackary... Finish cleaning up connect
