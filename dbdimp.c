@@ -951,6 +951,10 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 					mysql_options(sock,
 						      MYSQL_READ_DEFAULT_GROUP,
 						      gr);
+				} else {
+					mysql_options(sock,
+						      MYSQL_READ_DEFAULT_GROUP,
+						      "dbd_mysql");
 				}
 				if ((svp =
 				     hv_fetch(hv,
