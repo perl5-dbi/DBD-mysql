@@ -114,9 +114,9 @@ struct imp_dbh_st {
 		unsigned int auto_reconnects_ok;
 		unsigned int auto_reconnects_failed;
 	} stats;
+	int has_protocol41;	/* does server support new binary protocol */
+	int has_autodetect_prepare;
 };
-
-
 
 
 /*
@@ -127,6 +127,38 @@ typedef struct imp_sth_ph_st {
 	SV *value;
 	int type;
 } imp_sth_ph_t;
+
+/*
+ *  The bind_param method internally uses this structure for storing
+ *  parameters.
+ */
+typedef struct imp_sth_phb_st {
+	unsigned long length;
+	char is_null;
+} imp_sth_phb_t;
+
+/*
+ *  The dbd_describe uses this structure for storing
+ *  fields meta info.
+ *  Added ddata, ldata, lldata for accomodate 
+ *  being able to use different data types
+ *  12.02.20004 PMG
+ */
+typedef struct imp_sth_fbh_st {
+	unsigned long length;
+	bool is_null;
+	char *data;
+	double ddata;
+	long ldata;
+	long long lldata;
+
+} imp_sth_fbh_t;
+
+
+typedef struct imp_sth_fbind_st {
+	unsigned long *length;
+	char *is_null;
+} imp_sth_fbind_t;
 
 
 
@@ -143,8 +175,19 @@ typedef struct imp_sth_ph_st {
 struct imp_sth_st {
 	dbih_stc_t com;		/* MUST be first element in structure     */
 
+#if (MYSQL_VERSION_ID >= 40101)
+	MYSQL_STMT *stmt;
+	MYSQL_BIND *bind;
+	MYSQL_BIND *buffer;
+	imp_sth_phb_t *fbind;
+	imp_sth_fbh_t *fbh;
+	int has_binded;
+	int has_protocol41;	/* does server support new binary protocol */
+#endif
+
 	MYSQL_RES *cda;		/* result                                 */
 	int currow;		/* number of current row                  */
+	int fetch_done;		/* mark that fetch done                   */
 	long row_num;		/* total number of rows                   */
 
 	int done_desc;		/* have we described this sth yet ?       */
@@ -195,12 +238,20 @@ void do_error(SV * h, int rc, const char *what);
 SV *dbd_db_fieldlist(MYSQL_RES * res);
 
 void dbd_preparse(imp_sth_t * imp_sth, SV * statement);
-int mysql_st_internal_execute(SV *, SV *, SV *, int, imp_sth_ph_t *,
-			      MYSQL_RES **, MYSQL *, int);
+long mysql_st_internal_execute(SV *, SV *, SV *, int, imp_sth_ph_t *,
+			       MYSQL_RES **, MYSQL *, int);
+
+#if MYSQL_VERSION_ID>=40101
+long mysql_st_internal_execute41(SV *, SV *, SV *, int, imp_sth_ph_t *,
+				 MYSQL_RES **, MYSQL *, int, MYSQL_STMT *,
+				 MYSQL_BIND *, int *);
+
+int mysql_st_clean_cursor(SV *, imp_sth_t *);
+#endif
+
 AV *dbd_db_type_info_all(SV * dbh, imp_dbh_t * imp_dbh);
 SV *dbd_db_quote(SV *, SV *, SV *);
 extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
 			       char *, char *, imp_dbh_t *);
-
 
 extern int mysql_db_reconnect(SV *);
