@@ -1,20 +1,21 @@
 
 # -*- cperl -*-
 
-
 BEGIN {
+    use Config;
+
     if ($] == 5.008 && $ENV{"LANG"} ne "C") {
 	$ENV{LANG} = "C";
-	print STDERR "\n\n\nENV{LANG} is not 'C' execing 'perl Makefile.PL'".
+	print STDERR "\n\n\n\$ENV{LANG} is not 'C' execing 'perl Makefile.PL'".
 	" with ENV{LANG} == 'C'\n You can skip this check by: 'export ".
-	"LANG='C' before running 'perl Makefile.PL'\n\n";
+	"LANG='C' before running 'perl Makefile.PL or by upgrading your Perl'\n\n\n";
+
 	sleep(5);
-        exec ("perl $0", @ARGV )|| die $!;
+        exec ("$Config{perlpath} $0", @ARGV )|| die $!;
     }
 }
 use strict;
 BEGIN { $^W = 1; }
-use Config ();
 use Getopt::Long();
 use ExtUtils::MakeMaker();
 use Data::Dumper ();
