@@ -120,7 +120,9 @@ static void FreeParam(imp_sth_ph_t* params, int numParam) {
 
 
 static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
-			imp_sth_ph_t* params, int numParams) {
+			imp_sth_ph_t* params, int numParams, 
+			bool bind_type_guessing)
+{
     char* salloc;
     int i, j;
     char* valbuf;
@@ -149,7 +151,11 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
 	    alen += 3;  /* Erase '?', insert 'NULL' */
 	} else {
 	    if (!ph->type) {
+	        if (bind_type_guessing) {
+		    ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
+		} else {
 		    ph->type= SQL_VARCHAR;
+		}
 	    }
 	    valbuf = SvPV(ph->value, vallen);
 	    alen += 2*vallen+1; /* Erase '?', insert (possibly quoted)
@@ -847,6 +853,7 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
     
     if (imp_dbh) {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
+      imp_dbh->bind_type_guessing = FALSE;
       imp_dbh->has_transactions = TRUE;
       imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
                                          if we detect a mod_perl env. */
@@ -1335,6 +1342,10 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
         /*XXX: Does DBI handle the magic ? */
 	imp_dbh->auto_reconnect = bool_value;
 	/* imp_dbh->mysql.reconnect=0; */
+    } else if (strlen("mysql_unsafe_bind_type_guessing") 
+		    == kl && strEQ(key,"mysql_unsafe_bind_type_guessing") ) 
+    {
+	imp_dbh->bind_type_guessing = bool_value;
     } else {
         return FALSE;
     }
@@ -1404,6 +1415,11 @@ SV* dbd_db_FETCH_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv) {
    case 'a':
       if (kl == strlen("auto_reconnect") && strEQ(key, "auto_reconnect"))
 		result = sv_2mortal(newSViv(imp_dbh->auto_reconnect));
+      break;
+    case 'u':
+      if (kl == strlen("unsafe_bind_type_guessing") && 
+          strEQ(key, "unsafe_bind_type_guessing"))
+		result = sv_2mortal(newSViv(imp_dbh->bind_type_guessing));
       break;
     case 'e':
       if (strEQ(key, "errno")) {
@@ -1559,9 +1575,15 @@ int mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
 			      int numParams, imp_sth_ph_t* params,
 			      MYSQL_RES** cdaPtr, MYSQL* svsock,
 			      int use_mysql_use_result) {
+    D_imp_sth(h);
+    D_imp_dbh_from_sth;
     STRLEN slen;
+
     char* sbuf = SvPV(statement, slen);
-    char* salloc = ParseParam(svsock, sbuf, &slen, params, numParams);
+
+    char* salloc = ParseParam(
+        svsock, sbuf, &slen, params, numParams, imp_dbh->bind_type_guessing
+    );
 
     if (salloc) {
         sbuf = salloc;

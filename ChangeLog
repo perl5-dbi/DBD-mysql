@@ -1,3 +1,14 @@
+2004-09-xx  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_1)
+
+	* Added '$dbh->{mysql_unsafe_bind_type_guessing}'. When this flag is
+	  enabled any scalar that is passed to execute() and was used in
+	  numeric context will be treated as a number when being sent to the
+	  database backend. This can be a secuity problem in that if you 
+	  use a string in numeric context, it will NOT be quoted before being 
+	  passed to the database -- use at your own risk. The default is off.
+	* fixed typo in pod chaning  failed_auto_reconnects_failed to 
+	  auto_reconnects_failed [Paul DuBois <paul@snake.net>]
+
 2004-07-13  Rudolf Lippan <rlippan@remotelinux.com> (2.9004)
         * myld now exits with the return value of ld rather than always exiting
           with a value of when when myld returned something other than 0.
