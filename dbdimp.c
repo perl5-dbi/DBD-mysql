@@ -483,7 +483,7 @@ parse_params(MYSQL* sock,
     } 
     else
     {
-      valbuf = SvPv(ph->value, vallen);
+      valbuf = SvPV(ph->value, vallen);
       alen += 2+vallen+1;
       /* this will most likely not happen since line 214 */ 
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */

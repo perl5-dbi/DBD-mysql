@@ -1,18 +1,18 @@
 { local $opt = {
-         'mysql_server_prepare' => '',
          'testsocket' => '',
-         'nofoundrows' => 0,
-         'cflags' => '-I/usr/local/mysql/include -mcpu=pentiumpro',
          'testpassword' => '',
-         'force_embedded' => '',
-         'ssl' => 0,
-         'libs' => '-L/usr/local/mysql/lib -lmysqlclient -lz -lcrypt -lnsl -lm -lc -lnss_files -lnss_dns -lresolv -lc -lnss_files -lnss_dns -lresolv',
-         'testdb' => 'test',
+         'nofoundrows' => 0,
+         'mysql_server_prepare' => '',
          'nocatchstderr' => 0,
+         'testdb' => 'test',
          'embedded' => '',
          'testuser' => '',
-         'testhost' => '',
-         'mysql_config' => 'mysql_config'
+         'force_embedded' => '',
+         'ssl' => 0,
+         'mysql_config' => 'mysql_config',
+         'cflags' => '-I/usr/local/mysql/include -fno-omit-frame-pointer',
+         'libs' => '-L/usr/local/mysql/lib -lmysqlclient -lz -lm',
+         'testhost' => ''
        };
 $::test_host = $opt->{'testhost'};
 $::test_port = $opt->{'testport'};
