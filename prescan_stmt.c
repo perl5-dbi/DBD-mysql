@@ -456,5 +456,29 @@ rewrite_execute_stmt(sth, imp_sth, output)
 	return 0;
 }
 
+int has_limit_clause(char *statement)
+{
+	/* This is just a quick ugly test for LIMIT statements use FBM?  */
+	while (statement++)
+		if (!strncasecmp(statement,"limit ",6) && '?' == *(statement+6))
+			return 1;
 
+	return 0;
+}
 
+int has_list_fields(char *statement)
+{
+        /*
+         *  Perform check for LISTFIELDS command
+         *  and if we met it then mark as uncompatible with new 4.1 protocol 
+         *  i.e. we leave imp_sth->has_protocol41=0 for this stmt 
+         *  and it will be executed later in mysql_st_internal_execute()
+         *  TODO: I think we can replace LISTFIELDS with SHOW COLUMNS [LIKE ...]
+         *        to remove this extension hack
+         */
+
+	if(!strncasecmp(statement, "listfields", 11))
+		return 1;
+
+	return 0;
+}

@@ -294,4 +294,7 @@ extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
 
 extern int mysql_db_reconnect(SV *);
 
+int has_limit_clause(char *statement);
+int has_list_fields(char *statement);
+
 #endif /*DBD_MYSQL_DBDIMP_H */

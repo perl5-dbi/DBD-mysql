@@ -983,8 +983,7 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
  **************************************************************************/
 
 int
-dbd_st_prepare(SV * sth,
-	       imp_sth_t * imp_sth, char *statement, SV * attribs)
+dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 {
 	/* Initialize our data */
 	int i;
@@ -1008,33 +1007,24 @@ dbd_st_prepare(SV * sth,
 
 	prescan_stmt(statement, &stmt_len, &phc);
 	/* no real need to calc_ph space since we are only going to collapse
-	   :foo down to ? and not inflate ? to :n */
+	   :foo down to ? and not inflate ? to :n  remove after collapse*/
 	stmt_len += calc_ph_space(phc);
 	++stmt_len; /* \0 */
 
         Newc(908, imp_sth->statement, stmt_len, char, char);
 
-        if (phc) {
-                /* +1 so we can use a 1 based idx (placeholders start from 1)*/
-                Newc(0, imp_sth->place_holders, phc+1,
-                                 phs_t**, phs_t*);
-        } else {
+        /* +1 so we can use a 1 based idx (placeholders start from 1)*/
+        if (phc)
+                Newc(0, imp_sth->place_holders, phc+1, phs_t**, phs_t*);
+         else
                 imp_sth->place_holders = 0;
-        }
-
 
 
 	phc = rewrite_placeholders(imp_sth, statement, imp_sth->statement, 0);
         imp_sth->phc = phc;
 
-	//fprintf(stderr, "Statement: %s\n", imp_sth->statement);
-	//fprintf(stderr, "Stmtlen: %i, Malloc Len %i\n", strlen(imp_sth->statement), stmt_len);
-	
         assert(strlen(imp_sth->statement)+1 <= stmt_len);
 
-
-
-/* ========================================== */
 
 	svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_use_result", 16);
 	imp_sth->use_mysql_use_result = svp && SvTRUE(*svp);
@@ -1047,236 +1037,178 @@ dbd_st_prepare(SV * sth,
 			      "MYSQL_VERSION_ID %d, imp_sth->real_prepare %d\n",
 			      MYSQL_VERSION_ID, imp_sth->real_prepare);
 	}
-#if MYSQL_VERSION_ID >=40101
-	//Set default value for sth from dbh
+
 	imp_sth->real_prepare = imp_dbh->real_prepare;
-	svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);
-	if (svp) {
+	if (svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20))
 		imp_sth->real_prepare = SvTRUE(*svp);
-	}
-	if (imp_sth->real_prepare) {
-		int limit_flag = 0;
-		for (i = 0; i < strlen(statement) - 1; i++) {
-			char *searchptr = &statement[i];
-			// if there is a 'limit' in the statement...
-			if (!limit_flag
-			    && !strncasecmp(searchptr, "limit ", 6)) {
-				limit_flag = 1;
-				i += 6;
-			}
-			if (limit_flag) {
-				// ... and place holders after the limit flag is set...
-				if (statement[i] == '?') {
-					// ... then we do not want to try server side prepare (use emulation)
-					imp_sth->real_prepare = 0;
-					i = strlen(statement) - 1;
-				}
-			}
-		}
-	}
-#endif
 
-	for (i = 0; i < AV_ATTRIB_LAST; i++) {
-		imp_sth->av_attr[i] = Nullav;
+	if (!imp_dbh->has_protocol41 && imp_sth->real_prepare)
+		warn("Cannot use server-side prepare when not"
+			" using Protocol 41");
+
+
+
+	/* skip real prepare if the stmt has a limit clause, for now */
+	if (!imp_sth->real_prepare ||
+		has_limit_clause(statement) || has_list_fields) {
+
+		imp_sth->real_prepare = FALSE;
+	       /* Bail out... The rest of this function only 
+	          applies to real prepared Statements */
+		DBIc_IMPSET_on(imp_sth); /* it lives */
+		return 1;
+	}
+
+	if (imp_sth->stmt) {
+		fprintf(stderr, "ERROR: Trying to prepare new stmt"
+			" while we have already not closed one \n");
 	}
 
 #if MYSQL_VERSION_ID >=40101
-	/*
-	 *  Perform check for LISTFIELDS command
-	 *  and if we met it then mark as uncompatible with new 4.1 protocol 
-	 *  i.e. we leave imp_sth->has_protocol41=0 for this stmt 
-	 *  and it will be executed later in mysql_st_internal_execute()
-	 *  TODO: I think we can replace LISTFIELDS with SHOW COLUMNS [LIKE ...]
-	 *        to remove this extension hack
-	 */
-
-	/* this is a better way to do this */
-	if (!strncasecmp(statement, "listfields ", 11)
-	    && imp_sth->real_prepare) {
-		if (dbis->debug >= 2) {
-			PerlIO_printf(DBILOGFP,
-				      "\"listfields\" Statement: %s\n setting real_prepare to 0\n",
-				      statement);
-		}
-		imp_sth->real_prepare = 0;
-	}
-
-	if (imp_sth->real_prepare) {
-		if (imp_sth->stmt) {
-			fprintf(stderr,
-				"ERROR: Trying to prepare new stmt while we have already not closed one \n");
-		}
-
-		imp_sth->stmt =
-		    mysql_prepare(&imp_dbh->mysql, statement,
-				  strlen(statement));
-
-		if (imp_sth->stmt) {
-			DBIc_NUM_PARAMS(imp_sth) =
-			    mysql_param_count(imp_sth->stmt);
-
-			if (DBIc_NUM_PARAMS(imp_sth) > 0) {
-				/* Allocate memory for bind variables */
-				imp_sth->bind =
-				    AllocBind(DBIc_NUM_PARAMS(imp_sth));
-				imp_sth->fbind =
-				    AllocFBind(DBIc_NUM_PARAMS(imp_sth));
-				imp_sth->has_binded = 0;
-
-				/* if this statement has a result set, field types will be correctly identified. If there 
-				 * is no result set, such as with an INSERT, fields will not be defined, and all buffer_type
-				 * will default to MYSQL_TYPE_STRING */
-				col_type =
-				    (imp_sth->stmt->fields) ? imp_sth->
-				    stmt->fields[i].
-				    type : MYSQL_TYPE_STRING;
-
-				if (dbis->debug >= 2) {
-					// DEBUG CODE
-					char *query =
-					    imp_sth->stmt->
-					    query ? imp_sth->stmt->
-					    query : "NO QUERY";
-					unsigned int param_count =
-					    imp_sth->stmt->
-					    param_count ? imp_sth->stmt->
-					    param_count : 0;
-					PerlIO_printf(DBILOGFP,
-						      "query %s i => %d, col_type => %d param_count => %u\n",
-						      query, i, col_type,
-						      param_count);
-				}
-
-				//Initialize ph variables with  NULL values
-				for (bind = imp_sth->bind, fbind =
-				     imp_sth->fbind, i = 0;
-				     i < DBIc_NUM_PARAMS(imp_sth);
-				     i++, bind++, fbind++) {
-					switch (col_type) {
-					case MYSQL_TYPE_DECIMAL:
-					case MYSQL_TYPE_DOUBLE:
-					case MYSQL_TYPE_FLOAT:
-						if (dbis->debug >= 2) {
-							PerlIO_printf
-							    (DBILOGFP,
-							     "case INT type: i => %d, col_type => %d \n",
-							     i, col_type);
-						}
-						bind->buffer_type =
-						    MYSQL_TYPE_DOUBLE;
-						bind->buffer = NULL;
-						bind->length =
-						    &(fbind->length);
-						bind->is_null =
-						    (char *) &(fbind->
-							       is_null);
-						fbind->is_null = 1;
-						fbind->length = 0;
-						break;
-
-					case MYSQL_TYPE_SHORT:
-					case MYSQL_TYPE_TINY:
-					case MYSQL_TYPE_LONG:
-					case MYSQL_TYPE_INT24:
-					case MYSQL_TYPE_YEAR:
-						if (dbis->debug >= 2) {
-							PerlIO_printf
-							    (DBILOGFP,
-							     "case FLOAT type: i => %d, col_type => %d\n",
-							     i, col_type);
-						}
-						bind->buffer_type =
-						    MYSQL_TYPE_LONG;
-						bind->buffer = NULL;
-						bind->length =
-						    &(fbind->length);
-						bind->is_null =
-						    (char *) &(fbind->
-							       is_null);
-						fbind->is_null = 1;
-						fbind->length = 0;
-						break;
-
-					case MYSQL_TYPE_LONGLONG:
-						if (dbis->debug >= 2) {
-							PerlIO_printf
-							    (DBILOGFP,
-							     "case LONGLONG i => %d, col_type => %d\n",
-							     i, col_type);
-						}
-						//bind->buffer_type= MYSQL_TYPE_LONGLONG;
-						bind->buffer_type =
-						    MYSQL_TYPE_STRING;
-						bind->buffer = NULL;
-						bind->length =
-						    &(fbind->length);
-						bind->is_null =
-						    (char *) &(fbind->
-							       is_null);
-						fbind->is_null = 1;
-						fbind->length = 0;
-						break;
-
-					case MYSQL_TYPE_DATE:
-					case MYSQL_TYPE_TIME:
-					case MYSQL_TYPE_DATETIME:
-					case MYSQL_TYPE_NEWDATE:
-					case MYSQL_TYPE_VAR_STRING:
-					case MYSQL_TYPE_STRING:
-					case MYSQL_TYPE_BLOB:
-					case MYSQL_TYPE_TIMESTAMP:
-						if (dbis->debug >= 2) {
-							PerlIO_printf
-							    (DBILOGFP,
-							     "case STRING i => %d, col_type => %d\n",
-							     i, col_type);
-						}
-						// Create string type here
-						bind->buffer_type =
-						    MYSQL_TYPE_STRING;
-						bind->buffer = NULL;
-						//bind->buffer_length= imp_sth->stmt->fields[i].length;
-						bind->length =
-						    &(fbind->length);
-						bind->is_null =
-						    (char *) &(fbind->
-							       is_null);
-						fbind->is_null = 1;
-						fbind->length = 0;
-						break;
-
-					default:
-						if (dbis->debug >= 2) {
-							PerlIO_printf
-							    (DBILOGFP,
-							     "case default i => %d, col_type => %d\n",
-							     i, col_type);
-						}
-						// Create string type here
-						bind->buffer_type =
-						    MYSQL_TYPE_STRING;
-						bind->buffer = NULL;
-						//bind->buffer_length= imp_sth->stmt->fields[i].length;
-						bind->length =
-						    &(fbind->length);
-						bind->is_null =
-						    (char *) &(fbind->
-							       is_null);
-						fbind->is_null = 1;
-						fbind->length = 0;
-						break;
-					}
-				}
-			}
-		} else {
-			do_error(sth, mysql_errno(&imp_dbh->mysql),
-				 mysql_error(&imp_dbh->mysql));
-			return 0;
-		}
-	} else {
-		imp_sth->real_prepare = 0;
-	}
+	imp_sth->stmt = mysql_prepare(&imp_dbh->mysql, statement,
+			  strlen(statement));
+#else
+	croak("DBD::mysql BUG\n");
 #endif
+	if (!imp_sth->stmt) {
+		do_error(sth, mysql_errno(&imp_dbh->mysql),
+			 mysql_error(&imp_dbh->mysql));
+		return 0;
+	}
+
+
+
+	DBIc_NUM_PARAMS(imp_sth) = mysql_param_count(imp_sth->stmt);
+
+	if (DBIc_NUM_PARAMS(imp_sth) < 0) {
+		DBIc_IMPSET_on(imp_sth);
+		return 1;
+	}
+	/* Allocate memory for bind variables */
+	imp_sth->bind = AllocBind(DBIc_NUM_PARAMS(imp_sth));
+	imp_sth->fbind = AllocFBind(DBIc_NUM_PARAMS(imp_sth));
+	imp_sth->has_binded = 0;
+
+	/* if this statement has a result set, field types will be 
+	   correctly identified. If there  is no result set, such as with 
+	   an INSERT, fields will not be defined, and all buffer_type
+	   will default to MYSQL_TYPE_STRING */
+	col_type = (imp_sth->stmt->fields) ? 
+		imp_sth->stmt->fields[i].type : MYSQL_TYPE_STRING;
+
+	if (dbis->debug >= 2) {
+		char *query = imp_sth->stmt->query ? 
+			imp_sth->stmt->query : "NO QUERY";
+		unsigned int param_count = imp_sth->stmt->param_count ? 
+			imp_sth->stmt-> param_count : 0;
+		PerlIO_printf(DBILOGFP,
+			      "query %s i => %d, col_type => %d"
+			      " param_count => %u\n", query, i, col_type,
+			      param_count);
+	}
+
+	//Initialize ph variables with  NULL values
+	for (bind = imp_sth->bind, fbind = imp_sth->fbind, i = 0;
+	     i < DBIc_NUM_PARAMS(imp_sth); i++, bind++, fbind++) {
+		switch (col_type) {
+		case MYSQL_TYPE_DECIMAL:
+		case MYSQL_TYPE_DOUBLE:
+		case MYSQL_TYPE_FLOAT:
+			if (dbis->debug >= 2) {
+				PerlIO_printf
+				    (DBILOGFP,
+				     "case INT type: i => %d, col_type => %d \n",
+				     i, col_type);
+			}
+			bind->buffer_type =
+			    MYSQL_TYPE_DOUBLE;
+			bind->buffer = NULL;
+			bind->length =
+			    &(fbind->length);
+			bind->is_null =
+			    (char *) &(fbind->
+				       is_null);
+			fbind->is_null = 1;
+			fbind->length = 0;
+			break;
+
+		case MYSQL_TYPE_SHORT:
+		case MYSQL_TYPE_TINY:
+		case MYSQL_TYPE_LONG:
+		case MYSQL_TYPE_INT24:
+		case MYSQL_TYPE_YEAR:
+			if (dbis->debug >= 2) {
+				PerlIO_printf
+				    (DBILOGFP,
+				     "case FLOAT type: i => %d, col_type => %d\n",
+				     i, col_type);
+			}
+			bind->buffer_type = MYSQL_TYPE_LONG;
+			bind->buffer = NULL;
+			bind->length = &(fbind->length);
+			bind->is_null = (char *) &(fbind-> is_null);
+			fbind->is_null = 1;
+			fbind->length = 0;
+			break;
+
+		case MYSQL_TYPE_LONGLONG:
+			if (dbis->debug >= 2) {
+				PerlIO_printf
+				    (DBILOGFP,
+				     "case LONGLONG i => %d, col_type => %d\n",
+				     i, col_type);
+			}
+			//bind->buffer_type= MYSQL_TYPE_LONGLONG;
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer = NULL;
+			bind->length = &(fbind->length);
+			bind->is_null = (char *) &(fbind->is_null);
+			fbind->is_null = 1;
+			fbind->length = 0;
+			break;
+
+		case MYSQL_TYPE_DATE:
+		case MYSQL_TYPE_TIME:
+		case MYSQL_TYPE_DATETIME:
+		case MYSQL_TYPE_NEWDATE:
+		case MYSQL_TYPE_VAR_STRING:
+		case MYSQL_TYPE_STRING:
+		case MYSQL_TYPE_BLOB:
+		case MYSQL_TYPE_TIMESTAMP:
+			if (dbis->debug >= 2) {
+				PerlIO_printf
+				    (DBILOGFP,
+				     "case STRING i => %d, col_type => %d\n",
+				     i, col_type);
+			}
+			// Create string type here
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer = NULL;
+			//bind->buffer_length= imp_sth->stmt->fields[i].length;
+			bind->length = &(fbind->length);
+			bind->is_null = (char *) &(fbind->is_null);
+			fbind->is_null = 1;
+			fbind->length = 0;
+			break;
+
+		default:
+			if (dbis->debug >= 2) {
+				PerlIO_printf
+				    (DBILOGFP,
+				     "case default i => %d, col_type => %d\n",
+				     i, col_type);
+			}
+			// Create string type here
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer = NULL;
+			//bind->buffer_length= imp_sth->stmt->fields[i].length;
+			bind->length = &(fbind->length);
+			bind->is_null = (char *) &(fbind-> is_null);
+			fbind->is_null = 1;
+			fbind->length = 0;
+			break;
+		}
+	}
 
 	/* Allocate memory for parameters */
 	imp_sth->params = AllocParam(DBIc_NUM_PARAMS(imp_sth));
