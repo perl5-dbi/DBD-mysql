@@ -398,10 +398,10 @@ mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
 respectively.
 
 
- $info = $dhb->{mysql_dbd_stats}
+ $info_hashref = $dhb->{mysql_dbd_stats}
 
-DBD::mysql keeps track of a few statistics in the mysql_dbd_stats attribute.
-The following statistics are being maintained:
+DBD::mysql keeps track of some statistics in the mysql_dbd_stats attribute.
+The following stats are being maintained:
 
 =over
 
