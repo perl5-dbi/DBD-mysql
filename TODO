@@ -1,6 +1,6 @@
 - update tests to use get_info(SQL_IDENTIFIER_QUOTE_CHAR) for quoting 
   (when s///ing  suff out or update tests to use quoted names).
-x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
+- use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - write test scripts for quote_idenitifer();
 - add tests for autoreconnect (dev only -- since these will require restarting 
   mysqld ?)
@@ -49,8 +49,8 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - Merge name_buff changes to rewrite_placeholders into DBD::Pg. this should be
   in there because make ? place holder handling a little cleaner. With this
   you can swtich underlying forms (?/$1/whatever) with a 2 line code change.
-  
-
+- croak on fetch/set of unknown attributes ??
+- do_error("%s....", ...);
 
 
 
