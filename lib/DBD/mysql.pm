@@ -425,3 +425,1322 @@ package DBD::mysql::st; # ====== STATEMENT ======
 use strict;
 
 1;
+
+__END__
+
+=pod
+
+=head1 NAME
+
+DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
+
+=head1 SYNOPSIS
+
+    use DBI;
+
+    $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
+
+    $dbh = DBI->connect($dsn, $user, $password);
+
+
+    $drh = DBI->install_driver("mysql");
+    @databases = DBI->data_sources("mysql");
+       or
+    @databases = DBI->data_sources("mysql",
+				   {"host" => $host, "port" => $port});
+
+    $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
+       or
+    $sth = $dbh->prepare("LISTFIELDS $table");
+       or
+    $sth = $dbh->prepare("LISTINDEX $table $index");
+    $sth->execute;
+    $numRows = $sth->rows;
+    $numFields = $sth->{'NUM_OF_FIELDS'};
+    $sth->finish;
+
+    $rc = $drh->func('createdb', $database, $host, $user, $password, 'admin');
+    $rc = $drh->func('dropdb', $database, $host, $user, $password, 'admin');
+    $rc = $drh->func('shutdown', $host, $user, $password, 'admin');
+    $rc = $drh->func('reload', $host, $user, $password, 'admin');
+
+    $rc = $dbh->func('createdb', $database, 'admin');
+    $rc = $dbh->func('dropdb', $database, 'admin');
+    $rc = $dbh->func('shutdown', 'admin');
+    $rc = $dbh->func('reload', 'admin');
+
+
+=head1 EXAMPLE
+
+  #!/usr/bin/perl
+
+  use strict;
+  use DBI();
+
+  # Connect to the database.
+  my $dbh = DBI->connect("DBI:mysql:database=test;host=localhost",
+                         "joe", "joe's password",
+                         {'RaiseError' => 1});
+
+  # Drop table 'foo'. This may fail, if 'foo' doesn't exist.
+  # Thus we put an eval around it.
+  eval { $dbh->do("DROP TABLE foo") };
+  print "Dropping foo failed: $@\n" if $@;
+
+  # Create a new table 'foo'. This must not fail, thus we don't
+  # catch errors.
+  $dbh->do("CREATE TABLE foo (id INTEGER, name VARCHAR(20))");
+
+  # INSERT some data into 'foo'. We are using $dbh->quote() for
+  # quoting the name.
+  $dbh->do("INSERT INTO foo VALUES (1, " . $dbh->quote("Tim") . ")");
+
+  # Same thing, but using placeholders
+  $dbh->do("INSERT INTO foo VALUES (?, ?)", undef, 2, "Jochen");
+
+  # Now retrieve data from the table.
+  my $sth = $dbh->prepare("SELECT * FROM foo");
+  $sth->execute();
+  while (my $ref = $sth->fetchrow_hashref()) {
+    print "Found a row: id = $ref->{'id'}, name = $ref->{'name'}\n";
+  }
+  $sth->finish();
+
+  # Disconnect from the database.
+  $dbh->disconnect();
+
+
+=head1 DESCRIPTION
+
+B<DBD::mysql> is the Perl5 Database Interface driver for the MySQL
+database. In other words: DBD::mysql is an interface between the Perl
+programming language and the MySQL programming API that comes with
+the MySQL relational database management system. Most functions
+provided by this programming API are supported. Some rarely used
+functions are missing, mainly because noone ever requested
+them. :-)
+
+In what follows we first discuss the use of DBD::mysql,
+because this is what you will need the most. For installation, see the
+sections on L<INSTALLATION>, L<WIN32 INSTALLATION>, and L<KNOWN BUGS>
+below. See L<EXAMPLE> for a simple example above.
+
+From perl you activate the interface with the statement
+
+    use DBI;
+
+After that you can connect to multiple MySQL database servers
+and send multiple queries to any of them via a simple object oriented
+interface. Two types of objects are available: database handles and
+statement handles. Perl returns a database handle to the connect
+method like so:
+
+  $dbh = DBI->connect("DBI:mysql:database=$db;host=$host",
+		      $user, $password, {RaiseError => 1});
+
+Once you have connected to a database, you can can execute SQL
+statements with:
+
+  my $query = sprintf("INSERT INTO foo VALUES (%d, %s)",
+		      $number, $dbh->quote("name"));
+  $dbh->do($query);
+
+See L<DBI(3)> for details on the quote and do methods. An alternative
+approach is
+
+  $dbh->do("INSERT INTO foo VALUES (?, ?)", undef,
+	   $number, $name);
+
+in which case the quote method is executed automatically. See also
+the bind_param method in L<DBI(3)>. See L<DATABASE HANDLES> below
+for more details on database handles.
+
+If you want to retrieve results, you need to create a so-called
+statement handle with:
+
+  $sth = $dbh->prepare("SELECT * FROM $table");
+  $sth->execute();
+
+This statement handle can be used for multiple things. First of all
+you can retreive a row of data:
+
+  my $row = $sth->fetchow_hashref();
+
+If your table has columns ID and NAME, then $row will be hash ref with
+keys ID and NAME. See L<STATEMENT HANDLES> below for more details on
+statement handles.
+
+But now for a more formal approach:
+
+
+=head2 Class Methods
+
+=over
+
+=item B<connect>
+
+    use DBI;
+
+    $dsn = "DBI:mysql:$database";
+    $dsn = "DBI:mysql:database=$database;host=$hostname";
+    $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
+
+    $dbh = DBI->connect($dsn, $user, $password);
+
+A C<database> must always be specified.
+
+=over
+
+=item host
+
+=item port
+
+The hostname, if not specified or specified as '', will default to an
+MySQL daemon running on the local machine on the default port
+for the UNIX socket.
+
+Should the MySQL daemon be running on a non-standard port number,
+you may explicitly state the port number to connect to in the C<hostname>
+argument, by concatenating the I<hostname> and I<port number> together
+separated by a colon ( C<:> ) character or by using the  C<port> argument.
+
+
+=item mysql_client_found_rows
+
+Enables (TRUE value) or disables (FALSE value) the flag CLIENT_FOUND_ROWS
+while connecting to the MySQL server. This has a somewhat funny effect:
+Without mysql_client_found_rows, if you perform a query like
+
+  UPDATE $table SET id = 1 WHERE id = 1
+
+then the MySQL engine will always return 0, because no rows have changed.
+With mysql_client_found_rows however, it will return the number of rows
+that have an id 1, as some people are expecting. (At least for compatibility
+to other engines.)
+
+=item mysql_compression
+
+As of MySQL 3.22.3, a new feature is supported: If your DSN contains
+the option "mysql_compression=1", then the communication between client
+and server will be compressed.
+
+=item mysql_connect_timeout
+
+If your DSN contains the option "mysql_connect_timeout=##", the connect
+request to the server will timeout if it has not been successful after
+the given number of seconds.
+
+=item mysql_read_default_file
+
+=item mysql_read_default_group
+
+These options can be used to read a config file like /etc/my.cnf or
+~/.my.cnf. By default MySQL's C client library doesn't use any config
+files unlike the client programs (mysql, mysqladmin, ...) that do, but
+outside of the C client library. Thus you need to explicitly request
+reading a config file, as in
+
+    $dsn = "DBI:mysql:test;mysql_read_default_file=/home/joe/my.cnf";
+    $dbh = DBI->connect($dsn, $user, $password)
+
+The option mysql_read_default_group can be used to specify the default
+group in the config file: Usually this is the I<client> group, but
+see the following example:
+
+    [client]
+    host=localhost
+
+    [perl]
+    host=perlhost
+
+(Note the order of the entries! The example won't work, if you reverse
+the [client] and [perl] sections!)
+
+If you read this config file, then you'll be typically connected to
+I<localhost>. However, by using
+
+    $dsn = "DBI:mysql:test;mysql_read_default_group=perl;"
+        . "mysql_read_default_file=/home/joe/my.cnf";
+    $dbh = DBI->connect($dsn, $user, $password);
+
+you'll be connected to I<perlhost>. Note that if you specify a
+default group and do not specify a file, then the default config
+files will all be read.  See the documentation of
+the C function mysql_options() for details.
+
+=item mysql_socket
+
+As of MySQL 3.21.15, it is possible to choose the Unix socket that is
+used for connecting to the server. This is done, for example, with
+
+    mysql_socket=/dev/mysql
+
+Usually there's no need for this option, unless you are using another
+location for the socket than that built into the client.
+
+=item mysql_ssl
+
+A true value turns on the CLIENT_SSL flag when connecting to the MySQL
+database:
+
+  mysql_ssl=1
+
+This means that your communication with the server will be encrypted.
+
+If you turn mysql_ssl on, you might also wish to use the following
+flags:
+
+=item mysql_ssl_client_key
+
+=item mysql_ssl_client_cert
+
+=item mysql_ssl_ca_file
+
+=item mysql_ssl_ca_path
+
+=item mysql_ssl_cipher
+
+These are used to specify the respective parameters of a call
+to mysql_ssl_set, if mysql_ssl is turned on.  
+
+
+=item mysql_local_infile
+
+As of MySQL 3.23.49, the LOCAL capability for LOAD DATA may be disabled
+in the MySQL client library by default. If your DSN contains the option
+"mysql_local_infile=1", LOAD DATA LOCAL will be enabled.  (However,
+this option is effective if the server has also been configured to
+disallow LOCAL.)
+
+
+=back
+
+=back
+
+
+=head2 Private MetaData Methods
+
+=over
+
+=item B<ListDBs>
+
+    my $drh = DBI->install_driver("mysql");
+    @dbs = $drh->func("$hostname:$port", '_ListDBs');
+    @dbs = $drh->func($hostname, $port, '_ListDBs');
+    @dbs = $dbh->func('_ListDBs');
+
+Returns a list of all databases managed by the MySQL daemon
+running on C<$hostname>, port C<$port>. This method
+is rarely needed for databases running on C<localhost>: You should
+use the portable method
+
+    @dbs = DBI->data_sources("mysql");
+
+whenever possible. It is a design problem of this method, that there's
+no way of supplying a host name or port number to C<data_sources>, that's
+the only reason why we still support C<ListDBs>. :-(
+
+=back
+
+
+=head2 Server Administration
+
+=over
+
+=item admin
+
+    $rc = $drh->func("createdb", $dbname, [host, user, password,], 'admin');
+    $rc = $drh->func("dropdb", $dbname, [host, user, password,], 'admin');
+    $rc = $drh->func("shutdown", [host, user, password,], 'admin');
+    $rc = $drh->func("reload", [host, user, password,], 'admin');
+
+      or
+
+    $rc = $dbh->func("createdb", $dbname, 'admin');
+    $rc = $dbh->func("dropdb", $dbname, 'admin');
+    $rc = $dbh->func("shutdown", 'admin');
+    $rc = $dbh->func("reload", 'admin');
+
+For server administration you need a server connection. For obtaining
+this connection you have two options: Either use a driver handle (drh)
+and supply the appropriate arguments (host, defaults localhost, user,
+defaults to '' and password, defaults to ''). A driver handle can be
+obtained with
+
+    $drh = DBI->install_driver('mysql');
+
+Otherwise reuse the existing connection of a database handle (dbh).
+
+There's only one function available for administrative purposes, comparable
+to the m(y)sqladmin programs. The command being execute depends on the
+first argument:
+
+=over
+
+=item createdb
+
+Creates the database $dbname. Equivalent to "m(y)sqladmin create $dbname".
+
+=item dropdb
+
+Drops the database $dbname. Equivalent to "m(y)sqladmin drop $dbname".
+
+It should be noted that database deletion is
+I<not prompted for> in any way.  Nor is it undo-able from DBI.
+
+    Once you issue the dropDB() method, the database will be gone!
+
+These method should be used at your own risk.
+
+=item shutdown
+
+Silently shuts down the database engine. (Without prompting!)
+Equivalent to "m(y)sqladmin shutdown".
+
+=item reload
+
+Reloads the servers configuration files and/or tables. This can be particularly
+important if you modify access privileges or create new users.
+
+=back
+
+=back
+
+
+=head1 DATABASE HANDLES
+
+The DBD::mysql driver supports the following attributes of database
+handles (read only):
+
+  $errno = $dbh->{'mysql_errno'};
+  $error = $dbh->{'mysql_error};
+  $info = $dbh->{'mysql_hostinfo'};
+  $info = $dbh->{'mysql_info'};
+  $insertid = $dbh->{'mysql_insertid'};
+  $info = $dbh->{'mysql_protoinfo'};
+  $info = $dbh->{'mysql_serverinfo'};
+  $info = $dbh->{'mysql_stat'};
+  $threadId = $dbh->{'mysql_thread_id'};
+
+These correspond to mysql_errno(), mysql_error(), mysql_get_host_info(),
+mysql_info(), mysql_insert_id(), mysql_get_proto_info(),
+mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
+respectively.
+
+
+ $info_hashref = $dhb->{mysql_dbd_stats}
+
+DBD::mysql keeps track of some statistics in the mysql_dbd_stats attribute.
+The following stats are being maintained:
+
+=over
+
+=item auto_reconnects
+
+the number of times that DBD::mysql had to reconnect to mysql
+
+=item failed_auto_reconnects
+
+the number of times that DBD::mysql tried to reconnect to mysql but failed.
+
+=back
+
+The DBD::mysql driver also supports the following attribute(s) of database
+handles (read/write):
+
+ $bool_value = $dbh->{mysql_auto_reconnect};
+ $dbh->{mysql_auto_reconnect} = $AutoReconnect ? 1 : 0;
+
+
+=item mysql_auto_reconnect
+
+This attribute determines whether DBD::mysql will automatically reconnect
+to mysql if the connection be lost. This feature defaults to off; however,
+if either the GATEWAY_INTERFACE or MOD_PERL envionment variable is set, 
+DBD::mysql will turn mysql_auto_reconnect on.  Setting mysql_auto_reconnect 
+to on is not advised if 'lock tables' is used because if DBD::mysql reconnect 
+to mysql all table locks will be lost.  This attribute is ignored when
+AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
+not automatically reconnect to the server.
+
+=head1 STATEMENT HANDLES
+
+The statement handles of DBD::mysql support a number
+of attributes. You access these by using, for example,
+
+  my $numFields = $sth->{'NUM_OF_FIELDS'};
+
+Note, that most attributes are valid only after a successfull I<execute>.
+An C<undef> value will returned in that case. The most important exception
+is the C<mysql_use_result> attribute: This forces the driver to use
+mysql_use_result rather than mysql_store_result. The former is faster
+and less memory consuming, but tends to block other processes. (That's why
+mysql_store_result is the default.)
+
+To set the C<mysql_use_result> attribute, use either of the following:
+
+  my $sth = $dbh->prepare("QUERY", { "mysql_use_result" => 1});
+
+or
+
+  my $sth = $dbh->prepare("QUERY");
+  $sth->{"mysql_use_result"} = 1;
+
+Column dependent attributes, for example I<NAME>, the column names,
+are returned as a reference to an array. The array indices are
+corresponding to the indices of the arrays returned by I<fetchrow>
+and similar methods. For example the following code will print a
+header of table names together with all rows:
+
+  my $sth = $dbh->prepare("SELECT * FROM $table");
+  if (!$sth) {
+      die "Error:" . $dbh->errstr . "\n";
+  }
+  if (!$sth->execute) {
+      die "Error:" . $sth->errstr . "\n";
+  }
+  my $names = $sth->{'NAME'};
+  my $numFields = $sth->{'NUM_OF_FIELDS'};
+  for (my $i = 0;  $i < $numFields;  $i++) {
+      printf("%s%s", $i ? "," : "", $$names[$i]);
+  }
+  print "\n";
+  while (my $ref = $sth->fetchrow_arrayref) {
+      for (my $i = 0;  $i < $numFields;  $i++) {
+	  printf("%s%s", $i ? "," : "", $$ref[$i]);
+      }
+      print "\n";
+  }
+
+For portable applications you should restrict yourself to attributes with
+capitalized or mixed case names. Lower case attribute names are private
+to DBD::mysql. The attribute list includes:
+
+=over
+
+=item ChopBlanks
+
+this attribute determines whether a I<fetchrow> will chop preceding
+and trailing blanks off the column values. Chopping blanks does not
+have impact on the I<max_length> attribute.
+
+=item mysql_insertid
+
+MySQL has the ability to choose unique key values automatically. If this
+happened, the new ID will be stored in this attribute. An alternative
+way for accessing this attribute is via $dbh->{'mysql_insertid'}.
+(Note we are using the $dbh in this case!)
+
+=item mysql_is_blob
+
+Reference to an array of boolean values; TRUE indicates, that the
+respective column is a blob. This attribute is valid for MySQL only.
+
+=item mysql_is_key
+
+Reference to an array of boolean values; TRUE indicates, that the
+respective column is a key. This is valid for MySQL only.
+
+=item mysql_is_num
+
+Reference to an array of boolean values; TRUE indicates, that the
+respective column contains numeric values.
+
+=item mysql_is_pri_key
+
+Reference to an array of boolean values; TRUE indicates, that the
+respective column is a primary key.
+
+=item mysql_is_auto_increment
+
+Reference to an array of boolean values; TRUE indicates that the
+respective column is an AUTO_INCREMENT column.  This is only valid
+for MySQL.
+
+=item mysql_length
+
+=item mysql_max_length
+
+A reference to an array of maximum column sizes. The I<max_length> is
+the maximum physically present in the result table, I<length> gives
+the theoretically possible maximum. I<max_length> is valid for MySQL
+only.
+
+=item NAME
+
+A reference to an array of column names.
+
+=item NULLABLE
+
+A reference to an array of boolean values; TRUE indicates that this column
+may contain NULL's.
+
+=item NUM_OF_FIELDS
+
+Number of fields returned by a I<SELECT> or I<LISTFIELDS> statement.
+You may use this for checking whether a statement returned a result:
+A zero value indicates a non-SELECT statement like I<INSERT>,
+I<DELETE> or I<UPDATE>.
+
+=item mysql_table
+
+A reference to an array of table names, useful in a I<JOIN> result.
+
+=item TYPE
+
+A reference to an array of column types. The engine's native column
+types are mapped to portable types like DBI::SQL_INTEGER() or
+DBI::SQL_VARCHAR(), as good as possible. Not all native types have
+a meaningfull equivalent, for example DBD::mysql::FIELD_TYPE_INTERVAL
+is mapped to DBI::SQL_VARCHAR().
+If you need the native column types, use I<mysql_type>. See below.
+
+=item mysql_type
+
+A reference to an array of MySQL's native column types, for example
+DBD::mysql::FIELD_TYPE_SHORT() or DBD::mysql::FIELD_TYPE_STRING().
+Use the I<TYPE> attribute, if you want portable types like
+DBI::SQL_SMALLINT() or DBI::SQL_VARCHAR().
+
+=item mysql_type_name
+
+Similar to mysql, but type names and not numbers are returned.
+Whenever possible, the ANSI SQL name is preferred.
+
+=back
+
+
+=head1 TRANSACTION SUPPORT
+
+Beginning with DBD::mysql 2.0416, transactions are supported.
+The transaction support works as follows:
+
+=over
+
+=item *
+
+By default AutoCommit mode is on, following the DBI specifications.
+
+=item *
+
+If you execute
+
+    $dbh-E<gt>{'AutoCommit'} = 0;
+
+or
+
+    $dbh-E<gt>{'AutoCommit'} = 1;
+
+then the driver will set the MySQL server variable autocommit to 0 or
+1, respectively. Switching from 0 to 1 will also issue a COMMIT,
+following the DBI specifications.
+
+=item *
+
+The methods
+
+    $dbh-E<gt>rollback();
+    $dbh-E<gt>commit();
+
+will issue the commands COMMIT and ROLLBACK, respectively. A
+ROLLBACK will also be issued if AutoCommit mode is off and the
+database handles DESTROY method is called. Again, this is following
+the DBI specifications.
+
+=back
+
+Given the above, you should note the following:
+
+=over
+
+=item *
+
+You should never change the server variable autocommit manually,
+unless you are ignoring DBI's transaction support.
+
+=item *
+
+Switching AutoCommit mode from on to off or vice versa may fail.
+You should always check for errors, when changing AutoCommit mode.
+The suggested way of doing so is using the DBI flag RaiseError.
+If you don't like RaiseError, you have to use code like the
+following:
+
+  $dbh->{'AutoCommit'} = 0;
+  if ($dbh->{'AutoCommit'}) {
+    # An error occurred!
+  }
+
+=item *
+
+If you detect an error while changing the AutoCommit mode, you
+should no longer use the database handle. In other words, you
+should disconnect and reconnect again, because the transaction
+mode is unpredictable. Alternatively you may verify the transaction
+mode by checking the value of the server variable autocommit.
+However, such behaviour isn't portable.
+
+=item *
+
+DBD::mysql has a "reconnect" feature that handles the so-called
+MySQL "morning bug": If the server has disconnected, most probably
+due to a timeout, then by default the driver will reconnect and
+attempt to execute the same SQL statement again. However, this
+behaviour is disabled when AutoCommit is off: Otherwise the
+transaction state would be completely unpredictable after a
+reconnect.  
+
+=item *
+
+The "reconnect" feature of DBD::mysql can be toggled by using the
+L<mysql_auto_reconnect> attribute. This behaviour should be turned off
+in code that uses LOCK TABLE because if the database server time out
+and DBD::mysql reconnect, table locks will be lost without any 
+indication of such loss.
+
+=back
+
+
+=head1 SQL EXTENSIONS
+
+Certain metadata functions of MySQL that are available on the
+C API level, haven't been implemented here. Instead they are implemented
+as "SQL extensions" because they return in fact nothing else but the
+equivalent of a statement handle. These are:
+
+=over
+
+=item LISTFIELDS $table
+
+Returns a statement handle that describes the columns of $table.
+Ses the docs of mysql_list_fields (C API) for details.
+
+=back
+
+
+
+=head1 COMPATIBILITY ALERT
+
+The statement attribute I<TYPE> has changed its meaning, as of
+DBD::mysql 2.0119. Formerly it used to be the an array
+of native engine's column types, but it is now an array of
+portable SQL column types. The old attribute is still available
+as I<mysql_type>.
+
+DBD::mysql is a moving target, due to a number of reasons:
+
+=over
+
+=item -
+
+Of course we have to conform the DBI guidelines and developments.
+
+=item -
+
+We have to keep track with the latest MySQL developments.
+
+=item -
+
+And, surprisingly, we have to be as close to ODBC as possible: This is
+due to the current direction of DBI.
+
+=item -
+
+And, last not least, as any tool it has a little bit life of its own.
+
+=back
+
+This means that a lot of things had to and have to be changed.
+As I am not interested in maintaining a lot of compatibility kludges,
+which only increase the drivers code without being really usefull,
+I did and will remove some features, methods or attributes.
+
+To ensure a smooth upgrade, the following policy will be applied:
+
+=over
+
+=item Obsolete features
+
+The first step is to declare something obsolete. This means, that no code
+is changed, but the feature appears in the list of obsolete features. See
+L<Obsolete Features> below.
+
+=item Deprecated features
+
+If the feature has been obsolete for quite some time, typically in the
+next major stable release, warnings will be inserted in the code. You
+can suppress these warnings by setting
+
+    $DBD::mysql = 1;
+
+In the docs the feature will be moved from the list of obsolete features
+to the list of deprecated features. See L<Deprecated Features> below.
+
+=item Removing features
+
+Finally features will be removed silently in the next major stable
+release. The feature will be shown in the list of historic features.
+See L<Historic Features> below.
+
+=back
+
+Example: The statement handle attribute
+
+    $sth->{'LENGTH'}
+
+was declared obsolete in DBD::mysql 2.00xy. It was considered
+deprecated in DBD::mysql 2.02xy and removed in 2.04xy.
+
+
+=head2 Obsolete Features
+
+=over
+
+=item Database handle attributes
+
+The following database handle attributes are declared obsolete
+in DBD::mysql 2.09. They will be deprecated in 2.11 and removed
+in 2.13.
+
+=over
+
+=item C<$dbh-E<gt>{'errno'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_errno'}>
+
+=item C<$dbh-E<gt>{'errmsg'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_error'}>
+
+=item C<$dbh-E<gt>{'hostinfo'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_hostinfo'}>
+
+=item C<$dbh-E<gt>{'info'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_info'}>
+
+=item C<$dbh-E<gt>{'protoinfo'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_protoinfo'}>
+
+=item C<$dbh-E<gt>{'serverinfo'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_serverinfo'}>
+
+=item C<$dbh-E<gt>{'stats'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_stat'}>
+
+=item C<$dbh-E<gt>{'thread_id'}>
+
+Replaced by C<$dbh-E<gt>{'mysql_thread_id'}>
+
+=back
+
+=back
+
+
+=head2 Deprecated Features
+
+=over
+
+=item _ListTables
+
+Replace with the standard DBI method C<$dbh-E<gt>tables()>. See also
+C<$dbh-E<gt>table_info()>. Portable applications will prefer
+
+    @tables = map { $_ =~ s/.*\.//; $_ } $dbh-E<gt>tables()
+
+because, depending on the engine, the string "user.table" will be
+returned, user being the table owner. The method will be removed
+in DBD::mysql version 2.11xy.
+
+=back
+
+
+=head2 Historic Features
+
+=over
+
+=item _CreateDB
+
+=item _DropDB
+
+The methods
+
+    $dbh-E<gt>func($db, '_CreateDB');
+    $dbh-E<gt>func($db, '_DropDB');
+
+have been used for creating or dropping databases. They have been removed
+in 1.21_07 in favour of
+
+    $drh-E<gt>func("createdb", $dbname, $host, "admin")
+    $drh-E<gt>func("dropdb", $dbname, $host, "admin")
+
+=item _ListFields
+
+The method
+
+    $sth = $dbh-E<gt>func($table, '_ListFields');
+
+has been used to list a tables columns names, types and other attributes.
+This method has been removed in 1.21_07 in favour of
+
+    $sth = $dbh-E<gt>prepare("LISTFIELDS $table");
+
+=item _ListSelectedFields
+
+The method
+
+    $sth->func('_ListSelectedFields');
+
+use to return a hash ref of attributes like 'IS_NUM', 'IS_KEY' and so
+on. These attributes are now accessible via
+
+    $sth-E<gt>{'mysql_is_num'};
+    $sth-E<gt>{'mysql_is_key'};
+
+and so on. Thus the method has been removed in 1.21_07.
+
+=item _NumRows
+
+The method
+
+    $sth-E<gt>func('_NumRows');
+
+used to be equivalent to
+
+    $sth-E<gt>rows();
+
+and has been removed in 1.21_07.
+
+=item _InsertID
+
+The method
+
+    $dbh-E<gt>func('_InsertID');
+
+used to be equivalent with
+
+    $dbh-E<gt>{'mysql_insertid'};
+
+=item Statement handle attributes
+
+=over
+
+=item affected_rows
+
+Replaced with $sth-E<gt>{'mysql_affected_rows'} or the result
+of $sth-E<gt>execute().
+
+=item format_default_size
+
+Replaced with $sth-E<gt>{'PRECISION'}.
+
+=item format_max_size
+
+Replaced with $sth-E<gt>{'mysql_max_length'}.
+
+=item format_type_name
+
+Replaced with $sth-E<gt>{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_type_name'} (MySQL specific).
+
+=item format_right_justify
+
+Replaced with $sth-E<gt>->{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+
+=item insertid
+
+Replaced with $sth-E<gt>{'mysql_insertid'}.
+
+=item IS_BLOB
+
+Replaced with $sth-E<gt>{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+
+=item is_blob
+
+Replaced with $sth-E<gt>{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+
+=item IS_PRI_KEY
+
+Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+
+=item is_pri_key
+
+Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+
+=item IS_NOT_NULL
+
+Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+the boolean values).
+
+=item is_not_null
+
+Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+the boolean values).
+
+=item IS_NUM
+
+Replaced with $sth-E<gt>{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+
+=item is_num
+
+Replaced with $sth-E<gt>{'TYPE'} (portable) or
+$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+
+=item IS_KEY
+
+Replaced with $sth-E<gt>{'mysql_is_key'}.
+
+=item is_key
+
+Replaced with $sth-E<gt>{'mysql_is_key'}.
+
+=item MAXLENGTH
+
+Replaced with $sth-E<gt>{'mysql_max_length'}.
+
+=item maxlength
+
+Replaced with $sth-E<gt>{'mysql_max_length'}.
+
+=item LENGTH
+
+Replaced with $sth-E<gt>{'PRECISION'} (portable) or
+$sth-E<gt>{'mysql_length'} (MySQL specific)
+
+=item length
+
+Replaced with $sth-E<gt>{'PRECISION'} (portable) or
+$sth-E<gt>{'mysql_length'} (MySQL specific)
+
+=item NUMFIELDS
+
+Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+
+=item numfields
+
+Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+
+=item NUMROWS
+
+Replaced with the result of $sth-E<gt>execute() or
+$sth-E<gt>{'mysql_affected_rows'}.
+
+=item TABLE
+
+Replaced with $sth-E<gt>{'mysql_table'}.
+
+=item table
+
+Replaced with $sth-E<gt>{'mysql_table'}.
+
+=back
+
+=back
+
+
+=head1 MULTITHREADING
+
+The multithreading capabilities of DBD::mysql depend completely
+on the underlying C libraries: The modules are working with handle data
+only, no global variables are accessed or (to the best of my knowledge)
+thread unsafe functions are called. Thus DBD::mysql is believed
+to be completely thread safe, if the C libraries are thread safe
+and you don't share handles among threads.
+
+The obvious question is: Are the C libraries thread safe?
+In the case of MySQL the answer is "mostly" and, in theory, you should
+be able to get a "yes", if the C library is compiled for being thread
+safe (By default it isn't.) by passing the option -with-thread-safe-client
+to configure. See the section on I<How to make a threadsafe client> in
+the manual.
+
+
+=head1 INSTALLATION
+
+Windows users may skip this section and pass over to L<WIN32
+INSTALLATION> below. Others, go on reading.
+
+First of all, you do not need an installed MySQL server for installing
+DBD::mysql. However, you need at least the client
+libraries and possibly the header files, if you are compiling DBD::mysql
+from source. In the case of MySQL you can create a
+client-only version by using the configure option --without-server.
+If you are using precompiled binaries, then it may be possible to
+use just selected RPM's like MySQL-client and MySQL-devel or something
+similar, depending on the distribution.
+
+First you need to install the DBI module. For using I<dbimon>, a
+simple DBI shell it is recommended to install Data::ShowTable another
+Perl module.
+
+I recommend trying automatic installation via the CPAN module. Try
+
+  perl -MCPAN -e shell
+
+If you are using the CPAN module for the first time, it will prompt
+you a lot of questions. If you finally receive the CPAN prompt, enter
+
+  install Bundle::DBD::mysql
+
+If this fails (which may be the case for a number of reasons, for
+example because you are behind a firewall or don't have network
+access), you need to do a manual installation. First of all you
+need to fetch the archives from any CPAN mirror, for example
+
+  ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
+
+The following archives are required (version numbers may have
+changed, I choose those which are current as of this writing):
+
+  DBI/DBI-1.15.tar.gz
+  Data/Data-ShowTable-3.3.tar.gz
+  DBD/DBD-mysql-2.1001.tar.gz
+
+Then enter the following commands:
+
+  gzip -cd DBI-1.15.tar.gz | tar xf -
+  cd DBI-1.15
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+  cd ..
+  gzip -cd Data-ShowTable-3.3.tar.gz | tar xf -
+  cd Data-ShowTable-3.3
+  perl Makefile.PL
+  make
+  make install  # Don't try make test, the test suite is broken
+
+  cd ..
+  gzip -cd DBD-mysql-2.1001.tar.gz | tar xf -
+  cd DBD-mysql-2.1001
+  perl Makefile.PL
+  make
+  make test
+  make install
+
+During "perl Makefile.PL" you will be prompted some questions.
+Other questions are the directories with header files and libraries.
+For example, of your file F<mysql.h> is in F</usr/include/mysql/mysql.h>,
+then enter the header directory F</usr>, likewise for
+F</usr/lib/mysql/libmysqlclient.a> or F</usr/lib/libmysqlclient.so>.
+
+
+=head1 WIN32 INSTALLATION
+
+If you are using ActivePerl, you may use ppm to install DBD-mysql.
+For Perl 5.6, upgrade to Build 623 or later, then it is sufficient
+to run
+
+  ppm install DBI
+  ppm install DBD::mysql
+
+If you need an HTTP proxy, you might need to set the environment
+variable http_proxy, for example like this:
+
+  set http_proxy=http://myproxy.com:8080/
+
+As of this writing, DBD::mysql is missing in the ActivePerl 5.8.0
+repository. However, Randy Kobes has kindly donated an own
+distribution and the following might succeed:
+
+  ppm install http://theoryx5.uwinnipeg.ca/ppms/DBD-mysql.ppd
+
+Otherwise you definitely *need* a C compiler. And it *must* be the same
+compiler that was being used for compiling Perl itself. If you don't
+have a C compiler, the file README.win32 from the Perl source
+distribution tells you where to obtain freely distributable C compilers
+like egcs or gcc. The Perl sources are available on any CPAN mirror in
+the src directory, for example
+
+    ftp://ftp.funet.fi/pub/languages/perl/CPAN/src/latest.tar.gz
+
+I recommend using the win32clients package for installing DBD::mysql
+under Win32, available for download on www.tcx.se. The following steps
+have been required for me:
+
+=over
+
+=item -
+
+The current Perl versions (5.6, as of this writing) do have a problem
+with detecting the C libraries. I recommend to apply the following
+patch:
+
+  *** c:\Perl\lib\ExtUtils\Liblist.pm.orig Sat Apr 15 20:03:40 2000
+  --- c:\Perl\lib\ExtUtils\Liblist.pm      Sat Apr 15 20:03:45 2000
+  ***************
+  *** 230,235 ****
+  --- 230,239 ----
+      # add "$Config{installarchlib}/CORE" to default search path
+      push @libpath, "$Config{installarchlib}/CORE";
+
+  +     if ($VC  and  exists($ENV{LIB})  and  defined($ENV{LIB})) {
+  +       push(@libpath, split(/;/, $ENV{LIB}));
+  +     }
+  +
+      foreach (Text::ParseWords::quotewords('\s+', 0, $potential_libs)){
+
+        $thislib = $_;
+                                                                       
+=item -
+
+Extract sources into F<C:\>. This will create a directory F<C:\mysql>
+with subdirectories include and lib.
+
+IMPORTANT: Make sure this subdirectory is not shared by other TCX
+files! In particular do *not* store the MySQL server in the same
+directory. If the server is already installed in F<C:\mysql>,
+choose a location like F<C:\tmp>, extract the win32clients there.
+Note that you can remove this directory entirely once you have
+installed DBD::mysql.
+
+=item -
+
+Extract the DBD::mysql sources into another directory, for
+example F<C:\src\siteperl>
+
+=item -
+
+Open a DOS shell and change directory to F<C:\src\siteperl>.
+
+=item -
+
+The next step is only required if you repeat building the modules: Make
+sure that you have a clean build tree by running
+
+  nmake realclean
+
+If you don't have VC++, replace nmake with your flavour of make. If
+error messages are reported in this step, you may safely ignore them.
+
+=item -
+
+Run
+
+  perl Makefile.PL
+
+which will prompt you for some settings. The really important ones are:
+
+  Which DBMS do you want to use?
+
+enter a 1 here (MySQL only), and
+
+  Where is your mysql installed? Please tell me the directory that
+  contains the subdir include.
+
+where you have to enter the win32clients directory, for example
+F<C:\mysql> or F<C:\tmp\mysql>.
+
+=item -
+
+Continued in the usual way:
+
+  nmake
+  nmake install
+
+=back
+
+If you want to create a PPM package for the ActiveState Perl version, then
+modify the above steps as follows: Run
+
+  perl Makefile.PL NAME=DBD-mysql BINARY_LOCATION=DBD-mysql.tar.gz
+  nmake ppd
+  nmake
+
+Once that is done, use tar and gzip (for example those from the CygWin32
+distribution) to create an archive:
+
+  mkdir x86
+  tar cf x86/DBD-mysql.tar blib
+  gzip x86/DBD-mysql.tar
+
+Put the files x86/DBD-mysql.tar.gz and DBD-mysql.ppd onto some WWW server
+and install them by typing
+
+  install http://your.server.name/your/directory/DBD-mysql.ppd
+
+in the PPM program.
+
+
+=head1 AUTHORS
+
+The current version of B<DBD::mysql> is almost completely written
+by Jochen Wiedmann (I<joe@ispsoft.de>). The first version's author
+was Alligator Descartes(I<descarte@symbolstone.org>), who has been
+aided and abetted by Gary Shea, Andreas König and Tim Bunce
+amongst others.
+
+The B<Mysql> module was originally written by Andreas König
+<koenig@kulturbox.de>. The current version, mainly an emulation
+layer, is from Jochen Wiedmann.
+
+
+=head1 COPYRIGHT
+
+This module is Copyright (c) 1997-2001 Jochen Wiedmann, with code
+portions Copyright (c)1994-1997 their original authors. This module is
+released under the same license as Perl itself. See the Perl README
+for details.
+
+
+=head1 MAILING LIST SUPPORT
+
+This module is maintained and supported on a mailing list,
+
+    msql-mysql-modules@lists.mysql.com
+
+To subscribe to this list, send a mail to
+
+    msql-mysql-modules-subscribe@lists.mysql.com
+
+or
+
+    msql-mysql-modules-digest-subscribe@lists.mysql.com
+
+Mailing list archives are available at
+
+    http://www.progressive-comp.com/Lists/?l=msql-mysql-modules
+
+
+Additionally you might try the dbi-user mailing list for questions about
+DBI and its modules in general. Subscribe via
+
+    http://www.fugue.com/dbi
+
+Mailing list archives are at
+
+     http://www.rosat.mpe-garching.mpg.de/mailing-lists/PerlDB-Interest/
+     http://outside.organic.com/mail-archives/dbi-users/
+     http://www.coe.missouri.edu/~faq/lists/dbi.html
+
+
+=head1 ADDITIONAL DBI INFORMATION
+
+Additional information on the DBI project can be found on the World
+Wide Web at the following URL:
+
+    http://www.symbolstone.org/technology/perl/DBI
+
+where documentation, pointers to the mailing lists and mailing list
+archives and pointers to the most current versions of the modules can
+be used.
+
+Information on the DBI interface itself can be gained by typing:
+
+    perldoc DBI
+
+right now!
+
+=cut
+
+
