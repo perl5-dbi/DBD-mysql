@@ -19,7 +19,7 @@ Getopt::Long::GetOptions($opt, "help", "testdb=s", "testhost=s",
 			 "testuser=s", "testpassword=s",
 			 "cflags=s", "libs=s", "verbose",
 			 "nocatchstderr",
-			 "ssl!","nofoundrows!");
+			 "ssl!","nofoundrows!") || die Usage();
 my $source = {};
 
 foreach my $key (qw/testdb testhost testuser testpassword cflags libs
