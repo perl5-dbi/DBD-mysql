@@ -129,6 +129,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
     STRLEN vallen;
     int alen;
     char* ptr;
+    char testchar;
     imp_sth_ph_t* ph;
     int slen = *slenPtr;
 
@@ -150,17 +151,29 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
         if (!ph->value  ||  !SvOK(ph->value)) {
 	    alen += 3;  /* Erase '?', insert 'NULL' */
 	} else {
+	    valbuf = SvPV(ph->value, vallen);
+	    alen += 2*vallen+1; /* Erase '?', insert (possibly quoted)
+				 string.  */
 	    if (!ph->type) {
-	        if (bind_type_guessing) {
+	        if ( bind_type_guessing > 1 ) {
+		    valbuf = SvPV(ph->value, vallen);
+		    ph->type = SQL_INTEGER;
+		    for (i = 0; i < vallen; ++i) {
+		        testchar = *(valbuf+i);
+		    	if ('-' != testchar  && !isdigit(testchar) && 
+			    '.' != testchar) 
+			{
+			    ph->type = SQL_VARCHAR;
+		            break;
+		        }
+		    }
+		    
+		} else if (bind_type_guessing) {
 		    ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
 		} else {
 		    ph->type= SQL_VARCHAR;
 		}
 	    }
-	    valbuf = SvPV(ph->value, vallen);
-	    alen += 2*vallen+1; /* Erase '?', insert (possibly quoted)
-				 * string.
-				 */
 	}
     }
 
@@ -1345,7 +1358,7 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
     } else if (strlen("mysql_unsafe_bind_type_guessing") 
 		    == kl && strEQ(key,"mysql_unsafe_bind_type_guessing") ) 
     {
-	imp_dbh->bind_type_guessing = bool_value;
+	imp_dbh->bind_type_guessing = SvIV(valuesv);
     } else {
         return FALSE;
     }

@@ -114,7 +114,7 @@ struct imp_dbh_st {
 	    unsigned int auto_reconnects_ok;
 	    unsigned int auto_reconnects_failed;
     } stats;
-    bool bind_type_guessing;
+    unsigned short int  bind_type_guessing;
 };
 
 
