@@ -262,11 +262,10 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 
 	if (host && !*host)
 		host = NULL;
-	if (port && *port) {
+	if (port && *port)
 		portNr = atoi(port);
-	} else {
+	else
 		portNr = 0;
-	}
 	if (user && !*user)
 		user = NULL;
 	if (password && !*password)
@@ -282,147 +281,125 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 
 	mysql_init(sock);
 
-	if (imp_dbh) {
-		SV *sv = DBIc_IMP_DATA(imp_dbh);
-		imp_dbh->has_transactions = TRUE;
-		imp_dbh->auto_reconnect = FALSE;	/* Safer we flip this to TRUE perl side 
-							   if we detect a mod_perl env. */
+	if (!imp_dbh)
+		goto do_connect;
 
-		DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
-		if (sv && SvROK(sv)) {
-			HV *hv = (HV *) SvRV(sv);
-			SV **svp;
-			STRLEN lna;
+	SV *sv = DBIc_IMP_DATA(imp_dbh);
+	imp_dbh->has_transactions = TRUE;
+	imp_dbh->auto_reconnect = FALSE;/* Safer we flip this to TRUE perl side 
+					   if we detect a mod_perl env. */
+
+	DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
+	if (!(sv && SvROK(sv)))
+		goto do_connect;
+
+	HV *hv = (HV *) SvRV(sv);
+	SV **svp;
+	STRLEN lna;
 
 #define OPTION_IF(a) ((svp = hv_fetch(hv,a,sizeof(a), FALSE)) &&\
 *svp && SvTRUE(*svp))
 
-			if (OPTION_IF("mysql_compression")) {
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->mysql_dr_connect: Enabling"
-						      " compression.\n");
-				mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
-			}
-			if (OPTION_IF("myql_connect_timeout")){
-				int to = SvIV(*svp);
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->mysql_dr_connect: Setting"
-						      " connect timeout (%d).\n",
-						      to);
-				mysql_options(sock,
-					      MYSQL_OPT_CONNECT_TIMEOUT,
-					      (const char *) &to);
-			}
-			if (OPTION_IF("mysql_read_default_file")){
-				char *df = SvPV(*svp, lna);
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->mysql_dr_connect: Reading"
-						      " default file %s.\n",
-						      df);
-				mysql_options(sock, MYSQL_READ_DEFAULT_FILE, df);
-			}
-			if (OPTION_IF("mysql_read_default_group")){
-				char *gr = SvPV(*svp, lna);
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->mysql_dr_connect: Using"
-						      " default group %s.\n",
-						      gr);
-				mysql_options(sock,
-					      MYSQL_READ_DEFAULT_GROUP,
-					      gr);
-			} else {
-				mysql_options(sock,
-					      MYSQL_READ_DEFAULT_GROUP,
-					      "dbd_mysql");
-			}
-			if ((svp =
-			     hv_fetch(hv,
-				      "mysql_client_found_rows",
-				      23, FALSE)) && *svp) {
-				if (SvTRUE(*svp)) {
-					client_flag |=
-					    CLIENT_FOUND_ROWS;
-				} else {
-					client_flag &=
-					    ~CLIENT_FOUND_ROWS;
-				}
-			}
+	if (OPTION_IF("mysql_compression")) {
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP,
+				      "imp_dbh->mysql_dr_connect: Enabling"
+				      " compression.\n");
+		mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
+	}
+	if (OPTION_IF("myql_connect_timeout")){
+		int to = SvIV(*svp);
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP,
+				      "imp_dbh->mysql_dr_connect: Setting"
+				      " connect timeout (%d).\n",
+				      to);
+		mysql_options(sock,MYSQL_OPT_CONNECT_TIMEOUT,(const char *)&to);
+	}
+	if (OPTION_IF("mysql_read_default_file")){
+		char *df = SvPV(*svp, lna);
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP,
+				      "imp_dbh->mysql_dr_connect: Reading"
+				      " default file %s.\n",
+				      df);
+		mysql_options(sock, MYSQL_READ_DEFAULT_FILE, df);
+	}
+	if (OPTION_IF("mysql_read_default_group")){
+		char *gr = SvPV(*svp, lna);
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP,
+				      "imp_dbh->mysql_dr_connect: Using"
+				      " default group %s.\n",
+				      gr);
+		mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
+	} else {
+		mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, "dbd_mysql");
+	}
+	if ((svp = hv_fetch(hv, "mysql_client_found_rows", 23,FALSE)) && *svp) {
+		if (SvTRUE(*svp)) {
+			client_flag |= CLIENT_FOUND_ROWS;
+		} else {
+			client_flag &= ~CLIENT_FOUND_ROWS;
+		}
+	}
 #if MYSQL_VERSION_ID >=40101
 
-			if ((svp =
-			     hv_fetch(hv, "mysql_server_prepare",
-				      20, FALSE)) && *svp) {
-				if (SvTRUE(*svp)) {
-					client_flag |=
-					    CLIENT_PROTOCOL_41;
-					imp_dbh->has_protocol41 =
-					    TRUE;
-				} else {
-					client_flag &=
-					    ~CLIENT_PROTOCOL_41;
-					imp_dbh->has_protocol41 =
-					    FALSE;
-				}
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->has_protocol41: %d",
-						      imp_dbh->
-						      has_protocol41);
-			}
+	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE)) && *svp) {
+		if (SvTRUE(*svp)) {
+			client_flag |= CLIENT_PROTOCOL_41;
+			imp_dbh->has_protocol41 = TRUE;
+		} else {
+			client_flag &= ~CLIENT_PROTOCOL_41;
+			imp_dbh->has_protocol41 = FALSE;
+		}
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP, "imp_dbh->has_protocol41: %d",
+				imp_dbh->has_protocol41);
+	}
 #endif
+
 #if defined(DBD_MYSQL_WITH_SSL)   && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
-			if (OPTION_IF("mysql_ssl")) {
-				char *client_key = NULL;
-				char *client_cert = NULL;
-				char *ca_file = NULL;
-				char *ca_path = NULL;
-				char *cipher = NULL;
-				STRLEN lna;
+
 #define DECODE_OPTION(a,b) \
 if ((svp = hv_fetch(hv,a, sizeof(a), FALSE)) && *svp) \
 	b = SvPV(*svp, lna); 
+	if (OPTION_IF("mysql_ssl")) {
+		char *client_key = NULL;
+		char *client_cert = NULL;
+		char *ca_file = NULL;
+		char *ca_path = NULL;
+		char *cipher = NULL;
+		STRLEN lna;
 
-DECODE_OPTION("mysql_ssl_client_key", client_key);
-DECODE_OPTION("mysql_ssl_client_cert", client_cert);
-DECODE_OPTION("mysql_ssl_ca_file", ca_file);
-DECODE_OPTION("mysql_ssl_ca_path", ca_path);
-DECODE_OPTION("mysql_ssl_cipher", cipher );
-				mysql_ssl_set(sock,
-					      client_key,
-					      client_cert,
-					      ca_file,
-					      ca_path,
-					      cipher);
-				client_flag |= CLIENT_SSL;
-			}
+		DECODE_OPTION("mysql_ssl_client_key", client_key);
+		DECODE_OPTION("mysql_ssl_client_cert", client_cert);
+		DECODE_OPTION("mysql_ssl_ca_file", ca_file);
+		DECODE_OPTION("mysql_ssl_ca_path", ca_path);
+		DECODE_OPTION("mysql_ssl_cipher", cipher );
+		mysql_ssl_set(sock, client_key, client_cert, ca_file, ca_path,
+			      cipher);
+		client_flag |= CLIENT_SSL;
+	}
 #endif
 #if (MYSQL_VERSION_ID >= 32349)
 				/*
 				 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use
 				 * mysql_local_infile=1 in the DSN to enable it.
 				 */
-			if ((svp =
-			     hv_fetch(hv, "mysql_local_infile", 18,
-				      FALSE)) && *svp) {
-				unsigned int flag = SvTRUE(*svp);
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "imp_dbh->mysql_dr_connect: Using"
-						      " local infile %u.\n",
-						      flag);
-				mysql_options(sock,
-					      MYSQL_OPT_LOCAL_INFILE,
-					      (const char *)
-					      &flag);
-			}
-#endif
-		}
+	if ((svp = hv_fetch(hv, "mysql_local_infile", 18, FALSE)) && *svp) {
+		unsigned int flag = SvTRUE(*svp);
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP,
+				      "imp_dbh->mysql_dr_connect: Using"
+				      " local infile %u.\n",
+				      flag);
+		mysql_options(sock, MYSQL_OPT_LOCAL_INFILE,(const char *)&flag);
 	}
+#endif
+
+do_connect:
 	if (dbis->debug >= 2)
 		PerlIO_printf(DBILOGFP,
 			      "imp_dbh->mysql_dr_connect: client_flags = %d\n",
@@ -468,9 +445,8 @@ static int _MyLogin(imp_dbh_t * imp_dbh)
 	}
 	if ((svp = hv_fetch(hv, "host", 4, FALSE))) {
 		host = SvPV(*svp, len);
-		if (!len) {
+		if (!len)
 			host = NULL;
-		}
 	} else {
 		host = NULL;
 	}
@@ -481,17 +457,15 @@ static int _MyLogin(imp_dbh_t * imp_dbh)
 	}
 	if ((svp = hv_fetch(hv, "user", 4, FALSE))) {
 		user = SvPV(*svp, len);
-		if (!len) {
+		if (!len)
 			user = NULL;
-		}
 	} else {
 		user = NULL;
 	}
 	if ((svp = hv_fetch(hv, "password", 8, FALSE))) {
 		password = SvPV(*svp, len);
-		if (!len) {
+		if (!len)
 			password = NULL;
-		}
 	} else {
 		password = NULL;
 	}
@@ -628,6 +602,7 @@ int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
 
 int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 {
+	int ret = 1;
 	/* croak, if not in AutoCommit mode */
 	if (DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
 		do_warn(dbh, TX_ERR_AUTOCOMMIT,
@@ -635,30 +610,27 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 		return FALSE;
 	}
 
-	if (imp_dbh->has_transactions) {
-#if MYSQL_VERSION_ID >=40101
-		if (!imp_dbh->has_protocol41) {
-#endif
-			if (mysql_real_query
-			    (&imp_dbh->mysql, "ROLLBACK", 8) != 0) {
-				do_error(dbh, mysql_errno(&imp_dbh->mysql),
-					 mysql_error(&imp_dbh->mysql));
-				return FALSE;
-			}
-#if MYSQL_VERSION_ID >=40101
-		} else {
-			if (mysql_rollback(&imp_dbh->mysql)) {
-				do_error(dbh, mysql_errno(&imp_dbh->mysql),
-					 mysql_error(&imp_dbh->mysql));
-				return FALSE;
-			}
-		}
-#endif
-	} else {
+	/* XXX How do we get here?  if we check for AutoCommit above? */
+	if (!imp_dbh->has_transactions) {
 		do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
 			 "Rollback ineffective while AutoCommit is on");
+		return TRUE;
 	}
-	return TRUE;
+
+	if (imp_dbh->has_protocol41) {
+#if MYSQL_VERSION_ID >=40101
+	    ret =  mysql_real_query (&imp_dbh->mysql, "ROLLBACK", 8);
+#endif
+		die("DBD::mysql Bug");
+	} else
+	    ret =  mysql_rollback(&imp_dbh->mysql);
+
+	if (ret) {
+		do_error(dbh, mysql_errno(&imp_dbh->mysql),
+			mysql_error(&imp_dbh->mysql));
+		return FALSE;
+	}
+
 }
 
 
@@ -751,25 +723,7 @@ void dbd_db_destroy(SV * dbh, imp_dbh_t * imp_dbh)
 	 *  Being on the safe side never hurts ...
 	 */
 	if (DBIc_ACTIVE(imp_dbh)) {
-		if (imp_dbh->has_transactions) {
-			if (!DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
-#if MYSQL_VERSION_ID >=40101
-				if (!imp_dbh->has_protocol41) {
-#endif
-					mysql_real_query(&imp_dbh->mysql,
-							 "ROLLBACK", 8);
-#if MYSQL_VERSION_ID >=40101
-				} else {
-					if (mysql_rollback
-					    (&imp_dbh->mysql)) {
-						do_error(dbh,
-							 TX_ERR_ROLLBACK,
-							 "ROLLBACK failed");
-					}
-				}
-#endif
-			}
-		}
+		mysql_db_rollback(dbh, imp_dbh);
 		dbd_db_disconnect(dbh, imp_dbh);
 	}
 
@@ -1102,10 +1056,6 @@ dbd_st_prepare(SV * sth,
 		imp_sth->av_attr[i] = Nullav;
 	}
 
-//	if (imp_sth->has_protocol41 == 0) {
-//		/* Count the number of parameters, the same way mysql_param_count does for server side prepares */
-//		DBIc_NUM_PARAMS(imp_sth) = CountParam(statement);
-//	} 
 #if MYSQL_VERSION_ID >=40101
 	/*
 	 *  Perform check for LISTFIELDS command
@@ -2573,7 +2523,6 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 {
 	SV *ph_namesv = param;
 	SV *newvalue = value;
-	int rc;
 	int paramNum = SvIV(param);
 	int idx = paramNum - 1;
 
@@ -2728,7 +2677,7 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 
 	}
 #endif
-	return rc;
+	return 1;
 }
 
 
@@ -2762,8 +2711,7 @@ int mysql_db_reconnect(SV * h)
 		return FALSE;
 	}
 
-	if (!DBIc_has(imp_dbh, DBIcf_AutoCommit)
-	    || !imp_dbh->auto_reconnect) {
+	if (!DBIc_has(imp_dbh, DBIcf_AutoCommit) || !imp_dbh->auto_reconnect) {
 		/* We never reconnect if AutoCommit is turned off.
 		 * Otherwise we might get an inconsistent transaction
 		 * state.
