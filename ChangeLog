@@ -1,8 +1,14 @@
-2003-09-12  Rudy Lippan  <rlippan@remotelinux.com> (2.9003_1)
+2003-10-26  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
+	* Applied patch from Aaron and Chuck that added basic testing of the 
+	  table_info/column_info functions [Aaron Ross <aross@plusthree.com>]
+	* Applied patch removing Jochen Wiedmann's contanct information and 
+	  also removing the restriction on CD ROM distribution. 
+	  [Jochen Wiedmen <joe@ispsoft.de>]
 	* The check for the innodb table type was broken so the transaction
 	  tests were skipped even though the database supported transactions.
-	* sql_types were not being inported in column info, so SQL_VARCAR was
-	  thowing an error.
+	* :sql_types were not being inported in column info, so SQL_VARCAR was
+	  thowing an error. Also, the :sql_types were not being pulled into 
+	  DBD::mysq::db package
 	* Patch for  dbdadmin.t so that it respects username and password
 	  [Alexey Stroganov <ranger@mysql.com>]
 	* Fix for memory leak in bind_param() introduced in 2.9002
