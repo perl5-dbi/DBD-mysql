@@ -414,12 +414,19 @@ or by adding the complete path name. Examples:
   -L/usr/lib/mysql -lmysqlclient
   -LC:\mysql\lib -lmysqlclient
 
-  /usr/lib/mysql/libmysqlclient.a
-  C:\mysql\lib\mysqlclient.lib
+If you would like to use the static libraries (and there are
+excellent reasons to do so), you need to create a separate
+directory, copy the static libraries to that place and use
+the -L switch above to point to your new directory. For example:
 
-The latter examples are using a statically linked library. This
-may be required in some cases, if the dynamically linked library
-is not found at run time.
+  mkdir /tmp/mysql-static
+  cp /usr/lib/mysql/*.a /tmp/mysql-static
+  perl Makefile.PL --libs="-L/tmp/mysql-static -lmysqlclient"
+  make
+  make test
+  make install
+  rm -rf /tmp/mysql-static
+
 
 =item The gzip library
 
@@ -720,15 +727,9 @@ library, for example
 
   /usr/lib/mysql/libmysqlclient.a
 
-You force linking against this file by replacing
-
-  -L/usr/lib/mysql -lmysqlclient
-
-with
-
-  /usr/lib/mysql/libmysqlclient.a
-
-in the list of linker flags. L</Configuration>. L</Linker flags>.  
+The use of a statically linked library is described in the
+previous section on linker flags. L</Configuration>.
+L</Linker flags>.  
 
 =item 4.)
 

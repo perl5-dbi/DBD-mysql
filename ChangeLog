@@ -1,3 +1,7 @@
+2003-07-??  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
+	* patch to INSTALL.pod on how to link DBD::mysql against 
+	  a static libmysqlclient [Jochen Wiedmann <joe@ispsoft.de>]
+
 2003-06-22  Rudy Lippan  <rlippan@remotelinux.com> (2.9002)
 	* moved pod into mysql.pm from mysql.pod
 	* Changed the default behaviour of mysql_found_rows, so now
