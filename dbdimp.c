@@ -18,7 +18,7 @@
 
 #include "dbdimp.h"
 #include "type_info.h"
-#include "commit.c"		// TODO: Fix & clean up -- Make header file &c.
+// #include "commit.c"		// TODO: Fix & clean up -- Make header file &c.
 
 #if defined(WIN32)  &&  defined(WORD)
     /*  Don't exactly know who's responsible for defining WORD ... :-(  */
@@ -758,7 +758,10 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		    serverinfo ?
 		    sv_2mortal(newSVpv(serverinfo, strlen(serverinfo)))
 		    : &sv_undef;
-
+	} else if (DECODE_KEY("clientinfo")) {
+		result = sv_2mortal(
+		  newSVpv(mysql_get_client_info(), 0));
+	/* TODO: client_version & server_version */
 	} else if (DECODE_KEY("sock")) {
 		result = sv_2mortal(newSViv((IV) & imp_dbh->mysql));
 
