@@ -1,0 +1,3 @@
+^blib\/
+\~$
+^Makefile(\.old)?$
