@@ -142,7 +142,7 @@ sub HaveTransactions () {
 		$have_transactions = "bdb";
 		last;
 	    }
-	    if ($row->{'Variable_name'} eq 'have_innobase'  &&
+	    if ($row->{'Variable_name'} eq 'have_innodb'  &&
 		$row->{'Value'} eq 'YES') {
 		$have_transactions = "innobase";
 		last;
