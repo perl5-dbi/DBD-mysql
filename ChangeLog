@@ -1,15 +1,29 @@
 2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.1027)
 
 	* Updated type_info_all() to be more inline with 
-	  what ODBC returns.
-	* Added attribute to turn off auto reconnect
-	* Added statistics attribute to count the number of 
-	  times auto reconnect succeeded  and the number of 
-	  times auto reconnect failed.
+	  what DBD::ODBC returns.
+	* Added attribute 'auto_reconnect' that allows the auto reconnect
+	  behaviour to be toggled. Right now this attribute defaults to 
+	  ON for backward compatibility; however, the default behaviour 
+	  may change so that auto_reconnect only defaults to on 
+	  in a mod_perl env.
+	* Fixed a segfault with failed reconnects that were trapped in an
+	  eval. The next tine DBD::mysql tried to reconnect, the process
+	  would segfault.
+	* Added statistics attribute, 'mysql_dbd_stats' which returns
+	  a hashref that contains 2 keys 'auto_reconnects' and
+	  'failed_auto_reconnects'.
 	* Fixed bug whereby strings that were used in numeric
 	  context were not getting quoted on execute(). Now all
 	  parameters are bound as varchar by default.
-	* Added get_info(). [Tim Bunce <Tim.Bunce@pobox.com>]
+
+	  **NOTE** this is a chage in behaviour that MAY cause problems
+	  with some SQL statements. If quoted integers causes any problems,
+	  can use bind_param(<column_id>, SQL_INTEGER) to force a column 
+	  to be bound as an integer.
+
+	* Added get_info() method. See 'perldoc DBI' for more info
+	* Added column_info(). See 'perldoc DBI' for more info [Tim Bunce]
 
 2003-03-03  Jochen Wiedmann  <joe@ispsoft.de> (2.1026)
 
