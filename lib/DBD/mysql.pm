@@ -716,6 +716,26 @@ in the MySQL client library by default. If your DSN contains the option
 this option is effective if the server has also been configured to
 disallow LOCAL.)
 
+=item Prepared statement support (server side prepare)
+
+To use server side prepared statements, all you need to do is set the variable 
+mysql_server_prepare in the connect:
+
+$dbh = DBI->connect(
+                    "DBI:mysql:database=test;host=localhost:mysql_server_prepare=1",
+                    "",
+                    "",
+                    { RaiseError => 1, AutoCommit => 1 }
+                    );
+
+To make sure that the 'make test' step tests whether server prepare works, you just
+need to export the env variable MYSQL_SERVER_PREPARE:
+
+export MYSQL_SERVER_PREPARE=1
+
+Test first without server side prepare, then with.
+
+
 =item mysql_embedded_options
 
 The option <mysql_embedded_options> can be used to pass 'command-line' 

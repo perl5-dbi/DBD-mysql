@@ -20,16 +20,10 @@ t/50chopblanks.t
 t/ak-dbd.t
 t/mysql.mtest
 t/mysql2.t
-lib
-lib/DBD
-lib/DBD/mysql
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 lib/DBD/mysql.pm
-lib/Bundle
-lib/Bundle/DBD
 lib/Bundle/DBD/mysql.pm
-lib/Mysql
 lib/Mysql/Statement.pm
 lib/Mysql.pm
 TODO
