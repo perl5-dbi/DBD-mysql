@@ -171,6 +171,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
     j = 0;
     while (j < slen) {
         switch(statement[j]) {
+	  case '`':
 	  case '\'':
 	  case '"':
 	    /*
