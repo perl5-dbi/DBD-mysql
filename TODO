@@ -32,16 +32,15 @@
 - remove dbd_mysql_coomit and make the commit called from the hash key set
   use mysq_db_commit.
 - remove goto hackary... Finish cleaning up connect
-- tests for $sth->{ParamValues}
 - rewrite test suite using Test::More
 - write up an fk_info()
+- use TEMP TABLES for tests
 -  get_info()
    - Ansi mode fixes and differences between ANSI mode and regular mode.
    - quotes return '""' when the server was started in ANSI mode even
       though '`' are still supported.
 - quoted identifires and ansi mode ('"' quotes)
 - utf-8 support
-- begin_work()
 - save points
 - better tracing support
 - Get caught up with DBI-1.41 with supported features
@@ -51,6 +50,12 @@
   you can swtich underlying forms (?/$1/whatever) with a 2 line code change.
 - croak on fetch/set of unknown attributes ??
 - do_error("%s....", ...);
+- --static to Makefile.PL
+- document addition of {client_info}
+- document {client_version}, {server_version}
+- make data_sources smart enough to use $ENV{DBI_USER} &c.
 
-
++ begin_work()
++ tests for $sth->{ParamValues}
++ add {client_version}, {server_version}
 
