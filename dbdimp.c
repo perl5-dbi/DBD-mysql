@@ -514,6 +514,11 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 {
 	int portNr;
 	MYSQL *result;
+#ifdef MYSQL_NO_CLIENT_FOUND_ROWS
+		unsigned int client_flag = 0;
+#else
+		unsigned int client_flag = CLIENT_FOUND_ROWS;
+#endif
 
 	if (host && !*host)
 		host = NULL;
@@ -535,227 +540,220 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 			      user ? user : "NULL",
 			      password ? password : "NULL");
 
-	{
-#ifdef MYSQL_NO_CLIENT_FOUND_ROWS
-		unsigned int client_flag = 0;
-#else
-		unsigned int client_flag = CLIENT_FOUND_ROWS;
-#endif
-		mysql_init(sock);
+	mysql_init(sock);
 
-		if (imp_dbh) {
-			SV *sv = DBIc_IMP_DATA(imp_dbh);
-			imp_dbh->has_transactions = TRUE;
-			imp_dbh->auto_reconnect = FALSE;	/* Safer we flip this to TRUE perl side 
-								   if we detect a mod_perl env. */
+	if (imp_dbh) {
+		SV *sv = DBIc_IMP_DATA(imp_dbh);
+		imp_dbh->has_transactions = TRUE;
+		imp_dbh->auto_reconnect = FALSE;	/* Safer we flip this to TRUE perl side 
+							   if we detect a mod_perl env. */
 
-			DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
-			if (sv && SvROK(sv)) {
-				HV *hv = (HV *) SvRV(sv);
-				SV **svp;
-				STRLEN lna;
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
+		if (sv && SvROK(sv)) {
+			HV *hv = (HV *) SvRV(sv);
+			SV **svp;
+			STRLEN lna;
 
-				if ((svp =
-				     hv_fetch(hv, "mysql_compression", 17,
-					      FALSE)) && *svp
-				    && SvTRUE(*svp)) {
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->mysql_dr_connect: Enabling"
-							      " compression.\n");
-					mysql_options(sock,
-						      MYSQL_OPT_COMPRESS,
-						      NULL);
-				}
-				if ((svp =
-				     hv_fetch(hv, "mysql_connect_timeout",
-					      21, FALSE))
-				    && *svp && SvTRUE(*svp)) {
-					int to = SvIV(*svp);
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->mysql_dr_connect: Setting"
-							      " connect timeout (%d).\n",
-							      to);
-					mysql_options(sock,
-						      MYSQL_OPT_CONNECT_TIMEOUT,
-						      (const char *) &to);
-				}
-				if ((svp =
-				     hv_fetch(hv,
-					      "mysql_read_default_file",
-					      23, FALSE)) && *svp
-				    && SvTRUE(*svp)) {
-					char *df = SvPV(*svp, lna);
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->mysql_dr_connect: Reading"
-							      " default file %s.\n",
-							      df);
-					mysql_options(sock,
-						      MYSQL_READ_DEFAULT_FILE,
+			if ((svp =
+			     hv_fetch(hv, "mysql_compression", 17,
+				      FALSE)) && *svp
+			    && SvTRUE(*svp)) {
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->mysql_dr_connect: Enabling"
+						      " compression.\n");
+				mysql_options(sock,
+					      MYSQL_OPT_COMPRESS,
+					      NULL);
+			}
+			if ((svp =
+			     hv_fetch(hv, "mysql_connect_timeout",
+				      21, FALSE))
+			    && *svp && SvTRUE(*svp)) {
+				int to = SvIV(*svp);
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->mysql_dr_connect: Setting"
+						      " connect timeout (%d).\n",
+						      to);
+				mysql_options(sock,
+					      MYSQL_OPT_CONNECT_TIMEOUT,
+					      (const char *) &to);
+			}
+			if ((svp =
+			     hv_fetch(hv,
+				      "mysql_read_default_file",
+				      23, FALSE)) && *svp
+			    && SvTRUE(*svp)) {
+				char *df = SvPV(*svp, lna);
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->mysql_dr_connect: Reading"
+						      " default file %s.\n",
 						      df);
-				}
-				if ((svp =
-				     hv_fetch(hv,
-					      "mysql_read_default_group",
-					      24, FALSE)) && *svp
-				    && SvTRUE(*svp)) {
-					char *gr = SvPV(*svp, lna);
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->mysql_dr_connect: Using"
-							      " default group %s.\n",
-							      gr);
-					mysql_options(sock,
-						      MYSQL_READ_DEFAULT_GROUP,
+				mysql_options(sock,
+					      MYSQL_READ_DEFAULT_FILE,
+					      df);
+			}
+			if ((svp =
+			     hv_fetch(hv,
+				      "mysql_read_default_group",
+				      24, FALSE)) && *svp
+			    && SvTRUE(*svp)) {
+				char *gr = SvPV(*svp, lna);
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->mysql_dr_connect: Using"
+						      " default group %s.\n",
 						      gr);
+				mysql_options(sock,
+					      MYSQL_READ_DEFAULT_GROUP,
+					      gr);
+			} else {
+				mysql_options(sock,
+					      MYSQL_READ_DEFAULT_GROUP,
+					      "dbd_mysql");
+			}
+			if ((svp =
+			     hv_fetch(hv,
+				      "mysql_client_found_rows",
+				      23, FALSE)) && *svp) {
+				if (SvTRUE(*svp)) {
+					client_flag |=
+					    CLIENT_FOUND_ROWS;
 				} else {
-					mysql_options(sock,
-						      MYSQL_READ_DEFAULT_GROUP,
-						      "dbd_mysql");
+					client_flag &=
+					    ~CLIENT_FOUND_ROWS;
 				}
-				if ((svp =
-				     hv_fetch(hv,
-					      "mysql_client_found_rows",
-					      23, FALSE)) && *svp) {
-					if (SvTRUE(*svp)) {
-						client_flag |=
-						    CLIENT_FOUND_ROWS;
-					} else {
-						client_flag &=
-						    ~CLIENT_FOUND_ROWS;
-					}
-				}
+			}
 #if MYSQL_VERSION_ID >=40101
 
-				if ((svp =
-				     hv_fetch(hv, "mysql_server_prepare",
-					      20, FALSE)) && *svp) {
-					if (SvTRUE(*svp)) {
-						client_flag |=
-						    CLIENT_PROTOCOL_41;
-						imp_dbh->has_protocol41 =
-						    TRUE;
-					} else {
-						client_flag &=
-						    ~CLIENT_PROTOCOL_41;
-						imp_dbh->has_protocol41 =
-						    FALSE;
-					}
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->has_protocol41: %d",
-							      imp_dbh->
-							      has_protocol41);
+			if ((svp =
+			     hv_fetch(hv, "mysql_server_prepare",
+				      20, FALSE)) && *svp) {
+				if (SvTRUE(*svp)) {
+					client_flag |=
+					    CLIENT_PROTOCOL_41;
+					imp_dbh->has_protocol41 =
+					    TRUE;
+				} else {
+					client_flag &=
+					    ~CLIENT_PROTOCOL_41;
+					imp_dbh->has_protocol41 =
+					    FALSE;
 				}
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->has_protocol41: %d",
+						      imp_dbh->
+						      has_protocol41);
+			}
 #endif
 #if defined(DBD_MYSQL_WITH_SSL)   && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
-				if ((svp =
-				     hv_fetch(hv, "mysql_ssl", 9, FALSE))
-				    && *svp) {
-					if (SvTRUE(*svp)) {
-						char *client_key = NULL;
-						char *client_cert = NULL;
-						char *ca_file = NULL;
-						char *ca_path = NULL;
-						char *cipher = NULL;
-						STRLEN lna;
-						if ((svp =
-						     hv_fetch(hv,
-							      "mysql_ssl_client_key",
-							      20, FALSE))
-						    && *svp) {
-							client_key =
-							    SvPV(*svp,
-								 lna);
-						}
-						if ((svp =
-						     hv_fetch(hv,
-							      "mysql_ssl_client_cert",
-							      21, FALSE))
-						    && *svp) {
-							client_cert =
-							    SvPV(*svp,
-								 lna);
-						}
-						if ((svp =
-						     hv_fetch(hv,
-							      "mysql_ssl_ca_file",
-							      17, FALSE))
-						    && *svp) {
-							ca_file =
-							    SvPV(*svp,
-								 lna);
-						}
-						if ((svp =
-						     hv_fetch(hv,
-							      "mysql_ssl_ca_path",
-							      17, FALSE))
-						    && *svp) {
-							ca_path =
-							    SvPV(*svp,
-								 lna);
-						}
-						if ((svp =
-						     hv_fetch(hv,
-							      "mysql_ssl_cipher",
-							      16, FALSE))
-						    && *svp) {
-							cipher =
-							    SvPV(*svp,
-								 lna);
-						}
-						mysql_ssl_set(sock,
-							      client_key,
-							      client_cert,
-							      ca_file,
-							      ca_path,
-							      cipher);
-						client_flag |= CLIENT_SSL;
+			if ((svp =
+			     hv_fetch(hv, "mysql_ssl", 9, FALSE))
+			    && *svp) {
+				if (SvTRUE(*svp)) {
+					char *client_key = NULL;
+					char *client_cert = NULL;
+					char *ca_file = NULL;
+					char *ca_path = NULL;
+					char *cipher = NULL;
+					STRLEN lna;
+					if ((svp =
+					     hv_fetch(hv,
+						      "mysql_ssl_client_key",
+						      20, FALSE))
+					    && *svp) {
+						client_key =
+						    SvPV(*svp,
+							 lna);
 					}
+					if ((svp =
+					     hv_fetch(hv,
+						      "mysql_ssl_client_cert",
+						      21, FALSE))
+					    && *svp) {
+						client_cert =
+						    SvPV(*svp,
+							 lna);
+					}
+					if ((svp =
+					     hv_fetch(hv,
+						      "mysql_ssl_ca_file",
+						      17, FALSE))
+					    && *svp) {
+						ca_file =
+						    SvPV(*svp,
+							 lna);
+					}
+					if ((svp =
+					     hv_fetch(hv,
+						      "mysql_ssl_ca_path",
+						      17, FALSE))
+					    && *svp) {
+						ca_path =
+						    SvPV(*svp,
+							 lna);
+					}
+					if ((svp =
+					     hv_fetch(hv,
+						      "mysql_ssl_cipher",
+						      16, FALSE))
+					    && *svp) {
+						cipher =
+						    SvPV(*svp,
+							 lna);
+					}
+					mysql_ssl_set(sock,
+						      client_key,
+						      client_cert,
+						      ca_file,
+						      ca_path,
+						      cipher);
+					client_flag |= CLIENT_SSL;
 				}
+			}
 #endif
 #if (MYSQL_VERSION_ID >= 32349)
 				/*
 				 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use
 				 * mysql_local_infile=1 in the DSN to enable it.
 				 */
-				if ((svp =
-				     hv_fetch(hv, "mysql_local_infile", 18,
-					      FALSE)) && *svp) {
-					unsigned int flag = SvTRUE(*svp);
-					if (dbis->debug >= 2)
-						PerlIO_printf(DBILOGFP,
-							      "imp_dbh->mysql_dr_connect: Using"
-							      " local infile %u.\n",
-							      flag);
-					mysql_options(sock,
-						      MYSQL_OPT_LOCAL_INFILE,
-						      (const char *)
-						      &flag);
-				}
-#endif
+			if ((svp =
+			     hv_fetch(hv, "mysql_local_infile", 18,
+				      FALSE)) && *svp) {
+				unsigned int flag = SvTRUE(*svp);
+				if (dbis->debug >= 2)
+					PerlIO_printf(DBILOGFP,
+						      "imp_dbh->mysql_dr_connect: Using"
+						      " local infile %u.\n",
+						      flag);
+				mysql_options(sock,
+					      MYSQL_OPT_LOCAL_INFILE,
+					      (const char *)
+					      &flag);
 			}
+#endif
 		}
-		if (dbis->debug >= 2)
-			PerlIO_printf(DBILOGFP,
-				      "imp_dbh->mysql_dr_connect: client_flags = %d\n",
-				      client_flag);
-		result =
-		    mysql_real_connect(sock, host, user, password, dbname,
-				       portNr, unixSocket, client_flag);
-		if (dbis->debug >= 2)
-			PerlIO_printf(DBILOGFP,
-				      "imp_dbh->mysql_dr_connect: <-");
-
-		/* we turn off Mysql's auto reconnect and handle re-connecting ourselves
-		 * so that we can keep track of when this happens.
-		 */
-		sock->reconnect = 0;
-		return result;
 	}
+	if (dbis->debug >= 2)
+		PerlIO_printf(DBILOGFP,
+			      "imp_dbh->mysql_dr_connect: client_flags = %d\n",
+			      client_flag);
+	result =
+	    mysql_real_connect(sock, host, user, password, dbname,
+			       portNr, unixSocket, client_flag);
+	if (dbis->debug >= 2)
+		PerlIO_printf(DBILOGFP,
+			      "imp_dbh->mysql_dr_connect: <-");
+
+	/* we turn off Mysql's auto reconnect and handle re-connecting ourselves
+	 * so that we can keep track of when this happens.
+	 */
+	sock->reconnect = 0;
+	return result;
 }
 
 /***************************************************************************
