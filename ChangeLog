@@ -1,3 +1,20 @@
+2005-03-28  Patrick Galbraith <patg@mysql.com> (2.9005_6)
+        * Fixed a bug with AutoCommit that manifested itself when you would
+          start the database with autocommit turned off (with my.cnf
+          init-connect    = 'set autocommit=0'), setting AutoCommit in
+          connect with { AutoConnect => 1 } would not work, nor setting it
+          via $dbh->{AutoCommit}=1 work. Also added logic which uses the
+          mysql client API functions for rollback and commit if the server
+          version is 4.1.0 and above, old version logic cleaned up as well
+          and still functional.
+        * Found that mysql_internal_execute needed to return a type of
+          my_longlong, which caused type warnings and still resulted in the 
+          fix described in 2.9005_4 not working.
+          
+
+2005-03-17  Patrick Galbraith <patg@mysql.com> (2.9005_5)
+        * Various type cast warnings fixed
+
 2005-03-16  Patrick Galbraith <patg@mysql.com> (2.9005_4)
         * Fix for rows - changed num_rows to my_ulonglong in dbdimp.h and
           how the buffer that contains the value returned from

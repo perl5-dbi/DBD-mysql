@@ -198,7 +198,7 @@ void	 do_error (SV* h, int rc, const char *what);
 SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
-int mysql_st_internal_execute(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
+my_ulonglong mysql_st_internal_execute(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
 			      MYSQL*, int);
 AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);
 SV* dbd_db_quote(SV*, SV*, SV*);

@@ -1166,7 +1166,7 @@ int dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh) {
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < 40103
+#if MYSQL_VERSION_ID < 40100
     if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6))
 #else
     if (mysql_commit(&imp_dbh->mysql))
@@ -1193,13 +1193,21 @@ int dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
     return FALSE;
   }
 
-  if (imp_dbh->has_transactions) {
-    if (mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8) != 0) {
+  if (imp_dbh->has_transactions)
+  {
+#if MYSQL_VERSION_ID < 40100
+    if (mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8))
+#else
+    if (mysql_rollback(&imp_dbh->mysql))
+#endif
+    {
       do_error(dbh, mysql_errno(&imp_dbh->mysql),
 	       mysql_error(&imp_dbh->mysql));
       return FALSE;
     }
-  } else {
+  }
+  else
+  {
     do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
 	     "Rollback ineffective while AutoCommit is on");
   }
@@ -1340,7 +1348,7 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
       if (bool_value == oldval)
         return TRUE;
 
-#if MYSQL_VERSION_ID >= 40103
+#if MYSQL_VERSION_ID >= 40100
       if (mysql_autocommit(&imp_dbh->mysql, bool_value))
       {
         do_error(dbh, TX_ERR_AUTOCOMMIT,
@@ -1614,7 +1622,7 @@ int dbd_st_prepare(SV* sth, imp_sth_t* imp_sth, char* statement, SV* attribs) {
  *
  **************************************************************************/
 
-int mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
+my_ulonglong mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
 			      int numParams, imp_sth_ph_t* params,
 			      MYSQL_RES** cdaPtr, MYSQL* svsock,
 			      int use_mysql_use_result) {
@@ -1752,7 +1760,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
     }
 
     statement = hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
-    if (((int)imp_sth->row_num =
+    if ((imp_sth->row_num =
 	     mysql_st_internal_execute(sth, *statement, NULL,
 				       DBIc_NUM_PARAMS(imp_sth),
 				       imp_sth->params,
@@ -1775,7 +1783,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 		      imp_sth->row_num);
     }
 
-    return imp_sth->row_num;
+    return (int) imp_sth->row_num;
 }
 
 
