@@ -169,7 +169,6 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 	client_flag &= ~CLIENT_PROTOCOL_41;
 #endif
 	SV *sv = DBIc_IMP_DATA(imp_dbh);
-	imp_dbh->has_transactions = TRUE;
 	imp_dbh->auto_reconnect = FALSE;	/* Safer we flip this to TRUE perl side 
 						   if we detect a mod_perl env. */
 
@@ -456,31 +455,26 @@ int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
 		return TRUE;
 	}
 
-	if (imp_dbh->has_transactions) {
-		if (!imp_dbh->has_protocol41) {
-			if (mysql_real_query(&imp_dbh->mysql,"COMMIT",6) != 0) {
-				do_error(dbh, mysql_errno(&imp_dbh->mysql),
-					 mysql_error(&imp_dbh->mysql));
-				return FALSE;
-			}
-		} else {
+	if (!imp_dbh->has_protocol41) {
+		if (mysql_real_query(&imp_dbh->mysql,"COMMIT",6) != 0) {
+			do_error(dbh, mysql_errno(&imp_dbh->mysql),
+				 mysql_error(&imp_dbh->mysql));
+			return FALSE;
+		}
+	} else {
 #if MYSQL_VERSION_ID >=40101
-			if (mysql_commit(&imp_dbh->mysql)) {
-				do_error(dbh, mysql_errno(&imp_dbh->mysql),
-					 mysql_error(&imp_dbh->mysql));
-				return FALSE;
-			}
+		if (mysql_commit(&imp_dbh->mysql)) {
+			do_error(dbh, mysql_errno(&imp_dbh->mysql),
+				 mysql_error(&imp_dbh->mysql));
+			return FALSE;
+		}
 #else
 		die("DBD::mysql Bug");
 #endif
-		}
-		if (imp_dbh->begun_work) {
-			imp_dbh->begun_work = FALSE;
-			set_autocommit(dbh, imp_dbh, FALSE, FALSE);
-		}
-	} else {
-		do_warn(dbh, JW_ERR_NOT_IMPLEMENTED,
-			"Commmit ineffective while AutoCommit is on");
+	}
+	if (imp_dbh->begun_work) {
+		imp_dbh->begun_work = FALSE;
+		set_autocommit(dbh, imp_dbh, FALSE, FALSE);
 	}
 	return TRUE;
 }
@@ -493,13 +487,6 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 		do_warn(dbh, TX_ERR_AUTOCOMMIT,
 			"Rollback ineffective while AutoCommit is on");
 		return FALSE;
-	}
-
-	/* XXX How do we get here?  if we check for AutoCommit above? */
-	if (!imp_dbh->has_transactions) {
-		do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-			 "Rollback ineffective while AutoCommit is on");
-		return TRUE;
 	}
 
 	if (imp_dbh->has_protocol41) {
@@ -612,12 +599,6 @@ static bool set_autocommit(SV *dbh, imp_dbh_t *imp_dbh, bool do_auto_commit,
 	bool commit_first)
 {
 	int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
-
-	if (!imp_dbh->has_transactions && do_auto_commit) {
-		do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-			 "Transactions not supported by database");
-		croak("Transactions not supported by database");
-	}
 
 	/* if setting AutoCommit on ... */
 	if (!oldval && do_auto_commit) {
