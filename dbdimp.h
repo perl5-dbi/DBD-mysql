@@ -119,6 +119,7 @@ struct imp_dbh_st {
 	} stats;
 	int has_protocol41;	/* does server support new binary protocol */
 	int has_autodetect_prepare;
+	int real_prepare;	/* Prepare Serverside?*/
 };
 
 
@@ -207,15 +208,14 @@ struct phs_st {         /* scalar placeholder EXPERIMENTAL      */
 struct imp_sth_st {
 	dbih_stc_t com;		/* MUST be first element in structure     */
 
-#if (MYSQL_VERSION_ID >= 40101)
 	MYSQL_STMT *stmt;
 	MYSQL_BIND *bind;
 	MYSQL_BIND *buffer;
 	imp_sth_phb_t *fbind;
 	imp_sth_fbh_t *fbh;
 	int has_binded;
-	int has_protocol41;	/* does server support new binary protocol */
-#endif
+
+	int real_prepare;	/* Prepare Serverside?*/
 
 	char *statement;
 	MYSQL_RES *cda;		/* result                                 */

@@ -260,6 +260,11 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 		unsigned int client_flag = CLIENT_FOUND_ROWS;
 #endif
 
+#if MYSQL_VERSION_ID >=40101
+	client_flag |= CLIENT_PROTOCOL_41;
+#endif
+
+
 	if (host && !*host)
 		host = NULL;
 	if (port && *port)
@@ -281,9 +286,15 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 
 	mysql_init(sock);
 
+	/*XXX When does this get called with !imp_dbh ?? */
 	if (!imp_dbh)
 		goto do_connect;
 
+#ifdef DBD_MYSQL_REAL_PREPARE
+	imp_dbh->real_prepare = TRUE;
+#else
+	imp_dbh->real_prepare = FALSE;
+#endif
 	SV *sv = DBIc_IMP_DATA(imp_dbh);
 	imp_dbh->has_transactions = TRUE;
 	imp_dbh->auto_reconnect = FALSE;/* Safer we flip this to TRUE perl side 
@@ -343,21 +354,31 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 			client_flag &= ~CLIENT_FOUND_ROWS;
 		}
 	}
-#if MYSQL_VERSION_ID >=40101
 
-	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE)) && *svp) {
+	if ((svp = hv_fetch(hv, "mysql_protocol41", 16, FALSE)) && *svp) {
 		if (SvTRUE(*svp)) {
-			client_flag |= CLIENT_PROTOCOL_41;
 			imp_dbh->has_protocol41 = TRUE;
+			client_flag |= CLIENT_PROTOCOL_41;
 		} else {
-			client_flag &= ~CLIENT_PROTOCOL_41;
 			imp_dbh->has_protocol41 = FALSE;
+			client_flag &= ~CLIENT_PROTOCOL_41;
 		}
 		if (dbis->debug >= 2)
 			PerlIO_printf(DBILOGFP, "imp_dbh->has_protocol41: %d",
 				imp_dbh->has_protocol41);
 	}
-#endif
+
+	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE)) && *svp) {
+		if (SvTRUE(*svp)) {
+			imp_dbh->real_prepare = TRUE;
+		} else {
+			imp_dbh->real_prepare = FALSE;
+		}
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP, "imp_dbh->real_prepare: %d",
+				imp_dbh->real_prepare);
+	}
+
 
 #if defined(DBD_MYSQL_WITH_SSL)   && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
@@ -620,8 +641,9 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 	if (imp_dbh->has_protocol41) {
 #if MYSQL_VERSION_ID >=40101
 	    ret =  mysql_real_query (&imp_dbh->mysql, "ROLLBACK", 8);
-#endif
+#else
 		die("DBD::mysql Bug");
+#endif
 	} else
 	    ret =  mysql_rollback(&imp_dbh->mysql);
 
@@ -797,7 +819,7 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 		imp_dbh->auto_reconnect = bool_value;
 		/* imp_dbh->mysql.reconnect=0; */
 	} else if (kl == 20 && strEQ(key, "mysql_server_prepare")) {
-		imp_dbh->has_protocol41 = SvTRUE(valuesv);
+		imp_dbh->real_prepare = SvTRUE(valuesv);
 	} else {
 		return FALSE;
 	}
@@ -926,7 +948,9 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 			    sv_2mortal(newSVpv(stats, strlen(stats))) :
 			    &sv_undef;
 	} else if (DECODE_KEY("server_prepare")) {
-		result = sv_2mortal(newSViv((IV) imp_dbh->has_protocol41));
+		result = sv_2mortal(newSViv((IV) imp_dbh->real_prepare));
+	} else if (DECODE_KEY("protocol41")) {
+		result = sv_2mortal(newSViv((IV) imp_dbh->real_prepare));
 	} else if (DECODE_KEY("thread_id")) {
 		result = sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
 	}
@@ -1020,17 +1044,17 @@ dbd_st_prepare(SV * sth,
 		PerlIO_printf(DBILOGFP, "Setting mysql_use_result to %d\n",
 			      imp_sth->use_mysql_use_result);
 		PerlIO_printf(DBILOGFP,
-			      "MYSQL_VERSION_ID %d, imp_sth->has_protocol41 %d\n",
-			      MYSQL_VERSION_ID, imp_sth->has_protocol41);
+			      "MYSQL_VERSION_ID %d, imp_sth->real_prepare %d\n",
+			      MYSQL_VERSION_ID, imp_sth->real_prepare);
 	}
 #if MYSQL_VERSION_ID >=40101
 	//Set default value for sth from dbh
-	imp_sth->has_protocol41 = imp_dbh->has_protocol41;
+	imp_sth->real_prepare = imp_dbh->real_prepare;
 	svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);
 	if (svp) {
-		imp_sth->has_protocol41 = SvTRUE(*svp);
+		imp_sth->real_prepare = SvTRUE(*svp);
 	}
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		int limit_flag = 0;
 		for (i = 0; i < strlen(statement) - 1; i++) {
 			char *searchptr = &statement[i];
@@ -1044,7 +1068,7 @@ dbd_st_prepare(SV * sth,
 				// ... and place holders after the limit flag is set...
 				if (statement[i] == '?') {
 					// ... then we do not want to try server side prepare (use emulation)
-					imp_sth->has_protocol41 = 0;
+					imp_sth->real_prepare = 0;
 					i = strlen(statement) - 1;
 				}
 			}
@@ -1068,16 +1092,16 @@ dbd_st_prepare(SV * sth,
 
 	/* this is a better way to do this */
 	if (!strncasecmp(statement, "listfields ", 11)
-	    && imp_sth->has_protocol41) {
+	    && imp_sth->real_prepare) {
 		if (dbis->debug >= 2) {
 			PerlIO_printf(DBILOGFP,
-				      "\"listfields\" Statement: %s\n setting has_protocol41 to 0\n",
+				      "\"listfields\" Statement: %s\n setting real_prepare to 0\n",
 				      statement);
 		}
-		imp_sth->has_protocol41 = 0;
+		imp_sth->real_prepare = 0;
 	}
 
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (imp_sth->stmt) {
 			fprintf(stderr,
 				"ERROR: Trying to prepare new stmt while we have already not closed one \n");
@@ -1250,7 +1274,7 @@ dbd_st_prepare(SV * sth,
 			return 0;
 		}
 	} else {
-		imp_sth->has_protocol41 = 0;
+		imp_sth->real_prepare = 0;
 	}
 #endif
 
@@ -1568,7 +1592,7 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 
 #if MYSQL_VERSION_ID >=40101
 
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (DBIc_ACTIVE(imp_sth)
 		    && !(mysql_st_clean_cursor(sth, imp_sth))) {
 			//FIXME: Have to add do_error HERE
@@ -1649,7 +1673,7 @@ int dbd_describe(SV * sth, imp_sth_t * imp_sth)
 
 #if MYSQL_VERSION_ID >=40101
 
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		int num_fields = DBIc_NUM_FIELDS(imp_sth);
 		int i;
 		int col_type;
@@ -1805,7 +1829,7 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 	unsigned long *lengths;
 
 #if MYSQL_VERSION_ID >=40101
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (!DBIc_ACTIVE(imp_sth)) {
 			do_error(sth, JW_ERR_SEQUENCE,
 				 "no statement executing\n");
@@ -1845,7 +1869,7 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 	int rc;
 	imp_sth_fbh_t *fbh;
 	MYSQL_BIND *bind;
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (dbis->debug >= 2)
 			PerlIO_printf(DBILOGFP,
 				      "dbd_st_fetch calling mysql_fetch\n");
@@ -2068,7 +2092,7 @@ int dbd_st_finish(SV * sth, imp_sth_t * imp_sth)
 #endif
 
 #if MYSQL_VERSION_ID >=40101
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (imp_sth && imp_sth->stmt) {
 			if (!mysql_st_clean_cursor(sth, imp_sth)) {
 				do_error(sth, JW_ERR_SEQUENCE,
@@ -2127,7 +2151,7 @@ void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 #if MYSQL_VERSION_ID >=40101
 	int num_fields;
 
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (imp_sth->stmt) {
 			num_fields = DBIc_NUM_FIELDS(imp_sth);
 
@@ -2479,7 +2503,7 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	} else if (DECODE_KEY("mysql_use_result")) {
 		retsv = boolSV(imp_sth->use_mysql_use_result);
 	} else if (DECODE_KEY("mysql_server_prepare")) {
-		retsv = sv_2mortal(newSViv ((IV) imp_sth-> has_protocol41));
+		retsv = sv_2mortal(newSViv ((IV) imp_sth->real_prepare ));
 	} else if (DECODE_KEY("mysql_is_auto_increment")) {
 		retsv = ST_FETCH_AV (AV_ATTRIB_IS_AUTO_INCREMENT);
 	}
@@ -2636,7 +2660,7 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 
 #if MYSQL_VERSION_ID >=40101
 
-	if (imp_sth->has_protocol41) {
+	if (imp_sth->real_prepare) {
 		if (imp_sth->has_binded == 0)	//first bind
 		{
 			//SQL_VARCHAR
