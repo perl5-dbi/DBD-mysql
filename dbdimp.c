@@ -33,9 +33,6 @@ static bool set_autocommit(SV *dbh, imp_dbh_t *imp_dbh, bool do_auto_commit,
 
 DBISTATE_DECLARE;
 
-#define SQL_GET_TYPE_INFO_num \
-	(sizeof(SQL_GET_TYPE_INFO_values)/sizeof(sql_type_info_t))
-
 
 /***************************************************************************
  *  Name:    dbd_init
