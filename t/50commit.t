@@ -118,12 +118,12 @@ while (Testing()) {
 
 	# Check commit
 	Test($state or $dbh->do("DELETE FROM $table WHERE id = 1"))
-	    or ErrMsgF("Failed to insert value: err %s, errstr %s.\n",
+	    or ErrMsgF("Failed to delete value: err %s, errstr %s.\n",
 		       $dbh->err, $dbh->errstr);
 	Test($state or !($msg = NumRows($dbh, $table, 0)))
 	    or ErrMsg($msg);
 	Test($state or $dbh->commit)
-	    or ErrMsgF("Failed to rollback: err %s, errstr %s.\n",
+	    or ErrMsgF("Failed to commit: err %s, errstr %s.\n",
 		       $dbh->err, $dbh->errstr);
 	Test($state or !($msg = NumRows($dbh, $table, 0)))
 	    or ErrMsg($msg);
