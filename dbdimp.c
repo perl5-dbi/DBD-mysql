@@ -161,7 +161,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
 		    ph->type = SQL_INTEGER;
 
 		    seen_neg = 0; seen_dec = 0;
-		    for (j = 0; j < vallen; ++j) {
+		    for (j = 0; j < (int)vallen; ++j) {
 		        testchar = *(valbuf+j);
 			if ('-' == testchar) {
 			    if (seen_neg) {
@@ -1737,7 +1737,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
     }
 
     statement = hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
-    if ((imp_sth->row_num =
+    if (((int)imp_sth->row_num =
 	     mysql_st_internal_execute(sth, *statement, NULL,
 				       DBIc_NUM_PARAMS(imp_sth),
 				       imp_sth->params,
@@ -2419,13 +2419,13 @@ AV* dbd_db_type_info_all(SV* dbh, imp_dbh_t* imp_dbh) {
 
     hv = newHV();
     av_push(av, newRV_noinc((SV*) hv));
-    for (i = 0;  i < (sizeof(cols) / sizeof(const char*));  i++) {
+    for (i = 0;  i < (int)(sizeof(cols) / sizeof(const char*));  i++) {
         if (!hv_store(hv, (char*) cols[i], strlen(cols[i]), newSViv(i), 0)) {
 	    SvREFCNT_dec((SV*) av);
 	    return Nullav;
 	}
     }
-    for (i = 0;  i < SQL_GET_TYPE_INFO_num;  i++) {
+    for (i = 0;  i < (int)SQL_GET_TYPE_INFO_num;  i++) {
         const sql_type_info_t* t = &SQL_GET_TYPE_INFO_values[i];
 
 	row = newAV();
@@ -2477,7 +2477,7 @@ SV* dbd_db_quote(SV* dbh, SV* str, SV* type) {
         if (type  &&  SvOK(type)) {
 	    int i;
 	    int tp = SvIV(type);
-	    for (i = 0;  i < SQL_GET_TYPE_INFO_num;  i++) {
+	    for (i = 0;  i < (int)SQL_GET_TYPE_INFO_num;  i++) {
 	        const sql_type_info_t* t = &SQL_GET_TYPE_INFO_values[i];
 		if (t->data_type == tp) {
 		    if (!t->literal_prefix) {
