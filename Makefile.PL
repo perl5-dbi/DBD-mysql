@@ -21,6 +21,7 @@ use ExtUtils::MakeMaker();
 use Data::Dumper ();
 use File::Path;
 use File::Copy;
+require DBI::DBD;
 
 my $TESTDB = "test";
 
@@ -138,6 +139,7 @@ my $fileName = $@ ?
 
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
+$cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
@@ -390,7 +392,6 @@ sub libscan
 }
 
 sub postamble {
-  require DBI::DBD;
   "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
 
 installhtml: lib/DBD/mysql/INSTALL.pod
