@@ -70,6 +70,8 @@ while (Testing()) {
 		    $dbh->do($def)))
 	   or DbiError($dbh->err, $dbh->errstr);
 
+    Test($state or $dbh->table_info(undef,undef,$table));
+    Test($state or $dbh->column_info(undef,undef,$table,'%'));
 
     Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"))
 	   or DbiError($dbh->err, $dbh->errstr);
