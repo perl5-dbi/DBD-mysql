@@ -161,7 +161,7 @@ while (Testing()) {
 	    or ErrMsg("Expected fatal error for AutoCommit => 0\n");
 
 	for (my $i = 0;  $i < 14;  $i++) {
-	    Skip("No transactions");
+	    Skip("Unable to detect a transactional table type; Skipping transaction tests");
 	}
     }
 
