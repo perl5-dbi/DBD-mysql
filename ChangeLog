@@ -1,6 +1,10 @@
-2004-09-xx  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_1)
-
-	* Applied patch to fix column info with later version of mysql
+2004-10-20  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_1)
+	* Added $dbh->{mysql_unsafe_bind_type_guessing} = 2 which will look at
+	  each bind_param and make guess based on whether it looks like a 
+	  number, and if the parameter looks like a number, it will not be 
+	  quoted.  [thanks to dragonchild for cleaning up the initial rough 
+	  draft impementation making it ready for prime time]
+	* Applied patch to fix column which broke with later version of mysql
 	  [Tim Bunce]
 	* Merged $dbh->last_inert_id() from the 3.0 dev tree
 	* If you are using perl 5.008 without a $ENV{LANG} of "C". Makefile.PL
