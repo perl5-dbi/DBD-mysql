@@ -889,6 +889,48 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 }
 
 
+static int handle_list_fields(SV *sth, char *statement, STRLEN slen)
+{
+	char *table;
+	D_imp_sth(sth);
+	D_imp_dbh_from_sth;
+
+	slen -= 10;
+	statement += 10;
+	while (slen && isspace(*statement)) {
+		--slen;
+		++statement;
+	}
+
+	if (!slen) {
+		do_error(sth, JW_ERR_QUERY, "Missing table name"); 
+		return -2;
+	}
+	if (!(table = malloc(slen + 1))) {
+		do_error(sth, JW_ERR_MEM, "Out of memory"); 
+		return -2;
+	}
+
+	strncpy(table, statement, slen);
+	statement = table;
+
+	while (slen && !isspace(*statement)) {
+		--slen;
+		++statement;
+	}
+	*statement++ = '\0';
+
+	imp_sth->cda = mysql_list_fields(&imp_dbh->mysql, table, NULL);
+	free(table);
+
+	if (!imp_sth->cda) {
+		do_error(sth, mysql_errno(&imp_dbh->mysql),
+			 mysql_error(&imp_dbh->mysql));
+		return -2;
+	}
+
+	return 0;
+}
 
 
 /***************************************************************************
@@ -907,65 +949,20 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 {
 	STRLEN slen;
-	// char *sbuf = SvPV(statement, slen); 
-	// char *salloc = ParseParam(svsock, sbuf, &slen, params, numParams);
 	char *statement;
 	int ret = -2;
 	int max_len = 0;
 	D_imp_dbh_from_sth;
-	STRLEN stmt_len;
-	char *sbuf;
+
+	if (!imp_sth->statement)
+		return 0; /* not prepared */
 
 
-	if (!imp_sth->statement) {
-		/* not prepared */
-		return 0;
-	}
+	slen = max_len = strlen(imp_sth->statement);/*TODO: imp_sth->stmt_len */
 
+	if (slen >= 11 && !strncasecmp(imp_sth->statement, "listfields ", 11))
+		return handle_list_fields(sth, imp_sth->statement, slen);
 
-	slen = max_len = strlen(imp_sth->statement);
-	sbuf = imp_sth->statement;
-
-	if (slen >= 11 && !strncasecmp(sbuf, "listfields ", 11)) {
-		char *table;
-
-		slen -= 10;
-		sbuf += 10;
-		while (slen && isspace(*sbuf)) {
-			--slen;
-			++sbuf;
-		}
-
-		if (!slen) {
-			do_error(sth, JW_ERR_QUERY, "Missing table name");
-			return -2;
-		}
-		if (!(table = malloc(slen + 1))) {
-			do_error(sth, JW_ERR_MEM, "Out of memory");
-			return -2;
-		}
-
-		strncpy(table, sbuf, slen);
-		sbuf = table;
-
-		while (slen && !isspace(*sbuf)) {
-			--slen;
-			++sbuf;
-		}
-		*sbuf++ = '\0';
-
-		imp_sth->cda =
-		    mysql_list_fields(&imp_dbh->mysql, table, NULL);
-		free(table);
-
-		if (!imp_sth->cda) {
-			do_error(sth, mysql_errno(&imp_dbh->mysql),
-				 mysql_error(&imp_dbh->mysql));
-			return -2;
-		}
-
-		return 0;
-	}
 	if ((int) DBIc_NUM_PARAMS(imp_sth) > 0) {
 		/* How much do we need to malloc to hold resultant string */
 		HV *hv = imp_sth->all_params_hv;
@@ -998,7 +995,7 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 	/*TODO:  Clean up and free old result */
 
 
-	if ((mysql_real_query (&imp_dbh->mysql, statement, strlen(statement)))
+	if ((mysql_real_query(&imp_dbh->mysql, statement, strlen(statement)))
 	    && (!mysql_db_reconnect(sth) || (mysql_real_query
 		(&imp_dbh->mysql, statement, strlen(statement))))) {
 
@@ -1025,7 +1022,7 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 	if (!imp_sth->cda) {
 		return mysql_affected_rows(&imp_dbh->mysql);
 	} else {
-		/*TODO: mysql_affect_rowsi */
+		/*TODO: mysql_affected_rows */
 		return mysql_num_rows(imp_sth->cda);
 	}
 
@@ -1067,7 +1064,7 @@ long mysql_st_internal_execute41(SV * h,
 	}
 
 	if (numParams > 0 ) {
-		if (mysql_bind_param(stmt, bind)) {
+		if (mysql_bind_param(stmt, bind+1)) { /*+1 bind is 0 based */
 			fprintf(stderr, "\nparam bind failed\n");
 			fprintf(stderr, "\n|%d| |%s|\n",
 				mysql_stmt_errno(stmt),
@@ -1187,8 +1184,7 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 							       use_mysql_use_result,
 							       imp_sth->
 							       stmt,
-							       imp_sth->
-							       bind);
+							       imp_sth->bind);
 	} else {
 		imp_sth->row_num = mysql_st_internal_execute(sth, imp_sth);
 	}
@@ -1931,7 +1927,7 @@ int dbd_st_blob_read(SV * sth,
 
 
 
-static phs_t * retrieve_placeholder (imp_sth_t *imp_sth, SV *ph_namesv)
+static phs_t *retrieve_placeholder(imp_sth_t *imp_sth, SV *ph_namesv)
 {
 	STRLEN name_len;
 	char *name = Nullch;
@@ -1990,19 +1986,23 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * ph_namesv, SV * newvalue,
 
 	phs = retrieve_placeholder(imp_sth, ph_namesv);
 
-	/* if (phs->is_bound && sql_type != 0 && phs->ftype != sql_type) {
-		croak("Can't change TYPE of param: %s from %d to %d after"
-		      " initial bind", phs->name, phs->ftype, sql_type);
+	 if (phs->is_bound && sql_type != 0 && phs->ftype != sql_type) {
+		/* croak("Can't change TYPE of param: %s from %d to %d after"
+		      " initial bind", phs->name, phs->ftype, sql_type);  */
 	} else {
 		phs->ftype = sql_type ? sql_type : SQL_VARCHAR;
-	} */
+	}
 
-	if (imp_sth->real_prepare && phs->quoted)
+	if (!imp_sth->real_prepare && phs->quoted)
 		Safefree(phs->quoted);
 
 	if (!SvOK(newvalue)) {
-		if (imp_sth->real_prepare)
-			phs->bind->buffer = SvPV(newvalue, slen);
+		if (imp_sth->real_prepare) {
+			/*FIXME  Move the malloc out of here*/
+			if (!phs->bind->is_null)
+				phs->bind->is_null = malloc(sizeof(int));
+			*phs->bind->is_null = 1;
+		}	
 		else {
 			New(908, phs->quoted, sizeof("NULL"), char);
 			strcpy(phs->quoted, "NULL");
@@ -2013,10 +2013,18 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * ph_namesv, SV * newvalue,
 		if (!(type_info = native2sql(FIELD_TYPE_VAR_STRING)))
 			croak("Default field type is bad. DBD::mysql bug");
 
+
 		if (imp_sth->real_prepare) {
-			phs->bind->buffer = SvPV(newvalue, slen);
-			/* Should be here max value for this param? */
+			char *data;
+			data = SvPV(newvalue, slen);
+			/* XXX Could just remalloc if larger 
+			   XXX remeber to free later too*/
+			if (phs->bind->buffer)
+				Safefree(phs->bind->buffer); 
+			Newz(908, phs->bind->buffer, slen, char);
+			Copy(data, phs->bind->buffer, slen, char);
 			phs->bind->buffer_length = slen;
+			phs->bind->length = &phs->bind->buffer_length;
 		} else
 			phs->quoted = type_info->quote(imp_dbh->mysql, 
 			    newvalue, &phs->quoted_len);
