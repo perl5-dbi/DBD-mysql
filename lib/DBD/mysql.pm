@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9002';
+$VERSION = '2.9003_1';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -29,7 +29,7 @@ sub driver{
 				   'Version' => $VERSION,
 				   'Err'    => \$DBD::mysql::err,
 				   'Errstr' => \$DBD::mysql::errstr,
-				   'Attribution' => 'DBD::mysql by Jochen Wiedmann'
+				   'Attribution' => 'DBD::mysql by Rudy Lippan'
 				 });
 
     $drh;
@@ -97,6 +97,7 @@ sub AUTOLOAD {
 
 package DBD::mysql::dr; # ====== DRIVER ======
 use strict;
+use DBI qw(:sql_types);
 
 sub connect {
     my($drh, $dsn, $username, $password, $attrhash) = @_;
@@ -108,8 +109,8 @@ sub connect {
     $password ||= '';
 
     # create a 'blank' dbh
-    my($this, $privateAttrHash);
-    $privateAttrHash = {
+    my($this, $privateAttrHash) = (undef, $attrhash);
+    $privateAttrHash = { %$privateAttrHash,
 	'Name' => $dsn,
 	'user' => $username,
 	'password' => $password
@@ -137,12 +138,14 @@ sub connect {
 sub data_sources {
     my($self) = shift;
     my($attributes) = shift;
-    my($host, $port) = ('', '');
+    my($host, $port, $user, $password) = ('', '', '', '');
     if ($attributes) {
       $host = $attributes->{host} || '';
       $port = $attributes->{port} || '';
+      $user = $attributes->{user} || '';
+      $password = $attributes->{password} || '';
     }
-    my(@dsn) = $self->func($host, $port, '_ListDBs');
+    my(@dsn) = $self->func($host, $port, $user, $password, '_ListDBs');
     my($i);
     for ($i = 0;  $i < @dsn;  $i++) {
 	$dsn[$i] = "DBI:mysql:$dsn[$i]";
@@ -1675,7 +1678,8 @@ in the PPM program.
 =head1 AUTHORS
 
 The current version of B<DBD::mysql> is almost completely written
-by Jochen Wiedmann (I<joe@ispsoft.de>). The first version's author
+by Jochen Wiedmann (I<joe@ispsoft.de>), and is now being maintained by
+Rudy Lippan (I<rlippan@remotelinux.com>). The first version's author
 was Alligator Descartes(I<descarte@symbolstone.org>), who has been
 aided and abetted by Gary Shea, Andreas König and Tim Bunce
 amongst others.
@@ -1687,8 +1691,10 @@ layer, is from Jochen Wiedmann.
 
 =head1 COPYRIGHT
 
-This module is Copyright (c) 1997-2001 Jochen Wiedmann, with code
-portions Copyright (c)1994-1997 their original authors. This module is
+
+This module is Copyright (c) 2003 Rudolf Lippan; Large Portions 
+Copyright (c) 1997-2001 Jochen Wiedmann, with code portions 
+Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
 for details.
 
