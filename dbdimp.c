@@ -60,6 +60,7 @@ static int CountParam(char* statement) {
 
     while (c = *ptr++) {
         switch (c) {
+	  case '`':
 	  case '"':
 	  case '\'':
 	    /*
