@@ -1,6 +1,13 @@
+2004-10-28 Rudolf Lippan <rlippan@remotelinux.com> (2.9015_1)
+	* Merged Makefile.PL from 2.9005_3
+	* Bumped version number to 2.9015 for release of Dev Branch. Which 
+	  will become 2.9020 when tested and merged into HEAD.
+	* fixed typo/compiler warning in bind_param_guessing 
+	  '*testchar' should have been 'testchar'.
+
 2004-10-20 Patrick Galbraith patg@mysql.com (Dev-2_9 - 2.9005)
 
-  * merged changes from 2.9005
+  * merged changes from 2.9005_1
   * fix to blob in dbd_st_fetch (Alexey Stroganov ranger@mysql.com)
   In case of BLOB/TEXT fields we allocate only 8192 bytes in dbd_describe()
   for data. Here we know real size of field so we should increase buffer
