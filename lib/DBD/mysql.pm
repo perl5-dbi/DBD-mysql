@@ -127,6 +127,10 @@ sub connect {
     # and populate internal handle data.
     DBD::mysql::db::_login($this, $dsn, $username, $password)
 	  or $this = undef;
+
+    if ($this && ($ENV{MOD_PERL} || $ENV{GATEWAY_INTERFACE})) {
+        $this->{mysql_auto_reconnect} = 1;
+    }
     $this;
 }
 

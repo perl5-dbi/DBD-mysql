@@ -857,7 +857,8 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
     if (imp_dbh) {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
       imp_dbh->has_transactions = TRUE;
-      imp_dbh->auto_reconnect = TRUE; /* Default to TRUE for backwards compat */
+      imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
+                                         if we detect a mod_perl env. */
 
       DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
       if (sv  &&  SvROK(sv)) {

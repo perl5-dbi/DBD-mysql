@@ -425,12 +425,13 @@ handles (read/write):
 =item mysql_auto_reconnect
 
 This attribute determines whether DBD::mysql will automatically reconnect
-to mysql if the connection be lost. This feature defaults to on for backwards
-compatibility; however, if LOCK TABLE be used, this feature should be turned
-off because table locks will be lost when DBD::mysql reconnects to the server.
-This attribute is ignored when AutoCommit is turned off, and DBD::mysql will
+to mysql if the connection be lost. This feature defaults to off; however,
+if either the GATEWAY_INTERFACE or MOD_PERL envionment variable is set, 
+DBD::mysql will turn mysql_auto_reconnect on.  Setting mysql_auto_reconnect 
+to on is not advised if 'lock tables' is used because if DBD::mysql reconnect 
+to mysql all table locks will be lost.  This attribute is ignored when
+AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
-
 
 =head1 STATEMENT HANDLES
 
