@@ -1,28 +1,19 @@
 { local $opt = {
-         'nocatchstderr' => 0,
-         'testdb' => 'test',
-         'testuser' => '',
-         'force_embedded' => '',
-         'cflags' => '-I/usr/local/mysql/include -mcpu=pentiumpro',
-         'nofoundrows' => 0,
-         'mysql_config' => 'mysql_config',
-         'testsocket' => '',
-         'embedded' => '',
+         'testhost' => '127.0.0.1',
+         'testpassword' => 'jwi',
          'ssl' => 0,
-         'mysql_server_prepare' => '',
-         'libs' => '-L/usr/local/mysql/lib -lmysqlclient -lz -lcrypt -lnsl -lm -lc -lnss_files -lnss_dns -lresolv -lc -lnss_files -lnss_dns -lresolv',
-         'testhost' => '',
-         'testpassword' => ''
+         'testuser' => 'jwi',
+         'nocatchstderr' => 0,
+         'libs' => '-L/usr/lib/mysql -lmysqlclient -lz -lcrypt -lnsl -lm',
+         'cflags' => '-I\'/usr/include/mysql\'',
+         'testdb' => 'test'
        };
 $::test_host = $opt->{'testhost'};
 $::test_port = $opt->{'testport'};
 $::test_user = $opt->{'testuser'};
-$::test_socket = $opt->{'testsocket'};
 $::test_password = $opt->{'testpassword'};
 $::test_db = $opt->{'testdb'};
 $::test_dsn = "DBI:mysql:$::test_db";
-$::test_dsn .= ";mysql_socket=$::test_socket" if $::test_socket;
 $::test_dsn .= ":$::test_host" if $::test_host;
 $::test_dsn .= ":$::test_port" if $::test_port;
-$::test_dsn .= ":mysql_server_prepare=1" if $opt->{'mysql_server_prepare'} || $ENV{'MYSQL_SERVER_PREPARE'};
 } 1;
