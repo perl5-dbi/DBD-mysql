@@ -1,4 +1,4 @@
-2004-06-28  Rudolf Lippan <rlippan@remotelinux.com> (2.9004_1)
+2004-06-30  Rudolf Lippan <rlippan@remotelinux.com> (2.9004_2)
         * myld now exits with the return value of ld rather than always exiting
           with a value of when when myld returned something other than 0.
         * Table names that had '?'s in them and were quoted using '`' would thow
