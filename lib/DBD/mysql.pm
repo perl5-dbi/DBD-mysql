@@ -9,7 +9,8 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9003';
+$VERSION =our $VERSION = sprintf "%s.%s%s", q$Name$ =~ /^Name: dbd_mysql-(\d+)_(\d+)(_\d+|)\s*$/, 9999,999,999;
+
 
 bootstrap DBD::mysql $VERSION;
 
