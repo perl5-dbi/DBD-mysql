@@ -2422,6 +2422,27 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			      (u_long) sth, key);
 	}
 
+        if (DECODE_KEY("ParamValues")) {
+                HV *returnHV;
+                SV *valueSV;
+                SV *sv;
+                I32 keylen;
+                returnHV = newHV();
+
+                while ((sv = hv_iternextsv(imp_sth->all_params_hv, &key, &keylen)) != NULL) {
+                        phs_t *phs = (phs_t*)(void*)SvPVX(sv);
+                        if (phs->quoted)
+                                valueSV = newSVpv(phs->quoted, phs->quoted_len);
+                        else
+                                valueSV= &sv_undef;
+
+                        hv_store(returnHV, key, keylen, valueSV, 0);
+
+                }
+                return sv_2mortal(newRV((SV*)returnHV));
+        }
+	
+
 	if (DECODE_KEY("NAME")) {
 		retsv = ST_FETCH_AV(AV_ATTRIB_NAME);
 	} else if (DECODE_KEY("NULLABLE")) {
@@ -2735,6 +2756,7 @@ int mysql_db_reconnect(SV * h)
 		++imp_dbh->stats.auto_reconnects_failed;
 		return FALSE;
 	} else {
+/* XXX: Needs to free save_socket? */
 		++imp_dbh->stats.auto_reconnects_ok;
 	}
 	return TRUE;

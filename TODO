@@ -34,3 +34,4 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - remove dbd_mysql_coomit and make the commit called from the hash key set
   use mysq_db_commit.
 - remove goto hackary... Finish cleaning up connect
+- tests for $sth->{ParamValues}
