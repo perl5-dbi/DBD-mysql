@@ -1,3 +1,16 @@
+2004-06-29  Rudolf Lippan <rlippan@remotelinux.com> (2.9004)
+        * myld now exits with the return value of ld rather than always exiting
+          with a value of when when myld returned something other than 0.
+        * Table names that had '?'s in them and were quoted using '`' would thow
+          off placeholder counting.
+        * Add support for mysq 4.1.3's api change to shutdown 
+          [Patrick Galbraith]
+        * Fixed to error messages in t/50commit.t 
+          [Decker, Gero <gero.decker@sap.com>]
+        * Fix to documentation of mysql_local_info.  enabling 
+          mysql_local_infile is ineffective if LOCAL is disabled in the server
+          and not effective as docs had read. [Paul DuBois <paul@snake.net>]
+
 2003-10-26  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
 	* Applied patch from Aaron and Chuck that added basic testing of the 
 	  table_info/column_info functions [Aaron Ross <aross@plusthree.com>]
