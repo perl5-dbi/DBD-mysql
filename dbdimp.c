@@ -2477,4 +2477,10 @@ SV* dbd_db_quote(SV* dbh, SV* str, SV* type) {
     return result;
 }
 
+SV *mysql_db_last_insert_id(SV* dbh, imp_dbh_t *imp_dbh,
+        SV *catalog, SV *schema, SV *table, SV *field,SV *attr)
+{
+        return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
+}
+
 
