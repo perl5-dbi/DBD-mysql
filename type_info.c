@@ -1,127 +1,135 @@
 #include "type_info.h"
-
+#include "quote.h"
 const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 	{"varchar", SQL_VARCHAR, 255, "'", "'", "max length",
 	 1, 0, 3, 0, 0, 0, "variable length string", 0, 0, 0,
-	 SQL_VARCHAR, 0, 0, FIELD_TYPE_VAR_STRING, 0
+	 SQL_VARCHAR, 0, 0, FIELD_TYPE_VAR_STRING, 0, quote_char, dequote_char
 	 /* 0 */
 	 },
 	{"decimal", SQL_DECIMAL, 15, NULL, NULL, "precision,scale",
 	 1, 0, 3, 0, 0, 0, "double", 0, 6, 2,
-	 SQL_DECIMAL, 0, 0, FIELD_TYPE_DECIMAL, 1
+	 SQL_DECIMAL, 0, 0, FIELD_TYPE_DECIMAL, 1, null_quote, null_dequote
 	 /* 1 */
 	 },
 	{"tinyint", SQL_TINYINT, 3, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "Tiny integer", 0, 0, 10,
-	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1
+	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1, null_quote, null_dequote
 	 /* 2 */
 	 },
 	{"smallint", SQL_SMALLINT, 5, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "Short integer", 0, 0, 10,
-	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1
+	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1, null_quote, null_dequote
 	 /* 3 */
 	 },
 	{"integer", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "integer", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote
 	 /* 4 */
 	 },
 	{"float", SQL_REAL, 7, NULL, NULL, NULL,
 	 1, 0, 0, 0, 0, 0, "float", 0, 2, 10,
-	 SQL_FLOAT, 0, 0, FIELD_TYPE_FLOAT, 1
+	 SQL_FLOAT, 0, 0, FIELD_TYPE_FLOAT, 1, null_quote, null_dequote
 	 /* 5 */
 	 },
 	{"double", SQL_FLOAT, 15, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "double", 0, 4, 2,
-	 SQL_FLOAT, 0, 0, FIELD_TYPE_DOUBLE, 1
+	 SQL_FLOAT, 0, 0, FIELD_TYPE_DOUBLE, 1, null_quote, null_dequote
 	 /* 6 */
 	 },
 	{"double", SQL_DOUBLE, 15, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "double", 0, 4, 10,
-	 SQL_DOUBLE, 0, 0, FIELD_TYPE_DOUBLE, 1
+	 SQL_DOUBLE, 0, 0, FIELD_TYPE_DOUBLE, 1, null_quote, null_dequote
 	 /* 6 */
 	 },
 	/* FIELD_TYPE_NULL ?  */
 	{"timestamp", SQL_TIMESTAMP, 14, "'", "'", NULL,
 	 0, 0, 3, 0, 0, 0, "timestamp", 0, 0, 0,
-	 SQL_TIMESTAMP, 0, 0, FIELD_TYPE_TIMESTAMP, 0
+	 SQL_TIMESTAMP, 0, 0, FIELD_TYPE_TIMESTAMP, 0, 
+	 quote_varchar, dequote_varchar
 	 /* 7 */
 	 },
 	{"bigint", SQL_BIGINT, 19, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "Longlong integer", 0, 0, 10,
-	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1
+	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1, null_quote, null_dequote
 	 /* 8 */
 	 },
 	{"middleint", SQL_INTEGER, 8, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "Medium integer", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote
 	 /* 9 */
 	 },
 	{"date", SQL_DATE, 10, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "date", 0, 0, 0,
-	 SQL_DATE, 0, 0, FIELD_TYPE_DATE, 0
+	 SQL_DATE, 0, 0, FIELD_TYPE_DATE, 0, quote_varchar, dequote_varchar
 	 /* 10 */
 	 },
 	{"time", SQL_TIME, 6, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "time", 0, 0, 0,
-	 SQL_TIME, 0, 0, FIELD_TYPE_TIME, 0
+	 SQL_TIME, 0, 0, FIELD_TYPE_TIME, 0, quote_varchar, dequote_varchar
 	 /* 11 */
 	 },
 	{"datetime", SQL_TIMESTAMP, 21, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "datetime", 0, 0, 0,
-	 SQL_TIMESTAMP, 0, 0, FIELD_TYPE_DATETIME, 0
+	 SQL_TIMESTAMP, 0, 0, FIELD_TYPE_DATETIME, 0, 
+	 quote_varchar, dequote_varchar
 	 /* 12 */
 	 },
 	{"year", SQL_SMALLINT, 4, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "year", 0, 0, 10,
-	 SQL_SMALLINT, 0, 0, FIELD_TYPE_YEAR, 0
+	 SQL_SMALLINT, 0, 0, FIELD_TYPE_YEAR, 0, quote_varchar, dequote_varchar
 	 /* 13 */
 	 },
 	{"date", SQL_DATE, 10, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "date", 0, 0, 0,
-	 SQL_DATE, 0, 0, FIELD_TYPE_NEWDATE, 0
+	 SQL_DATE, 0, 0, FIELD_TYPE_NEWDATE, 0, quote_varchar, dequote_varchar
 	 /* 14 */
 	 },
 	{"enum", SQL_VARCHAR, 255, "'", "'", NULL,
 	 1, 0, 1, 0, 0, 0, "enum(value1,value2,value3...)", 0, 0, 0,
-	 0, 0, 0, FIELD_TYPE_ENUM, 0
+	 0, 0, 0, FIELD_TYPE_ENUM, 0, quote_varchar, dequote_varchar,
 	 /* 15 */
 	 },
 	{"set", SQL_VARCHAR, 255, "'", "'", NULL,
 	 1, 0, 1, 0, 0, 0, "set(value1,value2,value3...)", 0, 0, 0,
-	 0, 0, 0, FIELD_TYPE_SET, 0
+	 0, 0, 0, FIELD_TYPE_SET, 0, quote_varchar, dequote_varchar
 	 /* 16 */
 	 },
 	{"blob", SQL_LONGVARBINARY, 65535, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "binary large object (0-65535)", 0, 0, 0,
-	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_BLOB, 0
+	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_BLOB, 0, 
+	 quote_varchar, dequote_varchar
 	 /* 17 */
 	 },
 	{"tinyblob", SQL_VARBINARY, 255, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "binary large object (0-255) ", 0, 0, 0,
-	 SQL_VARBINARY, 0, 0, FIELD_TYPE_TINY_BLOB, 0
+	 SQL_VARBINARY, 0, 0, FIELD_TYPE_TINY_BLOB, 0, 
+	 quote_varchar, dequote_varchar
 	 /* 18 */
 	 },
 	{"mediumblob", SQL_LONGVARBINARY, 16777215, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "binary large object", 0, 0, 0,
-	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0
+	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0,
+	 quote_varchar, dequote_varchar
+
 	 /* 19 */
 	 },
 	{"longblob", SQL_LONGVARBINARY, 2147483647, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "binary large object, use mediumblob instead",
 	 0, 0, 0,
-	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_LONG_BLOB, 0
+	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_LONG_BLOB, 0, 
+	 quote_varchar, dequote_varchar
 	 /* 20 */
 	 },
 	{"char", SQL_CHAR, 255, "'", "'", "max length",
 	 1, 0, 3, 0, 0, 0, "string", 0, 0, 0,
-	 SQL_CHAR, 0, 0, FIELD_TYPE_STRING, 0
+	 SQL_CHAR, 0, 0, FIELD_TYPE_STRING, 0,
+	 quote_char, dequote_char
 	 /* 21 */
 	 },
 
 	{"decimal", SQL_NUMERIC, 15, NULL, NULL, "precision,scale",
 	 1, 0, 3, 0, 0, 0, "double", 0, 6, 2,
-	 SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1},
+	 SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1, null_quote, null_dequote},
 	/*
 	   { "tinyint", SQL_BIT, 3, NULL, NULL, NULL,
 	   1, 0, 1, 0, 0, 0, "Tiny integer", 0, 0, 10,
@@ -130,31 +138,31 @@ const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 	 */
 	{"tinyint unsigned", SQL_TINYINT, 3, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "Tiny integer unsigned", 0, 0, 10,
-	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1},
+	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1, null_quote, null_dequote},
 	{"smallint unsigned", SQL_SMALLINT, 5, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "Short integer unsigned", 0, 0, 10,
-	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1},
+	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1, null_quote, null_dequote},
 	{"middleint unsigned", SQL_INTEGER, 8, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "Medium integer unsigned", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote},
 	{"int unsigned", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "integer unsigned", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote},
 	{"int", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "integer", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote},
 	{"integer unsigned", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "integer", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote},
 	{"bigint unsigned", SQL_BIGINT, 20, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "Longlong integer unsigned", 0, 0, 10,
-	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1},
+	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1, null_quote, null_dequote},
 	{"text", SQL_LONGVARCHAR, 65535, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "large text object (0-65535)", 0, 0, 0,
-	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_BLOB, 0},
+	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_BLOB, 0, null_quote, null_dequote},
 	{"mediumtext", SQL_LONGVARCHAR, 16777215, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "large text object", 0, 0, 0,
-	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0}
+	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0, null_quote, null_dequote}
 
 	/* BEGIN MORE STUFF */
 	,
@@ -164,99 +172,99 @@ const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
 	 NULL,
 	 0, 0, 3, 1, 0, 1, "Medium integer unsigned auto_increment", 0, 0,
 	 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1,
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote,
 	 },
 
 	{"tinyint unsigned auto_increment", SQL_TINYINT, 3, NULL, NULL,
 	 NULL,
 	 0, 0, 3, 1, 0, 1, "tinyint unsigned auto_increment", 0, 0, 10,
-	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1},
+	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1, null_quote, null_dequote},
 
 	{"smallint auto_increment", SQL_SMALLINT, 5, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "smallint auto_increment", 0, 0, 10,
-	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1},
+	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1, null_quote, null_dequote},
 
 	{"int unsigned auto_increment", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 0, 0, 3, 1, 0, 1, "integer unsigned auto_increment", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote},
 
 	{"mediumint", SQL_INTEGER, 7, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "Medium integer", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote},
 
 	{"bit", SQL_BIT, 1, NULL, NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "char(1)", 0, 0, 0,
-	 SQL_BIT, 0, 0, FIELD_TYPE_TINY, 0},
+	 SQL_BIT, 0, 0, FIELD_TYPE_TINY, 0, null_quote, null_dequote},
 
 	{"numeric", SQL_NUMERIC, 19, NULL, NULL, "precision,scale",
 	 1, 0, 3, 0, 0, 0, "numeric", 0, 19, 10,
-	 SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1,
+	 SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1, null_quote, null_dequote,
 	 },
 
 	{"integer unsigned auto_increment", SQL_INTEGER, 10, NULL, NULL,
 	 NULL,
 	 0, 0, 3, 1, 0, 1, "integer unsigned auto_increment", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1,
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote,
 	 },
 
 	{"mediumint unsigned", SQL_INTEGER, 8, NULL, NULL, NULL,
 	 1, 0, 3, 1, 0, 0, "Medium integer unsigned", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote},
 
 	{"smallint unsigned auto_increment", SQL_SMALLINT, 5, NULL, NULL,
 	 NULL,
 	 0, 0, 3, 1, 0, 1, "smallint unsigned auto_increment", 0, 0, 10,
-	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1},
+	 SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1, null_quote, null_dequote},
 
 	{"int auto_increment", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "integer auto_increment", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote},
 
 	{"long varbinary", SQL_LONGVARBINARY, 16777215, "0x", NULL, NULL,
 	 1, 0, 3, 0, 0, 0, "mediumblob", 0, 0, 0,
-	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_LONG_BLOB, 0},
+	 SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_LONG_BLOB, 0, null_quote, null_dequote},
 
 	{"double auto_increment", SQL_FLOAT, 15, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "double auto_increment", 0, 4, 2,
-	 SQL_FLOAT, 0, 0, FIELD_TYPE_DOUBLE, 1},
+	 SQL_FLOAT, 0, 0, FIELD_TYPE_DOUBLE, 1, null_quote, null_dequote},
 
 	{"double auto_increment", SQL_DOUBLE, 15, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "double auto_increment", 0, 4, 10,
-	 SQL_DOUBLE, 0, 0, FIELD_TYPE_DOUBLE, 1},
+	 SQL_DOUBLE, 0, 0, FIELD_TYPE_DOUBLE, 1, null_quote, null_dequote},
 
 	{"integer auto_increment", SQL_INTEGER, 10, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "integer auto_increment", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1,
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1, null_quote, null_dequote,
 	 },
 
 	{"bigint auto_increment", SQL_BIGINT, 19, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "bigint auto_increment", 0, 0, 10,
-	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1},
+	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1, null_quote, null_dequote},
 
 	{"bit auto_increment", SQL_BIT, 1, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "char(1) auto_increment", 0, 0, 0,
-	 SQL_BIT, 0, 0, FIELD_TYPE_TINY, 1},
+	 SQL_BIT, 0, 0, FIELD_TYPE_TINY, 1, null_quote, null_dequote},
 
 	{"mediumint auto_increment", SQL_INTEGER, 7, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "Medium integer auto_increment", 0, 0, 10,
-	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1},
+	 SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1, null_quote, null_dequote},
 
 	{"float auto_increment", SQL_REAL, 7, NULL, NULL, NULL,
 	 0, 0, 0, 0, 0, 1, "float auto_increment", 0, 2, 10,
-	 SQL_FLOAT, 0, 0, FIELD_TYPE_FLOAT, 1},
+	 SQL_FLOAT, 0, 0, FIELD_TYPE_FLOAT, 1, null_quote, null_dequote},
 
 	{"long varchar", SQL_LONGVARCHAR, 16777215, "'", "'", NULL,
 	 1, 0, 3, 0, 0, 0, "mediumtext", 0, 0, 0,
-	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 1},
+	 SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 1, null_quote, null_dequote},
 
 	{"tinyint auto_increment", SQL_TINYINT, 3, NULL, NULL, NULL,
 	 0, 0, 3, 0, 0, 1, "tinyint auto_increment", 0, 0, 10,
-	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1},
+	 SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1, null_quote, null_dequote},
 
 	{"bigint unsigned auto_increment", SQL_BIGINT, 20, NULL, NULL,
 	 NULL,
 	 0, 0, 3, 1, 0, 1, "bigint unsigned auto_increment", 0, 0, 10,
-	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1},
+	 SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1, null_quote, null_dequote},
 
 /* END MORE STUFF */
 };

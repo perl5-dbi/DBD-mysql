@@ -28,21 +28,8 @@ typedef short WORD;
 
 #define DECODE_KEY(a) ((sizeof(a)-1) == kl && strEQ(a,key))
 
-SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type);
 
 DBISTATE_DECLARE;
-
-static imp_sth_ph_t *AllocParam(int numParam)
-{
-	imp_sth_ph_t *params;
-
-	if (numParam) {
-		Newz(908, params, numParam, imp_sth_ph_t);
-	} else {
-		params = NULL;
-	}
-	return params;
-}
 
 #if MYSQL_VERSION_ID >=40101
 
@@ -135,18 +122,7 @@ static void FreeFBuffer(imp_sth_fbh_t * fbh)
 
 static void FreeParam(imp_sth_ph_t * params, int numParam)
 {
-	if (params) {
-		int i;
-		for (i = 0; i < numParam; i++) {
-			imp_sth_ph_t *ph = params + i;
-			if (ph->value) {
-				(void) SvREFCNT_dec(ph->value);
-				ph->value = NULL;
-			}
-		}
-
-		Safefree(params);
-	}
+	return;
 }
 
 
@@ -785,7 +761,7 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 	int cacheit = FALSE;
 	bool bool_value = SvTRUE(valuesv);
 
-	if (kl == 10 && strEQ(key, "AutoCommit")) {
+	if (10 == kl && strEQ(key, "AutoCommit")) {
 
 		if (!imp_dbh->has_transactions && bool_value) {
 			do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
@@ -822,7 +798,7 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 		/*XXX: Does DBI handle the magic ? */
 		imp_dbh->auto_reconnect = bool_value;
 		/* imp_dbh->mysql.reconnect=0; */
-	} else if (kl == 20 && strEQ(key, "mysql_server_prepare")) {
+	} else if (20 == kl && strEQ(key, "mysql_server_prepare")) {
 		imp_dbh->real_prepare = SvTRUE(valuesv);
 	} else {
 		return FALSE;
@@ -853,7 +829,7 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 
 static SV *my_ulonglong2str(my_ulonglong val)
 {
-	if (val == 0) {
+	if (0 == val) {
 		return newSVpv("0", 1);
 	} else {
 		char buf[64];
@@ -883,7 +859,7 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		break;
 	}
 
-	if (strncmp(key, "mysql_", 6) == 0) {
+	if (0 == strncmp(key, "mysql_", 6) ) {
 		fine_key = key;
 		key = key + 6;
 		kl = kl - 6;
@@ -959,7 +935,7 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 		result = sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
 	}
 
-	if (result == NULL) {
+	if (NULL == result) {
 		return Nullsv;
 	}
 	if (!fine_key) {
@@ -1215,7 +1191,6 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 	}
 
 	/* Allocate memory for parameters */
-	imp_sth->params = AllocParam(DBIc_NUM_PARAMS(imp_sth));
 	DBIc_IMPSET_on(imp_sth);
 
 	return 1;
@@ -1537,24 +1512,11 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 
 
 		imp_sth->row_num = mysql_st_internal_execute41(sth,
-							       *statement,
-							       NULL,
-							       DBIc_NUM_PARAMS
-							       (imp_sth),
-							       imp_sth->
-							       params,
-							       &imp_sth->
-							       cda,
-							       &imp_dbh->
-							       mysql,
-							       imp_sth->
-							       use_mysql_use_result,
-							       imp_sth->
-							       stmt,
-							       imp_sth->
-							       bind,
-							       &imp_sth->
-							       has_binded);
+		       *statement, NULL, DBIc_NUM_PARAMS(imp_sth),
+		       imp_sth->params, &imp_sth->cda, &imp_dbh->mysql,
+		       imp_sth->use_mysql_use_result, imp_sth->stmt,
+		       imp_sth->bind, &imp_sth->has_binded
+		);
 	} else {
 #endif
 		imp_sth->row_num = mysql_st_internal_execute(sth,  imp_sth);
@@ -1812,13 +1774,13 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 
 		if ((rc = mysql_fetch(imp_sth->stmt))) {
 
-			if (rc == 1) {
+			if (1 == rc) {
 				do_error(sth,
 					 mysql_stmt_errno(imp_sth->stmt),
 					 mysql_stmt_error(imp_sth->stmt));
 			}
 
-			if (rc == 100) {
+			if (100 == rc) {
 				//Update row_num to affected_rows value 
 				imp_sth->row_num =
 				    (long)
@@ -1958,7 +1920,7 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 			if (col) {
 				STRLEN len = lengths[i];
 				if (ChopBlanks) {
-					while (len && col[len - 1] == ' ') {
+					while (len && ' ' == col[len - 1]) {
 						--len;
 					}
 				}
@@ -2115,14 +2077,7 @@ void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 
 	/* dbd_st_finish has already been called by .xs code if needed.       */
 
-	/* Free values allocated by dbd_bind_ph */
-	FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
-	imp_sth->params = NULL;
-
-	if (imp_sth->params) {
-		FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
-		imp_sth->params = NULL;
-	}
+	/*TODO: Free placeholders */
 
 	/* Free cached array attributes */
 	for (i = 0; i < AV_ATTRIB_LAST; i++) {
@@ -2342,7 +2297,7 @@ SV *dbd_st_FETCH_internal(SV * sth, int what, MYSQL_RES * res, int cacheit)
 		}
 	}
 
-	if (av == Nullav) {
+	if (Nullav == av) {
 		return &sv_undef;
 	}
 	return sv_2mortal(newRV_inc((SV *) av));
@@ -2545,19 +2500,19 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 
        /* get the place holder */
         phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
-        if (phs_svp == NULL) {
+        if (NULL == phs_svp) {
                 croak("Can't bind unknown placeholder '%s' (%s)",
                                         name, neatsvpv(ph_namesv,0));
         }
         phs = (phs_t*)(void*)SvPVX(*phs_svp);
 
 
-        /* if (phs->is_bound && phs->ftype != bind_type) {
-                croak("Can't change TYPE of param %s to %d after initial bind",
-                                        phs->name, sql_type);
-        } else { */
-                phs->ftype = bind_type;
-        /*}*/
+         if (phs->is_bound && sql_type != 0  && phs->ftype != sql_type ) {
+                croak("Can't change TYPE of param: %s from %d to %d after"
+			" initial bind", phs->name, phs->ftype, sql_type);
+        } else  {
+                phs->ftype = sql_type ? sql_type : SQL_VARCHAR;
+        }
 
         /* convert to a string ASAP */
         if (!SvPOK(newvalue) && SvOK(newvalue)) {
@@ -2578,10 +2533,12 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
                 strcpy(phs->quoted, "NULL");
                 phs->quoted_len = strlen(phs->quoted);
         } else {
-		SV * quoted;
-                value_string = SvPV(newvalue, value_len);
-                quoted = internal_quote(imp_dbh, value, 0);
-		phs->quoted = SvPV(quoted, (phs->quoted_len));
+		sql_type_info_t *type_info;
+		if(!(type_info = native2sql(FIELD_TYPE_VAR_STRING)))
+			croak("Default field type is bad. DBD::mysql bug");
+
+		phs->quoted = 
+			type_info->quote(imp_dbh->mysql,value,&phs->quoted_len);
  
  		assert(strlen(phs->quoted) == phs->quoted_len);
         }
@@ -2737,86 +2694,36 @@ AV *dbd_db_type_info_all(SV * dbh, imp_dbh_t * imp_dbh)
 }
 
 
-SV *dbd_db_quote(SV * dbh, SV * str, SV * type)
+SV *dbd_db_quote(SV * dbh, SV * str, SV * type_sv)
 {
-	imp_dbh_t imp_dbh;
+	D_imp_dbh(dbh);
 	SV *result;
-	char *ptr;
-	char *sptr;
+	char *quoted;
 	STRLEN len;
-	D_imp_xxh(dbh);
+	IV type;
+	const sql_type_info_t *type_info;
 
 	if (SvGMAGICAL(str))
 		mg_get(str);
 
-	if (!SvOK(str)) {
-		result = newSVpv("NULL", 4);
-	} else {
-		 D_imp_dbh(dbh);
-		if (type && SvOK(type)) {
-			int i;
-			int tp = SvIV(type);
-			const sql_type_info_t *t = sql_type_data(tp);
-			if (t && (!t->literal_prefix)) {
-					return Nullsv;
-			}
-		}
+	if (!SvOK(str))
+		return result = newSVpv("NULL", 4);
 
-		ptr = SvPV(str, len);
-		result = newSV(len * 2 + 3);
-		sptr = SvPVX(result);
+	
+	if (type_sv && SvOK(type_sv))
+		type = SvIV(type_sv);
+	else
+		type = SQL_VARCHAR;
 
-		*sptr++ = '\'';
-		sptr += mysql_real_escape_string(&imp_dbh->mysql, sptr,
-						 ptr, len);
-		*sptr++ = '\'';
-		SvPOK_on(result);
-		SvCUR_set(result, sptr - SvPVX(result));
-		*sptr++ = '\0';	/*  Never hurts NUL terminating a Perl
-				 *      string ...
-				 */
-	}
+	type_info = sql_type_data(type);
+	
+	if(!type_info)
+		croak("Unknown type %d", type); /*TODO: Default to varchar ???*/
+
+
+	quoted = type_info->quote(imp_dbh->mysql, str, &len);
+	result = newSVpvn(quoted, len); /*XXX can we do this w/o the copy? */
+
 	return result;
 }
-
-/* TODO: Merge this and regular quote function */
-SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type)
-{
-	SV *result;
-	char *ptr;
-	char *sptr;
-	STRLEN len;
-
-	if (SvGMAGICAL(str))
-		mg_get(str);
-
-	if (!SvOK(str)) {
-		result = newSVpv("NULL", 4);
-	} else {
-		if (type && SvOK(type)) {
-			int i;
-			int tp = SvIV(type);
-			const sql_type_info_t *t = sql_type_data(tp);
-			if (t && (!t->literal_prefix)) {
-					return Nullsv;
-			}
-		}
-
-		ptr = SvPV(str, len);
-		result = newSV(len * 2 + 3);
-		sptr = SvPVX(result);
-
-		*sptr++ = '\'';
-		sptr += mysql_real_escape_string(&imp_dbh->mysql, sptr,
-						 ptr, len);
-		*sptr++ = '\'';
-		SvPOK_on(result);
-		SvCUR_set(result, sptr - SvPVX(result));
-		*sptr++ = '\0';	/*  Never hurts NUL terminating a Perl
-				 *      string ...
-				 */
-	}
-	return result;
-}
-
 

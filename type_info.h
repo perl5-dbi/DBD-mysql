@@ -22,6 +22,9 @@ typedef struct sql_type_info_s {
 	int interval_precision;
 	int native_type;
 	int is_num;
+        char*  (*quote)();
+        void   (*dequote)();
+
 } sql_type_info_t;
 
 AV *build_type_info_all(void);
