@@ -237,6 +237,7 @@ struct imp_sth_st {
 #define do_error		mysql_dr_error
 #define dbd_db_type_info_all    mysql_db_type_info_all
 #define dbd_db_quote            mysql_db_quote
+#define dbd_db_last_insert_id	mysql_db_last_insert_id
 
 #include <dbd_xsh.h>
 void do_error(SV * h, int rc, const char *what);
@@ -261,6 +262,10 @@ extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
 			       char *, char *, imp_dbh_t *);
 
 extern int mysql_db_reconnect(SV *);
+
+SV *mysql_db_last_insert_id(SV* dbh, SV *imp_dbh,
+        SV *catalog, SV *schema, SV *table, SV *field,SV *attr);
+
 
 int has_limit_clause(char *statement);
 int has_list_fields(char *statement);

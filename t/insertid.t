@@ -39,6 +39,7 @@ QUERY
   #
   # Verify $dbh->insertid
   Test($state or ($dbh->{'mysql_insertid'} eq "1"));
+  Test($state or $dbh->last_insert_id(undef,undef,undef,undef,undef) eq 1);
 
   #
   # Insert another row
@@ -48,6 +49,8 @@ QUERY
   Test($state or $sth->execute("Jochen"));
   Test($state or $sth->{'mysql_insertid'} eq 2);
   Test($state or $dbh->{'mysql_insertid'} eq 2);
+
+  Test($state or $dbh->last_insert_id(undef,undef,undef,undef,undef) eq 2);
   Test($state or $sth->finish());
 
   #
