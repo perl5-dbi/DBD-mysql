@@ -1,5 +1,6 @@
 #!/usr/local/bin/perl
 #
+#
 #   $Id$
 #
 #   This is a test for statement attributes being present appropriately.
