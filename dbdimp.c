@@ -33,30 +33,6 @@ DBISTATE_DECLARE;
 
 #if MYSQL_VERSION_ID >=40101
 
-static MYSQL_BIND *AllocBind(int numParam)
-{
-	MYSQL_BIND *bind;
-
-	if (numParam) {
-		Newz(908, bind, numParam, MYSQL_BIND);
-	} else {
-		bind = NULL;
-	}
-	return bind;
-}
-
-static imp_sth_phb_t *AllocFBind(int numParam)
-{
-	imp_sth_phb_t *fbind;
-
-	if (numParam) {
-		Newz(908, fbind, numParam, imp_sth_phb_t);
-	} else {
-		fbind = NULL;
-	}
-	return fbind;
-}
-
 static MYSQL_BIND *AllocBuffer(int numField)
 {
 	MYSQL_BIND *buffer;
@@ -82,14 +58,6 @@ static imp_sth_fbh_t *AllocFBuffer(int numField)
 	return fbh;
 }
 
-static void FreeBind(MYSQL_BIND * bind)
-{
-	if (bind) {
-		Safefree(bind);
-	} else {
-		fprintf(stderr, "FREE ERROR BIND!");
-	}
-}
 
 static void FreeBuffer(MYSQL_BIND * buffer)
 {
@@ -97,15 +65,6 @@ static void FreeBuffer(MYSQL_BIND * buffer)
 		Safefree(buffer);
 	} else {
 		fprintf(stderr, "FREE ERROR BUFFER!");
-	}
-}
-
-static void FreeFBind(imp_sth_phb_t * fbind)
-{
-	if (fbind) {
-		Safefree(fbind);
-	} else {
-		fprintf(stderr, "FREE ERROR  FBIND!");
 	}
 }
 
@@ -120,27 +79,16 @@ static void FreeFBuffer(imp_sth_fbh_t * fbh)
 
 #endif
 
-static void FreeParam(imp_sth_ph_t * params, int numParam)
-{
-	return;
-}
-
-
 #define SQL_GET_TYPE_INFO_num \
 	(sizeof(SQL_GET_TYPE_INFO_values)/sizeof(sql_type_info_t))
 
 
 /***************************************************************************
- *
  *  Name:    dbd_init
- *
  *  Purpose: Called when the driver is installed by DBI
- *
  *  Input:   dbistate - pointer to the DBIS variable, used for some
  *               DBI internal things
- *
  *  Returns: Nothing
- *
  **************************************************************************/
 
 void dbd_init(dbistate_t * dbistate)
@@ -150,18 +98,13 @@ void dbd_init(dbistate_t * dbistate)
 
 
 /***************************************************************************
- *
  *  Name:    do_error, do_warn
- *
  *  Purpose: Called to associate an error code and an error message
  *           to some handle
- *
  *  Input:   h - the handle in error condition
  *           rc - the error code
  *           what - the error message
- *
  *  Returns: Nothing
- *
  **************************************************************************/
 
 void do_error(SV * h, int rc, const char *what)
@@ -203,11 +146,8 @@ void do_warn(SV * h, int rc, char *what)
 
 
 /***************************************************************************
- *
  *  Name:    mysql_dr_connect
- *
  *  Purpose: Replacement for mysql_connect
- *
  *  Input:   MYSQL* sock - Pointer to a MYSQL structure being
  *             initialized
  *           char* unixSocket - Name of a UNIX socket being used
@@ -221,7 +161,6 @@ void do_warn(SV * h, int rc, char *what)
  *
  *  Returns: The sock argument for success, NULL otherwise;
  *           you have to call do_error in the latter case.
- *
  **************************************************************************/
 
 MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
@@ -420,7 +359,6 @@ if ((svp = hv_fetch(hv,a, sizeof(a), FALSE)) && *svp) \
 }
 
 /***************************************************************************
- *
  * Frontend for mysql_dr_connect
  */
 static int _MyLogin(imp_dbh_t * imp_dbh)
@@ -496,21 +434,16 @@ static int _MyLogin(imp_dbh_t * imp_dbh)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_login
- *
  *  Purpose: Called for connecting to a database and logging in.
- *
  *  Input:   dbh - database handle being initialized
  *           imp_dbh - drivers private database handle data
  *           dbname - the database we want to log into; may be like
  *               "dbname:host" or "dbname:host:port"
  *           user - user name to connect as
  *           password - passwort to connect with
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
  *           been called in the latter case
- *
  **************************************************************************/
 
 int dbd_db_login(SV * dbh, imp_dbh_t * imp_dbh, char *dbname, char *user,
@@ -551,20 +484,15 @@ int dbd_db_login(SV * dbh, imp_dbh_t * imp_dbh, char *dbname, char *user,
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_commit
  *           dbd_db_rollback
- *
  *  Purpose: You guess what they should do. mSQL doesn't support
  *           transactions, so we stub commit to return OK
  *           and rollback to return ERROR in any case.
- *
  *  Input:   dbh - database handle being commited or rolled back
  *           imp_dbh - drivers private database handle data
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
  *           been called in the latter case
- *
  **************************************************************************/
 
 int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
@@ -576,24 +504,24 @@ int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
 	}
 
 	if (imp_dbh->has_transactions) {
-#if MYSQL_VERSION_ID >=40101
 		if (!imp_dbh->has_protocol41) {
-#endif
 			if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6)
 			    != 0) {
 				do_error(dbh, mysql_errno(&imp_dbh->mysql),
 					 mysql_error(&imp_dbh->mysql));
 				return FALSE;
 			}
-#if MYSQL_VERSION_ID >=40101
 		} else {
+#if MYSQL_VERSION_ID >=40101
 			if (mysql_commit(&imp_dbh->mysql)) {
 				do_error(dbh, mysql_errno(&imp_dbh->mysql),
 					 mysql_error(&imp_dbh->mysql));
 				return FALSE;
 			}
-		}
+#else
+		die("DBD::mysql Bug");
 #endif
+		}
 	} else {
 		do_warn(dbh, JW_ERR_NOT_IMPLEMENTED,
 			"Commmit ineffective while AutoCommit is on");
@@ -637,17 +565,12 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_disconnect
- *
  *  Purpose: Disconnect a database handle from its database
- *
  *  Input:   dbh - database handle being disconnected
  *           imp_dbh - drivers private database handle data
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
  *           been called in the latter case
- *
  **************************************************************************/
 
 int dbd_db_disconnect(SV * dbh, imp_dbh_t * imp_dbh)
@@ -671,17 +594,12 @@ int dbd_db_disconnect(SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_discon_all
- *
  *  Purpose: Disconnect all database handles at shutdown time
- *
  *  Input:   dbh - database handle being disconnected
  *           imp_dbh - drivers private database handle data
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
  *           been called in the latter case
- *
  **************************************************************************/
 
 int dbd_discon_all(SV * drh, imp_drh_t * imp_drh)
@@ -706,16 +624,11 @@ int dbd_discon_all(SV * drh, imp_drh_t * imp_drh)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_destroy
- *
  *  Purpose: Our part of the dbh destructor
- *
  *  Input:   dbh - database handle being destroyed
  *           imp_dbh - drivers private database handle data
- *
  *  Returns: Nothing
- *
  **************************************************************************/
 
 void dbd_db_destroy(SV * dbh, imp_dbh_t * imp_dbh)
@@ -737,17 +650,13 @@ void dbd_db_destroy(SV * dbh, imp_dbh_t * imp_dbh)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_STORE_attrib
- *
  *  Purpose: Function for storing dbh attributes; we currently support
  *           just nothing. :-)
- *
  *  Input:   dbh - database handle being modified
  *           imp_dbh - drivers private database handle data
  *           keysv - the attribute name
  *           valuesv - the attribute value
- *
  *  Returns: TRUE for success, FALSE otherwise
  *
  **************************************************************************/
@@ -758,11 +667,9 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 	STRLEN kl;
 	char *key = SvPV(keysv, kl);
 	SV *cachesv = Nullsv;
-	int cacheit = FALSE;
 	bool bool_value = SvTRUE(valuesv);
 
-	if (10 == kl && strEQ(key, "AutoCommit")) {
-
+	if (DECODE_KEY("AutoCommit")) {
 		if (!imp_dbh->has_transactions && bool_value) {
 			do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
 				 "Transactions not supported by database");
@@ -793,37 +700,27 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 			}
 			DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
 		}
-	} else if (strlen("mysql_auto_reconnect")
-		   == kl && strEQ(key, "mysql_auto_reconnect")) {
+	} else if (DECODE_KEY("mysql_auto_reconnect")) {
 		/*XXX: Does DBI handle the magic ? */
 		imp_dbh->auto_reconnect = bool_value;
-		/* imp_dbh->mysql.reconnect=0; */
-	} else if (20 == kl && strEQ(key, "mysql_server_prepare")) {
+	} else if (DECODE_KEY("mysql_server_prepare")) {
 		imp_dbh->real_prepare = SvTRUE(valuesv);
 	} else {
 		return FALSE;
 	}
 
-	if (cacheit)		/* cache value for later DBI 'quick' fetch? */
-		hv_store((HV *) SvRV(dbh), key, kl, cachesv, 0);
 	return TRUE;
 }
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_FETCH_attrib
- *
  *  Purpose: Function for fetching dbh attributes
- *
  *  Input:   dbh - database handle being queried
  *           imp_dbh - drivers private database handle data
  *           keysv - the attribute name
- *
  *  Returns: An SV*, if sucessfull; NULL otherwise
- *
  *  Notes:   Do not forget to call sv_2mortal in the former case!
- *
  **************************************************************************/
 
 
@@ -881,10 +778,10 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	} else if (DECODE_KEY("dbd_stats")) {
 		HV *hv = newHV();
 		hv_store(hv, "auto_reconnects_ok",
-			 strlen("auto_reconnects_ok"),
+			 sizeof("auto_reconnects_ok"),
 			 newSViv(imp_dbh->stats.auto_reconnects_ok), 0);
 		hv_store(hv, "auto_reconnects_failed",
-			 strlen("auto_reconnects_failed"),
+			 sizeof("auto_reconnects_failed"),
 			 newSViv(imp_dbh->stats.auto_reconnects_failed),
 			 0);
 
@@ -951,75 +848,58 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_prepare
- *
  *  Purpose: Called for preparing an SQL statement; our part of the
  *           statement handle constructor
- *
  *  Input:   sth - statement handle being initialized
  *           imp_sth - drivers private statement handle data
  *           statement - pointer to string with SQL statement
  *           attribs - statement attributes, currently not in use
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error will
  *           be called in the latter case
- *
  **************************************************************************/
 
 int
-dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement,
-	       SV * attribs)
+dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 {
 	/* Initialize our data */
 	int i;
 	SV **svp;
-
-	imp_sth->done_desc = 0;
-	imp_sth->cda = NULL;
-	imp_sth->currow = 0;
-
-#if MYSQL_VERSION_ID >=40101
 	D_imp_dbh_from_sth;
-	MYSQL_BIND *bind;
-	imp_sth_phb_t *fbind;
-	imp_sth->fetch_done = 0;
-	int col_type;
-#endif
-
 
 	unsigned int phc;
 	STRLEN stmt_len;
 
-	prescan_stmt(statement, &stmt_len, &phc);
-	/* no real need to calc_ph space since we are only going to collapse
-	   :foo down to ? and not inflate ? to :n  remove after collapse */
-	stmt_len += calc_ph_space(phc);
-	++stmt_len;		/* \0 */
+	/* clear imp_sth, but don't clear first struct dbih_stc_t */
+	memset((((char *)imp_sth)+sizeof(dbih_stc_t)), 0,
+	    sizeof(imp_sth_t)-sizeof(dbih_stc_t));
 
+	prescan_stmt(statement, &stmt_len, &phc);
+	stmt_len += calc_ph_space(phc) + 1;
 	Newc(908, imp_sth->statement, stmt_len, char, char);
 
 	/* +1 so we can use a 1 based idx (placeholders start from 1) */
-	if (phc)
-		Newc(0, imp_sth->place_holders, phc + 1, phs_t **,
-		     phs_t *);
-	else
-		imp_sth->place_holders = 0;
+	if (phc) {
+		Newc(0, imp_sth->place_holders, phc + 1, phs_t **, phs_t *);
+		Newz(908, imp_sth->bind, phc+1, MYSQL_BIND);
+	}
 
-
-	phc =
-	    rewrite_placeholders(imp_sth, statement, imp_sth->statement,
-				 0);
-	imp_sth->phc = phc;
-
+	/* rewrite and set up placeholders (imp_sth->phc, imp_sth->params &c.*/
+	rewrite_placeholders(imp_sth, statement);
 	assert(strlen(imp_sth->statement) + 1 <= stmt_len);
-
 
 	svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_use_result", 16);
 	imp_sth->use_mysql_use_result = svp && SvTRUE(*svp);
 
 
 	imp_sth->real_prepare = imp_dbh->real_prepare;
+	if (svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20))
+		imp_sth->real_prepare = SvTRUE(*svp);
+
+	if (!imp_dbh->has_protocol41 && imp_sth->real_prepare) {
+		warn("Cannot use server prepare when not using Protocol 41");
+		imp_sth->real_prepare = FALSE;
+	}
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP, "Setting mysql_use_result to %d\n",
 			      imp_sth->use_mysql_use_result);
@@ -1028,31 +908,18 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement,
 			      MYSQL_VERSION_ID, imp_sth->real_prepare);
 	}
 
-	if (svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20))
-		imp_sth->real_prepare = SvTRUE(*svp);
 
-	if (!imp_dbh->has_protocol41 && imp_sth->real_prepare)
-		warn("Cannot use server-side prepare when not"
-		     " using Protocol 41");
-
-
-
-	/* skip real prepare if the stmt has a limit clause, for now */
-	if (!imp_sth->real_prepare ||
-	    has_limit_clause(statement) || has_list_fields(statement)) {
-
+	/* Bail out if we are don't need to do a real prepare as the
+	   rest of this function only applies to real prepared statements */
+	if (!imp_sth->real_prepare || has_limit_clause(statement) || 
+	    has_list_fields(statement)) {
 
 		imp_sth->real_prepare = FALSE;
-		/* Bail out... The rest of this function only 
-		   applies to real prepared Statements */
 		DBIc_IMPSET_on(imp_sth);	/* it lives */
 		return 1;
 	}
-	if (imp_sth->stmt) {
-		fprintf(stderr, "ERROR: Trying to prepare new stmt"
-			" while we have already not closed one \n");
-	}
 #if MYSQL_VERSION_ID >=40101
+	/*TODO remove strlen(statement) as we should already know this*/
 	imp_sth->stmt = mysql_prepare(&imp_dbh->mysql, statement,
 				      strlen(statement));
 #else
@@ -1064,149 +931,25 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement,
 		return 0;
 	}
 
+	assert(DBIc_NUM_PARAMS(imp_sth) == mysql_param_count(imp_sth->stmt));
 
-
-	DBIc_NUM_PARAMS(imp_sth) = mysql_param_count(imp_sth->stmt);
-
-	if (DBIc_NUM_PARAMS(imp_sth) < 0) {
-		DBIc_IMPSET_on(imp_sth);
-		return 1;
-	}
-	/* Allocate memory for bind variables */
-	imp_sth->bind = AllocBind(DBIc_NUM_PARAMS(imp_sth));
-	imp_sth->fbind = AllocFBind(DBIc_NUM_PARAMS(imp_sth));
-	imp_sth->has_binded = 0;
-
-	/* if this statement has a result set, field types will be 
-	   correctly identified. If there  is no result set, such as with 
-	   an INSERT, fields will not be defined, and all buffer_type
-	   will default to MYSQL_TYPE_STRING */
-	col_type = (imp_sth->stmt->fields) ?
-	    imp_sth->stmt->fields[i].type : MYSQL_TYPE_STRING;
-
-	if (dbis->debug >= 2) {
-		char *query = imp_sth->stmt->query ?
-		    imp_sth->stmt->query : "NO QUERY";
-		unsigned int param_count = imp_sth->stmt->param_count ?
-		    imp_sth->stmt->param_count : 0;
-		PerlIO_printf(DBILOGFP,
-			      "query %s i => %d, col_type => %d"
-			      " param_count => %u\n", query, i, col_type,
-			      param_count);
-	}
-	//Initialize ph variables with  NULL values
-	for (bind = imp_sth->bind, fbind = imp_sth->fbind, i = 0;
-	     i < DBIc_NUM_PARAMS(imp_sth); i++, bind++, fbind++) {
-		switch (col_type) {
-		case MYSQL_TYPE_DECIMAL:
-		case MYSQL_TYPE_DOUBLE:
-		case MYSQL_TYPE_FLOAT:
-			if (dbis->debug >= 2) {
-				PerlIO_printf
-				    (DBILOGFP,
-				     "case INT type: i => %d, col_type => %d \n",
-				     i, col_type);
-			}
-			bind->buffer_type = MYSQL_TYPE_DOUBLE;
-			bind->buffer = NULL;
-			bind->length = &(fbind->length);
-			bind->is_null = (char *) &(fbind->is_null);
-			fbind->is_null = 1;
-			fbind->length = 0;
-			break;
-
-		case MYSQL_TYPE_SHORT:
-		case MYSQL_TYPE_TINY:
-		case MYSQL_TYPE_LONG:
-		case MYSQL_TYPE_INT24:
-		case MYSQL_TYPE_YEAR:
-			if (dbis->debug >= 2) {
-				PerlIO_printf
-				    (DBILOGFP,
-				     "case FLOAT type: i => %d, col_type => %d\n",
-				     i, col_type);
-			}
-			bind->buffer_type = MYSQL_TYPE_LONG;
-			bind->buffer = NULL;
-			bind->length = &(fbind->length);
-			bind->is_null = (char *) &(fbind->is_null);
-			fbind->is_null = 1;
-			fbind->length = 0;
-			break;
-
-		case MYSQL_TYPE_LONGLONG:
-			if (dbis->debug >= 2) {
-				PerlIO_printf
-				    (DBILOGFP,
-				     "case LONGLONG i => %d, col_type => %d\n",
-				     i, col_type);
-			}
-			//bind->buffer_type= MYSQL_TYPE_LONGLONG;
-			bind->buffer_type = MYSQL_TYPE_STRING;
-			bind->buffer = NULL;
-			bind->length = &(fbind->length);
-			bind->is_null = (char *) &(fbind->is_null);
-			fbind->is_null = 1;
-			fbind->length = 0;
-			break;
-
-		case MYSQL_TYPE_DATE:
-		case MYSQL_TYPE_TIME:
-		case MYSQL_TYPE_DATETIME:
-		case MYSQL_TYPE_NEWDATE:
-		case MYSQL_TYPE_VAR_STRING:
-		case MYSQL_TYPE_STRING:
-		case MYSQL_TYPE_BLOB:
-		case MYSQL_TYPE_TIMESTAMP:
-			if (dbis->debug >= 2) {
-				PerlIO_printf
-				    (DBILOGFP,
-				     "case STRING i => %d, col_type => %d\n",
-				     i, col_type);
-			}
-			// Create string type here
-			bind->buffer_type = MYSQL_TYPE_STRING;
-			bind->buffer = NULL;
-			//bind->buffer_length= imp_sth->stmt->fields[i].length;
-			bind->length = &(fbind->length);
-			bind->is_null = (char *) &(fbind->is_null);
-			fbind->is_null = 1;
-			fbind->length = 0;
-			break;
-
-		default:
-			if (dbis->debug >= 2) {
-				PerlIO_printf
-				    (DBILOGFP,
-				     "case default i => %d, col_type => %d\n",
-				     i, col_type);
-			}
-			// Create string type here
-			bind->buffer_type = MYSQL_TYPE_STRING;
-			bind->buffer = NULL;
-			//bind->buffer_length= imp_sth->stmt->fields[i].length;
-			bind->length = &(fbind->length);
-			bind->is_null = (char *) &(fbind->is_null);
-			fbind->is_null = 1;
-			fbind->length = 0;
-			break;
-		}
-	}
-
-	/* Allocate memory for parameters */
 	DBIc_IMPSET_on(imp_sth);
+
+	if (DBIc_NUM_PARAMS(imp_sth) < 0)
+		return 1;
+
+	imp_sth->metadata = mysql_get_metadata(imp_sth->stmt);
 
 	return 1;
 }
 
 
+
+
 /***************************************************************************
- *
  *  Name:    mysql_st_internal_execute
- *
  *  Purpose: Internal version for executing a statement, called both from
  *           within the "do" and the "execute" method.
- *
  *  Inputs:  h - object handle, for storing error messages
  *           statement - query being executed
  *           attribs - statement attributes, currently ignored
@@ -1214,7 +957,6 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement,
  *           params - parameter array
  *           cdaPtr - where to store results, if any
  *           svsock - socket connected to the database
- *
  **************************************************************************/
 
 int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
@@ -1318,12 +1060,9 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 
 	stmt_len = strlen(statement);
 
-	if ((mysql_real_query
-	     (&imp_dbh->mysql, statement, strlen(statement)))
-	    && (!mysql_db_reconnect(sth)
-		||
-		(mysql_real_query
-		 (&imp_dbh->mysql, statement, strlen(statement))))) {
+	if ((mysql_real_query (&imp_dbh->mysql, statement, strlen(statement)))
+	    && (!mysql_db_reconnect(sth) || (mysql_real_query
+		(&imp_dbh->mysql, statement, strlen(statement))))) {
 
 		if ((int) DBIc_NUM_PARAMS(imp_sth) > 0)
 			Safefree(statement);
@@ -1355,14 +1094,10 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 }
 
 /***************************************************************************
- *
  *  Name:    mysql_st_internal_execute41
- *
  *  Purpose: Internal version for executing a prepared statement, called both from
  *           within the "do" and the "execute" method.
  *           MYSQL 4.1 API           
- *
- *
  *  Inputs:  h - object handle, for storing error messages
  *           statement - query being executed
  *           attribs - statement attributes, currently ignored
@@ -1370,7 +1105,6 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
  *           params - parameter array
  *           cdaPtr - where to store results, if any
  *           svsock - socket connected to the database
- *
  **************************************************************************/
 
 #if MYSQL_VERSION_ID >=40101
@@ -1384,7 +1118,7 @@ long mysql_st_internal_execute41(SV * h,
 				 MYSQL * svsock,
 				 int use_mysql_use_result,
 				 MYSQL_STMT * stmt,
-				 MYSQL_BIND * bind, int *has_binded)
+				 MYSQL_BIND * bind)
 {
 	STRLEN slen;
 
@@ -1395,18 +1129,7 @@ long mysql_st_internal_execute41(SV * h,
 							    slen));
 	}
 
-	if (*cdaPtr)		//do we free metadata info
-	{
-		mysql_free_result(*cdaPtr);	//free it if not
-		*cdaPtr = NULL;
-	}
-
-/* 
-   If were performed any changes with ph variables 
-   we have to rebind them 
-*/
-
-	if (numParams > 0 && !(*has_binded)) {
+	if (numParams > 0 ) {
 		if (mysql_bind_param(stmt, bind)) {
 			fprintf(stderr, "\nparam bind failed\n");
 			fprintf(stderr, "\n|%d| |%s|\n",
@@ -1416,12 +1139,12 @@ long mysql_st_internal_execute41(SV * h,
 				 mysql_stmt_error(stmt));
 			return -2;
 		}
-		*has_binded = 1;
 	}
 
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP,
-			      "mysql_st_internal_execute41 calling mysql_execute\n");
+			      "mysql_st_internal_execute41 calling "
+			      "mysql_execute\n");
 	}
 
 	if (mysql_execute(stmt)) {
@@ -1460,18 +1183,13 @@ long mysql_st_internal_execute41(SV * h,
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_execute
- *
  *  Purpose: Called for preparing an SQL statement; our part of the
  *           statement handle constructor
- *
  *  Input:   sth - statement handle being initialized
  *           imp_sth - drivers private statement handle data
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error will
  *           be called in the latter case
- *
  **************************************************************************/
 
 int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
@@ -1511,8 +1229,6 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 
 	statement = hv_fetch((HV *) SvRV(sth), "Statement", 9, FALSE);
 
-#if MYSQL_VERSION_ID >=40101
-
 	if (imp_sth->real_prepare) {
 		if (DBIc_ACTIVE(imp_sth)
 		    && !(mysql_st_clean_cursor(sth, imp_sth))) {
@@ -1537,23 +1253,16 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 							       imp_sth->
 							       stmt,
 							       imp_sth->
-							       bind,
-							       &imp_sth->
-							       has_binded);
+							       bind);
 	} else {
-#endif
 		imp_sth->row_num = mysql_st_internal_execute(sth, imp_sth);
-
-#if MYSQL_VERSION_ID >=40101
 	}
-#endif
 
 	if (imp_sth->row_num != -2) {
 		if (!imp_sth->cda) {
-			imp_sth->insertid =
-			    mysql_insert_id(&imp_dbh->mysql);
+			imp_sth->insertid = mysql_insert_id(&imp_dbh->mysql);
 		} else {
-      /** Store the result in the current statement handle */
+      			/** Store the result in the current statement handle */
 			DBIc_ACTIVE_on(imp_sth);
 			DBIc_NUM_FIELDS(imp_sth) =
 			    mysql_num_fields(imp_sth->cda);
@@ -1572,172 +1281,155 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_describe
- *
  *  Purpose: Called from within the fetch method to describe the result
- *
  *  Input:   sth - statement handle being initialized
  *           imp_sth - our part of the statement handle, there's no
  *               need for supplying both; Tim just doesn't remove it
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error will
  *           be called in the latter case
- *
  **************************************************************************/
 
 int dbd_describe(SV * sth, imp_sth_t * imp_sth)
 {
+	int num_fields = DBIc_NUM_FIELDS(imp_sth);
+	int i;
+	int col_type;
+	imp_sth_fbh_t *fbh;
+	MYSQL_BIND *bind;
+	MYSQL_FIELD *fields;
+
 
 	if (dbis->debug >= 2)
 		PerlIO_printf(DBILOGFP, "** dbd_describe() **\n");
 
-#if MYSQL_VERSION_ID >=40101
+	if (imp_sth->done_desc) 
+		return TRUE;
 
-	if (imp_sth->real_prepare) {
-		int num_fields = DBIc_NUM_FIELDS(imp_sth);
-		int i;
-		int col_type;
-		imp_sth_fbh_t *fbh;
-		MYSQL_BIND *bind;
-		MYSQL_FIELD *fields;
-
-		if (dbis->debug >= 2)
-			PerlIO_printf(DBILOGFP,
-				      "** dbd_describe() num_fields %d**\n",
-				      num_fields);
-
-		if (imp_sth->done_desc) {
-			return TRUE;
-		}
-
-		if (!num_fields || !imp_sth->cda) {
-			//no metadata
-			do_error(sth, JW_ERR_SEQUENCE,
-				 "no metadata information while trying describe result set");
-			return 0;
-		}
-
-		/* allocate fields buffers  */
-		if (!(imp_sth->fbh = AllocFBuffer(num_fields))
-		    || !(imp_sth->buffer = AllocBuffer(num_fields))) {
-			//Out of memory 
-			do_error(sth, JW_ERR_SEQUENCE,
-				 "Out of memory in dbd_sescribe()");
-			return 0;
-		}
-
-		fields = mysql_fetch_fields(imp_sth->cda);
-
-		for (fbh = imp_sth->fbh, bind =
-		     (MYSQL_BIND *) imp_sth->buffer, i = 0; i < num_fields;
-		     i++, fbh++, bind++) {
-			// get the column type 
-			col_type =
-			    fields ? fields[i].type : MYSQL_TYPE_STRING;
-			if (dbis->debug >= 2)
-				PerlIO_printf(DBILOGFP, "col type %d\n",
-					      col_type);
-
-			switch (col_type) {
-			case MYSQL_TYPE_DECIMAL:
-			case MYSQL_TYPE_DOUBLE:
-			case MYSQL_TYPE_FLOAT:
-				bind->buffer_type = MYSQL_TYPE_DOUBLE;
-				bind->buffer_length = fields[i].length;
-				bind->length = &(fbh->length);
-				bind->is_null = &(fbh->is_null);
-				Newz(908, fbh->data, fields[i].length,
-				     char);
-				bind->buffer = (char *) &fbh->ddata;
-				break;
-
-			case MYSQL_TYPE_SHORT:
-			case MYSQL_TYPE_TINY:
-			case MYSQL_TYPE_LONG:
-			case MYSQL_TYPE_INT24:
-			case MYSQL_TYPE_YEAR:
-				bind->buffer_type = MYSQL_TYPE_LONG;
-				bind->buffer_length = fields[i].length;
-				bind->length = &(fbh->length);
-				bind->is_null = &(fbh->is_null);
-				Newz(908, fbh->data, fields[i].length,
-				     char);
-				bind->buffer = (char *) &fbh->ldata;
-				break;
-
-			case MYSQL_TYPE_LONGLONG:
-				//bind->buffer_type= MYSQL_TYPE_LONGLONG;
-				/* perl handles long long as double
-				 * so we'll set this to string */
-				bind->buffer_type = MYSQL_TYPE_STRING;
-				bind->buffer_length = fields[i].length;
-				bind->length = &(fbh->length);
-				bind->is_null = &(fbh->is_null);
-				Newz(908, fbh->data, fields[i].length,
-				     char);
-				bind->buffer = (char *) fbh->data;
-				// must treat as a string for now
-				//bind->buffer = (char *) fbh->data;
-				break;
-
-			case MYSQL_TYPE_DATE:
-			case MYSQL_TYPE_TIME:
-			case MYSQL_TYPE_DATETIME:
-			case MYSQL_TYPE_NEWDATE:
-			case MYSQL_TYPE_VAR_STRING:
-			case MYSQL_TYPE_STRING:
-			case MYSQL_TYPE_BLOB:
-			case MYSQL_TYPE_TIMESTAMP:
-				// Create string type here
-				bind->buffer_type = MYSQL_TYPE_STRING;
-				bind->buffer_length = fields[i].length;
-				bind->length = &(fbh->length);
-				bind->is_null = &(fbh->is_null);
-				Newz(908, fbh->data, fields[i].length,
-				     char);
-				bind->buffer = (char *) fbh->data;
-
-			default:
-				// Create string type here
-				bind->buffer_type = MYSQL_TYPE_STRING;
-				bind->buffer_length = fields[i].length;
-				bind->length = &(fbh->length);
-				bind->is_null = &(fbh->is_null);
-				Newz(908, fbh->data, fields[i].length,
-				     char);
-				bind->buffer = (char *) fbh->data;
-
-			}	// end of switch
-		}		// end of for
-
-		if (mysql_bind_result(imp_sth->stmt, imp_sth->buffer)) {
-			do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-				 mysql_stmt_error(imp_sth->stmt));
-			return 0;
-			//return FALSE;
-		}
+	if (!imp_sth->real_prepare) {
+		imp_sth->done_desc = 1;
+		return TRUE;
 	}
-#endif
 
-	imp_sth->done_desc = 1;
-	return TRUE;
+
+	if (dbis->debug >= 2)
+		PerlIO_printf(DBILOGFP, "** dbd_describe() num_fields %d**\n",
+			num_fields);
+
+
+	if (!num_fields || !imp_sth->cda) {
+		//no metadata
+		do_error(sth, JW_ERR_SEQUENCE,
+			"no metadata information while trying describe"
+			" result set");
+			return 0;
+	}
+
+	/* allocate fields buffers  */
+	if (!(imp_sth->fbh = AllocFBuffer(num_fields))
+	    || !(imp_sth->buffer = AllocBuffer(num_fields))) {
+		//Out of memory 
+		do_error(sth, JW_ERR_SEQUENCE,
+			 "Out of memory in dbd_sescribe()");
+		return 0;
+	}
+
+	fields = mysql_fetch_fields(imp_sth->cda);
+
+	for (fbh = imp_sth->fbh, bind =
+	     (MYSQL_BIND *) imp_sth->buffer, i = 0; i < num_fields;
+	     i++, fbh++, bind++) {
+		// get the column type 
+		col_type =
+		    fields ? fields[i].type : MYSQL_TYPE_STRING;
+		if (dbis->debug >= 2)
+			PerlIO_printf(DBILOGFP, "col type %d\n", col_type);
+
+		switch (col_type) {
+		case MYSQL_TYPE_DECIMAL:
+		case MYSQL_TYPE_DOUBLE:
+		case MYSQL_TYPE_FLOAT:
+			bind->buffer_type = MYSQL_TYPE_DOUBLE;
+			bind->buffer_length = fields[i].length;
+			bind->length = &(fbh->length);
+			bind->is_null = &(fbh->is_null);
+			Newz(908, fbh->data, fields[i].length, char);
+			bind->buffer = (char *) &fbh->ddata;
+			break;
+
+		case MYSQL_TYPE_SHORT:
+		case MYSQL_TYPE_TINY:
+		case MYSQL_TYPE_LONG:
+		case MYSQL_TYPE_INT24:
+		case MYSQL_TYPE_YEAR:
+			bind->buffer_type = MYSQL_TYPE_LONG;
+			bind->buffer_length = fields[i].length;
+			bind->length = &(fbh->length);
+			bind->is_null = &(fbh->is_null);
+			Newz(908, fbh->data, fields[i].length, char);
+			bind->buffer = (char *) &fbh->ldata;
+			break;
+
+		case MYSQL_TYPE_LONGLONG:
+			//bind->buffer_type= MYSQL_TYPE_LONGLONG;
+			/* perl handles long long as double
+			 * so we'll set this to string */
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer_length = fields[i].length;
+			bind->length = &(fbh->length);
+			bind->is_null = &(fbh->is_null);
+			Newz(908, fbh->data, fields[i].length, char);
+			bind->buffer = (char *) fbh->data;
+			// must treat as a string for now
+			//bind->buffer = (char *) fbh->data;
+			break;
+
+		case MYSQL_TYPE_DATE:
+		case MYSQL_TYPE_TIME:
+		case MYSQL_TYPE_DATETIME:
+		case MYSQL_TYPE_NEWDATE:
+		case MYSQL_TYPE_VAR_STRING:
+		case MYSQL_TYPE_STRING:
+		case MYSQL_TYPE_BLOB:
+		case MYSQL_TYPE_TIMESTAMP:
+			// Create string type here
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer_length = fields[i].length;
+			bind->length = &(fbh->length);
+			bind->is_null = &(fbh->is_null);
+			Newz(908, fbh->data, fields[i].length, char);
+			bind->buffer = (char *) fbh->data;
+
+		default:
+			// Create string type here
+			bind->buffer_type = MYSQL_TYPE_STRING;
+			bind->buffer_length = fields[i].length;
+			bind->length = &(fbh->length);
+			bind->is_null = &(fbh->is_null);
+			Newz(908, fbh->data, fields[i].length, char);
+			bind->buffer = (char *) fbh->data;
+
+		}	// end of switch
+	}		// end of for
+
+	if (mysql_bind_result(imp_sth->stmt, imp_sth->buffer)) {
+		do_error(sth, mysql_stmt_errno(imp_sth->stmt),
+			 mysql_stmt_error(imp_sth->stmt));
+		return 0;
+		//return FALSE;
+	}
+
 }
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_fetch
- *
  *  Purpose: Called for fetching a result row
- *
  *  Input:   sth - statement handle being initialized
  *           imp_sth - drivers private statement handle data
- *
  *  Returns: array of columns; the array is allocated by DBI via
  *           DBIS->get_fbav(imp_sth), even the values of the array
  *           are prepared, we just need to modify them appropriately
- *
  **************************************************************************/
 
 AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
@@ -1749,7 +1441,6 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 	MYSQL_ROW cols;
 	unsigned long *lengths;
 
-#if MYSQL_VERSION_ID >=40101
 	if (imp_sth->real_prepare) {
 		if (!DBIc_ACTIVE(imp_sth)) {
 			do_error(sth, JW_ERR_SEQUENCE,
@@ -1771,7 +1462,6 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 			}
 		}
 	}
-#endif
 
 	ChopBlanks = DBIc_is(imp_sth, DBIcf_ChopBlanks);
 
@@ -1986,17 +1676,12 @@ int mysql_st_clean_cursor(SV * sth, imp_sth_t * imp_sth)
 #endif
 
 /***************************************************************************
- *
  *  Name:    dbd_st_finish
- *
  *  Purpose: Called for freeing a mysql result
- *
  *  Input:   sth - statement handle being finished
  *           imp_sth - drivers private statement handle data
- *
  *  Returns: TRUE for success, FALSE otherwise; do_error() will
  *           be called in the latter case
- *
  **************************************************************************/
 
 int dbd_st_finish(SV * sth, imp_sth_t * imp_sth)
@@ -2045,6 +1730,7 @@ int dbd_st_finish(SV * sth, imp_sth_t * imp_sth)
 	if (imp_sth && imp_sth->cda) {
 		mysql_free_result(imp_sth->cda);
 		imp_sth->cda = NULL;
+		/* TODO: free more metadata &c.*/
 	}
 	DBIc_ACTIVE_off(imp_sth);
 	return 1;
@@ -2052,29 +1738,24 @@ int dbd_st_finish(SV * sth, imp_sth_t * imp_sth)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_destroy
- *
  *  Purpose: Our part of the statement handles destructor
- *
  *  Input:   sth - statement handle being destroyed
  *           imp_sth - drivers private statement handle data
- *
  *  Returns: Nothing
- *
  **************************************************************************/
 
 void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 {
 	int i;
 
-#if MYSQL_VERSION_ID >=40101
 	int num_fields;
 
 	if (imp_sth->real_prepare) {
 		if (imp_sth->stmt) {
 			num_fields = DBIc_NUM_FIELDS(imp_sth);
 
+#if MYSQL_VERSION_ID >=40101
 			if (mysql_stmt_close(imp_sth->stmt)) {
 				PerlIO_printf(DBILOGFP,
 					      "DESTROY: Error %s while close stmt\n",
@@ -2085,21 +1766,15 @@ void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 					 mysql_stmt_errno(imp_sth->stmt),
 					 mysql_stmt_error(imp_sth->stmt));
 			}
-
-			if (DBIc_NUM_PARAMS(imp_sth) > 0) {
-				FreeBind(imp_sth->bind);
-				FreeFBind(imp_sth->fbind);
-			}
-
-			imp_sth->bind = NULL;
-			imp_sth->fbind = NULL;
-		}
-	}
 #endif
 
-	/* dbd_st_finish has already been called by .xs code if needed.       */
+		}
+	}
 
-	/*TODO: Free placeholders */
+	if (DBIc_NUM_PARAMS(imp_sth) > 0) {
+		Safefree(imp_sth->params);
+		Safefree(imp_sth->bind);
+	}
 
 	/* Free cached array attributes */
 	for (i = 0; i < AV_ATTRIB_LAST; i++) {
@@ -2120,20 +1795,15 @@ void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_STORE_attrib
- *
  *  Purpose: Modifies a statement handles attributes; we currently
  *           support just nothing
- *
  *  Input:   sth - statement handle being destroyed
  *           imp_sth - drivers private statement handle data
  *           keysv - attribute name
  *           valuesv - attribute value
- *
  *  Returns: TRUE for success, FALSE otrherwise; do_error will
  *           be called in the latter case
- *
  **************************************************************************/
 int
 dbd_st_STORE_attrib(SV * sth,
@@ -2164,14 +1834,11 @@ dbd_st_STORE_attrib(SV * sth,
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_FETCH_internal
- *
  *  Purpose: Retrieves a statement handles array attributes; we use
  *           a separate function, because creating the array
  *           attributes shares much code and it aids in supporting
  *           enhanced features like caching.
- *
  *  Input:   sth - statement handle; may even be a database handle,
  *               in which case this will be used for storing error
  *               messages only. This is only valid, if cacheit (the
@@ -2179,11 +1846,9 @@ dbd_st_STORE_attrib(SV * sth,
  *           what - internal attribute number
  *           res - pointer to a DBMS result
  *           cacheit - TRUE, if results may be cached in the sth.
- *
  *  Returns: RV pointing to result array in case of success, NULL
  *           otherwise; do_error has already been called in the latter
  *           case.
- *
  **************************************************************************/
 
 #ifndef IS_KEY
@@ -2327,18 +1992,13 @@ SV *dbd_st_FETCH_internal(SV * sth, int what, MYSQL_RES * res, int cacheit)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_FETCH_attrib
- *
  *  Purpose: Retrieves a statement handles attributes
- *
  *  Input:   sth - statement handle being destroyed
  *           imp_sth - drivers private statement handle data
  *           keysv - attribute name
- *
  *  Returns: NULL for an unknown attribute, "undef" for error,
  *           attribute value otherwise.
- *
  **************************************************************************/
 
 #define ST_FETCH_AV(what) \
@@ -2366,9 +2026,9 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 		I32 keylen;
 		returnHV = newHV();
 
-		while ((sv =
-			hv_iternextsv(imp_sth->all_params_hv, &key,
-				      &keylen)) != NULL) {
+		while ((sv = hv_iternextsv(imp_sth->all_params_hv, &key,
+			&keylen)) != NULL) {
+
 			phs_t *phs = (phs_t *) (void *) SvPVX(sv);
 			if (phs->quoted)
 				valueSV =
@@ -2429,12 +2089,9 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 
 
 /***************************************************************************
- *
  *  Name:    dbd_st_blob_read
- *
  *  Purpose: Used for blob reads if the statement handles "LongTruncOk"
  *           attribute (currently not supported by DBD::mysql)
- *
  *  Input:   SV* - statement handle from which a blob will be fetched
  *           imp_sth - drivers private statement handle data
  *           field - field number of the blob (note, that a row may
@@ -2443,10 +2100,8 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
  *           len - maximum number of bytes to read
  *           destrv - RV* that tells us where to store
  *           destoffset - destination offset
- *
  *  Returns: TRUE for success, FALSE otrherwise; do_error will
  *           be called in the latter case
- *
  **************************************************************************/
 
 int dbd_st_blob_read(SV * sth,
@@ -2458,12 +2113,39 @@ int dbd_st_blob_read(SV * sth,
 }
 
 
+
+static phs_t * retrieve_placeholder (imp_sth_t *imp_sth, SV *ph_namesv)
+{
+	STRLEN name_len;
+	char *name = Nullch;
+	char namebuf[30];
+	phs_t *phs;
+	SV **phs_svp;
+
+	if (SvGMAGICAL(ph_namesv))
+		mg_get(ph_namesv);
+	if (SvNIOKp(ph_namesv) || (name && isDIGIT(name[0]))) {
+		snprintf(namebuf,sizeof(namebuf),"$%d", (int) SvIV(ph_namesv));
+		name = namebuf;
+		name_len = strlen(name);
+	} else if (SvOKp(ph_namesv))
+		name = SvPV(ph_namesv, name_len);
+	assert(name != Nullch);
+
+	/* get the place holder */
+	phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
+	if (NULL == phs_svp) {
+		croak("Can't bind unknown placeholder '%s' (%s)",
+		      name, neatsvpv(ph_namesv, 0));
+	}
+	phs = (phs_t *) (void *) SvPVX(*phs_svp);
+	return phs;
+}
+
+
 /***************************************************************************
- *
  *  Name:    dbd_bind_ph
- *
  *  Purpose: Binds a statement value to a parameter
- *
  *  Input:   sth - statement handle
  *           imp_sth - drivers private statement handle data
  *           param - parameter number, counting starts with 1
@@ -2474,63 +2156,22 @@ int dbd_st_blob_read(SV * sth,
  *           inout - TRUE, if parameter is an output variable (currently
  *               this is not supported)
  *           maxlen - ???
- *
  *  Returns: TRUE for success, FALSE otherwise
- *
  **************************************************************************/
 
-int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
+int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * ph_namesv, SV * newvalue,
 		IV sql_type, SV * attribs, int is_inout, IV maxlen)
 {
-	SV *ph_namesv = param;
-	SV *newvalue = value;
-	int paramNum = SvIV(param);
-	int idx = paramNum - 1;
-
-#if MYSQL_VERSION_ID >=40101
 	STRLEN slen;
-#endif
-
-	SV **phs_svp;
 	SV **svp;
-	STRLEN name_len;
-	char *name = Nullch;
-	char namebuf[30];
 	phs_t *phs;
 	sql_type_info_t *sql_type_info;
-	int pg_type = 0;
-	int bind_type;
-	char *value_string;
-	STRLEN value_len;
 	D_imp_dbh_from_sth;
-
 
 	if (is_inout)
 		croak("bind_inout not supported by this driver");
 
-
-	if (SvGMAGICAL(ph_namesv))
-		mg_get(ph_namesv);
-
-	if (!SvNIOKp(ph_namesv))
-		name = SvPV(ph_namesv, name_len);
-
-	if (SvNIOKp(ph_namesv) || (name && isDIGIT(name[0]))) {
-		sprintf(namebuf, "$%d", (int) SvIV(ph_namesv));
-		name = namebuf;
-		name_len = strlen(name);
-		assert(name_len < sizeof(namebuf));
-	}
-	assert(name != Nullch);
-
-	/* get the place holder */
-	phs_svp = hv_fetch(imp_sth->all_params_hv, name, name_len, 0);
-	if (NULL == phs_svp) {
-		croak("Can't bind unknown placeholder '%s' (%s)",
-		      name, neatsvpv(ph_namesv, 0));
-	}
-	phs = (phs_t *) (void *) SvPVX(*phs_svp);
-
+	phs = retrieve_placeholder(imp_sth, ph_namesv);
 
 	if (phs->is_bound && sql_type != 0 && phs->ftype != sql_type) {
 		croak("Can't change TYPE of param: %s from %d to %d after"
@@ -2539,111 +2180,42 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 		phs->ftype = sql_type ? sql_type : SQL_VARCHAR;
 	}
 
-	/* convert to a string ASAP */
-	if (!SvPOK(newvalue) && SvOK(newvalue)) {
-		sv_2pv(newvalue, &na);
-	}
-	/* phs->sv is copy of real variable, upgrade to at least string */
-	(void) SvUPGRADE(newvalue, SVt_PV);
-
-
-	if (phs->quoted)
+	if (imp_sth->real_prepare && phs->quoted)
 		Safefree(phs->quoted);
 
-	phs->value = newvalue;	/*TODO: Remove Hack */
 	if (!SvOK(newvalue)) {
-		phs->quoted = safemalloc(sizeof("NULL"));
-		if (NULL == phs->quoted)
-			croak("No memory");
-		strcpy(phs->quoted, "NULL");
-		phs->quoted_len = strlen(phs->quoted);
+		if (imp_sth->real_prepare)
+			phs->bind->buffer = SvPV(newvalue, slen);
+		else {
+			New(908, phs->quoted, sizeof("NULL"), char);
+			strcpy(phs->quoted, "NULL");
+			phs->quoted_len = strlen(phs->quoted);
+		}
 	} else {
 		sql_type_info_t *type_info;
 		if (!(type_info = native2sql(FIELD_TYPE_VAR_STRING)))
 			croak("Default field type is bad. DBD::mysql bug");
 
-		phs->quoted =
-		    type_info->quote(imp_dbh->mysql, value,
-				     &phs->quoted_len);
+		if (imp_sth->real_prepare) {
+			phs->bind->buffer = SvPV(newvalue, slen);
+			/* Should be here max value for this param? */
+			phs->bind->buffer_length = slen;
+		} else
+			phs->quoted = type_info->quote(imp_dbh->mysql, 
+			    newvalue, &phs->quoted_len);
 
-		assert(strlen(phs->quoted) == phs->quoted_len);
 	}
-
+	phs->bind->buffer_type = MYSQL_TYPE_VAR_STRING;
 	phs->is_bound = 1;
-
-
-	if (!imp_sth->real_prepare)
-		return 1;
-
-	if (0 == imp_sth->has_binded) {
-		//SQL_VARCHAR
-		imp_sth->bind[idx].buffer_type = MYSQL_TYPE_VAR_STRING;
-		imp_sth->bind[idx].length =
-		    (ulong *) & (imp_sth->fbind[idx].length);
-		imp_sth->bind[idx].is_null =
-		    (char *) &(imp_sth->fbind[idx].is_null);
-
-		if (SvOK(phs->value)
-		    && phs->value) {
-			if (dbis->debug >= 2)
-				PerlIO_printf(DBILOGFP,
-					      "(first bind)   SCALAR IS STRING %s\n",
-					      imp_sth->bind[idx].buffer);
-			imp_sth->bind[idx].buffer = SvPV(phs->value, slen);
-			imp_sth->bind[idx].buffer_length = slen;	////Should be here max value for this param?
-			imp_sth->fbind[idx].is_null = 0;
-			imp_sth->fbind[idx].length = slen;
-		} else {
-			//NULL value 
-			if (dbis->debug >= 2)
-				PerlIO_printf(DBILOGFP,
-					      "(first bind)   SCALAR IS NULL\n");
-			imp_sth->bind[idx].buffer = SvPV(phs->value, slen);
-			imp_sth->fbind[idx].is_null = 1;
-			imp_sth->fbind[idx].length = 0;
-		}
-	} else {
-		//rebind ph variable
-		//Map the new data direct to stmt handler
-		//as this is not first bind 
-		if (SvOK(phs->value)
-		    && phs->value) {
-			if (dbis->debug >= 2)
-				PerlIO_printf(DBILOGFP,
-					      "   SCALAR IS STRING %s\n",
-					      imp_sth->bind[idx].buffer);
-			imp_sth->stmt->params[idx].buffer =
-			    SvPV(phs->value, slen);
-
-			//Should be here max value for this param?
-			imp_sth->stmt->params[idx].buffer_length = slen;
-			imp_sth->fbind[idx].length = slen;
-			imp_sth->fbind[idx].is_null = 0;
-		} else {
-			//NULL value 
-			if (dbis->debug >= 2)
-				PerlIO_printf(DBILOGFP,
-					      "   SCALAR IS NULL\n");
-			imp_sth->stmt->params[idx].buffer = NULL;
-			imp_sth->fbind[idx].is_null = 1;
-			imp_sth->fbind[idx].length = 0;
-		}
-	}
-
 	return 1;
 }
 
 
 /***************************************************************************
- *
  *  Name:    mysql_db_reconnect
- *
  *  Purpose: If the server has disconnected, try to reconnect.
- *
  *  Input:   h - database or statement handle
- *
  *  Returns: TRUE for success, FALSE otherwise
- *
  **************************************************************************/
 
 int mysql_db_reconnect(SV * h)
@@ -2659,25 +2231,20 @@ int mysql_db_reconnect(SV * h)
 		imp_dbh = (imp_dbh_t *) imp_xxh;
 	}
 
-	if (mysql_errno(&imp_dbh->mysql) != CR_SERVER_GONE_ERROR) {
-		/* Other error */
+	/* Other error that we don't handle */
+	if (mysql_errno(&imp_dbh->mysql) != CR_SERVER_GONE_ERROR)
 		return FALSE;
-	}
 
-	if (!DBIc_has(imp_dbh, DBIcf_AutoCommit)
-	    || !imp_dbh->auto_reconnect) {
-		/* We never reconnect if AutoCommit is turned off.
-		 * Otherwise we might get an inconsistent transaction
-		 * state.
-		 */
+	/* We never reconnect if AutoCommit is turned off.  Otherwise we might
+	   get an inconsistent transaction state.  */
+	if (!DBIc_has(imp_dbh, DBIcf_AutoCommit) || !imp_dbh->auto_reconnect)
 		return FALSE;
-	}
 
 	/* _MyLogin will blow away imp_dbh->mysql so we save a copy of
-	 * imp_dbh->mysql and put it back where it belongs if the reconnect
-	 * fail.  Think server is down & reconnect fails but the application eval{}s
-	 * the execute, so next time $dbh->quote() gets called, instant SIGSEGV!
-	 */
+	   imp_dbh->mysql and put it back where it belongs if the reconnect
+	   fail.  Think server is down & reconnect fails but the application 
+	   eval{}s the execute, so next time $dbh->quote() gets called, instant
+	   SIGSEGV!  */
 	save_socket = imp_dbh->mysql;
 	memcpy(&save_socket, &imp_dbh->mysql, sizeof(save_socket));
 	memset(&imp_dbh->mysql, 0, sizeof(imp_dbh->mysql));
@@ -2688,25 +2255,20 @@ int mysql_db_reconnect(SV * h)
 		memcpy(&imp_dbh->mysql, &save_socket, sizeof(save_socket));
 		++imp_dbh->stats.auto_reconnects_failed;
 		return FALSE;
-	} else {
-/* XXX: Needs to free save_socket? */
-		++imp_dbh->stats.auto_reconnects_ok;
 	}
+
+	mysql_close(&save_socket); /* TODO: testthis */
+	++imp_dbh->stats.auto_reconnects_ok;
 	return TRUE;
 }
 
 
 /***************************************************************************
- *
  *  Name:    dbd_db_type_info_all
- *
  *  Purpose: Implements $dbh->type_info_all
- *
  *  Input:   dbh - database handle
  *           imp_sth - drivers private database handle data
- *
  *  Returns: RV to AV of types
- *
  **************************************************************************/
 
 AV *dbd_db_type_info_all(SV * dbh, imp_dbh_t * imp_dbh)
@@ -2741,7 +2303,7 @@ SV *dbd_db_quote(SV * dbh, SV * str, SV * type_sv)
 	type_info = sql_type_data(type);
 
 	if (!type_info)
-		croak("Unknown type %d", type);	/*TODO: Default to varchar ??? */
+		croak("Unknown type %d", type);	/*TODO: Default to varchar ?? */
 
 
 	quoted = type_info->quote(imp_dbh->mysql, str, &len);
