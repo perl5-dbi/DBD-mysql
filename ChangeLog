@@ -1,4 +1,4 @@
-2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.1027)
+2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.9001)
 	* moved pod into mysql.pm from mysql.pod
 	* Changed the default behaviour of mysql_found_rows, so now
 	  'UPDATE table set field=?' will return the number of rows matched
