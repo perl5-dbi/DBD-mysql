@@ -121,8 +121,8 @@ struct imp_dbh_st {
 			     */
     bool auto_reconnect;
     struct {
-	    unsigned int auto_reconnects;
-	    unsigned int failed_auto_reconnects;
+	    unsigned int auto_reconnects_ok;
+	    unsigned int auto_reconnects_failed;
     } stats;
 };
 
