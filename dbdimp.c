@@ -1773,161 +1773,27 @@ dbd_st_STORE_attrib(SV * sth,
 }
 
 
-/***************************************************************************
- *  Name:    dbd_st_FETCH_internal
- *  Purpose: Retrieves a statement handles array attributes; we use
- *           a separate function, because creating the array
- *           attributes shares much code and it aids in supporting
- *           enhanced features like caching.
- *  Input:   sth - statement handle; may even be a database handle,
- *               in which case this will be used for storing error
- *               messages only. This is only valid, if cacheit (the
- *               last argument) is set to TRUE.
- *           what - internal attribute number
- *           res - pointer to a DBMS result
- *           cacheit - TRUE, if results may be cached in the sth.
- *  Returns: RV pointing to result array in case of success, NULL
- *           otherwise; do_error has already been called in the latter
- *           case.
- **************************************************************************/
-
-#ifndef IS_KEY
-#define IS_KEY(A) (((A) & (PRI_KEY_FLAG | UNIQUE_KEY_FLAG | MULTIPLE_KEY_FLAG)) != 0)
-#endif
-
-#if !defined(IS_AUTO_INCREMENT) && defined(AUTO_INCREMENT_FLAG)
-#define IS_AUTO_INCREMENT(A) (((A) & AUTO_INCREMENT_FLAG) != 0)
-#endif
-
-SV *dbd_st_FETCH_internal(SV * sth, int what, MYSQL_RES * res, int cacheit)
+static SV *build_param_values(imp_sth_t *imp_sth)
 {
-	D_imp_sth(sth);
-	AV *av = Nullav;
-	MYSQL_FIELD *curField;
+	HV *returnHV;
+	SV *valueSV;
+	SV *sv;
+	I32 keylen;
+	char *key;
+	returnHV = newHV();
 
-	/* Are we asking for a legal value? */
-	if (what < 0 || what >= AV_ATTRIB_LAST) {
-		do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented");
+	while ((sv = hv_iternextsv(imp_sth->all_params_hv, &key,
+		&keylen)) != NULL) {
 
-		/* Return cached value, if possible */
-	} else if (cacheit && imp_sth->av_attr[what]) {
-		av = imp_sth->av_attr[what];
+		phs_t *phs = (phs_t *) (void *) SvPVX(sv);
+		if (phs->quoted)
+			valueSV = newSVpv(phs->quoted, phs->quoted_len);
+		else
+			valueSV = &sv_undef;
 
-		/* Does this sth really have a result? */
-	} else if (!res) {
-		do_error(sth, JW_ERR_NOT_ACTIVE,
-			 "statement contains no result");
-
-		/* Do the real work. */
-	} else {
-		av = newAV();
-		mysql_field_seek(res, 0);
-		while ((curField = mysql_fetch_field(res))) {
-			SV *sv;
-
-			switch (what) {
-			case AV_ATTRIB_NAME:
-				sv = newSVpv(curField->name,
-					     strlen(curField->name));
-				break;
-
-			case AV_ATTRIB_TABLE:
-				sv = newSVpv(curField->table,
-					     strlen(curField->table));
-				break;
-
-			case AV_ATTRIB_TYPE:
-				sv = newSViv((int) curField->type);
-				break;
-
-			case AV_ATTRIB_SQL_TYPE:
-				sv = newSViv((int)
-					     native2sql(curField->type)->
-					     data_type);
-				break;
-			case AV_ATTRIB_IS_PRI_KEY:
-				sv = boolSV(IS_PRI_KEY(curField->flags));
-				break;
-
-			case AV_ATTRIB_IS_NOT_NULL:
-				sv = boolSV(IS_NOT_NULL(curField->flags));
-				break;
-
-			case AV_ATTRIB_NULLABLE:
-				sv = boolSV(!IS_NOT_NULL(curField->flags));
-				break;
-
-			case AV_ATTRIB_LENGTH:
-				sv = newSViv((int) curField->length);
-				break;
-
-			case AV_ATTRIB_IS_NUM:
-				sv = newSViv((int)
-					     native2sql(curField->type)->
-					     is_num);
-				break;
-
-			case AV_ATTRIB_TYPE_NAME:
-				sv = newSVpv((char *)
-					     native2sql(curField->type)->
-					     type_name, 0);
-				break;
-
-			case AV_ATTRIB_MAX_LENGTH:
-				sv = newSViv((int) curField->max_length);
-				break;
-
-			case AV_ATTRIB_IS_AUTO_INCREMENT:
-#if defined(AUTO_INCREMENT_FLAG)
-				sv = boolSV(IS_AUTO_INCREMENT
-					    (curField->flags));
-				break;
-#else
-				croak
-				    ("AUTO_INCREMENT_FLAG is not supported on this machine");
-#endif
-
-			case AV_ATTRIB_IS_KEY:
-				sv = boolSV(IS_KEY(curField->flags));
-				break;
-
-			case AV_ATTRIB_IS_BLOB:
-				sv = boolSV(IS_BLOB(curField->flags));
-				break;
-
-			case AV_ATTRIB_SCALE:
-				sv = newSViv((int) curField->decimals);
-				break;
-
-			case AV_ATTRIB_PRECISION:
-				sv = newSViv((int)
-					     (curField->length >
-					      curField->
-					      max_length) ? curField->
-					     length : curField->
-					     max_length);
-				break;
-
-			default:
-				sv = &sv_undef;
-				break;
-			}
-			av_push(av, sv);
-		}
-
-		/* Ensure that this value is kept, decremented in
-		 *  dbd_st_destroy and dbd_st_execute.  */
-		if (cacheit) {
-			imp_sth->av_attr[what] = av;
-		} else {
-			return sv_2mortal(newRV_noinc((SV *) av));
-		}
+		hv_store(returnHV, key, keylen, valueSV, 0);
 	}
-
-	if (Nullav == av) {
-		return &sv_undef;
-	}
-	return sv_2mortal(newRV_inc((SV *) av));
+	return sv_2mortal(newRV((SV *) returnHV));
 }
 
 
@@ -1940,18 +1806,48 @@ SV *dbd_st_FETCH_internal(SV * sth, int what, MYSQL_RES * res, int cacheit)
  *  Returns: NULL for an unknown attribute, "undef" for error,
  *           attribute value otherwise.
  **************************************************************************/
+#ifndef IS_KEY
+#define IS_KEY(A) (((A) & (PRI_KEY_FLAG | UNIQUE_KEY_FLAG | MULTIPLE_KEY_FLAG)) != 0)
+#endif
 
-#define ST_FETCH_AV(what) \
-    dbd_st_FETCH_internal(sth, (what), imp_sth->cda, TRUE)
+#if !defined(IS_AUTO_INCREMENT) && defined(AUTO_INCREMENT_FLAG)
+#define IS_AUTO_INCREMENT(A) (((A) & AUTO_INCREMENT_FLAG) != 0)
+#endif
+
+#define ST_BUILD_AV(key, how, what) \
+else if(DECODE_KEY(key)) {\
+	AV *av = Nullav;\
+	MYSQL_FIELD *curField;\
+	MYSQL_RES *res = imp_sth->cda;\
+	if (what < 0 || what >= AV_ATTRIB_LAST) {\
+		do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented");\
+	} else if (1 && imp_sth->av_attr[what]) {\
+		av = imp_sth->av_attr[what];\
+	} else if (!res) { /* Does this sth really have a result? */\
+		do_error(sth,JW_ERR_NOT_ACTIVE,"statement contains no result");\
+	} else {\
+		av = newAV();\
+		mysql_field_seek(res, 0);\
+		while ((curField = mysql_fetch_field(res))) {\
+			SV *cur_sv;\
+			cur_sv = how;\
+			av_push(av, cur_sv);\
+		}\
+	}\
+	if (Nullav == av) \
+		return &sv_undef;\
+	imp_sth->av_attr[what] = av;\
+	retsv = sv_2mortal(newRV_inc((SV *) av));\
+}
 
 SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 {
-	STRLEN(kl);
+	STRLEN kl;
 	char *key = SvPV(keysv, kl);
 	SV *retsv = Nullsv;
-	if (kl < 2) {
-		return Nullsv;
-	}
+
+	if (kl < 2)
+		return retsv;
 
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP,
@@ -1960,70 +1856,54 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 	}
 
 	if (DECODE_KEY("ParamValues")) {
-		HV *returnHV;
-		SV *valueSV;
-		SV *sv;
-		I32 keylen;
-		returnHV = newHV();
-
-		while ((sv = hv_iternextsv(imp_sth->all_params_hv, &key,
-			&keylen)) != NULL) {
-
-			phs_t *phs = (phs_t *) (void *) SvPVX(sv);
-			if (phs->quoted)
-				valueSV =
-				    newSVpv(phs->quoted, phs->quoted_len);
-			else
-				valueSV = &sv_undef;
-
-			hv_store(returnHV, key, keylen, valueSV, 0);
-
-		}
-		return sv_2mortal(newRV((SV *) returnHV));
+		retsv = build_param_values(imp_sth);
 	}
-
-
-	if (DECODE_KEY("NAME")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_NAME);
-	} else if (DECODE_KEY("NULLABLE")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_NULLABLE);
-	} else if (DECODE_KEY("PRECISION")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_PRECISION);
-	} else if (DECODE_KEY("SCALE")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_SCALE);
-	} else if (DECODE_KEY("TYPE")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_SQL_TYPE);
-	} else if (DECODE_KEY("mysql_type")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_TYPE);
-	} else if (DECODE_KEY("mysql_table")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_TABLE);
-	} else if (DECODE_KEY("mysql_is_key")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_IS_KEY);
-	} else if (DECODE_KEY("mysql_is_num")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_IS_NUM);
-	} else if (DECODE_KEY("mysql_length")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_LENGTH);
-	} else if (DECODE_KEY("mysql_result")) {
+	ST_BUILD_AV("NAME",newSVpv(curField->name,strlen(curField->name)),
+	    AV_ATTRIB_NAME)
+	ST_BUILD_AV("NULLABLE", boolSV(!IS_NOT_NULL(curField->flags)),
+		    AV_ATTRIB_NULLABLE)
+	ST_BUILD_AV("PRECISION",
+	    newSViv((int)(curField->length > curField-> max_length) ? 
+	        curField-> length : curField-> max_length),AV_ATTRIB_PRECISION)
+	ST_BUILD_AV("SCALE",newSViv((int) curField->decimals), AV_ATTRIB_SCALE)
+	ST_BUILD_AV("TYPE",newSViv((int)native2sql(curField->type)->data_type),
+	    AV_ATTRIB_SQL_TYPE)
+	ST_BUILD_AV("mysql_type",newSViv((int) curField->type),AV_ATTRIB_TYPE)
+	ST_BUILD_AV("mysql_table",
+	    newSVpv(curField->table,strlen(curField->table)), AV_ATTRIB_TABLE)
+	ST_BUILD_AV("mysql_is_key",boolSV(IS_KEY(curField->flags)),
+	    AV_ATTRIB_IS_KEY)
+	ST_BUILD_AV("mysql_is_num",
+	    newSViv((int)native2sql(curField->type)->is_num), AV_ATTRIB_IS_NUM)
+	ST_BUILD_AV("mysql_length",newSViv((int) curField->length), 
+	    AV_ATTRIB_LENGTH)
+	ST_BUILD_AV("mysql_is_blob",boolSV(IS_BLOB(curField->flags)),
+		AV_ATTRIB_IS_BLOB)
+	ST_BUILD_AV("mysql_type_name",newSVpv((char *)native2sql(
+	    curField->type)->type_name, 0),AV_ATTRIB_TYPE_NAME)
+	ST_BUILD_AV("mysql_is_pri_key",boolSV(IS_PRI_KEY(curField->flags)),
+	    AV_ATTRIB_IS_PRI_KEY)
+	ST_BUILD_AV("mysql_max_length",newSViv((int)curField->max_length),
+	    AV_ATTRIB_MAX_LENGTH)
+	ST_BUILD_AV("mysql_is_not_null",boolSV(IS_NOT_NULL(curField->flags)), 
+	    AV_ATTRIB_IS_NOT_NULL)
+	else if (DECODE_KEY("mysql_result")) {
 		retsv = sv_2mortal(newSViv((IV) imp_sth->cda));
-	} else if (DECODE_KEY("mysql_is_blob")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_IS_BLOB);
 	} else if (DECODE_KEY("mysql_insertid")) {
 		/* We cannot return an IV, because the insertid is a long.  */
 		return sv_2mortal(my_ulonglong2str(imp_sth->insertid));
-	} else if (DECODE_KEY("mysql_type_name")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_TYPE_NAME);
-	} else if (DECODE_KEY("mysql_is_pri_key")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_IS_PRI_KEY);
-	} else if (DECODE_KEY("mysql_max_length")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_MAX_LENGTH);
 	} else if (DECODE_KEY("mysql_use_result")) {
 		retsv = boolSV(imp_sth->use_mysql_use_result);
 	} else if (DECODE_KEY("mysql_server_prepare")) {
 		retsv = sv_2mortal(newSViv((IV) imp_sth->real_prepare));
 	} else if (DECODE_KEY("mysql_is_auto_increment")) {
-		retsv = ST_FETCH_AV(AV_ATTRIB_IS_AUTO_INCREMENT);
+#if!defined(AUTO_INCREMENT_FLAG)
+		ST_BUILD_AV(boolSV(IS_AUTO_INCREMENT(curField->flags)),
+		    AV_ATTRIB_IS_AUTO_INCREMENT);
+#else
+		croak("AUTO_INCREMENT_FLAG is not supported on this machine");
+#endif
 	}
-
 	return retsv;
 }
 
@@ -2113,12 +1993,12 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * ph_namesv, SV * newvalue,
 
 	phs = retrieve_placeholder(imp_sth, ph_namesv);
 
-	if (phs->is_bound && sql_type != 0 && phs->ftype != sql_type) {
+	/* if (phs->is_bound && sql_type != 0 && phs->ftype != sql_type) {
 		croak("Can't change TYPE of param: %s from %d to %d after"
 		      " initial bind", phs->name, phs->ftype, sql_type);
 	} else {
 		phs->ftype = sql_type ? sql_type : SQL_VARCHAR;
-	}
+	} */
 
 	if (imp_sth->real_prepare && phs->quoted)
 		Safefree(phs->quoted);
