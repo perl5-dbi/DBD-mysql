@@ -868,7 +868,7 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 	}
 #if MYSQL_VERSION_ID >=40101
 	/*TODO remove strlen(statement) as we should already know this*/
-	imp_sth->stmt = mysql_prepare(&imp_dbh->mysql, statement,
+	imp_sth->stmt = mysql_stmt_prepare(&imp_dbh->mysql, statement,
 				      strlen(statement));
 #else
 	croak("DBD::mysql BUG\n");
@@ -886,7 +886,7 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 	if (DBIc_NUM_PARAMS(imp_sth) < 0)
 		return 1;
 
-	imp_sth->metadata = mysql_get_metadata(imp_sth->stmt);
+	imp_sth->metadata = mysql_stmt_param_metadata(imp_sth->stmt);
 
 	return 1;
 }
@@ -1067,7 +1067,7 @@ long mysql_st_internal_execute41(SV * h,
 	}
 
 	if (numParams > 0 ) {
-		if (mysql_bind_param(stmt, bind+1)) { /*+1 bind is 0 based */
+		if (mysql_stmt_bind_param(stmt, bind+1)) { /*+1 bind is 0 based */
 			fprintf(stderr, "\nparam bind failed\n");
 			fprintf(stderr, "\n|%d| |%s|\n",
 				mysql_stmt_errno(stmt),
@@ -1084,13 +1084,13 @@ long mysql_st_internal_execute41(SV * h,
 			      "mysql_execute\n");
 	}
 
-	if (mysql_execute(stmt)) {
+	if (mysql_stmt_execute(stmt)) {
 		do_error(h, mysql_stmt_errno(stmt),
 			 mysql_stmt_error(stmt));
 		return -2;
 	}
 
-	if (!(*cdaPtr = mysql_get_metadata(stmt))) {
+	if (!(*cdaPtr = mysql_stmt_result_metadata(stmt))) {
 		if (mysql_stmt_errno(stmt)) {
 			do_error(h, mysql_stmt_errno(stmt),
 				 mysql_stmt_error(stmt));
@@ -1347,7 +1347,7 @@ int dbd_describe(SV * sth, imp_sth_t * imp_sth)
 		}	// end of switch
 	}		// end of for
 
-	if (mysql_bind_result(imp_sth->stmt, imp_sth->buffer)) {
+	if (mysql_stmt_bind_result(imp_sth->stmt, imp_sth->buffer)) {
 		do_error(sth, mysql_stmt_errno(imp_sth->stmt),
 			 mysql_stmt_error(imp_sth->stmt));
 		return 0;
@@ -1420,7 +1420,7 @@ AV *dbd_st_fetch(SV * sth, imp_sth_t * imp_sth)
 			PerlIO_printf(DBILOGFP,
 				      "dbd_st_fetch calling mysql_fetch\n");
 
-		if ((rc = mysql_fetch(imp_sth->stmt))) {
+		if ((rc = mysql_stmt_fetch(imp_sth->stmt))) {
 
 			if (1 == rc) {
 				do_error(sth,
