@@ -17,37 +17,37 @@
 /*
  *  Header files we use
  */
-#include <DBIXS.h>  /* installed by the DBI module                        */
-#include <mysql.h>  /* Comes with MySQL-devel */
-#include <errmsg.h> /* Comes with MySQL-devel */
+#include <DBIXS.h>		/* installed by the DBI module                        */
+#include <mysql.h>		/* Comes with MySQL-devel */
+#include <errmsg.h>		/* Comes with MySQL-devel */
 
 /*
  *  The following are return codes passed in $h->err in case of
  *  errors by DBD::mysql.
  */
 enum errMsgs {
-    JW_ERR_CONNECT = 1,
-    JW_ERR_SELECT_DB,
-    JW_ERR_STORE_RESULT,
-    JW_ERR_NOT_ACTIVE,
-    JW_ERR_QUERY,
-    JW_ERR_FETCH_ROW,
-    JW_ERR_LIST_DB,
-    JW_ERR_CREATE_DB,
-    JW_ERR_DROP_DB,
-    JW_ERR_LIST_TABLES,
-    JW_ERR_LIST_FIELDS,
-    JW_ERR_LIST_FIELDS_INT,
-    JW_ERR_LIST_SEL_FIELDS,
-    JW_ERR_NO_RESULT,
-    JW_ERR_NOT_IMPLEMENTED,
-    JW_ERR_ILLEGAL_PARAM_NUM,
-    JW_ERR_MEM,
-    JW_ERR_LIST_INDEX,
-    JW_ERR_SEQUENCE,
-    TX_ERR_AUTOCOMMIT,
-    TX_ERR_COMMIT,
-    TX_ERR_ROLLBACK
+	JW_ERR_CONNECT = 1,
+	JW_ERR_SELECT_DB,
+	JW_ERR_STORE_RESULT,
+	JW_ERR_NOT_ACTIVE,
+	JW_ERR_QUERY,
+	JW_ERR_FETCH_ROW,
+	JW_ERR_LIST_DB,
+	JW_ERR_CREATE_DB,
+	JW_ERR_DROP_DB,
+	JW_ERR_LIST_TABLES,
+	JW_ERR_LIST_FIELDS,
+	JW_ERR_LIST_FIELDS_INT,
+	JW_ERR_LIST_SEL_FIELDS,
+	JW_ERR_NO_RESULT,
+	JW_ERR_NOT_IMPLEMENTED,
+	JW_ERR_ILLEGAL_PARAM_NUM,
+	JW_ERR_MEM,
+	JW_ERR_LIST_INDEX,
+	JW_ERR_SEQUENCE,
+	TX_ERR_AUTOCOMMIT,
+	TX_ERR_COMMIT,
+	TX_ERR_ROLLBACK
 };
 
 
@@ -55,24 +55,24 @@ enum errMsgs {
  *  Internal constants, used for fetching array attributes
  */
 enum av_attribs {
-    AV_ATTRIB_NAME = 0,
-    AV_ATTRIB_TABLE,
-    AV_ATTRIB_TYPE,
-    AV_ATTRIB_SQL_TYPE,
-    AV_ATTRIB_IS_PRI_KEY,
-    AV_ATTRIB_IS_NOT_NULL,
-    AV_ATTRIB_NULLABLE,
-    AV_ATTRIB_LENGTH,
-    AV_ATTRIB_IS_NUM,
-    AV_ATTRIB_TYPE_NAME,
-    AV_ATTRIB_PRECISION,
-    AV_ATTRIB_SCALE,
-    AV_ATTRIB_MAX_LENGTH,
-    AV_ATTRIB_IS_KEY,
-    AV_ATTRIB_IS_BLOB,
-    AV_ATTRIB_IS_AUTO_INCREMENT,
-    AV_ATTRIB_LAST         /*  Dummy attribute, never used, for allocation  */
-};                         /*  purposes only                                */
+	AV_ATTRIB_NAME = 0,
+	AV_ATTRIB_TABLE,
+	AV_ATTRIB_TYPE,
+	AV_ATTRIB_SQL_TYPE,
+	AV_ATTRIB_IS_PRI_KEY,
+	AV_ATTRIB_IS_NOT_NULL,
+	AV_ATTRIB_NULLABLE,
+	AV_ATTRIB_LENGTH,
+	AV_ATTRIB_IS_NUM,
+	AV_ATTRIB_TYPE_NAME,
+	AV_ATTRIB_PRECISION,
+	AV_ATTRIB_SCALE,
+	AV_ATTRIB_MAX_LENGTH,
+	AV_ATTRIB_IS_KEY,
+	AV_ATTRIB_IS_BLOB,
+	AV_ATTRIB_IS_AUTO_INCREMENT,
+	AV_ATTRIB_LAST		/*  Dummy attribute, never used, for allocation  */
+};				/*  purposes only                                */
 
 
 /*
@@ -86,7 +86,7 @@ enum av_attribs {
  *  "struct imp_drh_st *".
  */
 struct imp_drh_st {
-    dbih_drc_t com;         /* MUST be first element in structure   */
+	dbih_drc_t com;		/* MUST be first element in structure   */
 };
 
 
@@ -101,19 +101,19 @@ struct imp_drh_st {
  *  "struct imp_dbh_st *".
  */
 struct imp_dbh_st {
-    dbih_dbc_t com;         /*  MUST be first element in structure   */
-    
-    MYSQL mysql;
-    int has_transactions;   /*  boolean indicating support for
-			     *  transactions, currently always
-			     *  TRUE for MySQL and always FALSE
-			     *  for mSQL.
-			     */
-    bool auto_reconnect;
-    struct {
-	    unsigned int auto_reconnects_ok;
-	    unsigned int auto_reconnects_failed;
-    } stats;
+	dbih_dbc_t com;		/*  MUST be first element in structure   */
+
+	MYSQL mysql;
+	int has_transactions;	/*  boolean indicating support for
+				 *  transactions, currently always
+				 *  TRUE for MySQL and always FALSE
+				 *  for mSQL.
+				 */
+	bool auto_reconnect;
+	struct {
+		unsigned int auto_reconnects_ok;
+		unsigned int auto_reconnects_failed;
+	} stats;
 };
 
 
@@ -124,8 +124,8 @@ struct imp_dbh_st {
  *  parameters.
  */
 typedef struct imp_sth_ph_st {
-    SV* value;
-    int type;
+	SV *value;
+	int type;
 } imp_sth_ph_t;
 
 
@@ -141,21 +141,21 @@ typedef struct imp_sth_ph_st {
  *  "struct imp_sth_st *".
  */
 struct imp_sth_st {
-    dbih_stc_t com;       /* MUST be first element in structure     */
+	dbih_stc_t com;		/* MUST be first element in structure     */
 
-    MYSQL_RES* cda;       /* result                                 */
-    int currow;           /* number of current row                  */
-    long row_num;         /* total number of rows                   */
+	MYSQL_RES *cda;		/* result                                 */
+	int currow;		/* number of current row                  */
+	long row_num;		/* total number of rows                   */
 
-    int   done_desc;      /* have we described this sth yet ?	    */
-    long  long_buflen;    /* length for long/longraw (if >0)	    */
-    bool  long_trunc_ok;  /* is truncating a long an error	    */
-    unsigned long insertid; /* ID of auto insert                      */
-    imp_sth_ph_t* params; /* Pointer to parameter array             */
-    AV* av_attr[AV_ATTRIB_LAST];/*  For caching array attributes        */
-    int   use_mysql_use_result;  /*  TRUE if execute should use     */
-                          /* mysql_use_result rather than           */
-                          /* mysql_store_result */
+	int done_desc;		/* have we described this sth yet ?       */
+	long long_buflen;	/* length for long/longraw (if >0)        */
+	bool long_trunc_ok;	/* is truncating a long an error          */
+	unsigned long insertid;	/* ID of auto insert                      */
+	imp_sth_ph_t *params;	/* Pointer to parameter array             */
+	AV *av_attr[AV_ATTRIB_LAST];	/*  For caching array attributes        */
+	int use_mysql_use_result;	/*  TRUE if execute should use     */
+	/* mysql_use_result rather than           */
+	/* mysql_store_result */
 };
 
 
@@ -191,16 +191,16 @@ struct imp_sth_st {
 #define dbd_db_quote            mysql_db_quote
 
 #include <dbd_xsh.h>
-void	 do_error (SV* h, int rc, const char *what);
-SV	*dbd_db_fieldlist (MYSQL_RES* res);
+void do_error(SV * h, int rc, const char *what);
+SV *dbd_db_fieldlist(MYSQL_RES * res);
 
-void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
-int mysql_st_internal_execute(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
-			      MYSQL*, int);
-AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);
-SV* dbd_db_quote(SV*, SV*, SV*);
-extern MYSQL* mysql_dr_connect(MYSQL*, char*, char*, char*, char*, char*,
-			       char*, imp_dbh_t*);
+void dbd_preparse(imp_sth_t * imp_sth, SV * statement);
+int mysql_st_internal_execute(SV *, SV *, SV *, int, imp_sth_ph_t *,
+			      MYSQL_RES **, MYSQL *, int);
+AV *dbd_db_type_info_all(SV * dbh, imp_dbh_t * imp_dbh);
+SV *dbd_db_quote(SV *, SV *, SV *);
+extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
+			       char *, char *, imp_dbh_t *);
 
 
-extern int mysql_db_reconnect(SV*);
+extern int mysql_db_reconnect(SV *);
