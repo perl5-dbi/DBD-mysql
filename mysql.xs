@@ -97,7 +97,11 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
        }
  
        if (strEQ(command, "shutdown")) {
+#if MYSQL_VERSION_ID < 40103
 	   result = mysql_shutdown(sock);
+#else
+	   result = mysql_shutdown(sock, SHUTDOWN_DEFAULT);
+#endif
        } else if (strEQ(command, "reload")) {
 	   result = mysql_reload(sock);
        } else if (strEQ(command, "createdb")) {
