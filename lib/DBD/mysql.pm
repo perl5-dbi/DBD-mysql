@@ -448,7 +448,7 @@ sub primary_key_info {
     }
     my $poriferan = DBI->connect("dbi:Sponge:","","",{ AutoCommit=>1 }); 
     $poriferan  or return undef;
-    my $fk_data = $poriferan->prepare('primarky_key_info', {
+    my $fk_data = $poriferan->prepare('primary_key_info', {
         rows => \@pk_info, NAME => [qw(
 	    TABLE_CAT TABLE_SCHEME TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME
         )]
