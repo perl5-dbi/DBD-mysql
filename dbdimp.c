@@ -881,10 +881,6 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
     
     if (imp_dbh) {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
-      imp_dbh->bind_type_guessing = FALSE;
-      imp_dbh->has_transactions = TRUE;
-      imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
-                                         if we detect a mod_perl env. */
 
       DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
       if (sv  &&  SvROK(sv)) {
@@ -1118,6 +1114,11 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
   imp_dbh->stats.auto_reconnects_ok = 0;
   imp_dbh->stats.auto_reconnects_failed = 0;
+
+  imp_dbh->bind_type_guessing = FALSE;
+  imp_dbh->has_transactions = TRUE;
+  imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
+                                     if we detect a mod_perl env. */
 
   if (!_MyLogin(imp_dbh)) {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
