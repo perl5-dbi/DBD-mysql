@@ -34,5 +34,6 @@ lib/Mysql/Statement.pm
 lib/DBD/mysql.pm
 lib/DBD/mysql.pod
 lib/DBD/mysql/INSTALL.pod
+lib/DBD/mysql/GetInfo.pm
 lib/Bundle/DBD/mysql.pm
 myld
