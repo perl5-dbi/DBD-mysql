@@ -3,10 +3,10 @@
 
 use strict;
 BEGIN { $^W = 1; }
-use Config ();
+use Config();
 use Getopt::Long();
 use ExtUtils::MakeMaker();
-use Data::Dumper();
+use Data::Dumper ();
 use File::Path;
 use File::Copy;
 
@@ -156,7 +156,7 @@ foreach my $val (values %$source)
 foreach my $key (sort { $a cmp $b} keys %$opt)
 {
   printf("  %-" . $keylen . "s (%-" . $slen . "s) = %s\n",
-      $key, $source->{$key}, $opt->{$key})
+	 $key, $source->{$key}, $opt->{$key})
 }
 
 print <<"MSG";
@@ -174,19 +174,19 @@ my $fileName = $@ ?
 die "Failed to determine location of $fileName" unless -f $fileName;
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
-              "\$::test_host = \$opt->{'testhost'};\n" .
-              "\$::test_port = \$opt->{'testport'};\n" .
-              "\$::test_user = \$opt->{'testuser'};\n" .
+	      "\$::test_host = \$opt->{'testhost'};\n" .
+	      "\$::test_port = \$opt->{'testport'};\n" .
+	      "\$::test_user = \$opt->{'testuser'};\n" .
               "\$::test_socket = \$opt->{'testsocket'};\n" .
-              "\$::test_password = \$opt->{'testpassword'};\n" .
-              "\$::test_db = \$opt->{'testdb'};\n" .
+	      "\$::test_password = \$opt->{'testpassword'};\n" .
+	      "\$::test_db = \$opt->{'testdb'};\n" .
 	      "\$::test_dsn = \"DBI:mysql:\$::test_db\";\n" .
-              "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
+	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n" .
               "\$::test_dsn .= \":mysql_server_prepare=1\" if \$opt->{'mysql_server_prepare'} || \$ENV{'MYSQL_SERVER_PREPARE'};\n" .
-              "} 1;\n"))  &&
- close(FILE))  ||  die "Failed to create $fileName: $!";
+	      "} 1;\n"))  &&
+  close(FILE))  ||  die "Failed to create $fileName: $!";
 
 
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
@@ -419,11 +419,11 @@ USAGE
 #
 ############################################################################
 
-sub Configure 
+sub Configure
 {
   my($opt, $source, $param) = @_;
 
-  if (exists($opt->{$param})) 
+  if (exists($opt->{$param}))
   {
     $source->{$param} = "Users choice";
     return;
