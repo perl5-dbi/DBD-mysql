@@ -295,3 +295,82 @@ rows(sth)
     char buf[64];
     sprintf(buf, "%lu", imp_sth->row_num);
     ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
+
+
+MODULE = DBD::mysql    PACKAGE = DBD::mysql::GetInfo
+
+# This probably should be grabed out of some ODBC types header file
+#define SQL_CATALOG_NAME_SEPARATOR 41
+#define SQL_CATALOG_TERM 42
+#define SQL_DBMS_VER 18
+#define SQL_IDENTIFIER_QUOTE_CHAR 29
+#define SQL_MAXIMUM_STATEMENT_LENGTH 105
+#define SQL_MAXIMUM_TABLES_IN_SELECT 106
+#define SQL_MAX_TABLE_NAME_LEN 35
+#define SQL_SERVER_NAME 13
+
+
+#  dbd_mysql_getinfo()
+#  Return ODBC get_info() information that must needs be accessed from C
+#  This is an undocumented function that should only
+#  be used by DBD::mysql::GetInfo.
+
+void
+dbd_mysql_get_info(dbh, sql_info_type)
+    SV* dbh
+    SV* sql_info_type
+  CODE:
+    D_imp_dbh(dbh);
+    IV type = 0;
+    SV* retsv;
+    bool using_322;
+
+
+    if (SvOK(sql_info_type))
+    	type = SvIV(sql_info_type);
+    else
+    	croak("get_info called with an invalied parameter");
+    
+    switch(type) {
+    	case SQL_CATALOG_NAME_SEPARATOR:
+	    /* (dbc->flag & FLAG_NO_CATALOG) ? WTF is in flag ? */
+	    retsv = newSVpv(".",1);
+	    break;
+	case SQL_CATALOG_TERM:
+	    /* (dbc->flag & FLAG_NO_CATALOG) ? WTF is in flag ? */
+	    retsv = newSVpv("database",8);
+	    break;
+	case SQL_DBMS_VER:
+	    retsv = newSVpv(
+	        imp_dbh->mysql.server_version,
+		strlen(imp_dbh->mysql.server_version)
+	    );
+	    break;
+	case SQL_IDENTIFIER_QUOTE_CHAR:
+	    /*XXX What about a DB started in ANSI mode? */
+	    /* Swiped from MyODBC's get_info.c */
+	    using_322=is_prefix(mysql_get_server_info(&imp_dbh->mysql),"3.22");
+	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
+	    break;
+	case SQL_MAXIMUM_STATEMENT_LENGTH:
+	    retsv = newSViv(net_buffer_length);
+	    break;
+	case SQL_MAXIMUM_TABLES_IN_SELECT:
+	    /* newSViv((sizeof(int) > 32) ? sizeof(int)-1 : 31 ); in general? */
+	    newSViv((sizeof(int) == 64 ) ? 63 : 31 );
+	    break;
+	case SQL_MAX_TABLE_NAME_LEN:
+	    newSViv(NAME_LEN);
+	    break;
+	case SQL_SERVER_NAME:
+	    newSVpv(imp_dbh->mysql.host_info,strlen(imp_dbh->mysql.host_info));
+	    break;
+    	default:
+    		croak("Unknown SQL Info type: %i",dbh);
+    }
+    ST(0) = sv_2mortal(retsv);
+
+
+
+
+

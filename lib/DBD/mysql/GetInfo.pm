@@ -10,14 +10,13 @@ package DBD::mysql::GetInfo;
 
 use strict;
 use DBD::mysql;
-
 # Beware: not officially documented interfaces...
 # use DBI::Const::GetInfoType qw(%GetInfoType);
 # use DBI::Const::GetInfoReturn qw(%GetInfoReturnTypes %GetInfoReturnValues);
 
 my $sql_driver = 'mysql';
 my $sql_ver_fmt = '%02d.%02d.%04d';   # ODBC version string: ##.##.#####
-my $sql_driver_ver = do{
+my $sql_driver_ver = do {
     no warnings;
     sprintf $sql_ver_fmt, split (/./, $DBD::mysql::VERSION);
 };
@@ -66,6 +65,19 @@ sub sql_user_name {
 }
 
 
+####################
+# makefunc()
+# returns a ref to a sub that that calls into  XS to get 
+# values for info types that must needs be coded in C
+
+sub makefunk ($) {
+     my $type = shift;
+     return sub {dbd_mysql_get_info(shift, $type)}
+}
+
+
+
+
 our %info = (
      20 => 'N',                           # SQL_ACCESSIBLE_PROCEDURES
      19 => 'Y',                           # SQL_ACCESSIBLE_TABLES
@@ -81,8 +93,8 @@ our %info = (
      82 => 0,                             # SQL_BOOKMARK_PERSISTENCE
     114 => 1,                             # SQL_CATALOG_LOCATION
   10003 => 'Y',                           # SQL_CATALOG_NAME
-     41 => '.',                           # SQL_CATALOG_NAME_SEPARATOR
-     42 => 'database',                    # SQL_CATALOG_TERM
+     41 => makefunk 41,                   # SQL_CATALOG_NAME_SEPARATOR
+     42 => makefunk 42,                   # SQL_CATALOG_TERM
      92 => 29,                            # SQL_CATALOG_USAGE
   10004 => '',                            # SQL_COLLATING_SEQUENCE
   10004 => '',                            # SQL_COLLATION_SEQ
@@ -130,8 +142,7 @@ our %info = (
      25 => 'N',                           # SQL_DATA_SOURCE_READ_ONLY
     119 => 7,                             # SQL_DATETIME_LITERALS
      17 => 'MySQL',                       # SQL_DBMS_NAME
-     18 => '4.0.11-gamma-standard',       # SQL_DBMS_VER
-     18 => '4.0.11-gamma-standard',       # SQL_DBMS_VERSION
+     18 => makefunk 18,                   # SQL_DBMS_VER
     170 => 3,                             # SQL_DDL_INDEX
      26 => 2,                             # SQL_DEFAULT_TRANSACTION_ISOLATION
      26 => 2,                             # SQL_DEFAULT_TXN_ISOLATION
@@ -163,7 +174,8 @@ our %info = (
      81 => 11,                            # SQL_GETDATA_EXTENSIONS
      88 => 3,                             # SQL_GROUP_BY
      28 => 4,                             # SQL_IDENTIFIER_CASE
-     29 => '`',                           # SQL_IDENTIFIER_QUOTE_CHAR
+     #29 => sub {dbd_mysql_get_info(shift,$GetInfoType {SQL_IDENTIFIER_QUOTE_CHAR})},
+     29 => makefunk 29,                   # SQL_IDENTIFIER_QUOTE_CHAR
     148 => 0,                             # SQL_INDEX_KEYWORDS
     149 => 0,                             # SQL_INFO_SCHEMA_VIEWS
     172 => 7,                             # SQL_INSERT_STATEMENT
@@ -187,11 +199,11 @@ our %info = (
     102 => 500,                           # SQL_MAXIMUM_INDEX_SIZE
     104 => 0,                             # SQL_MAXIMUM_ROW_SIZE
      32 => 0,                             # SQL_MAXIMUM_SCHEMA_NAME_LENGTH
-    105 => 8192,                          # SQL_MAXIMUM_STATEMENT_LENGTH
+    105 => makefunk 105,                  # SQL_MAXIMUM_STATEMENT_LENGTH
 # 20000 => undef,                         # SQL_MAXIMUM_STMT_OCTETS
 # 20001 => undef,                         # SQL_MAXIMUM_STMT_OCTETS_DATA
 # 20002 => undef,                         # SQL_MAXIMUM_STMT_OCTETS_SCHEMA
-    106 => 31,                            # SQL_MAXIMUM_TABLES_IN_SELECT
+    106 => makefunk 106,                  # SQL_MAXIMUM_TABLES_IN_SELECT
      35 => 64,                            # SQL_MAXIMUM_TABLE_NAME_LENGTH
     107 => 16,                            # SQL_MAXIMUM_USER_NAME_LENGTH
   10022 => 0,                             # SQL_MAX_ASYNC_CONCURRENT_STATEMENTS
@@ -217,7 +229,7 @@ our %info = (
      32 => 0,                             # SQL_MAX_SCHEMA_NAME_LEN
     105 => 8192,                          # SQL_MAX_STATEMENT_LEN
     106 => 31,                            # SQL_MAX_TABLES_IN_SELECT
-     35 => 64,                            # SQL_MAX_TABLE_NAME_LEN
+     35 => makefunk 35,                   # SQL_MAX_TABLE_NAME_LEN
     107 => 16,                            # SQL_MAX_USER_NAME_LEN
      37 => 'Y',                           # SQL_MULTIPLE_ACTIVE_TXN
      36 => 'Y',                           # SQL_MULT_RESULT_SETS
@@ -254,7 +266,7 @@ our %info = (
      43 => 7,                             # SQL_SCROLL_CONCURRENCY
      44 => 17,                            # SQL_SCROLL_OPTIONS
      14 => '\\',                          # SQL_SEARCH_PATTERN_ESCAPE
-     13 => 'Localhost via UNIX socket',   # SQL_SERVER_NAME
+     13 => makefunk 13,                   # SQL_SERVER_NAME
      94 => 'ÇüéâäàåçêëèïîìÄÅÉæÆôöòûùÿÖÜáíóúñÑ', # SQL_SPECIAL_CHARACTERS
     155 => 7,                             # SQL_SQL92_DATETIME_FUNCTIONS
     156 => 0,                             # SQL_SQL92_FOREIGN_KEY_DELETE_RULE
