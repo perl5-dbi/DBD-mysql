@@ -1750,10 +1750,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
      */
     for (i = 0;  i < AV_ATTRIB_LAST;  i++) {
 	if (imp_sth->av_attr[i]) {
-#ifdef DEBUGGING_MEMORY_LEAK
-	    PerlIO_printf("Execute: Decrementing refcnt: old = %d\n",
-			  SvREFCNT(imp_sth->av_attr[i]));
-#endif
 	    SvREFCNT_dec(imp_sth->av_attr[i]);
 	}
 	imp_sth->av_attr[i] = Nullav;
@@ -1783,7 +1779,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 		      imp_sth->row_num);
     }
 
-    return (int) imp_sth->row_num;
+    if (imp_sth->row_num == (my_ulonglong) -1)
+    	return -1;
+    else
+	return (int) imp_sth->row_num;
 }
 
 

@@ -767,7 +767,7 @@ while (Testing()) {
     Test($state or ($sth = $dbh->query("drop table $table1")))
 	or test_error($dbh);
     if ($mdriver eq 'mysql') {
-	Test($state or ( (! defined $sth->numfields) || $sth->numfields == 0))
+	Test($state or ($sth->numfields == 0))
 	    or printf("Expected num fields being zero, not %s.\n",
 				   $sth->numfields);
     }
@@ -820,6 +820,9 @@ while (Testing()) {
     if ($mdriver eq 'mysql') {
 	my ($sth, $table);
 	Test($state or ($table = FindNewTable($dbh)));
+	Test($state or
+	     ($sth = $dbh->query("DROP TABLE IF EXISTS $table")))
+	    or printf("Error while executing query: %s\n", $Mysql::db_errstr);
 	Test($state or $dbh->query("CREATE TABLE $table ("
 				   . " id integer AUTO_INCREMENT PRIMARY KEY,"
 				   . " country char(30) NOT NULL)"))
