@@ -1,4 +1,6 @@
-2004-10-20  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_1)
+2004-10-27  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_2)
+	* DBI 1.43 is required -- It is needed for support of 
+	  $dbh->last_insert_id().
 	* Added $dbh->{mysql_unsafe_bind_type_guessing} = 2 which will look at
 	  each bind_param and make guess based on whether it looks like a 
 	  number, and if the parameter looks like a number, it will not be 
