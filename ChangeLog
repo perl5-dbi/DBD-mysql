@@ -1,3 +1,8 @@
+Dev-3_0
+	* Applied Patch from Patick Galbraith wich adds support of serer-side 
+	  prepared staements and cleans up a few warnings.
+	  [Patrick Galbraith <patg@mysql.com>]
+
 2003-10-26  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
 	* Applied patch from Aaron and Chuck that added basic testing of the 
 	  table_info/column_info functions [Aaron Ross <aross@plusthree.com>]
