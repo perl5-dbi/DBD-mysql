@@ -185,6 +185,7 @@ struct phs_st {         /* scalar placeholder EXPERIMENTAL      */
     size_t quoted_len;
     unsigned int count;
     bool is_bound;
+	MYSQL_BIND *bind;
 
     char name[1];       /* struct is malloc'd bigger as needed  */
 };
@@ -210,11 +211,12 @@ struct imp_sth_st {
 	dbih_stc_t com;		/* MUST be first element in structure     */
 
 	MYSQL_STMT *stmt;
+	MYSQL_RES *metadata;
+
 	MYSQL_BIND *bind;
-	MYSQL_BIND *buffer;
+	MYSQL_BIND *buffer; /* response */
 	imp_sth_phb_t *fbind;
 	imp_sth_fbh_t *fbh;
-	int has_binded;
 
 	int real_prepare;	/* Prepare Serverside?*/
 
@@ -283,7 +285,7 @@ void dbd_preparse(imp_sth_t * imp_sth, SV * statement);
 #if MYSQL_VERSION_ID>=40101
 long mysql_st_internal_execute41(SV *, SV *, SV *, int, imp_sth_ph_t *,
 				 MYSQL_RES **, MYSQL *, int, MYSQL_STMT *,
-				 MYSQL_BIND *, int *);
+				 MYSQL_BIND *);
 
 int mysql_st_clean_cursor(SV *, imp_sth_t *);
 #endif
