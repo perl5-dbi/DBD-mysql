@@ -339,7 +339,7 @@ sub column_info {
 	#warn "$type: $basetype [@type_params] [@type_attr]\n";
 
 	$info->{DATA_TYPE} = SQL_VARCHAR();
-	if ($basetype =~ /char|text|blob/) {
+	if ($basetype =~ /^(char|varchar|\w*text|\w*blob)/) {
 	    $info->{DATA_TYPE} = SQL_CHAR() if $basetype eq 'char';
 	    if ($type_params[0]) {
 		$info->{COLUMN_SIZE} = $type_params[0];
@@ -351,7 +351,13 @@ sub column_info {
 		$info->{COLUMN_SIZE} = 4294967295 if $basetype =~ /^long/;
 	    }
 	}
-	elsif ($basetype =~ /enum|set/) {
+	elsif ($basetype =~ /^(binary|varbinary)/) {
+	    $info->{COLUMN_SIZE} = $type_params[0];
+	    # SQL_BINARY & SQL_VARBINARY are tempting here but don't match the
+	    # semantics for mysql (not hex). SQL_CHAR &  SQL_VARCHAR are correct here.
+	    $info->{DATA_TYPE} = ($basetype eq 'binary') ? SQL_CHAR() : SQL_VARCHAR();
+	}
+	elsif ($basetype =~ /^(enum|set)/) {
 	    if ($basetype eq 'set') {
 		$info->{COLUMN_SIZE} = length(join ",", @type_params);
 	    }
@@ -362,18 +368,18 @@ sub column_info {
 	    }
 	    $info->{"mysql_values"} = \@type_params;
 	}
-	elsif ($basetype =~ /int/) {
+	elsif ($basetype =~ /int/) { # big/medium/small/tiny etc + unsigned?
 	    $info->{DATA_TYPE} = SQL_INTEGER();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE} = $type_params[0];
 	}
-	elsif ($basetype =~ /decimal/) {
+	elsif ($basetype =~ /^decimal/) {
 	    $info->{DATA_TYPE} = SQL_DECIMAL();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE}    = $type_params[0];
 	    $info->{DECIMAL_DIGITS} = $type_params[1];
 	}
-	elsif ($basetype =~ /float|double/) {
+	elsif ($basetype =~ /^(float|double)/) {
 	    $info->{DATA_TYPE} = ($basetype eq 'float') ? SQL_FLOAT() : SQL_DOUBLE();
 	    $info->{NUM_PREC_RADIX} = 2;
 	    $info->{COLUMN_SIZE} = ($basetype eq 'float') ? 32 : 64;
@@ -391,8 +397,13 @@ sub column_info {
 	    }
 	    $info->{DECIMAL_DIGITS} = 0; # no fractional seconds
 	}
+	elsif ($basetype eq 'year') {	# no close standard so treat as int
+	    $info->{DATA_TYPE} = SQL_INTEGER();
+	    $info->{NUM_PREC_RADIX} = 10;
+	    $info->{COLUMN_SIZE} = 4;
+	}
 	else {
-	    warn "unsupported column '$row->{field}' type '$basetype' treated as varchar";
+	    Carp::carp("column_info: unrecognized column type '$basetype' of $table_id.$row->{field} treated as varchar");
 	}
 	$info->{SQL_DATA_TYPE} ||= $info->{DATA_TYPE};
 	#warn Dumper($info);
