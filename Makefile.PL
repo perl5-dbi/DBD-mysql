@@ -19,11 +19,11 @@ Getopt::Long::GetOptions($opt, "help", "testdb=s", "testhost=s",
 			 "testuser=s", "testpassword=s",
 			 "cflags=s", "libs=s", "verbose",
 			 "nocatchstderr",
-			 "ssl!");
+			 "ssl!","nofoundrows!");
 my $source = {};
 
 foreach my $key (qw/testdb testhost testuser testpassword cflags libs
-                    nocatchstderr ssl/) {
+                    nocatchstderr ssl nofoundrows/) {
   Configure($opt, $source, $key);
 }
 
@@ -75,6 +75,7 @@ die "Failed to determine location of $fileName" unless -f $fileName;
 
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
+$cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 my %o = ( 'NAME' => 'DBD::mysql',
 	  'INC' => $cflags,
 	  'dist'         => { 'SUFFIX'       => ".gz",
@@ -130,6 +131,10 @@ Possible options are:
                          mysqlclient library
   --nocatchstderr        Supress using the "myld" script that redirects
                          STDERR while running the linker.
+  --nofoundrows          Change the behavoiur of \$sth->rows() so that it
+  			 returns the number of rows physically modified 
+			 instead of the rows matched
+  --ssl			 Enable SSL support
   --help                 Print this message and exit
 
 All options may be configured on the command line. If they are
@@ -189,6 +194,9 @@ sub Configure {
   if ($param eq "nocatchstderr") {
     $source->{$param} = "default";
     $opt->{$param} = 0;
+  } elsif ($param eq "nofoundrows") {
+    $source->{$param} = "default";
+    $opt->{$param} = 0;
   } elsif ($param eq "testdb") {
     $source->{$param} = "default";
     $opt->{$param} = $TESTDB;
@@ -236,6 +244,7 @@ MSG
   } elsif ($param eq "ssl") {
     $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
     $source->{$param} = "guessed";
+  }  elsif ($param eq "nofoundrows") {
   } else {
     die "Unknown configuration parameter: $param";
   }

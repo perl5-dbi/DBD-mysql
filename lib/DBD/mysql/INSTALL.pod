@@ -730,6 +730,12 @@ with
 
 in the list of linker flags. L</Configuration>. L</Linker flags>.  
 
+=item 4.)
+
+Red Hat 8 & 9 set the Default locale to UTF which causes problems with 
+MakeMaker.  To build DBD::mysql on these systems, do a 'unset LANG' 
+before runing 'perl Makefile.PL'
+
 =back
 
 
