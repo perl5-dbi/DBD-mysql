@@ -163,7 +163,8 @@ struct imp_sth_st {
 /*
  *  And last, not least: The prototype definitions.
  *
- * These defines avoid name clashes for multiple statically linked DBD's	*/
+ * These defines avoid name clashes for multiple statically linked DBD's
+ */
 #define dbd_init		mysql_dr_init
 #define dbd_db_login		mysql_db_login
 #define dbd_db_do		mysql_db_do

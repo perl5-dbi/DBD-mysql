@@ -4,7 +4,7 @@
           mysql_affected_rows is printed to from %lu to %lli if an error
           (-1) and %llu otherwise. This will now allow the number from rows
           to be able to be the maximum that mysql_affected_rows is able to
-          return, where before was limitted to %lu max value. (CNET)
+          return, where before was limitted to %lu max value. (CNET).
 
         * insert_id now a my_ulonglong (CNET) 
 

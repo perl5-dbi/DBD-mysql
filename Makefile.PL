@@ -382,7 +382,8 @@ sub SearchFor {
 
 package MY;
 
-sub libscan {
+sub libscan
+{
     my($self, $path) = @_;
     if ($path =~ /~$|SCCS/) { return undef; }
     $path;
