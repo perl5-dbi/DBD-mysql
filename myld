@@ -44,7 +44,7 @@ MSG
 
 if ($retval) {
   print STDERR $contents;
-  exit 1;
+  exit $retval;
 }
 
 END { unlink "myld.stderr"; }
