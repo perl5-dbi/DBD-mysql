@@ -490,7 +490,7 @@ int has_list_fields(char *statement)
          *        to remove this extension hack
          */
 
-	if(!strncasecmp(statement, "listfields", 11))
+	if (!strncasecmp(statement, "listfields", 10))
 		return 1;
 
 	return 0;

@@ -260,9 +260,6 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 		unsigned int client_flag = CLIENT_FOUND_ROWS;
 #endif
 
-#if MYSQL_VERSION_ID >=40101
-	client_flag |= CLIENT_PROTOCOL_41;
-#endif
 
 
 	if (host && !*host)
@@ -294,6 +291,13 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 	imp_dbh->real_prepare = TRUE;
 #else
 	imp_dbh->real_prepare = FALSE;
+#endif
+#if MYSQL_VERSION_ID >=40101
+	imp_dbh->has_protocol41 = TRUE;
+	client_flag |= CLIENT_PROTOCOL_41;
+#else
+	imp_dbh->has_protocol41 = FALSE;
+	client_flag &= ~CLIENT_PROTOCOL_41;
 #endif
 	SV *sv = DBIc_IMP_DATA(imp_dbh);
 	imp_dbh->has_transactions = TRUE;
@@ -1030,6 +1034,7 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 	imp_sth->use_mysql_use_result = svp && SvTRUE(*svp);
 
 
+	imp_sth->real_prepare = imp_dbh->real_prepare;
 	if (dbis->debug >= 2) {
 		PerlIO_printf(DBILOGFP, "Setting mysql_use_result to %d\n",
 			      imp_sth->use_mysql_use_result);
@@ -1038,7 +1043,6 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 			      MYSQL_VERSION_ID, imp_sth->real_prepare);
 	}
 
-	imp_sth->real_prepare = imp_dbh->real_prepare;
 	if (svp = DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20))
 		imp_sth->real_prepare = SvTRUE(*svp);
 
@@ -1048,9 +1052,10 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 
 
 
-	/* skip real prepare if the stmt has a limit clause, for now */
+	/* skip real prepare if the stmt has a limit clause, for now */ 
 	if (!imp_sth->real_prepare ||
-		has_limit_clause(statement) || has_list_fields) {
+		 has_limit_clause(statement) || has_list_fields(statement)) {
+
 
 		imp_sth->real_prepare = FALSE;
 	       /* Bail out... The rest of this function only 
@@ -1058,7 +1063,6 @@ dbd_st_prepare(SV * sth, imp_sth_t * imp_sth, char *statement, SV * attribs)
 		DBIc_IMPSET_on(imp_sth); /* it lives */
 		return 1;
 	}
-
 	if (imp_sth->stmt) {
 		fprintf(stderr, "ERROR: Trying to prepare new stmt"
 			" while we have already not closed one \n");
@@ -2566,6 +2570,7 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
         if (phs->quoted)
                 Safefree(phs->quoted);
 
+	phs->value=newvalue; /*TODO: Remove Hack */
         if (!SvOK(newvalue)) {
                 phs->quoted = safemalloc(sizeof("NULL"));
                 if (NULL == phs->quoted)
@@ -2595,15 +2600,15 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 		imp_sth->bind[idx].is_null =
 		    (char *) &(imp_sth->fbind[idx].is_null);
 
-		if (SvOK(imp_sth->params[idx].value)
-		    && imp_sth->params[idx].value) {
+		if (SvOK(phs->value)
+		    && phs->value) {
 			if (dbis->debug >= 2)
 				PerlIO_printf(DBILOGFP,
 					      "(first bind)   SCALAR IS STRING %s\n",
 					      imp_sth->bind[idx].
 					      buffer);
 			imp_sth->bind[idx].buffer =
-			    SvPV(imp_sth->params[idx].value, slen);
+			    SvPV(phs->value, slen);
 			imp_sth->bind[idx].buffer_length = slen;	////Should be here max value for this param?
 			imp_sth->fbind[idx].is_null = 0;
 			imp_sth->fbind[idx].length = slen;
@@ -2613,7 +2618,7 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 				PerlIO_printf(DBILOGFP,
 					      "(first bind)   SCALAR IS NULL\n");
 			imp_sth->bind[idx].buffer =
-			    SvPV(imp_sth->params[idx].value, slen);
+			    SvPV(phs->value, slen);
 			imp_sth->fbind[idx].is_null = 1;
 			imp_sth->fbind[idx].length = 0;
 		}
@@ -2621,15 +2626,15 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 		//rebind ph variable
 		//Map the new data direct to stmt handler
 		//as this is not first bind 
-		if (SvOK(imp_sth->params[idx].value)
-		    && imp_sth->params[idx].value) {
+		if (SvOK(phs->value)
+		    && phs->value) {
 			if (dbis->debug >= 2)
 				PerlIO_printf(DBILOGFP,
 					      "   SCALAR IS STRING %s\n",
 					      imp_sth->bind[idx].
 					      buffer);
 			imp_sth->stmt->params[idx].buffer =
-			    SvPV(imp_sth->params[idx].value, slen);
+			    SvPV(phs->value, slen);
 
 			//Should be here max value for this param?
 			imp_sth->stmt->params[idx].buffer_length = slen;	

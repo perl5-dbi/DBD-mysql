@@ -179,6 +179,7 @@ typedef struct imp_sth_fbind_st {
 typedef struct phs_st phs_t;    /* scalar placeholder   */
 
 struct phs_st {         /* scalar placeholder EXPERIMENTAL      */
+	SV *value;
     int ftype;          /* field type */
     char *quoted;       /* Quoted value bound to placeholder*/
     size_t quoted_len;
