@@ -841,11 +841,12 @@ The following stats are being maintained:
 
 =item auto_reconnects_ok
 
-the number of times that DBD::mysql had to reconnect to mysql
+The number of times that DBD::mysql successfully reconnected to the mysql 
+server.
 
-=item failed_auto_reconnects_failed
+=item auto_reconnects_failed
 
-the number of times that DBD::mysql tried to reconnect to mysql but failed.
+The number of times that DBD::mysql tried to reconnect to mysql but failed.
 
 =back
 
