@@ -296,7 +296,12 @@ rows(sth)
   CODE:
     D_imp_sth(sth);
     char buf[64];
-    sprintf(buf, "%lu", imp_sth->row_num);
+
+    if (imp_sth->row_num == (my_ulonglong) -1)
+      sprintf(buf, "%lli", -1);
+    else
+      sprintf(buf, "%llu", imp_sth->row_num);
+
     ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
 
 

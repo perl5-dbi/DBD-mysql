@@ -1,3 +1,13 @@
+2005-03-16  Patrick Galbraith <patg@mysql.com> (2.9005_4)
+        * Fix for rows - changed num_rows to my_ulonglong in dbdimp.h and
+          how the buffer that contains the value returned from
+          mysql_affected_rows is printed to from %lu to %lli if an error
+          (-1) and %llu otherwise. This will now allow the number from rows
+          to be able to be the maximum that mysql_affected_rows is able to
+          return, where before was limitted to %lu max value. (CNET)
+
+        * insert_id now a my_ulonglong (CNET) 
+
 2004-10-27  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_3)
 	* Removed requirement that mysql.mtest be included in the distribution.
 	* DBI 1.43 is required -- It is needed for support of 

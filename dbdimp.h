@@ -146,7 +146,7 @@ struct imp_sth_st {
 
     MYSQL_RES* cda;       /* result                                 */
     int currow;           /* number of current row                  */
-    long row_num;         /* total number of rows                   */
+    my_ulonglong row_num;         /* total number of rows                   */
 
     int   done_desc;      /* have we described this sth yet ?	    */
     long  long_buflen;    /* length for long/longraw (if >0)	    */
