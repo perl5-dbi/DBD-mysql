@@ -416,16 +416,6 @@ sub get_info {
 }
 
 
-####################
-# quote_identifier()
-# crippled stub of quote_identifier
-
-sub quote_identifier {
-    my ($dbh, @id) = @_;
-   return (grep { defined } @id)[0];
-
-}
-
 
 package DBD::mysql::st; # ====== STATEMENT ======
 use strict;

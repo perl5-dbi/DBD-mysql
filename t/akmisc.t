@@ -458,7 +458,7 @@ while (Testing()) {
 	if (!$state) {
 	    @array = $dbh2->listtables;
 	}
-	Test($state or (grep( /^$table1$/, @array )))
+	Test($state or (grep( /^`$table1`$/, @array )))
 	    or printf("'$table1' not in table list.\n");
     }
 

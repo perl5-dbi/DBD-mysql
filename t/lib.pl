@@ -213,7 +213,7 @@ sub DbiError ($$) {
 	}
 
 	if (!$listed) {
-	    @tables = map{ $_ =~ s/^.*\.//; $_ } $dbh->tables();
+	    @tables = grep {s/(?:^.*\.)|`//g} $dbh->tables();
 	    $listed = 1;
 	}
 

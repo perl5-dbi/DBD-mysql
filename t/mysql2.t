@@ -50,7 +50,7 @@ print "ok 1\n";
 		   $db,
 		   "TABLE01",
 		   "( id char(4) not null, longish blob )");
-    if (grep /^$t[0]$/i, $db->listtables) {
+    if (grep /^`$t[0]`$/i, $db->listtables) {
 	print "ok 2\n";
     } else {
 	print "not ok 2\n";

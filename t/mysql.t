@@ -320,7 +320,7 @@ $dbh2->query("drop table $secondtable") and print("ok 22\n") or print("not ok 22
 
     # Does ListTables now find our $firsttable?
     @array = $dbh2->listtables;
-    grep( /^$firsttable$/i, @array )  and print("ok 24\n") or print("not ok 24\n");
+    grep( /^`$firsttable`$/i, @array )  and print("ok 24\n") or print("not ok 24\n");
 }
 
 # The third connection within a single script. I promise, this will do...
