@@ -4,16 +4,19 @@
 # in the linking stage
 #
 
+use strict;
+
 open(OLDSTDERR, ">&STDERR") || die "Failed to backup STDERR: $!";
 open(FILE, ">myld.stderr") || die "Failed to create myld.stderr: $!";
 open(STDERR, ">&FILE") || die "Failed to redirect STDERR: $!";
-$retval = system @ARGV;
+my $retval = system @ARGV;
 open(STDERR, ">&OLDSTDERR");
 close(FILE) || die "Failed to close myld.stderr: $!";
+my $contents = "";
 if (-f "myld.stderr"  &&  !-z _) {
   open(FILE, "<myld.stderr") || die "Failed to reopen myld.stderr: $!";
   local $/ = undef;
-  my $contents = <FILE>;
+  $contents = <FILE>;
   die "Failed to read myld.stderr: $!" unless defined($contents);
   close(FILE) || die "Failed to close myld.stderr: $!";
 
@@ -23,8 +26,8 @@ if (-f "myld.stderr"  &&  !-z _) {
 $contents
 
 An error occurred while linking the DBD::mysql driver. The error
-message seems to indicate that you don't have a libz.a, libgz.a,
-libz.so or libgz.so. This is typically resolved by:
+message seems to indicate that you don't have a lib$missing.a,
+or a lib$missing.so. This is typically resolved by:
 
 1.) You may try to remove the -lz or -lgz flag from the libs list
     by using the --libs switch for "perl Makefile.PL".
