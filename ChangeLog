@@ -1,4 +1,10 @@
 Dev-3_0
+	* Read my.conf file by default even when neither 
+	  msql_read_default_group nor mysq_read_default_file are specified. 
+	  If mysql_read default_group is not specified, the group "dbd_mysql" 
+	  will be read.
+	* Makefile.PL now generates version numbers based on release tag,
+	  so there is no way for an non-tagged release to make it into the wild.
 	* Applied Patch from Patick Galbraith wich adds support of serer-side 
 	  prepared staements and cleans up a few warnings.
 	  [Patrick Galbraith <patg@mysql.com>]
