@@ -1,4 +1,4 @@
-2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.9001)
+2003-06-22  Rudy Lippan  <rlippan@remotelinux.com> (2.9001)
 	* moved pod into mysql.pm from mysql.pod
 	* Changed the default behaviour of mysql_found_rows, so now
 	  'UPDATE table set field=?' will return the number of rows matched
@@ -11,7 +11,7 @@
 	  behaviour to be toggled. :
 	  
 	  ** NOTE** The behaviour of auto reconnect has changed.  If 
-	  either the MOD_PERL or the GATEWAY_INTERFACE envionment variable is
+	  either the MOD_PERL or the GATEWAY_INTERFACE environment variable is
 	  set, auto_reconnect will default to ON; otherwise auto_reconnect
 	  will default to off.  Earlier versions of this driver would always
 	  try to reconnect to the database on error; however, this is dangerous
@@ -21,16 +21,16 @@
 	  eval. The next tine DBD::mysql tried to reconnect, the process
 	  would segfault.
 	* Added statistics attribute, 'mysql_dbd_stats' which returns
-	  a hashref that contains 2 keys 'auto_reconnects' and
+	  a hash ref that contains 2 keys 'auto_reconnects' and
 	  'failed_auto_reconnects'.
 	* Fixed bug where strings that were used in numeric
 	  context were not getting quoted on execute(). Now all
 	  parameters are bound as varchar by default.
 
-	  **NOTE** this is a chage in behaviour that MAY cause problems
-	  with some SQL statements. If quoted integers causes any problems,
-	   use bind_param(<column_id>, SQL_INTEGER) to force a column 
-	  to be bound as an integer.
+	  **NOTE** this is a change in behaviour that MAY cause problems
+	  with some SQL statements. If quoted integers, for example,  
+	  cause any problems, use bind_param(<column_id>, SQL_INTEGER) to 
+	  force a column to be bound as an integer.
 
 	* Added get_info() method. See 'perldoc DBI' for more info
 	* Added column_info(). See 'perldoc DBI' for more info [Tim Bunce]
