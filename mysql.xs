@@ -2,12 +2,11 @@
 
    $Id$
 
-   Copyright (c) 1997, 1998 Jochen Wiedmann
+   Copyright (c) 2003      Rudolf Lippan
+   Copyright (c) 1997-2003 Jochen Wiedmann
 
    You may distribute under the terms of either the GNU General Public
-   License or the Artistic License, as specified in the Perl README file,
-   with the exception that it cannot be placed on a CD-ROM or similar media
-   for commercial distribution without the prior approval of the author.
+   License or the Artistic License, as specified in the Perl README file.
 
 */
 

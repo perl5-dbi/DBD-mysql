@@ -823,8 +823,7 @@ or
 =head1 AUTHORS
 
 Andreas Koenig C<koenig@franz.ww.TU-Berlin.DE> wrote the original
-MsqlPerl. Jochen Wiedmann C<joe@ispsoft.de> wrote the M(y)sqlPerl
-emulation using DBI.
+MsqlPerl. Jochen Wiedmann wrote the M(y)sqlPerl emulation using DBI.
 
 
 =head1 SEE ALSO

@@ -1678,9 +1678,9 @@ in the PPM program.
 =head1 AUTHORS
 
 The current version of B<DBD::mysql> is almost completely written
-by Jochen Wiedmann (I<joe@ispsoft.de>), and is now being maintained by
+by Jochen Wiedmann, and is now being maintained by
 Rudy Lippan (I<rlippan@remotelinux.com>). The first version's author
-was Alligator Descartes(I<descarte@symbolstone.org>), who has been
+was Alligator Descartes (I<descarte@symbolstone.org>), who has been
 aided and abetted by Gary Shea, Andreas König and Tim Bunce
 amongst others.
 
@@ -1693,7 +1693,7 @@ layer, is from Jochen Wiedmann.
 
 
 This module is Copyright (c) 2003 Rudolf Lippan; Large Portions 
-Copyright (c) 1997-2001 Jochen Wiedmann, with code portions 
+Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
 for details.
@@ -1703,15 +1703,15 @@ for details.
 
 This module is maintained and supported on a mailing list,
 
-    msql-mysql-modules@lists.mysql.com
+    perl@lists.mysql.com
 
 To subscribe to this list, send a mail to
 
-    msql-mysql-modules-subscribe@lists.mysql.com
+    perl-subscribe@lists.mysql.com
 
 or
 
-    msql-mysql-modules-digest-subscribe@lists.mysql.com
+    perl-digest-subscribe@lists.mysql.com
 
 Mailing list archives are available at
 

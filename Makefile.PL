@@ -90,7 +90,7 @@ if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'CAPI'} = 'TRUE'
     if ($ExtUtils::MakeMaker::VERSION >= 5.43
 	&&  $Config::Config{'archname'} =~ /-object\b/i);
-  $o{'AUTHOR'} = 'Jochen Wiedmann <joe@ispsoft.de>';
+  $o{'AUTHOR'} = 'Rudy Lippan <rlippan@remotelinux.com>';
   $o{'ABSTRACT'} =
     'A MySQL driver for the Perl5 Database Interface (DBI)';
   $o{'PREREQ_PM'} = { 'DBI' => 1.08,
