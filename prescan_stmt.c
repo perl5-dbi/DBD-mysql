@@ -153,6 +153,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 	phs_t *phs;
 	SV *phs_sv;
 	SV **hv;
+	char name_buff[20]; /* XXX XXX XXX XXX */
 	char *src, *dest, *style = "\0", *laststyle = Nullch;
 	int ch, namelen;
 	int in_comment=0, in_literal=0;
@@ -251,14 +252,17 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			continue;
 
 
-		sprintf(dest," $%d", ++place_holder_count);
+		/* sprintf(dest," $%d", ++place_holder_count);*/
+		sprintf(name_buff,"$%d", ++place_holder_count);
+		sprintf(dest, "?");
+
 		namelen = strlen(dest);
 		dest += namelen;
 
 		ph_name_start = src-1;
 		if ('?' == ch) {		/* X/Open standard	    */
-			namelen--; /* Leading " " */
-			ph_name_start = dest-namelen;
+			ph_name_start = name_buff;
+			namelen = strlen(name_buff);
 			style = "?";
 		} else if (isDIGIT(*src)) {	/* '(:/$)1'	*/
 			namelen = 1;
@@ -287,8 +291,8 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 			imp_sth->all_params_hv = newHV();
 		}
 
-		/* //PerlIO_printf(DBILOGFP, "phs name start:%s len: %i Index:%i\n",  */
-		 /* //   ph_name_start,namelen, place_holder_count); */
+		/* fprintf(stderr, "phs name start:%s len: %i Index:%i\n", 
+		    ph_name_start,namelen, place_holder_count); */
 		
 		hv =hv_fetch(imp_sth->all_params_hv,ph_name_start,namelen,0);
 
@@ -409,7 +413,7 @@ rewrite_execute_stmt(sth, imp_sth, output)
 	char *end;
 	char ch;
 	phs_t *phs;
-	unsigned long ph;
+	unsigned long ph = 0;
 	bool in_literal = 0;
 	
 	src = statement = imp_sth->statement;
@@ -432,7 +436,14 @@ rewrite_execute_stmt(sth, imp_sth, output)
 		}
 
 		/* check if no placeholders */
-		if (('$' != ch) || !isDIGIT(*src)) {
+		/* if (('$' != ch) || !isDIGIT(*src)) {
+			if ('\'' == ch || '"' == ch) {
+				in_literal = ch;
+			}
+			*dest++ = ch;
+			continue;
+		} */
+		if ('?' != ch) {
 			if ('\'' == ch || '"' == ch) {
 				in_literal = ch;
 			}
@@ -440,8 +451,9 @@ rewrite_execute_stmt(sth, imp_sth, output)
 			continue;
 		}
 
-		ph = strtol(src, &end, 10);
-		src = end;
+		/* ph = strtol(src, &end, 10); */
+		/* src = end;*/
+		ph++; /* we are a place holder so get phs */
 
 		assert(ph <= imp_sth->phc);
 		phs = imp_sth->place_holders[ph];
