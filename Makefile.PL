@@ -121,7 +121,6 @@ sleep 5;
 eval { require File::Spec };
 my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
-die "Failed to determine location of $fileName" unless -f $fileName;
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
 	      "\$::test_host = \$opt->{'testhost'};\n" .

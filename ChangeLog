@@ -1,4 +1,5 @@
-2004-10-27  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_2)
+2004-10-27  Rudolf Lippan <rlippan@remotelinux.com> (2.9005_3)
+	* Removed requirement that mysql.mtest be included in the distribution.
 	* DBI 1.43 is required -- It is needed for support of 
 	  $dbh->last_insert_id().
 	* Added $dbh->{mysql_unsafe_bind_type_guessing} = 2 which will look at

@@ -27,7 +27,6 @@ t/mysql.t
 t/akmisc.t
 t/insertid.t
 t/mysql.dbtest
-t/mysql.mtest
 dbdimp.h
 constants.h
 lib/Mysql.pm
