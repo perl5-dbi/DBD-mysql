@@ -18,6 +18,7 @@
 
 #include "dbdimp.h"
 #include "type_info.h"
+#include "commit.c" // TODO: Fix & clean up -- Make header file &c.
 
 #if defined(WIN32)  &&  defined(WORD)
     /*  Don't exactly know who's responsible for defining WORD ... :-(  */
@@ -25,50 +26,11 @@
 typedef short WORD;
 #endif
 
+#define DECODE_KEY(a) ((sizeof(a)-1) == kl && strEQ(a,key))
+
 SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type);
 
 DBISTATE_DECLARE;
-
-
-static int CountParam(char *statement)
-{
-	char *ptr = statement;
-	int numParam = 0;
-	char c;
-
-	while ((c = *ptr++)) {
-		switch (c) {
-		case '"':
-		case '\'':
-			/* Skip string */
-			{
-				char end_token = c;
-				while ((c = *ptr) && c != end_token) {
-					if (c == '\\') {
-						++ptr;
-						if (*ptr) {
-							++ptr;
-						}
-					} else {
-						++ptr;
-					}
-				}
-				if (c) {
-					++ptr;
-				}
-				break;
-			}
-
-		case '?':
-			++numParam;
-			break;
-
-		default:
-			break;
-		}
-	}
-	return numParam;
-}
 
 static imp_sth_ph_t *AllocParam(int numParam)
 {
@@ -185,232 +147,6 @@ static void FreeParam(imp_sth_ph_t * params, int numParam)
 
 		Safefree(params);
 	}
-}
-
-
-static char *ParseParam(MYSQL * sock,
-			char *statement,
-			STRLEN * slenPtr,
-			imp_sth_ph_t * params, int numParams)
-{
-
-	if (numParams == 0) {
-		return NULL;
-	}
-
-	char *salloc;
-	int i, j;
-	char *valbuf;
-	STRLEN vallen;
-	int alen;
-	char *ptr;
-	imp_sth_ph_t *ph;
-	int slen = *slenPtr;
-	int limit_flag = 0;
-
-
-
-
-
-	while (isspace(*statement)) {
-		++statement;
-		--slen;
-	}
-
-
-	/* Calculate the number of bytes being allocated for the statement */
-	alen = slen;
-
-	for (i = 0, ph = params; i < numParams; i++, ph++) {
-		if (!ph->value || !SvOK(ph->value)) {
-			alen += 3;	/* Erase '?', insert 'NULL' */
-		} else {
-			//fprintf(stdout, "ph->type %d\n", ph->type);
-			/* this will most likely not happen since line 214 */
-			/* of mysql.xs hardcodes all types to SQL_VARCHAR */
-			if (!ph->type) {
-				ph->type = SQL_VARCHAR;
-			}
-
-			// fprintf(stdout, "alen %d\n", alen);
-
-			valbuf = SvPV(ph->value, vallen);
-			/* shouldn't this be 2 + vallen + 1,not 2 * ? */
-			/* 2 is for the each quotes char... right? ''' + vallen + ''' + '\0' */
-			alen += 2 * vallen + 1;	/* Erase '?', insert (possibly quoted) * string.  */
-		}
-	}
-
-	/* Allocate memory */
-	New(908, salloc, alen + 1, char);
-	ptr = salloc;
-
-	/* Now create the statement string; compare CountParam above */
-	i = 0;
-	j = 0;
-
-	while (j < slen) {
-		/* LIMIT should be the last part of the query, in most cases */
-		if (!limit_flag) {
-			char *limitcheckptr = &statement[j];
-			if (!strncasecmp(limitcheckptr, "limit", 5))
-				limit_flag = 1;
-		}
-
-		switch (statement[j]) {
-		case '\'':
-		case '"':
-			/* Skip string */
-			{
-				char endToken = statement[j++];
-				*ptr++ = endToken;
-				while (j < slen
-				       && statement[j] != endToken) {
-					if (statement[j] == '\\') {
-						*ptr++ = statement[j++];
-						if (j < slen) {
-							*ptr++ =
-							    statement[j++];
-						}
-					} else {
-						*ptr++ = statement[j++];
-					}
-				}
-
-				if (j < slen) {
-					*ptr++ = statement[j++];
-				}
-			}
-			break;
-
-		case '?':
-			/* Insert parameter */
-			j++;
-			if (i >= numParams) {
-				break;
-			}
-
-			ph = params + i++;
-			if (!ph->value || !SvOK(ph->value)) {
-				*ptr++ = 'N';
-				*ptr++ = 'U';
-				*ptr++ = 'L';
-				*ptr++ = 'L';
-			} else {
-				int isNum = FALSE;
-				int c;
-
-				valbuf = SvPV(ph->value, vallen);
-				if (valbuf) {
-					switch (ph->type) {
-					case SQL_NUMERIC:
-					case SQL_DECIMAL:
-					case SQL_INTEGER:
-					case SQL_SMALLINT:
-					case SQL_FLOAT:
-					case SQL_REAL:
-					case SQL_DOUBLE:
-					case SQL_BIGINT:
-					case SQL_TINYINT:
-						isNum = TRUE;
-						break;
-
-					case SQL_CHAR:
-					case SQL_VARCHAR:
-					case SQL_DATE:
-					case SQL_TIME:
-					case SQL_TIMESTAMP:
-					case SQL_LONGVARCHAR:
-					case SQL_BINARY:
-					case SQL_VARBINARY:
-					case SQL_LONGVARBINARY:
-						isNum = FALSE;
-						break;
-
-					default:
-						isNum = FALSE;
-						break;
-					}	/* end of switch(ph->type) */
-
-					/* we're at the end of the query, so any placeholders if */
-					/* after a LIMIT clause will be numbers and should not be quoted */
-					if (limit_flag == 1) {
-						isNum = TRUE;
-					}
-
-				//	fprintf(stdout, "isNum %d\n",
-				//		isNum);
-					if (!isNum) {
-						*ptr++ = '\'';
-						ptr +=
-						    mysql_real_escape_string
-						    (sock, ptr, valbuf,
-						     vallen);
-						*ptr++ = '\'';
-
-					} else {
-						while (vallen--) {
-							switch ((c =
-								 *valbuf++))
-							{
-							case '\0':
-								*ptr++ =
-								    '\\';
-								*ptr++ =
-								    '0';
-								break;
-
-							case '\'':
-							case '\\':
-								*ptr++ =
-								    '\\';
-								/* No break! */
-
-							default:
-								*ptr++ = c;
-								break;
-							}
-						}
-					}
-				}	/* end of if valbuf */
-			}	/* end of if ph->value */
-
-			break;	/* end of case '?' */
-
-			// in case this is a nested LIMIT
-		case ')':
-			if (limit_flag) {
-				limit_flag = 0;
-			}
-			*ptr++ = statement[j++];
-			break;
-
-		default:
-			*ptr++ = statement[j++];
-			break;
-
-		}		/* end of switch(statement[j]) */
-
-	}			/* end of while (j < slen) */
-
-	*slenPtr = ptr - salloc;
-	*ptr++ = '\0';
-
-	return salloc;
-}
-
-int BindParam(imp_sth_ph_t * ph, SV * value, IV sql_type)
-{
-	if (ph->value) {
-		(void) SvREFCNT_dec(ph->value);
-	}
-
-	ph->value = newSVsv(value);
-
-	if (sql_type) {
-		ph->type = sql_type;
-	}
-	return TRUE;
 }
 
 
@@ -1125,95 +861,36 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 	bool bool_value = SvTRUE(valuesv);
 
 	if (kl == 10 && strEQ(key, "AutoCommit")) {
-		if (imp_dbh->has_transactions) {
-			int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
+
+		if (!imp_dbh->has_transactions && bool_value) {
+			do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
+				 "Transactions not supported by database");
+			croak
+			    ("Transactions not supported by database");
+		}
+
+		int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
 
 			/* if setting AutoCommit on ... */
-			if (bool_value) {
-				if (!oldval) {
-#if MYSQL_VERSION_ID >=40101
-					if (!imp_dbh->has_protocol41) {
-#endif
-						/*  Need to issue a commit before entering AutoCommit  */
-						if (mysql_real_query
-						    (&imp_dbh->mysql,
-						     "COMMIT", 6) != 0) {
-							do_error(dbh,
-								 TX_ERR_COMMIT,
-								 "COMMIT failed");
-							return FALSE;
-						}
-						if (mysql_real_query
-						    (&imp_dbh->mysql,
-						     "SET AUTOCOMMIT=1",
-						     16)
-						    != 0) {
-							do_error(dbh,
-								 TX_ERR_AUTOCOMMIT,
-								 "Turning on AutoCommit failed");
-							return FALSE;
-						}
-#if MYSQL_VERSION_ID >=40101
-					} else {
-						if (mysql_commit
-						    (&imp_dbh->mysql)) {
-							do_error(dbh,
-								 TX_ERR_COMMIT,
-								 "COMMIT failed");
-							return FALSE;
-						}
-						if (mysql_autocommit
-						    (&imp_dbh->mysql, 1)) {
-							do_error(dbh,
-								 TX_ERR_AUTOCOMMIT,
-								 "Turning on AutoCommit failed");
-							return FALSE;
-						}
-					}
-#endif
-					DBIc_set(imp_dbh, DBIcf_AutoCommit,
-						 bool_value);
-				}
-			} else {
-				if (oldval) {
-#if MYSQL_VERSION_ID >=40101
-					if (!imp_dbh->has_protocol41) {
-#endif
-						if (mysql_real_query
-						    (&imp_dbh->mysql,
-						     "SET AUTOCOMMIT=0",
-						     16) != 0) {
-							do_error(dbh,
-								 TX_ERR_AUTOCOMMIT,
-								 "Turning off AutoCommit failed");
-							return FALSE;
-						}
-#if MYSQL_VERSION_ID >=40101
-					} else {
-						if (mysql_autocommit
-						    (&imp_dbh->mysql, 0)) {
-							do_error(dbh,
-								 TX_ERR_AUTOCOMMIT,
-								 "Turning off AutoCommit failed");
-							return FALSE;
-						}
-					}
-#endif
-					DBIc_set(imp_dbh, DBIcf_AutoCommit,
-						 bool_value);
-				}
+		if (bool_value && !oldval) {
+			/*  Need to issue a commit before entering AutoCommit */
+			if (dbd_mysql_commit(imp_dbh) != 0) {
+				do_error(dbh, TX_ERR_COMMIT, "COMMIT failed");
+				return FALSE;
 			}
-		} else {
-			/*
-			 *  We do support neither transactions nor "AutoCommit".
-			 *  But we stub it. :-)
-			 */
-			if (!SvTRUE(valuesv)) {
-				do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-					 "Transactions not supported by database");
-				croak
-				    ("Transactions not supported by database");
+			if (dbd_mysql_autocommit_on(imp_dbh)) {
+				do_error(dbh, TX_ERR_AUTOCOMMIT,
+					 "Turning on AutoCommit failed");
+				return FALSE;
 			}
+			DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
+		} else if(!bool_value && oldval) {
+			if (dbd_mysql_autocommit_off(imp_dbh)) {
+				do_error(dbh, TX_ERR_AUTOCOMMIT,
+					 "Turning off AutoCommit failed");
+				return FALSE;
+			}
+			DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
 		}
 	} else if (strlen("mysql_auto_reconnect")
 		   == kl && strEQ(key, "mysql_auto_reconnect")) {
@@ -1272,142 +949,87 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	char *fine_key = NULL;
 	SV *result = NULL;
 
+
 	switch (*key) {
 	case 'A':
-		if (strEQ(key, "AutoCommit")) {
-			if (imp_dbh->has_transactions) {
-				return
-				    sv_2mortal(boolSV
-					       (DBIc_has
-						(imp_dbh,
-						 DBIcf_AutoCommit)));
-			} else {
-				return &sv_yes;
-			}
-		}
+		if (DECODE_KEY("AutoCommit"))
+			return sv_2mortal(boolSV (DBIc_has
+					(imp_dbh, DBIcf_AutoCommit)));
 		break;
 	}
+
 	if (strncmp(key, "mysql_", 6) == 0) {
 		fine_key = key;
 		key = key + 6;
 		kl = kl - 6;
 	}
 
-	switch (*key) {
-	case 'a':
-		if (kl == strlen("auto_reconnect")
-		    && strEQ(key, "auto_reconnect"))
-			result =
-			    sv_2mortal(newSViv(imp_dbh->auto_reconnect));
-		break;
-
-	case 'e':
-		if (strEQ(key, "errno")) {
-			result =
-			    sv_2mortal(newSViv
-				       ((IV)
+	if (DECODE_KEY("auto_reconnect")) {
+			result = sv_2mortal(newSViv(imp_dbh->auto_reconnect));
+	} else if (DECODE_KEY("errno")) {
+			result = sv_2mortal(newSViv ((IV)
 					mysql_errno(&imp_dbh->mysql)));
-		} else if (strEQ(key, "error")) {
+	} else if (DECODE_KEY("error")) {
 			const char *msg = mysql_error(&imp_dbh->mysql);
 			result = sv_2mortal(newSVpv(msg, strlen(msg)));
-		} else if (strEQ(key, "errmsg")) {
-			/* Obsolete, as of 2.09! */
-			const char *msg = mysql_error(&imp_dbh->mysql);
-			result = sv_2mortal(newSVpv(msg, strlen(msg)));
-		}
-		break;
+	} else if (DECODE_KEY("errmsg")) {
+		/* Obsolete, as of 2.09! */
+		const char *msg = mysql_error(&imp_dbh->mysql);
+		result = sv_2mortal(newSVpv(msg, strlen(msg)));
+	} else if (DECODE_KEY("dbd_stats")) {
+		HV *hv = newHV();
+		hv_store(hv, "auto_reconnects_ok", strlen("auto_reconnects_ok"),
+				 newSViv(imp_dbh->stats.auto_reconnects_ok), 0);
+		hv_store(hv, "auto_reconnects_failed",
+			 strlen("auto_reconnects_failed"),
+			 newSViv(imp_dbh->stats.  auto_reconnects_failed), 0);
 
-	case 'd':
-		if (strEQ(key, "dbd_stats")) {
-			HV *hv = newHV();
-			hv_store(hv,
-				 "auto_reconnects_ok",
-				 strlen("auto_reconnects_ok"),
-				 newSViv(imp_dbh->stats.
-					 auto_reconnects_ok), 0);
-			hv_store(hv, "auto_reconnects_failed",
-				 strlen("auto_reconnects_failed"),
-				 newSViv(imp_dbh->stats.
-					 auto_reconnects_failed), 0);
+		result = (newRV_noinc((SV *) hv));
 
-			result = (newRV_noinc((SV *) hv));
-		}
+	} else if (DECODE_KEY("hostinfo")) {
+		const char *hostinfo =
+		    mysql_get_host_info(&imp_dbh->mysql);
+		result = hostinfo ?
+		    sv_2mortal(newSVpv(hostinfo, strlen(hostinfo)))
+		    : &sv_undef;
 
-	case 'h':
-		if (strEQ(key, "hostinfo")) {
-			const char *hostinfo =
-			    mysql_get_host_info(&imp_dbh->mysql);
-			result =
-			    hostinfo ?
-			    sv_2mortal(newSVpv(hostinfo, strlen(hostinfo)))
-			    : &sv_undef;
-		}
-		break;
-
-	case 'i':
-		if (strEQ(key, "info")) {
+	} else if (DECODE_KEY("info")) {
 			const char *info = mysql_info(&imp_dbh->mysql);
 			result =
 			    info ? sv_2mortal(newSVpv(info, strlen(info)))
 			    : &sv_undef;
-		} else if (kl == 8 && strEQ(key, "insertid")) {
-			/* We cannot return an IV, because the insertid is a long. */
-			result =
-			    sv_2mortal(my_ulonglong2str
-				       (mysql_insert_id(&imp_dbh->mysql)));
-		}
-		break;
+	} else if (DECODE_KEY("insertid")) {
+		/* We cannot return an IV, because the insertid is a long. */
+		result = sv_2mortal(my_ulonglong2str
+			       (mysql_insert_id(&imp_dbh->mysql)));
+	} else if (DECODE_KEY("protoinfo")) {
+		result = sv_2mortal(newSViv
+			       (mysql_get_proto_info (&imp_dbh->mysql)));
+	} else  if (DECODE_KEY("serverinfo")) {
+		const char *serverinfo = mysql_get_server_info(&imp_dbh->mysql);
+		result = serverinfo ?
+			sv_2mortal(newSVpv (serverinfo, strlen(serverinfo))) 
+			: &sv_undef;
 
-	case 'p':
-		if (kl == 9 && strEQ(key, "protoinfo")) {
-			result =
-			    sv_2mortal(newSViv
-				       (mysql_get_proto_info
-					(&imp_dbh->mysql)));
-		}
-		break;
+	} else if (DECODE_KEY("sock")) {
+		result = sv_2mortal(newSViv((IV) & imp_dbh->mysql));
 
-	case 's':
-		if (kl == 10 && strEQ(key, "serverinfo")) {
-			const char *serverinfo =
-			    mysql_get_server_info(&imp_dbh->mysql);
-			result =
-			    serverinfo ?
-			    sv_2mortal(newSVpv
-				       (serverinfo,
-					strlen(serverinfo))) : &sv_undef;
-		} else if (strEQ(key, "sock")) {
-			result =
-			    sv_2mortal(newSViv((IV) & imp_dbh->mysql));
-		} else if (strEQ(key, "sockfd")) {
-			result =
-			    sv_2mortal(newSViv
-				       ((IV) imp_dbh->mysql.net.fd));
-		} else if (strEQ(key, "stat")) {
-			const char *stats = mysql_stat(&imp_dbh->mysql);
-			result = stats ?
-			    sv_2mortal(newSVpv(stats, strlen(stats))) :
-			    &sv_undef;
-		} else if (strEQ(key, "stats")) {
+	} else if (DECODE_KEY("sockfd")) {
+		result = sv_2mortal(newSViv((IV) imp_dbh->mysql.net.fd));
+	} else if (DECODE_KEY("stat")) {
+		const char *stats = mysql_stat(&imp_dbh->mysql);
+		result = stats ?
+		    sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
+	} else if (DECODE_KEY("stats")) {
 			/* Obsolete, as of 2.09 */
 			const char *stats = mysql_stat(&imp_dbh->mysql);
 			result = stats ?
 			    sv_2mortal(newSVpv(stats, strlen(stats))) :
 			    &sv_undef;
-		} else if (kl == 14 && strEQ(key, "server_prepare")) {
-			result =
-			    sv_2mortal(newSViv
-				       ((IV) imp_dbh->has_protocol41));
-		}
-		break;
-
-	case 't':
-		if (kl == 9 && strEQ(key, "thread_id")) {
-			result =
-			    sv_2mortal(newSViv
-				       (mysql_thread_id(&imp_dbh->mysql)));
-		}
-		break;
+	} else if (DECODE_KEY("server_prepare")) {
+		result = sv_2mortal(newSViv((IV) imp_dbh->has_protocol41));
+	} else if (DECODE_KEY("thread_id")) {
+		result = sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
 	}
 
 	if (result == NULL) {
@@ -1889,50 +1511,6 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 		/*TODO: mysql_affect_rowsi */
 		return mysql_num_rows(imp_sth->cda);
 	}
-
-
-
-
-
-#if 0
-	if (salloc) {
-		sbuf = salloc;
-		if (dbis->debug >= 2) {
-			PerlIO_printf(DBILOGFP, "Binding parameters: %s\n",
-				      sbuf);
-		}
-	}
-
-	if (*cdaPtr) {
-		mysql_free_result(*cdaPtr);
-		*cdaPtr = NULL;
-	}
-
-
-
-	if ((mysql_real_query(svsock, sbuf, slen)) &&
-	    (!mysql_db_reconnect(h) ||
-	     (mysql_real_query(svsock, sbuf, slen)))) {
-		Safefree(salloc);
-		do_error(h, mysql_errno(svsock), mysql_error(svsock));
-		return -2;
-	}
-	Safefree(salloc);
-
-  /** Store the result from the Query */
-	*cdaPtr = use_mysql_use_result ?
-	    mysql_use_result(svsock) : mysql_store_result(svsock);
-
-	if (mysql_errno(svsock)) {
-		do_error(h, mysql_errno(svsock), mysql_error(svsock));
-	}
-
-	if (!*cdaPtr) {
-		return mysql_affected_rows(svsock);
-	} else {
-		return mysql_num_rows(*cdaPtr);
-	}
-#endif
 
 }
 
@@ -2949,103 +2527,45 @@ SV *dbd_st_FETCH_attrib(SV * sth, imp_sth_t * imp_sth, SV * keysv)
 			      (u_long) sth, key);
 	}
 
-	switch (*key) {
-	case 'N':
-		if (strEQ(key, "NAME")) {
-			retsv = ST_FETCH_AV(AV_ATTRIB_NAME);
-		} else if (strEQ(key, "NULLABLE")) {
-			retsv = ST_FETCH_AV(AV_ATTRIB_NULLABLE);
-		}
-		break;
-	case 'P':
-		if (strEQ(key, "PRECISION")) {
-			retsv = ST_FETCH_AV(AV_ATTRIB_PRECISION);
-		}
-		break;
-	case 'S':
-		if (strEQ(key, "SCALE")) {
-			retsv = ST_FETCH_AV(AV_ATTRIB_SCALE);
-		}
-		break;
-	case 'T':
-		if (strEQ(key, "TYPE")) {
-			retsv = ST_FETCH_AV(AV_ATTRIB_SQL_TYPE);
-		}
-		break;
-	case 'm':
-		switch (kl) {
-		case 10:
-			if (strEQ(key, "mysql_type")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_TYPE);
-			}
-			break;
-		case 11:
-			if (strEQ(key, "mysql_table")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_TABLE);
-			}
-			break;
-		case 12:
-			if (strEQ(key, "mysql_is_key")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_IS_KEY);
-			} else if (strEQ(key, "mysql_is_num")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_IS_NUM);
-			} else if (strEQ(key, "mysql_length")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_LENGTH);
-			} else if (strEQ(key, "mysql_result")) {
-				retsv =
-				    sv_2mortal(newSViv((IV) imp_sth->cda));
-			}
-			break;
-		case 13:
-			if (strEQ(key, "mysql_is_blob")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_IS_BLOB);
-			}
-			break;
-		case 14:
-			if (strEQ(key, "mysql_insertid")) {
-				/* We cannot return an IV, because the insertid is a long.
-				 */
-				return
-				    sv_2mortal(my_ulonglong2str
-					       (imp_sth->insertid));
-			}
-			break;
-		case 15:
-			if (strEQ(key, "mysql_type_name")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_TYPE_NAME);
-			}
-			break;
-		case 16:
-			if (strEQ(key, "mysql_is_pri_key")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_IS_PRI_KEY);
-			} else if (strEQ(key, "mysql_max_length")) {
-				retsv = ST_FETCH_AV(AV_ATTRIB_MAX_LENGTH);
-			} else if (strEQ(key, "mysql_use_result")) {
-				retsv =
-				    boolSV(imp_sth->use_mysql_use_result);
-			}
-			break;
-		case 20:
-			if (strEQ(key, "mysql_server_prepare")) {
-#if MYSQL_VERSION_ID >=40101
-				retsv =
-				    sv_2mortal(newSViv
-					       ((IV) imp_sth->
-						has_protocol41));
-#else
-				retsv = boolSV(0);
-#endif
-			}
-			break;
-		case 23:
-			if (strEQ(key, "mysql_is_auto_increment")) {
-				retsv =
-				    ST_FETCH_AV
-				    (AV_ATTRIB_IS_AUTO_INCREMENT);
-			}
-			break;
-		}
-		break;
+	if (DECODE_KEY("NAME")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_NAME);
+	} else if (DECODE_KEY("NULLABLE")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_NULLABLE);
+	} else if (DECODE_KEY("PRECISION")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_PRECISION);
+	} else if (DECODE_KEY("SCALE")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_SCALE);
+	} else if (DECODE_KEY("TYPE")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_SQL_TYPE);
+	} else if (DECODE_KEY("mysql_type")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_TYPE);
+	} else  if (DECODE_KEY("mysql_table")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_TABLE);
+	} else if (DECODE_KEY("mysql_is_key")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_IS_KEY);
+	} else if (DECODE_KEY("mysql_is_num")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_IS_NUM);
+	} else if (DECODE_KEY("mysql_length")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_LENGTH);
+	} else if (DECODE_KEY("mysql_result")) {
+		retsv = sv_2mortal(newSViv((IV) imp_sth->cda));
+	} else if (DECODE_KEY("mysql_is_blob")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_IS_BLOB);
+	} else  if (DECODE_KEY("mysql_insertid")) {
+		/* We cannot return an IV, because the insertid is a long.  */
+		return sv_2mortal(my_ulonglong2str (imp_sth->insertid));
+	} else if (DECODE_KEY("mysql_type_name")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_TYPE_NAME);
+	} else if (DECODE_KEY("mysql_is_pri_key")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_IS_PRI_KEY);
+	} else if (DECODE_KEY("mysql_max_length")) {
+		retsv = ST_FETCH_AV(AV_ATTRIB_MAX_LENGTH);
+	} else if (DECODE_KEY("mysql_use_result")) {
+		retsv = boolSV(imp_sth->use_mysql_use_result);
+	} else if (DECODE_KEY("mysql_server_prepare")) {
+		retsv = sv_2mortal(newSViv ((IV) imp_sth-> has_protocol41));
+	} else if (DECODE_KEY("mysql_is_auto_increment")) {
+		retsv = ST_FETCH_AV (AV_ATTRIB_IS_AUTO_INCREMENT);
 	}
 
 	return retsv;
@@ -3198,54 +2718,6 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	if (paramNum <= 0 || paramNum > DBIc_NUM_PARAMS(imp_sth)) {
-		do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM,
-			 "Illegal parameter number");
-		return FALSE;
-	}
-
-	if (is_inout) {
-		do_error(sth, JW_ERR_NOT_IMPLEMENTED,
-			 "Output parameters not implemented");
-		return FALSE;
-	}
-
-	if (dbis->debug >= 2) {
-		if (SvOK(value)) {
-			char *foof = SvPV(value, slen);
-			PerlIO_printf(DBILOGFP,
-				      "   type %d value is SCALAR ->%s<- \n",
-				      sql_type, foof);
-		} else {
-			PerlIO_printf(DBILOGFP,
-				      "   type %d value is NULL -><- \n",
-				      sql_type);
-		}
-	}
-	rc = BindParam(&imp_sth->params[idx], value, sql_type);
 
 #if MYSQL_VERSION_ID >=40101
 
