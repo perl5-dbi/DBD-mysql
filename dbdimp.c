@@ -294,22 +294,17 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 			SV **svp;
 			STRLEN lna;
 
-			if ((svp =
-			     hv_fetch(hv, "mysql_compression", 17,
-				      FALSE)) && *svp
-			    && SvTRUE(*svp)) {
+#define OPTION_IF(a) ((svp = hv_fetch(hv,a,sizeof(a), FALSE)) &&\
+*svp && SvTRUE(*svp))
+
+			if (OPTION_IF("mysql_compression")) {
 				if (dbis->debug >= 2)
 					PerlIO_printf(DBILOGFP,
 						      "imp_dbh->mysql_dr_connect: Enabling"
 						      " compression.\n");
-				mysql_options(sock,
-					      MYSQL_OPT_COMPRESS,
-					      NULL);
+				mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
 			}
-			if ((svp =
-			     hv_fetch(hv, "mysql_connect_timeout",
-				      21, FALSE))
-			    && *svp && SvTRUE(*svp)) {
+			if (OPTION_IF("myql_connect_timeout")){
 				int to = SvIV(*svp);
 				if (dbis->debug >= 2)
 					PerlIO_printf(DBILOGFP,
@@ -320,26 +315,16 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 					      MYSQL_OPT_CONNECT_TIMEOUT,
 					      (const char *) &to);
 			}
-			if ((svp =
-			     hv_fetch(hv,
-				      "mysql_read_default_file",
-				      23, FALSE)) && *svp
-			    && SvTRUE(*svp)) {
+			if (OPTION_IF("mysql_read_default_file")){
 				char *df = SvPV(*svp, lna);
 				if (dbis->debug >= 2)
 					PerlIO_printf(DBILOGFP,
 						      "imp_dbh->mysql_dr_connect: Reading"
 						      " default file %s.\n",
 						      df);
-				mysql_options(sock,
-					      MYSQL_READ_DEFAULT_FILE,
-					      df);
+				mysql_options(sock, MYSQL_READ_DEFAULT_FILE, df);
 			}
-			if ((svp =
-			     hv_fetch(hv,
-				      "mysql_read_default_group",
-				      24, FALSE)) && *svp
-			    && SvTRUE(*svp)) {
+			if (OPTION_IF("mysql_read_default_group")){
 				char *gr = SvPV(*svp, lna);
 				if (dbis->debug >= 2)
 					PerlIO_printf(DBILOGFP,
@@ -391,69 +376,29 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 #endif
 #if defined(DBD_MYSQL_WITH_SSL)   && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
-			if ((svp =
-			     hv_fetch(hv, "mysql_ssl", 9, FALSE))
-			    && *svp) {
-				if (SvTRUE(*svp)) {
-					char *client_key = NULL;
-					char *client_cert = NULL;
-					char *ca_file = NULL;
-					char *ca_path = NULL;
-					char *cipher = NULL;
-					STRLEN lna;
-					if ((svp =
-					     hv_fetch(hv,
-						      "mysql_ssl_client_key",
-						      20, FALSE))
-					    && *svp) {
-						client_key =
-						    SvPV(*svp,
-							 lna);
-					}
-					if ((svp =
-					     hv_fetch(hv,
-						      "mysql_ssl_client_cert",
-						      21, FALSE))
-					    && *svp) {
-						client_cert =
-						    SvPV(*svp,
-							 lna);
-					}
-					if ((svp =
-					     hv_fetch(hv,
-						      "mysql_ssl_ca_file",
-						      17, FALSE))
-					    && *svp) {
-						ca_file =
-						    SvPV(*svp,
-							 lna);
-					}
-					if ((svp =
-					     hv_fetch(hv,
-						      "mysql_ssl_ca_path",
-						      17, FALSE))
-					    && *svp) {
-						ca_path =
-						    SvPV(*svp,
-							 lna);
-					}
-					if ((svp =
-					     hv_fetch(hv,
-						      "mysql_ssl_cipher",
-						      16, FALSE))
-					    && *svp) {
-						cipher =
-						    SvPV(*svp,
-							 lna);
-					}
-					mysql_ssl_set(sock,
-						      client_key,
-						      client_cert,
-						      ca_file,
-						      ca_path,
-						      cipher);
-					client_flag |= CLIENT_SSL;
-				}
+			if (OPTION_IF("mysql_ssl")) {
+				char *client_key = NULL;
+				char *client_cert = NULL;
+				char *ca_file = NULL;
+				char *ca_path = NULL;
+				char *cipher = NULL;
+				STRLEN lna;
+#define DECODE_OPTION(a,b) \
+if ((svp = hv_fetch(hv,a, sizeof(a), FALSE)) && *svp) \
+	b = SvPV(*svp, lna); 
+
+DECODE_OPTION("mysql_ssl_client_key", client_key);
+DECODE_OPTION("mysql_ssl_client_cert", client_cert);
+DECODE_OPTION("mysql_ssl_ca_file", ca_file);
+DECODE_OPTION("mysql_ssl_ca_path", ca_path);
+DECODE_OPTION("mysql_ssl_cipher", cipher );
+				mysql_ssl_set(sock,
+					      client_key,
+					      client_cert,
+					      ca_file,
+					      ca_path,
+					      cipher);
+				client_flag |= CLIENT_SSL;
 			}
 #endif
 #if (MYSQL_VERSION_ID >= 32349)
@@ -2911,6 +2856,7 @@ SV *dbd_db_quote(SV * dbh, SV * str, SV * type)
 	return result;
 }
 
+/* TODO: Merge this and regular quote function */
 SV *internal_quote(imp_dbh_t *imp_dbh, SV * str, SV * type)
 {
 	SV *result;
