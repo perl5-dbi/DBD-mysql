@@ -155,7 +155,7 @@ rewrite_placeholders (imp_sth, statement)
 	char *src, *dest, *style = "\0", *laststyle = Nullch;
 	int ch, namelen;
 	int in_comment=0, in_literal=0;
-	unsigned int place_holder_count =0;
+	unsigned int phc =0;
 	char *ph_name_start;
 
 	memset(&phs_tpl, 0, sizeof(phs_tpl));
@@ -249,8 +249,8 @@ rewrite_placeholders (imp_sth, statement)
 			continue;
 
 
-		/* sprintf(dest," $%d", ++place_holder_count);*/
-		sprintf(name_buff,"$%d", ++place_holder_count);
+		/* sprintf(dest," $%d", ++phc);*/
+		snprintf(name_buff, sizeof(name_buff), "$%d", ++phc);
 		sprintf(dest, "?");
 
 		namelen = strlen(dest);
@@ -289,7 +289,7 @@ rewrite_placeholders (imp_sth, statement)
 		}
 
 		/* fprintf(stderr, "phs name start:%s len: %i Index:%i\n", 
-		    ph_name_start,namelen, place_holder_count); */
+		    ph_name_start,namelen, phc); */
 		
 		hv =hv_fetch(imp_sth->all_params_hv,ph_name_start,namelen,0);
 
@@ -307,12 +307,12 @@ rewrite_placeholders (imp_sth, statement)
 		}
 		phs = (phs_t *)SvPVX(phs_sv);
 		phs->count++; /* Number with this name */
-		imp_sth->place_holders[place_holder_count] = phs;
-		phs->bind = &imp_sth->bind[place_holder_count];
+		imp_sth->place_holders[phc] = phs;
+		phs->bind = &imp_sth->bind[phc];
 	}
 
-	if (place_holder_count) {
-		DBIc_NUM_PARAMS(imp_sth) = place_holder_count;
+	if (phc) {
+		DBIc_NUM_PARAMS(imp_sth) = phc;
 		/* if (dbis->debug >= 2) {
 			PerlIO_printf(DBILOGFP, 
 			"    dbd_preparse scanned %d"
@@ -320,7 +320,7 @@ rewrite_placeholders (imp_sth, statement)
 		} */
 	}
 	*dest = '\0';
-	imp_sth->phc = place_holder_count;
+	imp_sth->phc = phc;
 }
 
 
@@ -463,6 +463,7 @@ rewrite_execute_stmt(sth, imp_sth, output)
 	}
 	*dest = '\0';
 	
+	imp_sth->stmt_len = dest-output;
 	return 0;
 }
 

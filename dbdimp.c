@@ -27,57 +27,11 @@ typedef short WORD;
 #endif
 
 #define DECODE_KEY(a) ((sizeof(a)-1) == kl && strEQ(a,key))
+static bool set_autocommit(SV *dbh, imp_dbh_t *imp_dbh, bool do_auto_commit,
+	bool commit_first);
 
 
 DBISTATE_DECLARE;
-
-#if MYSQL_VERSION_ID >=40101
-
-static MYSQL_BIND *AllocBuffer(int numField)
-{
-	MYSQL_BIND *buffer;
-
-	if (numField) {
-		Newz(908, buffer, numField, MYSQL_BIND);
-	} else {
-		buffer = NULL;
-	}
-	return buffer;
-}
-
-
-static imp_sth_fbh_t *AllocFBuffer(int numField)
-{
-	imp_sth_fbh_t *fbh;
-
-	if (numField) {
-		Newz(908, fbh, numField, imp_sth_fbh_t);
-	} else {
-		fbh = NULL;
-	}
-	return fbh;
-}
-
-
-static void FreeBuffer(MYSQL_BIND * buffer)
-{
-	if (buffer) {
-		Safefree(buffer);
-	} else {
-		fprintf(stderr, "FREE ERROR BUFFER!");
-	}
-}
-
-static void FreeFBuffer(imp_sth_fbh_t * fbh)
-{
-	if (fbh) {
-		Safefree(fbh);
-	} else {
-		fprintf(stderr, "FREE ERROR FBUFFER!");
-	}
-}
-
-#endif
 
 #define SQL_GET_TYPE_INFO_num \
 	(sizeof(SQL_GET_TYPE_INFO_values)/sizeof(sql_type_info_t))
@@ -287,8 +241,7 @@ MYSQL *mysql_dr_connect(MYSQL * sock, char *unixSocket, char *host,
 				      imp_dbh->has_protocol41);
 	}
 
-	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE))
-	    && *svp) {
+	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE)) && *svp) {
 		if (SvTRUE(*svp)) {
 			imp_dbh->real_prepare = TRUE;
 		} else {
@@ -505,8 +458,7 @@ int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
 
 	if (imp_dbh->has_transactions) {
 		if (!imp_dbh->has_protocol41) {
-			if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6)
-			    != 0) {
+			if (mysql_real_query(&imp_dbh->mysql,"COMMIT",6) != 0) {
 				do_error(dbh, mysql_errno(&imp_dbh->mysql),
 					 mysql_error(&imp_dbh->mysql));
 				return FALSE;
@@ -521,6 +473,10 @@ int dbd_db_commit(SV * dbh, imp_dbh_t * imp_dbh)
 #else
 		die("DBD::mysql Bug");
 #endif
+		}
+		if (imp_dbh->begun_work) {
+			imp_dbh->begun_work = FALSE;
+			set_autocommit(dbh, imp_dbh, FALSE, FALSE);
 		}
 	} else {
 		do_warn(dbh, JW_ERR_NOT_IMPLEMENTED,
@@ -560,7 +516,10 @@ int dbd_db_rollback(SV * dbh, imp_dbh_t * imp_dbh)
 			 mysql_error(&imp_dbh->mysql));
 		return FALSE;
 	}
-
+	if (imp_dbh->begun_work) {
+		imp_dbh->begun_work = 0;
+		set_autocommit(dbh, imp_dbh, FALSE, FALSE);
+	}	
 }
 
 
@@ -649,6 +608,45 @@ void dbd_db_destroy(SV * dbh, imp_dbh_t * imp_dbh)
 }
 
 
+static bool set_autocommit(SV *dbh, imp_dbh_t *imp_dbh, bool do_auto_commit,
+	bool commit_first)
+{
+	int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
+
+	if (!imp_dbh->has_transactions && do_auto_commit) {
+		do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
+			 "Transactions not supported by database");
+		croak("Transactions not supported by database");
+	}
+
+	/* if setting AutoCommit on ... */
+	if (!oldval && do_auto_commit) {
+		/*  Need to issue a commit before entering AutoCommit */
+		if (imp_dbh->begun_work)
+			croak("begun work bug autocommit was tunred off "
+			   "without commit/rollback");
+
+		if (commit_first && dbd_mysql_commit(imp_dbh) != 0) {
+			do_error(dbh, TX_ERR_COMMIT, "COMMIT failed");
+			return FALSE;
+		}
+		if (dbd_mysql_autocommit_on(imp_dbh)) {
+			do_error(dbh, TX_ERR_AUTOCOMMIT,
+				 "Turning on AutoCommit failed");
+			return FALSE;
+		}
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, TRUE);
+	} else if (!do_auto_commit && oldval) {
+		if (dbd_mysql_autocommit_off(imp_dbh)) {
+			do_error(dbh, TX_ERR_AUTOCOMMIT,
+				 "Turning off AutoCommit failed");
+			return FALSE;
+		}
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, FALSE);
+	}
+}
+
+
 /***************************************************************************
  *  Name:    dbd_db_STORE_attrib
  *  Purpose: Function for storing dbh attributes; we currently support
@@ -670,42 +668,17 @@ int dbd_db_STORE_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv,
 	bool bool_value = SvTRUE(valuesv);
 
 	if (DECODE_KEY("AutoCommit")) {
-		if (!imp_dbh->has_transactions && bool_value) {
-			do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-				 "Transactions not supported by database");
-			croak("Transactions not supported by database");
-		}
-
-		int oldval = DBIc_has(imp_dbh, DBIcf_AutoCommit);
-
-		/* if setting AutoCommit on ... */
-		if (bool_value && !oldval) {
-			/*  Need to issue a commit before entering AutoCommit */
-			if (dbd_mysql_commit(imp_dbh) != 0) {
-				do_error(dbh, TX_ERR_COMMIT,
-					 "COMMIT failed");
-				return FALSE;
-			}
-			if (dbd_mysql_autocommit_on(imp_dbh)) {
-				do_error(dbh, TX_ERR_AUTOCOMMIT,
-					 "Turning on AutoCommit failed");
-				return FALSE;
-			}
-			DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
-		} else if (!bool_value && oldval) {
-			if (dbd_mysql_autocommit_off(imp_dbh)) {
-				do_error(dbh, TX_ERR_AUTOCOMMIT,
-					 "Turning off AutoCommit failed");
-				return FALSE;
-			}
-			DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
-		}
+		/* TODO Set return value */
+		set_autocommit(dbh, imp_dbh, bool_value, TRUE);
+	} else if (DECODE_KEY("BegunWork")) {
+		imp_dbh->begun_work = 1;
 	} else if (DECODE_KEY("mysql_auto_reconnect")) {
 		/*XXX: Does DBI handle the magic ? */
 		imp_dbh->auto_reconnect = bool_value;
 	} else if (DECODE_KEY("mysql_server_prepare")) {
 		imp_dbh->real_prepare = SvTRUE(valuesv);
 	} else {
+		do_error(dbh, TX_ERR_AUTOCOMMIT, "Unknown Key");
 		return FALSE;
 	}
 
@@ -748,14 +721,8 @@ SV *dbd_db_FETCH_attrib(SV * dbh, imp_dbh_t * imp_dbh, SV * keysv)
 	SV *result = NULL;
 
 
-	switch (*key) {
-	case 'A':
-		if (DECODE_KEY("AutoCommit"))
-			return sv_2mortal(boolSV(DBIc_has
-						 (imp_dbh,
-						  DBIcf_AutoCommit)));
-		break;
-	}
+	if (DECODE_KEY("AutoCommit"))
+		return sv_2mortal(boolSV(DBIc_has (imp_dbh, DBIcf_AutoCommit)));
 
 	if (0 == strncmp(key, "mysql_", 6)) {
 		fine_key = key;
@@ -1028,7 +995,6 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 		char *key;
 		I32 retlen;
 		hv_iterinit(hv);
-		/* //PerlIO_printf(DBILOGFP, "b4 max_len: %i\n", max_len); */
 		while ((sv = hv_iternextsv(hv, &key, &retlen)) != NULL) {
 			if (sv != &sv_undef) {
 				phs_t *phs_tpl =
@@ -1038,18 +1004,14 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 						 "Execute called with unbound placeholder");
 					return -2;
 				}
-				max_len +=
-				    phs_tpl->quoted_len * phs_tpl->count;
+				max_len += phs_tpl->quoted_len * phs_tpl->count;
 			}
 		}
 		Newc(0, statement, max_len, char, char);
 
 		/* scan statement for placeholders and replace with values */
-		if ((ret =
-		     rewrite_execute_stmt(sth, imp_sth, statement)) < 0)
+		if ((ret = rewrite_execute_stmt(sth, imp_sth, statement)) < 0)
 			return ret;
-		/*fprintf(stderr, "Show STMT:\n");
-		   fprintf(stderr, "Stament Rewrite:%s\n", statement); */
 	} else {
 		statement = imp_sth->statement;
 	}
@@ -1057,8 +1019,6 @@ int mysql_st_internal_execute(SV * sth, imp_sth_t * imp_sth)
 
 	/*TODO:  Clean up and free old result */
 
-
-	stmt_len = strlen(statement);
 
 	if ((mysql_real_query (&imp_dbh->mysql, statement, strlen(statement)))
 	    && (!mysql_db_reconnect(sth) || (mysql_real_query
@@ -1319,6 +1279,10 @@ int dbd_describe(SV * sth, imp_sth_t * imp_sth)
 
 	if (!num_fields || !imp_sth->cda) {
 		//no metadata
+		/*XXX Should this be an error in describe?  user tries to 
+		  fetch on an insert probably should not thow some weird
+		  message about not having metadata and -- error during
+		  describe*/
 		do_error(sth, JW_ERR_SEQUENCE,
 			"no metadata information while trying describe"
 			" result set");
@@ -1326,12 +1290,9 @@ int dbd_describe(SV * sth, imp_sth_t * imp_sth)
 	}
 
 	/* allocate fields buffers  */
-	if (!(imp_sth->fbh = AllocFBuffer(num_fields))
-	    || !(imp_sth->buffer = AllocBuffer(num_fields))) {
-		//Out of memory 
-		do_error(sth, JW_ERR_SEQUENCE,
-			 "Out of memory in dbd_sescribe()");
-		return 0;
+	if (num_fields) {
+	 	Newz(908, imp_sth->fbh, num_fields, imp_sth_fbh_t);
+		Newz(908,imp_sth-> buffer, num_fields, MYSQL_BIND);
 	}
 
 	fields = mysql_fetch_fields(imp_sth->cda);
@@ -1714,9 +1675,11 @@ int dbd_st_finish(SV * sth, imp_sth_t * imp_sth)
 						Safefree(fbh->data);
 					}
 				}
-				FreeFBuffer(imp_sth->fbh);
+				if (imp_sth->fbh)
+					Safefree(imp_sth->fbh);
 			}
-			FreeBuffer(imp_sth->buffer);
+			if(imp_sth->buffer)
+				Safefree(imp_sth->buffer);
 
 			imp_sth->buffer = NULL;
 			imp_sth->fbh = NULL;

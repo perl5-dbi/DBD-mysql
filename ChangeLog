@@ -1,4 +1,6 @@
 Dev-3_0
+	* Added support for begin_work() so that it work as specified in the
+	  DBI spec.
 	* $sth->{ParamValues} now implemented per DBI spec
 	* removed re-implentation of do(). Cleaning up 
 	  prepare()/bind()/execute() allowed me to dispense with it so, 

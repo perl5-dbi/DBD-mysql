@@ -120,6 +120,7 @@ struct imp_dbh_st {
 	int has_protocol41;	/* does server support new binary protocol */
 	int has_autodetect_prepare;
 	int real_prepare;	/* Prepare Serverside?*/
+	bool begun_work;
 };
 
 
@@ -221,6 +222,7 @@ struct imp_sth_st {
 	int real_prepare;	/* Prepare Serverside?*/
 
 	char *statement;
+	STRLEN stmt_len;
 	MYSQL_RES *cda;		/* result                                 */
 	int currow;		/* number of current row                  */
 	int fetch_done;		/* mark that fetch done                   */
