@@ -11,7 +11,7 @@
  *  You may distribute this under the terms of either the GNU General Public
  *  License or the Artistic License, as specified in the Perl README file.
  *
- *  $Id$
+ *  Id: dbdimp.h,v 1.5 2003/10/17 17:20:50 rlippan Exp $ 
  */
 
 /*
@@ -20,6 +20,13 @@
 #include <DBIXS.h>  /* installed by the DBI module                        */
 #include <mysql.h>  /* Comes with MySQL-devel */
 #include <errmsg.h> /* Comes with MySQL-devel */
+
+/* 
+ * This is the version of MySQL wherer
+ * the server will be used to process prepare
+ * statements as opposed to emulation in the driver
+*/
+#define SERVER_PREPARE_VERSION 40103
 
 /*
  *  The following are return codes passed in $h->err in case of
@@ -45,6 +52,7 @@ enum errMsgs {
     JW_ERR_MEM,
     JW_ERR_LIST_INDEX,
     JW_ERR_SEQUENCE,
+    AS_ERR_EMBEDDED,
     TX_ERR_AUTOCOMMIT,
     TX_ERR_COMMIT,
     TX_ERR_ROLLBACK
@@ -85,8 +93,17 @@ enum av_attribs {
  *  This declares a variable called "imp_drh" of type
  *  "struct imp_drh_st *".
  */
+typedef struct imp_drh_embedded_st {
+    int state;
+    SV * args;
+    SV * groups;
+} imp_drh_embedded_t;
+
 struct imp_drh_st {
     dbih_drc_t com;         /* MUST be first element in structure   */
+#if defined(DBD_MYSQL_EMBEDDED)
+    imp_drh_embedded_t embedded;     /* */
+#endif
 };
 
 
@@ -114,9 +131,13 @@ struct imp_dbh_st {
 	    unsigned int auto_reconnects_ok;
 	    unsigned int auto_reconnects_failed;
     } stats;
+    int use_mysql_use_result; /* TRUE if execute should use     
+                               * mysql_use_result rather than   
+                               * mysql_store_result
+                               */
+    int use_server_side_prepare;
+    int has_autodetect_prepare;
 };
-
-
 
 
 /*
@@ -128,7 +149,38 @@ typedef struct imp_sth_ph_st {
     int type;
 } imp_sth_ph_t;
 
+/*
+ *  The bind_param method internally uses this structure for storing
+ *  parameters.
+ */
+typedef struct imp_sth_phb_st {
+    unsigned long   length;
+    char            is_null;
+} imp_sth_phb_t;
 
+/*
+ *  The dbd_describe uses this structure for storing
+ *  fields meta info.
+ *  Added ddata, ldata, lldata for accomodate 
+ *  being able to use different data types
+ *  12.02.20004 PMG
+ */
+typedef struct imp_sth_fbh_st {
+    unsigned long  length;
+    bool           is_null;
+    char           * data;
+    double        ddata;
+    long          ldata;
+    long long     lldata;
+    
+} imp_sth_fbh_t;
+
+
+typedef struct imp_sth_fbind_st {
+   unsigned long   * length;
+   char            * is_null;
+} imp_sth_fbind_t;
+            
 
 /*
  *  Finally our part of the statement handle. We receive the handle as
@@ -143,8 +195,19 @@ typedef struct imp_sth_ph_st {
 struct imp_sth_st {
     dbih_stc_t com;       /* MUST be first element in structure     */
 
-    MYSQL_RES* cda;       /* result                                 */
+#if (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
+    MYSQL_STMT       *stmt;
+    MYSQL_BIND       *bind;
+    MYSQL_BIND       *buffer;
+    imp_sth_phb_t    *fbind;
+    imp_sth_fbh_t    *fbh;
+    int              has_binded;
+    int use_server_side_prepare;     /* does server support new binary protocol */
+#endif
+
+    MYSQL_RES* result;       /* result                                 */
     int currow;           /* number of current row                  */
+    int fetch_done;       /* mark that fetch done                   */
     long row_num;         /* total number of rows                   */
 
     int   done_desc;      /* have we described this sth yet ?	    */
@@ -195,12 +258,25 @@ void	 do_error (SV* h, int rc, const char *what);
 SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
-int mysql_st_internal_execute(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
+long mysql_st_internal_execute(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
 			      MYSQL*, int);
+
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+long mysql_st_internal_execute41(SV*, SV*, SV*, int, imp_sth_ph_t*, MYSQL_RES**,
+                              MYSQL*, int, MYSQL_STMT*, MYSQL_BIND*, int*);			      
+
+int mysql_st_clean_cursor(SV*, imp_sth_t*);
+#endif
+
+#if defined(DBD_MYSQL_EMBEDDED)
+int count_embedded_options(char *);
+char ** fill_out_embedded_options(char *, int , int , int );
+int free_embedded_options(char **, int);
+#endif
+			      
 AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);
 SV* dbd_db_quote(SV*, SV*, SV*);
-extern MYSQL* mysql_dr_connect(MYSQL*, char*, char*, char*, char*, char*,
+extern MYSQL* mysql_dr_connect(SV*, MYSQL*, char*, char*, char*, char*, char*,
 			       char*, imp_dbh_t*);
-
 
 extern int mysql_db_reconnect(SV*);

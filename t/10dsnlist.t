@@ -1,6 +1,6 @@
 #!/usr/local/bin/perl
 #
-#   $Id$
+#   $Id$ 
 #
 #   This test creates a database and drops it. Should be executed
 #   after listdsn.
@@ -46,7 +46,7 @@ while (Testing()) {
 					$test_password)))
 	or ServerError();
 
-    Test($state or (@dsn = DBI->data_sources($mdriver)) >= 0);
+    Test($state or (@dsn = DBI->data_sources($mdriver, {user=> $test_user, password=> $test_password})) >= 0);
     if (!$state) {
 	my $d;
 	print "List of $mdriver data sources:\n";
@@ -61,7 +61,7 @@ while (Testing()) {
     #   Try different DSN's
     #
     my(@dsnList);
-    if (($mdriver eq 'mysql'  or  $mdriver eq 'mSQL')
+    if (($mdriver eq 'mysql'  or  $mdriver eq 'mSQL' or $mdriver eq 'mysqlEmb')
 	and  $test_dsn eq "DBI:$mdriver:test") {
 	@dsnList = ("DBI:$mdriver:test:localhost",
 		    "DBI:$mdriver:test;localhost",
