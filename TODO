@@ -24,8 +24,6 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
 - test re-execute of partially fetched() statement with & w/o finish()
 - Look at mem leak in autoreconnects. -- When auto recconect works, we thow
   away the pointer to save_socket w/o freeing it.
-- list_fieds needs to be added readded to execute() -- maybe;
-- PramValues
 - Embedded mysql server.  make embedded => (DBD::mysqlEmbed? || DBD::SQLHeavy :)
 - Add tests for when autocommit is not supported
 - Tests for change to rollback behaviour where DESTROY calls mysql_db_rollback.
@@ -35,3 +33,20 @@ x use DBD::ODBC & its type_info_all() to test type_info_all in DBD::mysql
   use mysq_db_commit.
 - remove goto hackary... Finish cleaning up connect
 - tests for $sth->{ParamValues}
+- rewrite test suite using Test::More
+- write up an fk_info()
+-  get_info()
+   - Ansi mode fixes and differences between ANSI mode and regular mode.
+   - quotes return '""' when the server was started in ANSI mode even
+      though '`' are still supported.
+- quoted identifires and ansi mode ('"' quotes)
+- utf-8 support
+- begin_work()
+- save points
+- better tracing support
+- Get caught up with DBI-1.41 with supported features
+
+
+
+
+
