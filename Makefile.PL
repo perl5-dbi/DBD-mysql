@@ -1,15 +1,5 @@
 # -*- cperl -*-
 
-BEGIN {
-    if ($] == 5.008 && $ENV{"LANG"} ne "C") {
-	$ENV{LANG} = "C";
-	print STDERR "\n\n\nENV{LANG} is not 'C' execing 'perl Makefile.PL'".
-	" with ENV{LANG} == 'C'\n You can skip this check by: 'export ".
-	"LANG='C' before running 'perl Makefile.PL'\n\n";
-	sleep(5);
-        exec ("perl $0", @ARGV )|| die $!;
-    }
-}
 
 use strict;
 BEGIN { $^W = 1; }

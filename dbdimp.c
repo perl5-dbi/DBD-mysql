@@ -7,7 +7,7 @@
  *  You may distribute this under the terms of either the GNU General Public
  *  License or the Artistic License, as specified in the Perl README file.
  *
- *  $Id$ 
+ *  $Id$
  */
 
 
@@ -65,7 +65,6 @@ count_params(char* statement)
   char* ptr = statement;
   int num_params = 0;
   char c;
-  char end_token;
 
   while ( (c = *ptr++) ) 
   {
@@ -75,7 +74,7 @@ count_params(char* statement)
     case '\'':
       /* Skip string */
       {
-        end_token = c;
+        char end_token = c;
         while ((c = *ptr)  &&  c != end_token)
         {
           if (c == '\\') 
@@ -219,7 +218,7 @@ FreeFBind(imp_sth_phb_t * fbind)
 {
   if (fbind)
   {
-    Safefree(fbind);
+	  Safefree(fbind);
   }
   else
   {
@@ -373,7 +372,7 @@ int print_embedded_options(char ** options_list, int options_count)
   for (i=0; i<options_count; i++)
   {
     if (options_list[i])
-        PerlIO_printf(DBILOGFP, "PARAM I=%d S=%s\n", i, options_list[i]);
+        PerlIO_printf(DBILOGFP, "Embedded server, parameter[%d]=%s\n", i, options_list[i]);
   }
   return 1;
 }
@@ -438,7 +437,7 @@ char ** fill_out_embedded_options(char * options, int options_type, int slen, in
 /* }}} */
 #endif
 
-/* {{{ static char* parse_params(MYSQL* sock, char* statement, STRLEN *slenPtr, imp_sth_ph_t* params, int num_params)
+/* {{{ static char* parse_params(MYSQL* sock, char* statement, STRLEN *slenPtr, imp_sth_ph_t* params, int num_params, bool bind_type_guessing)
 
   constructs an SQL statement previously prepared with 
   actual values replacing placeholders
@@ -448,18 +447,18 @@ parse_params(MYSQL* sock,
 	   char* statement, 
 	   STRLEN *slenPtr,
 	   imp_sth_ph_t* params, 
-	   int num_params)
+	   int num_params, 
+           bool bind_type_guessing)
 {
 
-  char *salloc, *statement_ptr, *statement_ptr_end;
-  int i;
+  char *salloc, *statement_ptr, *statement_ptr_end, *testchar, *ptr;
+  int i, alen, j;
   char* valbuf;
   STRLEN vallen;
-  int alen;
-  char* ptr;
   imp_sth_ph_t* ph;
   int slen = *slenPtr;
   int limit_flag = 0;
+  bool seen_neg, seen_dec;
 
   if (num_params == 0)
   {
@@ -484,16 +483,45 @@ parse_params(MYSQL* sock,
     } 
     else
     {
+      valbuf = SvPv(ph->value, vallen);
+      alen += 2+vallen+1;
       /* this will most likely not happen since line 214 */ 
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
-        ph->type= SQL_VARCHAR;
-      }
+        if ( bind_type_guessing > 1 ) {
+          valbuf = SvPV(ph->value, vallen);
+          ph->type = SQL_INTEGER;
 
-      valbuf = SvPV(ph->value, vallen);
-      /* *2 is becasue in the worst case each character may have to be quoted */
-      alen += 2*vallen+1; /* Erase '?', insert (possibly quoted) * string.  */
+          seen_neg = 0; seen_dec = 0;
+          for (j = 0; j < vallen; ++j) {
+            testchar = *(valbuf+j);
+            if ('-' == testchar) {
+              if (seen_neg) {
+                ph->type = SQL_VARCHAR;
+                break;
+              } else if (j) {
+                ph->type = SQL_VARCHAR;
+                break;
+              }
+              seen_neg = 1;
+            } else if ('.' == testchar) {
+              if (seen_dec) {
+                ph->type = SQL_VARCHAR;
+                break;
+              }
+              seen_dec = 1;
+            } else if (!isdigit(testchar)) {
+              ph->type = SQL_VARCHAR;
+              break;
+            }
+          }
+        } else if (bind_type_guessing) {
+          ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
+        } else {
+          ph->type= SQL_VARCHAR;
+        }
+      }
     }
   } 
 
@@ -644,175 +672,239 @@ bind_param(imp_sth_ph_t* ph, SV* value, IV sql_type)
 }
 /* }}} */
 
-
-/* {{{ static const sql_type_info_t SQL_GET_TYPE_INFO_values[] 
- *  The order of the following is important: The first column of a given
- *  data_type is choosen to represent all columns of the same type. */
-static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = 
-{
-  { "varchar", SQL_VARCHAR, 255, "'", "'", "max length",
-    1, 0, 3, 0, 0, 0, "variable length string", 0, 0, 0, 
-    SQL_VARCHAR, 0, 0, FIELD_TYPE_VAR_STRING,  0
+static const sql_type_info_t SQL_GET_TYPE_INFO_values[] = {
+  { "varchar",    SQL_VARCHAR,                    255, "'",  "'",  "max length",
+    1, 0, 3, 0, 0, 0, "variable length string",
+    0, 0, 0, 
+    SQL_VARCHAR, 0, 0, 
+    FIELD_TYPE_VAR_STRING,  0,
     /* 0 */
   },
-  { "decimal", SQL_DECIMAL, 15, NULL, NULL, "precision,scale",
-    1, 0, 3, 0, 0, 0, "double", 0, 6, 2, 
-    SQL_DECIMAL, 0, 0, FIELD_TYPE_DECIMAL, 1
+  { "decimal",   SQL_DECIMAL,                      15, NULL, NULL, "precision,scale",
+    1, 0, 3, 0, 0, 0, "double",
+    0, 6, 2, 
+    SQL_DECIMAL, 0, 0,
+    FIELD_TYPE_DECIMAL,     1
     /* 1 */
   },
-  { "tinyint", SQL_TINYINT, 3, NULL, NULL, NULL,
-     1, 0, 3, 0, 0, 0, "Tiny integer", 0, 0, 10,
-    SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1
+  { "tinyint",   SQL_TINYINT,                       3, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "Tiny integer",
+    0, 0, 10, 
+    SQL_TINYINT, 0, 0,
+    FIELD_TYPE_TINY,        1
     /* 2 */
   },
-  { "smallint", SQL_SMALLINT, 5, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "Short integer", 0, 0, 10, 
-    SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1
+  { "smallint",  SQL_SMALLINT,                      5, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "Short integer",
+    0, 0, 10, 
+    SQL_SMALLINT, 0, 0,
+    FIELD_TYPE_SHORT,       1
     /* 3 */
   },
-  { "integer", SQL_INTEGER, 10, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "integer", 0, 0, 10,
-    SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1
+  { "integer",   SQL_INTEGER,                      10, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "integer",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_LONG,        1
     /* 4 */
   },
-  { "float", SQL_REAL, 7,  NULL, NULL, NULL,
-    1, 0, 0, 0, 0, 0, "float", 0, 2, 10, 
-    SQL_FLOAT, 0, 0, FIELD_TYPE_FLOAT, 1
+  { "float",     SQL_REAL,                          7,  NULL, NULL, NULL,
+    1, 0, 0, 0, 0, 0, "float",
+    0, 2, 10, 
+    SQL_FLOAT, 0, 0,
+    FIELD_TYPE_FLOAT,       1
     /* 5 */
   },
-  { "double", SQL_FLOAT, 15,  NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "double", 0, 4, 2, 
-    SQL_FLOAT, 0, 0, FIELD_TYPE_DOUBLE, 1
+  { "double",    SQL_FLOAT,                       15,  NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "double",
+    0, 4, 2, 
+    SQL_FLOAT, 0, 0,
+    FIELD_TYPE_DOUBLE,      1
     /* 6 */
   },
-  { "double", SQL_DOUBLE, 15,  NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "double", 0, 4, 10, 
-    SQL_DOUBLE, 0, 0, FIELD_TYPE_DOUBLE, 1
+  { "double",    SQL_DOUBLE,                       15,  NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "double",
+    0, 4, 10, 
+    SQL_DOUBLE, 0, 0,
+    FIELD_TYPE_DOUBLE,      1
     /* 6 */
   },
-  /* FIELD_TYPE_NULL ?  */
-  { "timestamp", SQL_TIMESTAMP, 14, "'", "'", NULL,
-    0, 0, 3, 0, 0, 0, "timestamp", 0, 0, 0,
-    SQL_TIMESTAMP, 0, 0, FIELD_TYPE_TIMESTAMP, 0
+  /*
+    FIELD_TYPE_NULL ?
+  */
+  { "timestamp", SQL_TIMESTAMP,                    14, "'", "'", NULL,
+    0, 0, 3, 0, 0, 0, "timestamp",
+    0, 0, 0,
+    SQL_TIMESTAMP, 0, 0,
+    FIELD_TYPE_TIMESTAMP,   0
     /* 7 */
   },
-  { "bigint", SQL_BIGINT, 19, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "Longlong integer", 0, 0, 10,
-    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1
+  { "bigint",    SQL_BIGINT,                       19, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "Longlong integer",
+    0, 0, 10, 
+    SQL_BIGINT, 0, 0,
+    FIELD_TYPE_LONGLONG,    1
     /* 8 */
   },
-  { "middleint", SQL_INTEGER, 8, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "Medium integer", 0, 0, 10, 
-    SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1
+  { "middleint", SQL_INTEGER,                       8, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "Medium integer",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_INT24,       1
     /* 9 */
   },
-  { "date", SQL_DATE, 10, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "date", 0, 0, 0, 
-    SQL_DATE, 0, 0, FIELD_TYPE_DATE, 0
+  { "date",      SQL_DATE,                         10, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "date",
+    0, 0, 0, 
+    SQL_DATE, 0, 0,
+    FIELD_TYPE_DATE,        0
     /* 10 */
   },
-  { "time", SQL_TIME, 6, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "time", 0, 0, 0, 
-    SQL_TIME, 0, 0, FIELD_TYPE_TIME, 0
+  { "time",      SQL_TIME,                          6, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "time",
+    0, 0, 0, 
+    SQL_TIME, 0, 0,
+    FIELD_TYPE_TIME,        0
     /* 11 */
   },
-  { "datetime", SQL_TIMESTAMP, 21, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "datetime", 0, 0, 0, 
-    SQL_TIMESTAMP, 0, 0, FIELD_TYPE_DATETIME, 0
+  { "datetime",  SQL_TIMESTAMP,                    21, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "datetime",
+    0, 0, 0, 
+    SQL_TIMESTAMP, 0, 0,
+    FIELD_TYPE_DATETIME,    0
     /* 12 */
   },
-  { "year", SQL_SMALLINT, 4, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "year", 0, 0, 10, 
-    SQL_SMALLINT, 0, 0, FIELD_TYPE_YEAR, 0
+  { "year",      SQL_SMALLINT,                      4, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "year",
+    0, 0, 10, 
+    SQL_SMALLINT, 0, 0,
+    FIELD_TYPE_YEAR,        0
     /* 13 */
   },
-  { "date", SQL_DATE, 10, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "date", 0, 0, 0, 
-    SQL_DATE, 0, 0, FIELD_TYPE_NEWDATE, 0
+  { "date",      SQL_DATE,                         10, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "date",
+    0, 0, 0, 
+    SQL_DATE, 0, 0,
+    FIELD_TYPE_NEWDATE,     0
     /* 14 */
   },
-  { "enum", SQL_VARCHAR, 255, "'",  "'",  NULL,
-    1, 0, 1, 0, 0, 0, "enum(value1,value2,value3...)", 0, 0, 0, 
-    0, 0, 0, FIELD_TYPE_ENUM, 0
+  { "enum",      SQL_VARCHAR,                     255, "'",  "'",  NULL,
+    1, 0, 1, 0, 0, 0, "enum(value1,value2,value3...)",
+    0, 0, 0, 
+    0, 0, 0,
+    FIELD_TYPE_ENUM,        0
     /* 15 */
   },
-  { "set", SQL_VARCHAR, 255, "'",  "'",  NULL,
-    1, 0, 1, 0, 0, 0, "set(value1,value2,value3...)", 0, 0, 0, 
-    0, 0, 0, FIELD_TYPE_SET, 0
+  { "set",       SQL_VARCHAR,                     255, "'",  "'",  NULL,
+    1, 0, 1, 0, 0, 0, "set(value1,value2,value3...)",
+    0, 0, 0, 
+    0, 0, 0,
+    FIELD_TYPE_SET,         0
     /* 16 */
   },
-  { "blob", SQL_LONGVARBINARY, 65535, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "binary large object (0-65535)", 0, 0, 0, 
-    SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_BLOB, 0
+  { "blob",       SQL_LONGVARBINARY,              65535, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "binary large object (0-65535)",
+    0, 0, 0, 
+    SQL_LONGVARBINARY, 0, 0,
+    FIELD_TYPE_BLOB,        0
     /* 17 */
   },
-  { "tinyblob",  SQL_VARBINARY, 255, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "binary large object (0-255) ", 0, 0, 0, 
-    SQL_VARBINARY, 0, 0, FIELD_TYPE_TINY_BLOB, 0
+  { "tinyblob",  SQL_VARBINARY,                 255, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "binary large object (0-255) ",
+    0, 0, 0, 
+    SQL_VARBINARY, 0, 0,
+    FIELD_TYPE_TINY_BLOB,   0
     /* 18 */
   },
-  { "mediumblob", SQL_LONGVARBINARY, 16777215, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "binary large object", 0, 0, 0,
-    SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0
+  { "mediumblob", SQL_LONGVARBINARY,           16777215, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "binary large object",
+    0, 0, 0, 
+    SQL_LONGVARBINARY, 0, 0,
+    FIELD_TYPE_MEDIUM_BLOB, 0
     /* 19 */
   },
-  { "longblob", SQL_LONGVARBINARY, 2147483647, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "binary large object, use mediumblob instead", 0, 0, 0, 
-    SQL_LONGVARBINARY, 0, 0, FIELD_TYPE_LONG_BLOB, 0
+  { "longblob",   SQL_LONGVARBINARY,         2147483647, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "binary large object, use mediumblob instead",
+    0, 0, 0, 
+    SQL_LONGVARBINARY, 0, 0,
+    FIELD_TYPE_LONG_BLOB,   0
     /* 20 */
   },
-  { "char", SQL_CHAR, 255, "'",  "'",  "max length",
-    1, 0, 3, 0, 0, 0, "string", 0, 0, 0, 
-    SQL_CHAR, 0, 0, FIELD_TYPE_STRING, 0
+  { "char",       SQL_CHAR,                       255, "'",  "'",  "max length",
+    1, 0, 3, 0, 0, 0, "string",
+    0, 0, 0, 
+    SQL_CHAR, 0, 0,
+    FIELD_TYPE_STRING,      0
     /* 21 */
   },
 
-  { "decimal", SQL_NUMERIC, 15,  NULL, NULL, "precision,scale",
-    1, 0, 3, 0, 0, 0, "double", 0, 6, 2, 
-    SQL_NUMERIC, 0, 0, FIELD_TYPE_DECIMAL, 1
+  { "decimal",            SQL_NUMERIC,            15,  NULL, NULL, "precision,scale",
+    1, 0, 3, 0, 0, 0, "double",
+    0, 6, 2, 
+    SQL_NUMERIC, 0, 0,
+    FIELD_TYPE_DECIMAL,     1
   },
   /*
-  { "tinyint", SQL_BIT, 3, NULL, NULL, NULL,
-    1, 0, 1, 0, 0, 0, "Tiny integer", 0, 0, 10,
-    FIELD_TYPE_TINY, 1
+  { "tinyint",            SQL_BIT,                  3, NULL, NULL, NULL,
+    1, 0, 1, 0, 0, 0, "Tiny integer",
+    0, 0, 10, FIELD_TYPE_TINY,        1
   },
   */
-  { "tinyint unsigned", SQL_TINYINT, 3, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "Tiny integer unsigned", 0, 0, 10, 
-    SQL_TINYINT, 0, 0, FIELD_TYPE_TINY, 1
+  { "tinyint unsigned",   SQL_TINYINT,              3, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "Tiny integer unsigned",
+    0, 0, 10, 
+    SQL_TINYINT, 0, 0,
+    FIELD_TYPE_TINY,        1
   },
-  { "smallint unsigned", SQL_SMALLINT, 5, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "Short integer unsigned", 0, 0, 10,
-    SQL_SMALLINT, 0, 0, FIELD_TYPE_SHORT, 1
+  { "smallint unsigned",  SQL_SMALLINT,             5, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "Short integer unsigned",
+    0, 0, 10, 
+    SQL_SMALLINT, 0, 0,
+    FIELD_TYPE_SHORT,       1
   },
-  { "middleint unsigned", SQL_INTEGER, 8, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "Medium integer unsigned", 0, 0, 10, 
-    SQL_INTEGER, 0, 0, FIELD_TYPE_INT24, 1
+  { "middleint unsigned", SQL_INTEGER,              8, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "Medium integer unsigned",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_INT24,       1
   },
-  { "int unsigned", SQL_INTEGER, 10, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "integer unsigned", 0, 0, 10, 
-    SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1
+  { "int unsigned",       SQL_INTEGER,             10, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "integer unsigned",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_LONG,        1
   },
-  { "int", SQL_INTEGER, 10, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "integer", 0, 0, 10,
-    SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1
+  { "int",                SQL_INTEGER,             10, NULL, NULL, NULL,
+    1, 0, 3, 0, 0, 0, "integer",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_LONG,        1
   },
-  { "integer unsigned", SQL_INTEGER, 10, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "integer", 0, 0, 10,
-    SQL_INTEGER, 0, 0, FIELD_TYPE_LONG, 1
+  { "integer unsigned",   SQL_INTEGER,             10, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "integer",
+    0, 0, 10, 
+    SQL_INTEGER, 0, 0,
+    FIELD_TYPE_LONG,        1
   },
-  { "bigint unsigned", SQL_BIGINT, 20, NULL, NULL, NULL,
-    1, 0, 3, 1, 0, 0, "Longlong integer unsigned", 0, 0, 10,
-    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1
+  { "bigint unsigned",    SQL_BIGINT,              20, NULL, NULL, NULL,
+    1, 0, 3, 1, 0, 0, "Longlong integer unsigned",
+    0, 0, 10, 
+    SQL_BIGINT, 0, 0,
+    FIELD_TYPE_LONGLONG,    1
   },
-  { "text", SQL_LONGVARCHAR, 65535, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "large text object (0-65535)", 0, 0, 0, 
-    SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_BLOB, 0
+  { "text",               SQL_LONGVARCHAR,      65535, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "large text object (0-65535)",
+    0, 0, 0, 
+    SQL_LONGVARCHAR, 0, 0,
+    FIELD_TYPE_BLOB,        0
   },
-  { "mediumtext", SQL_LONGVARCHAR, 16777215, "'",  "'",  NULL,
-    1, 0, 3, 0, 0, 0, "large text object", 0, 0, 0,
-    SQL_LONGVARCHAR, 0, 0, FIELD_TYPE_MEDIUM_BLOB, 0
+  { "mediumtext",         SQL_LONGVARCHAR,   16777215, "'",  "'",  NULL,
+    1, 0, 3, 0, 0, 0, "large text object",
+    0, 0, 0, 
+    SQL_LONGVARCHAR, 0, 0,
+    FIELD_TYPE_MEDIUM_BLOB, 0
   }
+
 
  /* BEGIN MORE STUFF */
 ,
@@ -1031,7 +1123,7 @@ void do_warn(SV* h, int rc, char* what) {
   DBIh_EVENT2(h, WARN_event, DBIc_ERR(imp_xxh), errstr);
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "%s warning %d recorded: %s\n",
-                  what, rc, SvPV(errstr,lna));
+    what, rc, SvPV(errstr,lna));
   warn("%s", what);
 }
 /* }}} */
@@ -1147,9 +1239,11 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
             {
               /* number of server_groups always server_groups+1 */
               server_groups=fill_out_embedded_options(options, 0, (int)lna, ++server_groups_cnt);
-#if defined(DBD_MYSQL_EMBEDDED_DEBUG)
-              print_embedded_options(server_groups, server_groups_cnt);
-#endif
+              if (dbis->debug >= 2)
+              {
+                PerlIO_printf(DBILOGFP, "Groups names passed to embedded server:\n");
+                print_embedded_options(server_groups, server_groups_cnt);
+              }
             }
           }
   
@@ -1163,9 +1257,11 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
             {
               /* number of server_options always server_options+1 */
               server_args=fill_out_embedded_options(options, 1, (int)lna, ++server_args_cnt);
-#if defined(DBD_MYSQL_EMBEDDED_DEBUG)
-              print_embedded_options(server_args, server_args_cnt);
-#endif
+              if (dbis->debug >= 2)
+              {
+                PerlIO_printf(DBILOGFP, "Server options passed to embedded server:\n");
+                print_embedded_options(server_args, server_args_cnt);
+              }
             }
           }
           if (mysql_server_init(server_args_cnt, server_args, server_groups))
@@ -1218,6 +1314,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
     if (imp_dbh) 
     {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
+      imp_dbh->bind_type_guessing = FALSE;
       imp_dbh->has_transactions = TRUE;
       imp_dbh->auto_reconnect = FALSE; /* Safer we flip this to TRUE perl side 
                                          if we detect a mod_perl env. */
@@ -1646,6 +1743,11 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 #if defined(DBD_MYSQL_EMBEDDED)
     if (imp_drh->embedded.state)
     {
+      if (dbis->debug >= 2)
+      {
+        PerlIO_printf(DBILOGFP, "Stop embedded server\n");
+      }
+
       mysql_server_end();
       if (imp_drh->embedded.groups)
       {
@@ -1658,6 +1760,8 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
         (void) SvREFCNT_dec(imp_drh->embedded.args);
         imp_drh->embedded.args = NULL;
       }
+
+
     }
 #endif
 
@@ -1810,8 +1914,11 @@ dbd_db_STORE_attrib(
     /*XXX: Does DBI handle the magic ? */
     imp_dbh->auto_reconnect = bool_value;
   }
-  else if (kl==20 && strEQ(key, "mysql_server_prepare"))
+  else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
     imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
+
+  else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing")) 
+	imp_dbh->bind_type_guessing = SvIV(valuesv);
   else
     return FALSE;				/* Unknown key */
 
@@ -1865,7 +1972,7 @@ dbd_db_FETCH_attrib(
   STRLEN kl;
   char *key = SvPV(keysv, kl);
   char* fine_key = NULL;
-  SV* res_sv = NULL;
+  SV* result = NULL;
 
   switch (*key) {
     case 'A':
@@ -1891,19 +1998,23 @@ dbd_db_FETCH_attrib(
   switch(*key) {
   case 'a':
     if (kl == strlen("auto_reconnect") && strEQ(key, "auto_reconnect"))
-      res_sv = sv_2mortal(newSViv(imp_dbh->auto_reconnect));
+      result= sv_2mortal(newSViv(imp_dbh->auto_reconnect));
     break;
-
+  case 'u':
+    if (kl == strlen("unsafe_bind_type_guessing") && 
+        strEQ(key, "unsafe_bind_type_guessing"))
+      result = sv_2mortal(newSViv(imp_dbh->bind_type_guessing));
+    break;
   case 'e':
     if (strEQ(key, "errno"))
     {
-      res_sv = sv_2mortal(newSViv((IV)mysql_errno(&imp_dbh->mysql)));
+      result= sv_2mortal(newSViv((IV)mysql_errno(&imp_dbh->mysql)));
     }
     else if ( strEQ(key, "error") || strEQ(key, "errmsg"))
     {
     /* Note that errmsg is obsolete, as of 2.09! */
       const char* msg = mysql_error(&imp_dbh->mysql);
-      res_sv = sv_2mortal(newSVpv(msg, strlen(msg)));
+      result= sv_2mortal(newSVpv(msg, strlen(msg)));
     }
     break;
 
@@ -1926,14 +2037,14 @@ dbd_db_FETCH_attrib(
                0
               );
 
-      res_sv = (newRV_noinc((SV*)hv));
+      result= (newRV_noinc((SV*)hv));
     }
 
   case 'h':
     if (strEQ(key, "hostinfo"))
     {
       const char* hostinfo = mysql_get_host_info(&imp_dbh->mysql);
-      res_sv = hostinfo ?
+      result= hostinfo ?
         sv_2mortal(newSVpv(hostinfo, strlen(hostinfo))) : &sv_undef;
     }
     break;
@@ -1942,19 +2053,19 @@ dbd_db_FETCH_attrib(
     if (strEQ(key, "info"))
     {
       const char* info = mysql_info(&imp_dbh->mysql);
-      res_sv = info ? sv_2mortal(newSVpv(info, strlen(info))) : &sv_undef;
+      result= info ? sv_2mortal(newSVpv(info, strlen(info))) : &sv_undef;
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
     {
       /* We cannot return an IV, because the insertid is a long. */
-      res_sv = sv_2mortal(my_ulonglong2str(mysql_insert_id(&imp_dbh->mysql))); 
+      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(&imp_dbh->mysql))); 
     }
     break;
 
   case 'p':
     if (kl == 9  &&  strEQ(key, "protoinfo"))
     {
-      res_sv = sv_2mortal(newSViv(mysql_get_proto_info(&imp_dbh->mysql)));
+      result= sv_2mortal(newSViv(mysql_get_proto_info(&imp_dbh->mysql)));
     }
     break;
 
@@ -1962,57 +2073,51 @@ dbd_db_FETCH_attrib(
     if (kl == 10  &&  strEQ(key, "serverinfo"))
     {
       const char* serverinfo = mysql_get_server_info(&imp_dbh->mysql);
-      res_sv = serverinfo ?
+      result= serverinfo ?
         sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &sv_undef;
     }
     else if (strEQ(key, "sock"))
     {
-      res_sv = sv_2mortal(newSViv((IV) &imp_dbh->mysql));
+      result= sv_2mortal(newSViv((IV) &imp_dbh->mysql));
     }
     else if (strEQ(key, "sockfd"))
     {
-      res_sv = sv_2mortal(newSViv((IV) imp_dbh->mysql.net.fd));
+      result= sv_2mortal(newSViv((IV) imp_dbh->mysql.net.fd));
     }
     else if (strEQ(key, "stat"))
     {
       const char* stats = mysql_stat(&imp_dbh->mysql);
-      res_sv = stats ?
+      result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
     else if (strEQ(key, "stats"))
     {
       /* Obsolete, as of 2.09 */
       const char* stats = mysql_stat(&imp_dbh->mysql);
-      res_sv = stats ?
+      result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
     else if (kl == 14 && strEQ(key,"server_prepare"))
     {
-      res_sv = sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
+      result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
     }
     break;
 
   case 't':
     if (kl == 9  &&  strEQ(key, "thread_id"))
     {
-      res_sv = sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
-    }
-    break;
-  case 'u':
-    if (kl == 10  &&  strEQ(key, "use_result"))
-    {
-      res_sv = sv_2mortal(newSViv((IV) imp_dbh->use_mysql_use_result));
+      result= sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
     }
     break;
   }
 
-  if (res_sv == NULL) {
+  if (result== NULL) {
     return Nullsv;
   }
   if (!fine_key) {
     /* Obsolete, as of 2.09 */
   }
-  return res_sv;
+  return result;
 }
 /* }}} */
 
@@ -2168,11 +2273,22 @@ dbd_st_prepare(
 
     if (mysql_stmt_prepare(imp_sth->stmt, statement, statement_length))
     {
-      PerlIO_printf(DBILOGFP, "ERROR! dbd_st_prepare failed to call mysql_stmt_prepare: ERROR NO: %d ERROR MSG: %s\n", mysql_errno(&imp_dbh->mysql) , mysql_error(&imp_dbh->mysql));
+
       mysql_stmt_close(imp_sth->stmt);
       imp_sth->stmt = NULL;
+      do_error(sth, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql));
 
-      return FALSE;
+      /* For commands that are not supported by server side prepared statement
+         mechanism lets try to pass them through regular API */
+             
+      if (mysql_errno(&imp_dbh->mysql) == ER_UNSUPPORTED_PS)
+      {
+        imp_sth->use_server_side_prepare=0;
+      }
+      else
+      {
+        return FALSE;
+      }
     }
     else
     {
@@ -2255,9 +2371,11 @@ mysql_st_internal_execute(
                           int use_mysql_use_result
                          ) 
 {
+  D_imp_sth(h);
+  D_imp_dbh_from_sth;
   STRLEN slen;
   char* sbuf = SvPV(statement, slen);
-  char* salloc = parse_params(svsock, sbuf, &slen, params, num_params);
+  char* salloc = parse_params(svsock, sbuf, &slen, params, num_params, imp_dbh->bind_type_guessing);
   char* table;
 
   if (salloc) 
@@ -2446,13 +2564,7 @@ mysql_st_internal_execute41 (
   {
       if (use_mysql_use_result)
       {
-        /* 
-          This will not work, unfortunately. Per the documentation 
-          (http://dev.mysql.com/doc/mysql/en/mysql_stmt_num_rows.html), you must
-          use store_result for it to work. mysql_num_rows won't work either.
-          Another solution must be found.
-        */
-        return (long) mysql_stmt_num_rows(stmt);
+        return mysql_num_rows(*result);
       }
       else
       {
@@ -2466,7 +2578,8 @@ mysql_st_internal_execute41 (
         }
         else
         {
-          return (long) mysql_stmt_num_rows(stmt);
+         /*PerlIO_printf(DBILOGFP, "result set metadata for statement %s, num_rows %d\n", SvPV(statement, slen), result_val);*/
+         return (long) mysql_stmt_num_rows(stmt);
         }
       }
   }
@@ -2656,7 +2769,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       /* get the column type */
       col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
       if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "col type %d\n", col_type);
+        PerlIO_printf(DBILOGFP, "col %d\ncol type %d\ncol len%d\ncol buf_len%d\n", i, col_type, fbh->length, fields[i].length);
 
       bind->buffer_type= mysql_to_perl_type(col_type);
       bind->buffer_length= fields[i].length;
@@ -2716,7 +2829,7 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
 {
   int num_fields;
   int ChopBlanks;
-  int i;
+  unsigned int i;
   AV *av;
   MYSQL_ROW cols;
   unsigned long* lengths;
@@ -2812,12 +2925,31 @@ dbd_st_fetch(SV* sth, imp_sth_t* imp_sth)
       SV *sv = AvARRAY(av)[i]; /* Note: we (re)use the SV in the AV	*/
 
       /* This is wrong, null is not being set correctly
-       * This is not the way to determine length (shit this would break blobs!) 
-     */
+       * This is not the way to determine length (this would break blobs!) 
+       */
       if (fbh->is_null) 
         (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
       else 
       {
+        /* In case of BLOB/TEXT fields we allocate only 8192 bytes
+           in dbd_describe() for data. Here we know real size of field 
+           so we should increase buffer size and refetch column value
+        */
+        if (fbh->length > bind->buffer_length)
+        {
+          if (dbis->debug >= 2)
+            PerlIO_printf(DBILOGFP,"Refetch BLOB/TEXT column: %d\n", i);
+
+          Renew(fbh->data, fbh->length, char);
+          bind->buffer_length= fbh->length;
+          bind->buffer= (char *) fbh->data;
+          /*TODO: Use offset instead of 0 to fetch only remain part of data*/
+          if (mysql_stmt_fetch_column(imp_sth->stmt, bind , i, 0))
+          {
+            do_error(sth, mysql_stmt_errno(imp_sth->stmt), mysql_stmt_error(imp_sth->stmt));
+          }
+        }
+
         /* This does look a lot like Georg's PHP driver doesn't it?  --Brian */
         /* Credit due to Georg - mysqli_api.c  ;) --PMG */
         switch (bind->buffer_type) {
@@ -3762,13 +3894,13 @@ AV* dbd_db_type_info_all(SV* dbh, imp_dbh_t* imp_dbh) {
 SV* 
 dbd_db_quote(SV* dbh, SV* str, SV* type)
 {
-  SV* res_sv;
+  SV* result;
 
   if (SvGMAGICAL(str))
     mg_get(str);
 
   if (!SvOK(str))
-    res_sv = newSVpv("NULL", 4);
+    result= newSVpv("NULL", 4);
   else
   {
     char *ptr, *sptr;
@@ -3792,20 +3924,26 @@ dbd_db_quote(SV* dbh, SV* str, SV* type)
       }
     }
 
-    ptr = SvPV(str, len);
-    res_sv = newSV(len*2+3);
-    sptr = SvPVX(res_sv);
+    ptr= SvPV(str, len);
+    result= newSV(len*2+3);
+    sptr= SvPVX(result);
 
     *sptr++ = '\'';
     sptr += mysql_real_escape_string(&imp_dbh->mysql, sptr,
                                      ptr, len);
     *sptr++ = '\'';
-    SvPOK_on(res_sv);
-    SvCUR_set(res_sv, sptr - SvPVX(res_sv));
+    SvPOK_on(result);
+    SvCUR_set(result, sptr - SvPVX(result));
     *sptr++ = '\0';  /*  Never hurts NUL terminating a Perl
                       *	 string ...
                     */
   }
-  return res_sv;
+  return result;
 }
 /* }}} */
+
+SV *mysql_db_last_insert_id(SV* dbh, imp_dbh_t *imp_dbh,
+        SV *catalog, SV *schema, SV *table, SV *field,SV *attr)
+{
+        return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
+}

@@ -11,7 +11,7 @@
  *  You may distribute this under the terms of either the GNU General Public
  *  License or the Artistic License, as specified in the Perl README file.
  *
- *  Id: dbdimp.h,v 1.5 2003/10/17 17:20:50 rlippan Exp $ 
+ *  $Id$
  */
 
 /*
@@ -19,6 +19,7 @@
  */
 #include <DBIXS.h>  /* installed by the DBI module                        */
 #include <mysql.h>  /* Comes with MySQL-devel */
+#include <mysqld_error.h>  /* Comes MySQL */
 #include <errmsg.h> /* Comes with MySQL-devel */
 
 /* 
@@ -131,6 +132,7 @@ struct imp_dbh_st {
 	    unsigned int auto_reconnects_ok;
 	    unsigned int auto_reconnects_failed;
     } stats;
+    unsigned short int  bind_type_guessing; 
     int use_mysql_use_result; /* TRUE if execute should use     
                                * mysql_use_result rather than   
                                * mysql_store_result
@@ -252,6 +254,7 @@ struct imp_sth_st {
 #define do_error		mysql_dr_error
 #define dbd_db_type_info_all    mysql_db_type_info_all
 #define dbd_db_quote            mysql_db_quote
+#define dbd_db_last_insert_id   mysql_db_last_insert_id                                  
 
 #include <dbd_xsh.h>
 void	 do_error (SV* h, int rc, const char *what);
@@ -272,6 +275,9 @@ int mysql_st_clean_cursor(SV*, imp_sth_t*);
 int count_embedded_options(char *);
 char ** fill_out_embedded_options(char *, int , int , int );
 int free_embedded_options(char **, int);
+/* We have to define dbd_discon_all method for mysqlEmb driver at least 
+   to be able to stop embedded server properly */
+#define dbd_discon_all dbd_discon_all
 #endif
 			      
 AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);
@@ -280,3 +286,4 @@ extern MYSQL* mysql_dr_connect(SV*, MYSQL*, char*, char*, char*, char*, char*,
 			       char*, imp_dbh_t*);
 
 extern int mysql_db_reconnect(SV*);
+

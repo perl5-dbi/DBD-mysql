@@ -1,6 +1,6 @@
 /* Hej, Emacs, this is -*- C -*- mode!
 
-  $Id$
+   $Id$
 
    Copyright (c) 2003      Rudolf Lippan
    Copyright (c) 1997-2003 Jochen Wiedmann
@@ -246,10 +246,17 @@ do(dbh, statement, attr=Nullsv, ...)
   int             buffer_length = slen;
   int             buffer_type = 0;
   int             param_type = SQL_VARCHAR;
-  int             use_server_side_prepare;
+  int             use_server_side_prepare= 0;
+/* Globaly disabled using of server side prepared statement 
+   for dbh->do() statements. It is possible to force driver 
+   to use server side prepared statement mechanism by adding 
+   'mysql_server_prepare' attribute to do() method localy:
 
+   $dbh->do($stmt, {mysql_server_prepare=>1});
+*/
+#ifdef DBD_ENABLE_GLOBAL_PREPARE_FOR_DO
   use_server_side_prepare = imp_dbh->use_server_side_prepare;
-
+#endif
   if (attr)
   {
     SV **svp;

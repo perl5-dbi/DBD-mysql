@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9004';
+$VERSION = '2.9005_1';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -339,7 +339,7 @@ sub column_info {
 	#warn "$type: $basetype [@type_params] [@type_attr]\n";
 
 	$info->{DATA_TYPE} = SQL_VARCHAR();
-	if ($basetype =~ /char|text|blob/) {
+	if ($basetype =~ /^(char|varchar|\w*text|\w*blob)/) {
 	    $info->{DATA_TYPE} = SQL_CHAR() if $basetype eq 'char';
 	    if ($type_params[0]) {
 		$info->{COLUMN_SIZE} = $type_params[0];
@@ -351,7 +351,13 @@ sub column_info {
 		$info->{COLUMN_SIZE} = 4294967295 if $basetype =~ /^long/;
 	    }
 	}
-	elsif ($basetype =~ /enum|set/) {
+	elsif ($basetype =~ /^(binary|varbinary)/) {
+	    $info->{COLUMN_SIZE} = $type_params[0];
+	    # SQL_BINARY & SQL_VARBINARY are tempting here but don't match the
+	    # semantics for mysql (not hex). SQL_CHAR &  SQL_VARCHAR are correct here.
+	    $info->{DATA_TYPE} = ($basetype eq 'binary') ? SQL_CHAR() : SQL_VARCHAR();
+	}
+	elsif ($basetype =~ /^(enum|set)/) {
 	    if ($basetype eq 'set') {
 		$info->{COLUMN_SIZE} = length(join ",", @type_params);
 	    }
@@ -362,18 +368,18 @@ sub column_info {
 	    }
 	    $info->{"mysql_values"} = \@type_params;
 	}
-	elsif ($basetype =~ /int/) {
+	elsif ($basetype =~ /int/) { # big/medium/small/tiny etc + unsigned?
 	    $info->{DATA_TYPE} = SQL_INTEGER();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE} = $type_params[0];
 	}
-	elsif ($basetype =~ /decimal/) {
+	elsif ($basetype =~ /^decimal/) {
 	    $info->{DATA_TYPE} = SQL_DECIMAL();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE}    = $type_params[0];
 	    $info->{DECIMAL_DIGITS} = $type_params[1];
 	}
-	elsif ($basetype =~ /float|double/) {
+	elsif ($basetype =~ /^(float|double)/) {
 	    $info->{DATA_TYPE} = ($basetype eq 'float') ? SQL_FLOAT() : SQL_DOUBLE();
 	    $info->{NUM_PREC_RADIX} = 2;
 	    $info->{COLUMN_SIZE} = ($basetype eq 'float') ? 32 : 64;
@@ -391,8 +397,13 @@ sub column_info {
 	    }
 	    $info->{DECIMAL_DIGITS} = 0; # no fractional seconds
 	}
+	elsif ($basetype eq 'year') {	# no close standard so treat as int
+	    $info->{DATA_TYPE} = SQL_INTEGER();
+	    $info->{NUM_PREC_RADIX} = 10;
+	    $info->{COLUMN_SIZE} = 4;
+	}
 	else {
-	    warn "unsupported column '$row->{field}' type '$basetype' treated as varchar";
+	    Carp::carp("column_info: unrecognized column type '$basetype' of $table_id.$row->{field} treated as varchar");
 	}
 	$info->{SQL_DATA_TYPE} ||= $info->{DATA_TYPE};
 	#warn Dumper($info);
@@ -526,7 +537,7 @@ them. :-)
 
 In what follows we first discuss the use of DBD::mysql,
 because this is what you will need the most. For installation, see the
-sections on L<INSTALLATION>, L<WIN32 INSTALLATION>, and L<KNOWN BUGS>
+sections on L<INSTALLATION>, and L<WIN32 INSTALLATION>
 below. See L<EXAMPLE> for a simple example above.
 
 From perl you activate the interface with the statement
@@ -713,7 +724,7 @@ to mysql_ssl_set, if mysql_ssl is turned on.
 As of MySQL 3.23.49, the LOCAL capability for LOAD DATA may be disabled
 in the MySQL client library by default. If your DSN contains the option
 "mysql_local_infile=1", LOAD DATA LOCAL will be enabled.  (However,
-this option is effective if the server has also been configured to
+this option is *ineffective* if the server has also been configured to
 disallow LOCAL.)
 
 =item Prepared statement support (server side prepare)
@@ -881,11 +892,12 @@ The following stats are being maintained:
 
 =item auto_reconnects_ok
 
-the number of times that DBD::mysql had to reconnect to mysql
+The number of times that DBD::mysql successfully reconnected to the mysql 
+server.
 
-=item failed_auto_reconnects_failed
+=item auto_reconnects_failed
 
-the number of times that DBD::mysql tried to reconnect to mysql but failed.
+The number of times that DBD::mysql tried to reconnect to mysql but failed.
 
 =back
 
