@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9004';
+$VERSION = '2.9003';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -526,7 +526,7 @@ them. :-)
 
 In what follows we first discuss the use of DBD::mysql,
 because this is what you will need the most. For installation, see the
-sections on L<INSTALLATION>, and L<WIN32 INSTALLATION>
+sections on L<INSTALLATION>, L<WIN32 INSTALLATION>, and L<KNOWN BUGS>
 below. See L<EXAMPLE> for a simple example above.
 
 From perl you activate the interface with the statement
@@ -713,8 +713,28 @@ to mysql_ssl_set, if mysql_ssl is turned on.
 As of MySQL 3.23.49, the LOCAL capability for LOAD DATA may be disabled
 in the MySQL client library by default. If your DSN contains the option
 "mysql_local_infile=1", LOAD DATA LOCAL will be enabled.  (However,
-this option is *ineffective* if the server has also been configured to
+this option is effective if the server has also been configured to
 disallow LOCAL.)
+
+=item mysql_embedded_options
+
+The option <mysql_embedded_options> can be used to pass 'command-line' 
+options to embedded server.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
+
+
+=item mysql_embedded_groups
+
+The option <mysql_embedded_groups> can be used to specify the groups in the 
+config file(I<my.cnf>) which will be used to get options for embedded server. 
+If not specified [server] and [embedded] groups will be used.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
 
 
 =back
@@ -841,12 +861,11 @@ The following stats are being maintained:
 
 =item auto_reconnects_ok
 
-The number of times that DBD::mysql successfully reconnected to the mysql 
-server.
+the number of times that DBD::mysql had to reconnect to mysql
 
-=item auto_reconnects_failed
+=item failed_auto_reconnects_failed
 
-The number of times that DBD::mysql tried to reconnect to mysql but failed.
+the number of times that DBD::mysql tried to reconnect to mysql but failed.
 
 =back
 
@@ -867,6 +886,29 @@ to on is not advised if 'lock tables' is used because if DBD::mysql reconnect
 to mysql all table locks will be lost.  This attribute is ignored when
 AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
+
+=item mysql_use_result
+
+This attribute forces the driver to use mysql_use_result rather than
+mysql_store_result. The former is faster and less memory consuming, but
+tends to block other processes. (That's why mysql_store_result is the
+default.)
+
+It is possible to set default value of the C<mysql_use_result> attribute 
+for $dbh using several ways:
+
+ - through DSN 
+
+   $dbh= DBI->connect("DBI:mysql:test;mysql_use_result=1", "root", "");
+
+ - after creation of database handle
+
+   $dbh->{'mysql_use_result'}=0; #disable
+   $dbh->{'mysql_use_result'}=1; #enable
+
+It is possible to set/unset the C<mysql_use_result> attribute after 
+creation of statement handle. See below.
+
 
 =head1 STATEMENT HANDLES
 

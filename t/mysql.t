@@ -499,9 +499,7 @@ foreach (qw/table name type is_not_null is_pri_key length/) {
 	for (0..$sth_query->numfields -1) {
 	    # whatever we do to the one statementhandle, the other one has
 	    # to behave exactly the same way
-	    if ($method eq 'table' && lc($sth_query->$method()->[$_]) eq lc($sth_listf->$method()->[$_])) {
-		print "ok $i\n" ;
-	    } elsif ($method ne 'table' && $sth_query->$method()->[$_] eq $sth_listf->$method()->[$_]) {
+	    if ($sth_query->$method()->[$_] eq $sth_listf->$method()->[$_]) {
 		print "ok $i\n" ;
 	    } else {
 		print "not ok $i\n";

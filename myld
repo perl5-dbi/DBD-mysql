@@ -5,11 +5,20 @@
 #
 
 use strict;
+use Data::Dumper;
 
+# fix to get link on Mac OSX to work!
+if ($ARGV[0] =~ /MACOSX/)
+{
+  my ($macenv, $macenvval) = split('=',$ARGV[0]);;
+  $ENV{$macenv} = $macenvval;
+  shift @ARGV;
+}
 open(OLDSTDERR, ">&STDERR") || die "Failed to backup STDERR: $!";
 open(FILE, ">myld.stderr") || die "Failed to create myld.stderr: $!";
 open(STDERR, ">&FILE") || die "Failed to redirect STDERR: $!";
-my $retval = system @ARGV;
+my $retval = system(@ARGV);
+
 open(STDERR, ">&OLDSTDERR");
 close(FILE) || die "Failed to close myld.stderr: $!";
 my $contents = "";
@@ -44,7 +53,7 @@ MSG
 
 if ($retval) {
   print STDERR $contents;
-  exit $retval;
+  exit 1;
 }
 
 END { unlink "myld.stderr"; }

@@ -1,0 +1,35 @@
+use ExtUtils::MakeMaker;
+use File::Path;
+
+$/="\n";
+
+chomp($pwd = `pwd`); $pwd = "." if ($pwd eq '');
+require "$pwd/Makefile.conf" || die "Can't read Configuration file: $!\n";
+
+if (! -d "$pwd/t/test")
+{
+  eval { mkpath "$pwd/t/test" };
+  if ($@)
+  {
+    print "Couldn't create $pwd/t/test directory for test database: $@\n";
+  }
+}
+ExtUtils::MakeMaker::WriteMakefile(%{$o});
+
+package MY;
+
+no warnings;
+
+sub MY::postamble {
+  require DBI::DBD;
+  "\n" . DBI::DBD::dbd_postamble(@_);
+};
+
+sub MY::dynamic_lib {
+  my $self = shift;
+  my $result = $self->SUPER::dynamic_lib(@_);
+  if (!$::opt->{nocatchstderr}  &&  $result =~ /\$\(LD\)/) {
+    $result =~ s/(\$\(LD\))/\$\(PERL\) myld \$(LD)/sg;
+  }
+  return $result;
+};
