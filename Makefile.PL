@@ -19,11 +19,11 @@ Getopt::Long::GetOptions($opt, "help", "testdb=s", "testhost=s",
 			 "testuser=s", "testpassword=s",
 			 "cflags=s", "libs=s", "verbose",
 			 "nocatchstderr",
-			 "ssl!","nofoundrows!") || die Usage();
+			 "ssl!","nofoundrows!", "ikwiad!") || die Usage();
 my $source = {};
 
 foreach my $key (qw/testdb testhost testuser testpassword cflags libs
-                    nocatchstderr ssl nofoundrows/) {
+                    nocatchstderr ssl nofoundrows ikwiad/) {
   Configure($opt, $source, $key);
 }
 
@@ -53,7 +53,7 @@ To change these settings, see 'perl Makefile.PL --help' and
 
 MSG
 
-sleep 5;
+sleep 5 if !$opt->{ikwiad};
 
 eval { require File::Spec };
 my $fileName = $@ ?
@@ -189,6 +189,8 @@ sub Configure {
     $source->{$param} = "mysql_config";
     return;
   }
+
+    die "Could not find mysql_config. Please make sure that you path is set correctly\n" unless $opt->{ikwiad};
 
   # Ok, mysql_config doesn't work. We need to do our best
   if ($param eq "nocatchstderr") {
