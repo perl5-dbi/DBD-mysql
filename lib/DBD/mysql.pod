@@ -398,6 +398,40 @@ mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
 respectively.
 
 
+ $info = $dhb->{mysql_dbd_stats}
+
+DBD::mysql keeps track of a few statistics in the mysql_dbd_stats attribute.
+The following statistics are being maintained:
+
+=over
+
+=item auto_reconnects
+
+the number of times that DBD::mysql had to reconnect to mysql
+
+=item failed_auto_reconnects
+
+the number of times that DBD::mysql tried to reconnect to mysql but failed.
+
+=back
+
+The DBD::mysql driver also supports the following attribute(s) of database
+handles (read/write):
+
+ $bool_value = $dbh->{mysql_auto_reconnect};
+ $dbh->{mysql_auto_reconnect} = $AutoReconnect ? 1 : 0;
+
+
+=item mysql_auto_reconnect
+
+This attribute determines whether DBD::mysql will automatically reconnect
+to mysql if the connection be lost. This feature defaults to on for backwards
+compatibility; however, if LOCK TABLE be used, this feature should be turned
+off because table locks will be lost when DBD::mysql reconnects to the server.
+This attribute is ignored when AutoCommit is turned off, and DBD::mysql will
+not automatically reconnect to the server.
+
+
 =head1 STATEMENT HANDLES
 
 The statement handles of DBD::mysql support a number
@@ -624,6 +658,14 @@ attempt to execute the same SQL statement again. However, this
 behaviour is disabled when AutoCommit is off: Otherwise the
 transaction state would be completely unpredictable after a
 reconnect.  
+
+=item *
+
+The "reconnect" feature of DBD::mysql can be toggled by using the
+L<mysql_auto_reconnect> attribute. This behaviour should be turned off
+in code that uses LOCK TABLE because if the database server time out
+and DBD::mysql reconnect, table locks will be lost without any 
+indication of such loss.
 
 =back
 

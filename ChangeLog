@@ -1,3 +1,13 @@
+2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.1027)
+
+	* Added attribute to turn off auto reocnnect
+	* Added statistics attribute to count the number of 
+	  times auto reconnect succeeded  and the number of 
+	  times auto reconnect failed.
+	* Fixed bug whereby strings that were used in numeric
+	  context were not getting quoted on execute(). Now all
+	  parameters are bound as varchar by default.
+
 2003-03-03  Jochen Wiedmann  <joe@ispsoft.de> (2.1026)
 
 	* Fixed the handling of case insensitive file

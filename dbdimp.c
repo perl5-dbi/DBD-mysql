@@ -155,7 +155,7 @@ static char* ParseParam(MYSQL* sock, char* statement, STRLEN *slenPtr,
 	    alen += 3;  /* Erase '?', insert 'NULL' */
 	} else {
 	    if (!ph->type) {
-	        ph->type = SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
+		    ph->type= SQL_VARCHAR;
 	    }
 	    valbuf = SvPV(ph->value, vallen);
 	    alen += 2*vallen+1; /* Erase '?', insert (possibly quoted)
@@ -621,6 +621,8 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
     if (imp_dbh) {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
       imp_dbh->has_transactions = TRUE;
+      imp_dbh->auto_reconnect = TRUE; /* Default to TRUE for backwards compat */
+
       DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
       if (sv  &&  SvROK(sv)) {
 	HV* hv = (HV*) SvRV(sv);
@@ -733,6 +735,11 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
 				portNr, unixSocket, client_flag);
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: <-");
+
+    /* we turn off Mysql's auto reconnect and handle re-connecting ourselves
+     * so that we can keep track of when this happens.
+     */
+    sock->reconnect=0;
     return result;
   }
 }
@@ -845,6 +852,9 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 		  dbname ? dbname : "NULL",
 		  user ? user : "NULL",
 		  password ? password : "NULL");
+
+  imp_dbh->stats.auto_reconnects = 0;
+  imp_dbh->stats.failed_auto_reconnects = 0;
 
   if (!_MyLogin(imp_dbh)) {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
@@ -1047,14 +1057,14 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
     char *key = SvPV(keysv, kl);
     SV *cachesv = Nullsv;
     int cacheit = FALSE;
+    bool bool_value = SvTRUE(valuesv);
 
     if (kl==10 && strEQ(key, "AutoCommit")){
       if (imp_dbh->has_transactions) {
         int oldval = DBIc_has(imp_dbh,DBIcf_AutoCommit);
-	int newval = SvTRUE(valuesv);
 
  	/* if setting AutoCommit on ... */
-	if (newval) {
+	if (bool_value) {
 	    if (!oldval) {
 	        /*  Need to issue a commit before entering AutoCommit  */
 	        if (mysql_real_query(&imp_dbh->mysql,"COMMIT",6) != 0) {
@@ -1067,7 +1077,7 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
 			   "Turning on AutoCommit failed");
 		  return FALSE;
 		}
-		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
 	    }
 	} else {
 	    if (oldval) {
@@ -1077,7 +1087,7 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
 			   "Turning off AutoCommit failed");
 		  return FALSE;
 		}
-		DBIc_set(imp_dbh, DBIcf_AutoCommit, newval);
+		DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
 	    }
 	}
       } else {
@@ -1091,6 +1101,12 @@ int dbd_db_STORE_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv, SV* valuesv) {
 	    croak("Transactions not supported by database");
 	}
       }
+    } else if (strlen("mysql_auto_reconnect") 
+		    == kl && strEQ(key,"mysql_auto_reconnect") ) 
+    {
+        /*XXX: Does DBI handle the magic ? */
+	imp_dbh->auto_reconnect = bool_value;
+	/* imp_dbh->mysql.reconnect=0; */
     } else {
         return FALSE;
     }
@@ -1157,6 +1173,10 @@ SV* dbd_db_FETCH_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv) {
   }
 
   switch(*key) {
+   case 'a':
+      if (kl == strlen("auto_reconnect") && strEQ(key, "auto_reconnect"))
+		result = sv_2mortal(newSViv(imp_dbh->auto_reconnect));
+      break;
     case 'e':
       if (strEQ(key, "errno")) {
 	result = sv_2mortal(newSViv((IV)mysql_errno(&imp_dbh->mysql)));
@@ -1169,6 +1189,16 @@ SV* dbd_db_FETCH_attrib(SV* dbh, imp_dbh_t* imp_dbh, SV* keysv) {
 	result = sv_2mortal(newSVpv(msg, strlen(msg)));
       }
       break;
+    case 'd':
+      if (strEQ(key, "dbd_stats")) {
+          HV* hv = newHV();
+          hv_store(hv, "auto_reconnects", strlen("auto_reconnects"), 
+			  newSViv(imp_dbh->stats.auto_reconnects),0);
+          hv_store(hv,"failed_auto_reconnects",strlen("failed_auto_reconnects"),
+			  newSViv(imp_dbh->stats.failed_auto_reconnects),0);
+
+          result = (newRV_noinc((SV*)hv));
+      }
     case 'h':
       if (strEQ(key, "hostinfo")) {
 	const char* hostinfo = mysql_get_host_info(&imp_dbh->mysql);
@@ -2012,6 +2042,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 int mysql_db_reconnect(SV* h) {
   D_imp_xxh(h);
   imp_dbh_t* imp_dbh;
+  MYSQL save_socket;
 
   if (DBIc_TYPE(imp_xxh) == DBIt_ST) {
     imp_dbh = (imp_dbh_t*) DBIc_PARENT_COM(imp_xxh);
@@ -2025,7 +2056,7 @@ int mysql_db_reconnect(SV* h) {
     return FALSE;
   }
 
-  if (!DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+  if (!DBIc_has(imp_dbh, DBIcf_AutoCommit) || !imp_dbh->auto_reconnect) {
     /* We never reconnect if AutoCommit is turned off.
      * Otherwise we might get an inconsistent transaction
      * state.
@@ -2033,9 +2064,22 @@ int mysql_db_reconnect(SV* h) {
     return FALSE;
   }
 
+  /* _MyLogin will blow away imp_dbh->mysql so we save a copy of
+   * imp_dbh->mysql and put it back where it belongs if the reconnect
+   * fail.  Think server is down & reconnect fails but the application eval{}s
+   * the execute, so next time $dbh->quote() gets called, instant SIGSEGV!
+   */
+  save_socket = imp_dbh->mysql;
+  memcpy (&save_socket, &imp_dbh->mysql,sizeof(save_socket));
+  memset (&imp_dbh->mysql,0,sizeof(imp_dbh->mysql));
+
   if (!_MyLogin(imp_dbh)) {
     do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql));
+    memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
+    ++imp_dbh->stats.failed_auto_reconnects;
     return FALSE;
+  } else {
+    ++imp_dbh->stats.auto_reconnects;
   }
   return TRUE;
 }
