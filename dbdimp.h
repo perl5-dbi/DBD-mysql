@@ -17,6 +17,9 @@
 /*
  *  Header files we use
  */
+#ifndef DBD_MYSQL_DBDIMP_H
+
+#define DBD_MYSQL_DBDIMP_H
 #include <DBIXS.h>		/* installed by the DBI module                        */
 #include <mysql.h>		/* Comes with MySQL-devel */
 #include <errmsg.h>		/* Comes with MySQL-devel */
@@ -255,3 +258,5 @@ extern MYSQL *mysql_dr_connect(MYSQL *, char *, char *, char *, char *,
 			       char *, char *, imp_dbh_t *);
 
 extern int mysql_db_reconnect(SV *);
+
+#endif /*DBD_MYSQL_DBDIMP_H */
