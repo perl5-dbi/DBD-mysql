@@ -1,5 +1,10 @@
 2003-03-??  Rudy Lippan  <rlippan@remotelinux.com> (2.1027)
 
+	* Changed the default behaviour of mysql_found_rows, so now
+	  'UPDATE table set field=?' will return the number of rows matched
+	  and not the number of rows physically changed. You can get the old
+	  behaviour back by adding "mysql_found_rows=0" to the dsn passed
+	  to connect.
 	* Updated type_info_all() to be more inline with 
 	  what DBD::ODBC returns.
 	* Added attribute 'auto_reconnect' that allows the auto reconnect

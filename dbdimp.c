@@ -847,10 +847,10 @@ MYSQL* mysql_dr_connect(MYSQL* sock, char* unixSocket, char* host,
 		  password ? password : "NULL");
   
   {
-#ifdef MYSQL_DONT_USE_CLIENT_FOUND_ROWS
-    unsigned int client_flag = 0;
-#else
+#ifdef MYSQL_USE_CLIENT_FOUND_ROWS
     unsigned int client_flag = CLIENT_FOUND_ROWS;
+#else
+    unsigned int client_flag = 0;
 #endif
     mysql_init(sock);
     
