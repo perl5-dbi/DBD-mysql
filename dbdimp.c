@@ -2578,82 +2578,74 @@ int dbd_bind_ph(SV * sth, imp_sth_t * imp_sth, SV * param, SV * value,
                 quoted = internal_quote(imp_dbh, value, 0);
 		phs->quoted = SvPV(quoted, (phs->quoted_len));
  
- /* assert(strlen(phs->quoted) == phs->quoted_len);
- fprintf(stderr, "\nnquoted PHS: %s\n", value_string);
- fprintf(stderr, "QUOTED PHS: %s\n", phs->quoted); */
-		/*sql_type_info->quote(value_string, value_len, &phs->quoted_len);*/
+ 		assert(strlen(phs->quoted) == phs->quoted_len);
         }
 
         phs->is_bound = 1;
-        return 1;
 
 
+	if (!imp_sth->real_prepare)
+		return 1;
 
-
-#if MYSQL_VERSION_ID >=40101
-
-	if (imp_sth->real_prepare) {
-		if (imp_sth->has_binded == 0)	//first bind
-		{
+	if (0 == imp_sth->has_binded) {
 			//SQL_VARCHAR
-			imp_sth->bind[idx].buffer_type =
-			    MYSQL_TYPE_VAR_STRING;
-			imp_sth->bind[idx].length =
-			    (ulong *) & (imp_sth->fbind[idx].length);
-			imp_sth->bind[idx].is_null =
-			    (char *) &(imp_sth->fbind[idx].is_null);
+		imp_sth->bind[idx].buffer_type = MYSQL_TYPE_VAR_STRING;
+		imp_sth->bind[idx].length =
+		    (ulong *) & (imp_sth->fbind[idx].length);
+		imp_sth->bind[idx].is_null =
+		    (char *) &(imp_sth->fbind[idx].is_null);
 
-			if (SvOK(imp_sth->params[idx].value)
-			    && imp_sth->params[idx].value) {
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "(first bind)   SCALAR IS STRING %s\n",
-						      imp_sth->bind[idx].
-						      buffer);
-				imp_sth->bind[idx].buffer =
-				    SvPV(imp_sth->params[idx].value, slen);
-				imp_sth->bind[idx].buffer_length = slen;	////Should be here max value for this param?
-				imp_sth->fbind[idx].is_null = 0;
-				imp_sth->fbind[idx].length = slen;
-			} else {
-				//NULL value 
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "(first bind)   SCALAR IS NULL\n");
-				imp_sth->bind[idx].buffer =
-				    SvPV(imp_sth->params[idx].value, slen);
-				imp_sth->fbind[idx].is_null = 1;
-				imp_sth->fbind[idx].length = 0;
-			}
+		if (SvOK(imp_sth->params[idx].value)
+		    && imp_sth->params[idx].value) {
+			if (dbis->debug >= 2)
+				PerlIO_printf(DBILOGFP,
+					      "(first bind)   SCALAR IS STRING %s\n",
+					      imp_sth->bind[idx].
+					      buffer);
+			imp_sth->bind[idx].buffer =
+			    SvPV(imp_sth->params[idx].value, slen);
+			imp_sth->bind[idx].buffer_length = slen;	////Should be here max value for this param?
+			imp_sth->fbind[idx].is_null = 0;
+			imp_sth->fbind[idx].length = slen;
 		} else {
-			//rebind ph variable
-			//Map the new data direct to stmt handler
-			//as this is not first bind 
-			if (SvOK(imp_sth->params[idx].value)
-			    && imp_sth->params[idx].value) {
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "   SCALAR IS STRING %s\n",
-						      imp_sth->bind[idx].
-						      buffer);
-				imp_sth->stmt->params[idx].buffer =
-				    SvPV(imp_sth->params[idx].value, slen);
-				imp_sth->stmt->params[idx].buffer_length = slen;	//Should be here max value for this param?
-				imp_sth->fbind[idx].length = slen;
-				imp_sth->fbind[idx].is_null = 0;
-			} else {
-				//NULL value 
-				if (dbis->debug >= 2)
-					PerlIO_printf(DBILOGFP,
-						      "   SCALAR IS NULL\n");
-				imp_sth->stmt->params[idx].buffer = NULL;
-				imp_sth->fbind[idx].is_null = 1;
-				imp_sth->fbind[idx].length = 0;
-			}
+			//NULL value 
+			if (dbis->debug >= 2)
+				PerlIO_printf(DBILOGFP,
+					      "(first bind)   SCALAR IS NULL\n");
+			imp_sth->bind[idx].buffer =
+			    SvPV(imp_sth->params[idx].value, slen);
+			imp_sth->fbind[idx].is_null = 1;
+			imp_sth->fbind[idx].length = 0;
 		}
+	} else {
+		//rebind ph variable
+		//Map the new data direct to stmt handler
+		//as this is not first bind 
+		if (SvOK(imp_sth->params[idx].value)
+		    && imp_sth->params[idx].value) {
+			if (dbis->debug >= 2)
+				PerlIO_printf(DBILOGFP,
+					      "   SCALAR IS STRING %s\n",
+					      imp_sth->bind[idx].
+					      buffer);
+			imp_sth->stmt->params[idx].buffer =
+			    SvPV(imp_sth->params[idx].value, slen);
 
+			//Should be here max value for this param?
+			imp_sth->stmt->params[idx].buffer_length = slen;	
+			imp_sth->fbind[idx].length = slen;
+			imp_sth->fbind[idx].is_null = 0;
+		} else {
+			//NULL value 
+			if (dbis->debug >= 2)
+				PerlIO_printf(DBILOGFP,
+					      "   SCALAR IS NULL\n");
+			imp_sth->stmt->params[idx].buffer = NULL;
+			imp_sth->fbind[idx].is_null = 1;
+			imp_sth->fbind[idx].length = 0;
+		}
 	}
-#endif
+
 	return 1;
 }
 
