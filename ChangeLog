@@ -1,4 +1,23 @@
-2003-07-??  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
+2003-09-12  Rudy Lippan  <rlippan@remotelinux.com> (2.9003_1)
+	* The check for the innodb table type was broken so the transaction
+	  tests were skipped even though the database supported transactions.
+	* sql_types were not being inported in column info, so SQL_VARCAR was
+	  thowing an error.
+	* Patch for  dbdadmin.t so that it respects username and password
+	  [Alexey Stroganov <ranger@mysql.com>]
+	* Fix for memory leak in bind_param() introduced in 2.9002
+	  (2.9002 changed bind_param so that changing the value of a scalar
+	  after binding would not affect what was passed to execute eg: 
+	     $sth->bind_param(1,$foo);
+	     $foo = 'bar'
+	     $sth->execute() -- $foo would contain 'bar')
+	  [reported by <shildreth@emsphone.com>]
+	* don't define dbd_discon_all so that mysql uses DBI's This fixes a 
+	  bug whereby DBD::mysql was dropping perl's destruct level.
+	* patch to myld so that it uses strict and fixes scoping problem 
+	  with $contents [Jochen Wiedmann <joe@ispsoft.de>]
+	* Modified Makefile.PL so that it gives a usage message
+	  if any unknown options are passed in.
 	* patch to INSTALL.pod on how to link DBD::mysql against 
 	  a static libmysqlclient [Jochen Wiedmann <joe@ispsoft.de>]
 
@@ -33,8 +52,8 @@
 
 	  **NOTE** this is a change in behaviour that MAY cause problems
 	  with some SQL statements. If quoted integers, for example,  
-	  cause any problems, use bind_param(<column_id>, SQL_INTEGER) to 
-	  force a column to be bound as an integer.
+	  cause any problems, use bind_param(<column_id>, undef, SQL_INTEGER)
+	  to force a column to be bound as an integer.
 
 	* Added get_info() method. See 'perldoc DBI' for more info
 	* Added column_info(). See 'perldoc DBI' for more info [Tim Bunce]
