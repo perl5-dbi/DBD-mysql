@@ -201,21 +201,128 @@ do(dbh, statement, attr=Nullsv, ...)
     int numParams = 0;
     MYSQL_RES* cda = NULL;
     int retval;
+#if MYSQL_VERSION_ID >=40101 
 
+    MYSQL_STMT      * stmt = NULL;
+    MYSQL_BIND      * bind = NULL;
+    imp_sth_phb_t   * fbind = NULL;
+    int               has_binded;
+    char            * str;
+    STRLEN slen=0;
+    int              has_protocol41;
+
+    has_protocol41 = imp_dbh->has_protocol41;
+
+    if (attr)
+    {
+      SV **svp;
+      DBD_ATTRIBS_CHECK("do", dbh, attr);
+      svp = DBD_ATTRIB_GET_SVP(attr, "mysql_server_prepare", 20);
+
+      if (svp)
+      {
+        has_protocol41 = SvTRUE(*svp);
+      }
+    }
+ 
+    if (has_protocol41 && items > 3)
+    {
+      str = SvPV(statement, slen);
+
+      stmt= mysql_prepare(&imp_dbh->mysql, str , strlen(str));
+
+      if (stmt)
+      {
+        if (items > 3) 
+        {
+          //fprintf(stderr,"DO EXECUTION POINT 2\n");
+          /*  Handle binding supplied values to placeholders	   */
+          /*  Assume user has passed the correct number of parameters  */
+          int i;
+          numParams = items-3;
+          Newz(0, params, sizeof(*params)*numParams, struct imp_sth_ph_st);
+          Newz(0, bind, numParams, MYSQL_BIND);
+          Newz(0, fbind, numParams, imp_sth_phb_t);
+ 
+          for (i=0; i< numParams; i++)
+          {
+            params[i].value = ST(i+3);
+            params[i].type = SQL_VARCHAR;
+
+            //SQL_VARCHAR
+            bind[i].buffer_type = MYSQL_TYPE_VAR_STRING;
+            bind[i].length = (long*)&(fbind[i].length);
+            bind[i].is_null = (char*)&(fbind[i].is_null);
+ 
+            if (SvOK(params[i].value))
+            {
+              bind[i].buffer = SvPV(params[i].value, slen);
+              bind[i].buffer_length = slen; //FIXME: There is should max value  for this param
+              fbind[i].length = slen;
+            }
+            else
+            {
+              bind[i].buffer = SvPV(params[i].value, slen);
+              fbind[i].length = 0;
+              fbind[i].is_null= 1;
+            }
+          }
+          has_binded=0;
+        }
+        retval = mysql_st_internal_execute41(dbh, statement, attr,
+                                             numParams,
+                                             params,
+                                             &cda,
+                                             &imp_dbh->mysql,
+                                             0,
+                                             stmt,
+                                             bind,
+                                             &has_binded);
+        if (bind)
+        {
+          Safefree(bind);
+        }
+        if (fbind)
+        {
+          Safefree(fbind);
+        }
+        if(mysql_stmt_close(stmt))
+        {
+          fprintf(stderr, "\n failed while closing the statement");
+          fprintf(stderr, "\n %s", mysql_stmt_error(stmt));
+        }
+      }
+      else
+      {
+        fprintf(stderr,"DO: Something wrong while try to prepare query %s\n", mysql_error(&imp_dbh->mysql));
+        retval=-2;
+      }
+    }
+    else
+    {
+#endif
     if (items > 3) {
-      /*  Handle binding supplied values to placeholders	     */
+      /*  Handle binding supplied values to placeholders	   */
       /*  Assume user has passed the correct number of parameters  */
       int i;
       numParams = items-3;
       Newz(0, params, sizeof(*params)*numParams, struct imp_sth_ph_st);
-      for (i = 0;  i < numParams;  i++) {
-	params[i].value = ST(i+3);
-	params[i].type = SQL_VARCHAR;
+      for (i = 0;  i < numParams;  i++)
+      {
+        params[i].value = ST(i+3);
+        params[i].type = SQL_VARCHAR;
       }
     }
     retval = mysql_st_internal_execute(dbh, statement, attr, numParams,
 				       params, &cda, &imp_dbh->mysql, 0);
-    Safefree(params);
+#if MYSQL_VERSION_ID >=40101 
+   }
+#endif
+    if (params)
+    {
+      Safefree(params);
+    }
+
     if (cda) {
       mysql_free_result(cda);
     }
@@ -274,6 +381,32 @@ dataseek(sth, pos)
   CODE:
 {
   D_imp_sth(sth);
+#if (MYSQL_VERSION_ID >=40101) 
+  if (imp_sth->has_protocol41)
+  {
+    if (imp_sth->use_mysql_use_result || 1)
+    {
+      if (imp_sth->cda && imp_sth->stmt) 
+      {
+        mysql_stmt_data_seek(imp_sth->stmt, pos);
+        imp_sth->fetch_done=0;
+        RETVAL = 1;
+      } 
+      else 
+      {
+        RETVAL = 0;
+        do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active");
+      }
+    }
+    else
+    {
+      RETVAL = 0;
+      do_error(sth, JW_ERR_NOT_ACTIVE, "No result set");
+    }
+  }
+  else 
+  {
+#endif
   if (imp_sth->cda) {
     mysql_data_seek(imp_sth->cda, pos);
     RETVAL = 1;
@@ -281,6 +414,9 @@ dataseek(sth, pos)
     RETVAL = 0;
     do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active");
   }
+#if (MYSQL_VERSION_ID >=40101) 
+  }
+#endif
 }
   OUTPUT:
     RETVAL
@@ -368,8 +504,4 @@ dbd_mysql_get_info(dbh, sql_info_type)
     		croak("Unknown SQL Info type: %i",dbh);
     }
     ST(0) = sv_2mortal(retsv);
-
-
-
-
 
