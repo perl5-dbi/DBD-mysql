@@ -451,7 +451,7 @@ parse_params(MYSQL* sock,
            bool bind_type_guessing)
 {
 
-  char *salloc, *statement_ptr, *statement_ptr_end, *testchar, *ptr;
+  char *salloc, *statement_ptr, *statement_ptr_end, testchar, *ptr;
   int i, alen, j;
   char* valbuf;
   STRLEN vallen;
