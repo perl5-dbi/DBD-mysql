@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION =our $VERSION = sprintf "%s.%s%s", q$Name$ =~ /^Name: dbd_mysql-(\d+)_(\d+)(_\d+|)\s*$/, 9999,999,999;
+$VERSION =our $VERSION = sprintf "%s.%s%s", q$Name$ =~ /^Name: dbd_mysql-(\d+)_(\d+)(_\d+|)\s*$/, 999,"00",join "", (gmtime)[5] +1900, map {sprintf "%02d", $_} (gmtime)[4]+1;
 
 
 bootstrap DBD::mysql $VERSION;
@@ -422,6 +422,38 @@ sub get_info {
     my $v = $DBD::mysql::GetInfo::info{int($info_type)};
     $v = $v->($dbh) if ref $v eq 'CODE';
     return $v;
+}
+
+
+sub primary_key_info {
+    my ($dbh, $catalog, $schema, $table)  = @_;
+    return undef if $schema;
+
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+
+    my $query = "SHOW indexes FROM ".$dbh->quote_identifier($table);
+    $query .= " FROM ".$dbh->quote_identifier( $catalog) if defined($catalog);
+
+    my $sth = $dbh->prepare_cached($query) || return undef;;
+    $sth->execute() || return undef;
+
+
+    my @pk_info;
+    while (my $pk_row = $sth->fetchrow_hashref()) {
+	next if $pk_row->{"key_name"} ne 'PRIMARY';
+        push @pk_info, [$catalog, undef, @{$pk_row}{ "table", "column_name", 
+	    "seq_in_index", "key_name"
+	}];
+
+    }
+    my $poriferan = DBI->connect("dbi:Sponge:","","",{ AutoCommit=>1 }); 
+    $poriferan  or return undef;
+    my $fk_data = $poriferan->prepare('primarky_key_info', {
+        rows => \@pk_info, NAME => [qw(
+	    TABLE_CAT TABLE_SCHEME TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME
+        )]
+    });
+    return $fk_data;
 }
 
 
