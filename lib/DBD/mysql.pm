@@ -526,7 +526,7 @@ them. :-)
 
 In what follows we first discuss the use of DBD::mysql,
 because this is what you will need the most. For installation, see the
-sections on L<INSTALLATION>, L<WIN32 INSTALLATION>, and L<KNOWN BUGS>
+sections on L<INSTALLATION>, and L<WIN32 INSTALLATION>
 below. See L<EXAMPLE> for a simple example above.
 
 From perl you activate the interface with the statement
