@@ -235,7 +235,7 @@ dataseek(sth, pos)
 {
   D_imp_sth(sth);
 #if (MYSQL_VERSION_ID >=40101) 
-  if (imp_sth->has_protocol41)
+  if (imp_sth->real_prepare)
   {
     if (imp_sth->use_mysql_use_result || 1)
     {
