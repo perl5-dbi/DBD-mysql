@@ -124,15 +124,6 @@ struct imp_dbh_st {
  *  The bind_param method internally uses this structure for storing
  *  parameters.
  */
-typedef struct imp_sth_ph_st {
-	SV *value;
-	int type;
-} imp_sth_ph_t;
-
-/*
- *  The bind_param method internally uses this structure for storing
- *  parameters.
- */
 typedef struct imp_sth_phb_st {
 	unsigned long length;
 	char is_null;
@@ -156,39 +147,19 @@ typedef struct imp_sth_fbh_st {
 } imp_sth_fbh_t;
 
 
-typedef struct imp_sth_fbind_st {
-	unsigned long *length;
-	char *is_null;
-} imp_sth_fbind_t;
 
-
-
-
-/* 
-		MOVED FROM DBD::Pg to assist in getting prescan_stmt to
-		compile before refactoring.
-*/
-
-
-typedef struct phs_st phs_t;    /* scalar placeholder   */
-
-struct phs_st {         /* scalar placeholder EXPERIMENTAL      */
+/* Place Holders */
+typedef struct phs_st {
 	SV *value;
-    int ftype;          /* field type */
-    char *quoted;       /* Quoted value bound to placeholder*/
-    size_t quoted_len;
-    unsigned int count;
-    bool is_bound;
+	int ftype;          /* field type */
+	char *quoted;       /* Quoted value bound to placeholder*/
+	size_t quoted_len;
+	unsigned int count;
+	bool is_bound;
 	MYSQL_BIND *bind;
 
-    char name[1];       /* struct is malloc'd bigger as needed  */
-};
-
-/*
-				END MOVED
- */
-
-
+	char name[1];       /* struct is malloc'd bigger as needed  */
+} phs_t;
 
 
 /*
@@ -225,7 +196,6 @@ struct imp_sth_st {
 	long long_buflen;	/* length for long/longraw (if >0)        */
 	bool long_trunc_ok;	/* is truncating a long an error          */
 	unsigned long insertid;	/* ID of auto insert                      */
-	imp_sth_ph_t *params;	/* Pointer to parameter array             */
 	AV *av_attr[AV_ATTRIB_LAST];/*  For caching array attributes        */
 	int use_mysql_use_result;	/*  TRUE if execute should use     */
 					/* mysql_use_result rather than    */
@@ -278,7 +248,7 @@ void dbd_preparse(imp_sth_t * imp_sth, SV * statement);
 			       MYSQL_RES **, MYSQL *, int);
 */
 #if MYSQL_VERSION_ID>=40101
-long mysql_st_internal_execute41(SV *, SV *, SV *, int, imp_sth_ph_t *,
+long mysql_st_internal_execute41(SV *, SV *, SV *, int,
 				 MYSQL_RES **, MYSQL *, int, MYSQL_STMT *,
 				 MYSQL_BIND *);
 

@@ -1054,7 +1054,6 @@ long mysql_st_internal_execute41(SV * h,
 				 SV * statement,
 				 SV * attribs,
 				 int numParams,
-				 imp_sth_ph_t * params,
 				 MYSQL_RES ** cdaPtr,
 				 MYSQL * svsock,
 				 int use_mysql_use_result,
@@ -1183,8 +1182,6 @@ int dbd_st_execute(SV * sth, imp_sth_t * imp_sth)
 							       NULL,
 							       DBIc_NUM_PARAMS
 							       (imp_sth),
-							       imp_sth->
-							       params,
 							       &imp_sth->
 							       cda,
 							       &imp_dbh->
@@ -1716,7 +1713,6 @@ void dbd_st_destroy(SV * sth, imp_sth_t * imp_sth)
 	}
 
 	if (DBIc_NUM_PARAMS(imp_sth) > 0) {
-		Safefree(imp_sth->params);
 		Safefree(imp_sth->bind);
 	}
 
