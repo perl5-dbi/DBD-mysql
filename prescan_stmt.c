@@ -141,12 +141,10 @@ is_tx_stmt (stmt)
  *  the place holder SV*
  */
 
-int
-rewrite_placeholders (imp_sth, statement, internal, human)
+void
+rewrite_placeholders (imp_sth, statement)
 	imp_sth_t *imp_sth;
 	char *statement;
-	char *internal;
-	char *human;
 
 {
 	phs_t phs_tpl;
@@ -162,10 +160,9 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 
 	memset(&phs_tpl, 0, sizeof(phs_tpl));
 
-	if(human); /* use it */
 
 	src = statement;
-	dest = internal;
+	dest = imp_sth->statement;
 
 	/* // PerlIO_printf(DBILOGFP, "HERE: stmt: %s\n", src); */
 	while ((ch = *src++)) {
@@ -311,6 +308,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		phs = (phs_t *)SvPVX(phs_sv);
 		phs->count++; /* Number with this name */
 		imp_sth->place_holders[place_holder_count] = phs;
+		phs->bind = &imp_sth->bind[place_holder_count];
 	}
 
 	if (place_holder_count) {
@@ -322,7 +320,7 @@ rewrite_placeholders (imp_sth, statement, internal, human)
 		} */
 	}
 	*dest = '\0';
-	return place_holder_count;
+	imp_sth->phc = place_holder_count;
 }
 
 
