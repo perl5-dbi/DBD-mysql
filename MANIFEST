@@ -11,6 +11,8 @@ t/ak-dbd.t
 t/50chopblanks.t
 t/20createdrop.t
 t/dbdadmin.t
+t/35limit.t
+t/35prepare.t
 t/30insertfetch.t
 t/00base.t
 t/40blobs.t
