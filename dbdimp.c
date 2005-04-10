@@ -1150,7 +1150,7 @@ make_me_segfault(void) {
 
 
 
-/* {{{ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host, char* port, char* user, char* password,
+/* {{{ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host, char* port, char* user, char* password,
  **************************************************************************
  *
  *  Name:    mysql_dr_connect
@@ -1159,7 +1159,7 @@ make_me_segfault(void) {
  *
  *  Input:   MYSQL* sock - Pointer to a MYSQL structure being
  *             initialized
- *           char* unixSocket - Name of a UNIX socket being used
+ *           char* mysql_socket - Name of a UNIX socket being used
  *             or NULL
  *           char* host - Host name being used or NULL for localhost
  *           char* port - Port number being used or NULL for default
@@ -1173,7 +1173,7 @@ make_me_segfault(void) {
  *
  **************************************************************************/
 
-MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
+MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 			char* port, char* user, char* password,
 			char* dbname, imp_dbh_t *imp_dbh) {
   int portNr;
@@ -1452,7 +1452,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* unixSocket, char* host,
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: client_flags = %d\n",
 		    client_flag);
     result = mysql_real_connect(sock, host, user, password, dbname,
-				portNr, unixSocket, client_flag);
+				portNr, mysql_socket, client_flag);
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: <-");
 
@@ -1495,14 +1495,11 @@ static char *safe_hv_fetch(HV *hv, const char *name, uint name_length)
   }
   return res;
 }
-/* }}} */
 
-/* {{{ static int _MyLogin(SV* dbh, imp_dbh_t *imp_dbh)
- *
- * Frontend for mysql_dr_connect
- *
+/*
+ Frontend for mysql_dr_connect
 */
-static int _MyLogin(SV* dbh, imp_dbh_t *imp_dbh)
+static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
 {
   SV* sv;
   HV* hv;
@@ -1511,9 +1508,27 @@ static int _MyLogin(SV* dbh, imp_dbh_t *imp_dbh)
   char* port;
   char* user;
   char* password;
-  char* unixSocket;
+  char* mysql_socket;
+
+#if TAKE_IMP_DATA_VERSION
+  if (DBIc_has(imp_dbh, DBIcf_IMPSET))
+  { /* eg from take_imp_data() */
+    if (DBIc_has(imp_dbh, DBIcf_ACTIVE))
+    {
+      if (dbis->debug >= 2)
+        PerlIO_printf(DBILOGFP, "my_login skip connect\n");
+      /* tell our parent we've adopted an active child */
+      ++DBIc_ACTIVE_KIDS(DBIc_PARENT_COM(imp_dbh));
+      return TRUE;
+    }
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+                    "my_login IMPSET but not ACTIVE so connect not skipped\n");
+  }
+#endif
 
   sv = DBIc_IMP_DATA(imp_dbh);
+
   if (!sv  ||  !SvROK(sv))
     return FALSE;
 
@@ -1526,11 +1541,11 @@ static int _MyLogin(SV* dbh, imp_dbh_t *imp_dbh)
   user=		safe_hv_fetch(hv, "user", 4);
   password=	safe_hv_fetch(hv, "password", 8);
   dbname=	safe_hv_fetch(hv, "database", 8);
-  unixSocket=	safe_hv_fetch(hv, "mysql_socket", 12);
+  mysql_socket=	safe_hv_fetch(hv, "mysql_socket", 12);
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP,
-		  "imp_dbh->MyLogin: dbname = %s, uid = %s, pwd = %s," \
+		  "imp_dbh->my_login : dbname = %s, uid = %s, pwd = %s," \
 		  "host = %s, port = %s\n",
 		  dbname ? dbname : "NULL",
 		  user ? user : "NULL",
@@ -1538,14 +1553,12 @@ static int _MyLogin(SV* dbh, imp_dbh_t *imp_dbh)
 		  host ? host : "NULL",
 		  port ? port : "NULL");
 
-  return mysql_dr_connect(dbh, &imp_dbh->mysql, unixSocket, host, port, user,
+  return mysql_dr_connect(dbh, &imp_dbh->mysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
 }
-/* }}} */
 
 
-/* {{{ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user, char* password) {
- **************************************************************************
+/**************************************************************************
  *
  *  Name:    dbd_db_login
  *
@@ -1583,7 +1596,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
   imp_dbh->auto_reconnect = FALSE;
 
-  if (!_MyLogin(dbh, imp_dbh)) {
+  if (!my_login(dbh, imp_dbh)) {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
 	     mysql_error(&imp_dbh->mysql));
     return FALSE;
@@ -2345,9 +2358,7 @@ my_ulonglong mysql_st_internal_execute(
   {
     sbuf = salloc;
     if (dbis->debug >= 2)
-    {
       PerlIO_printf(DBILOGFP, "Binding parameters: %s\n", sbuf);
-    }
   }
 
   if (*result)
@@ -2417,9 +2428,6 @@ my_ulonglong mysql_st_internal_execute(
     rows= mysql_affected_rows(svsock);
   else
     rows= mysql_num_rows(*result);
-
-  if ((long long)rows == -1)
-    return(-1);
 
   return(rows);
 }
@@ -2527,8 +2535,6 @@ my_ulonglong mysql_st_internal_execute41(
          rows= mysql_stmt_num_rows(stmt);
       }
   }
-  if ((long long)rows == -1)
-    return(-1);
   return(rows);
 
 }
@@ -2641,7 +2647,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
                   imp_sth->row_num);
   }
 
-  if ((long long) imp_sth->row_num == -1)
+  /* row_num+1, if error, is == -1LL */
+  if (imp_sth->row_num+1 == (my_ulonglong) -1LL)
     return -1;
   else
     return (int) imp_sth->row_num;
@@ -3714,7 +3721,7 @@ int mysql_db_reconnect(SV* h) {
     return FALSE;
   }
 
-  /* _MyLogin will blow away imp_dbh->mysql so we save a copy of
+  /* my_login will blow away imp_dbh->mysql so we save a copy of
    * imp_dbh->mysql and put it back where it belongs if the reconnect
    * fail.  Think server is down & reconnect fails but the application eval{}s
    * the execute, so next time $dbh->quote() gets called, instant SIGSEGV!
@@ -3723,7 +3730,7 @@ int mysql_db_reconnect(SV* h) {
   memcpy (&save_socket, &imp_dbh->mysql,sizeof(save_socket));
   memset (&imp_dbh->mysql,0,sizeof(imp_dbh->mysql));
 
-  if (!_MyLogin(h, imp_dbh)) {
+  if (!my_login(h, imp_dbh)) {
     do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql));
     memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
     ++imp_dbh->stats.auto_reconnects_failed;

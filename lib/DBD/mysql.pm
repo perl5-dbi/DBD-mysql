@@ -103,6 +103,8 @@ sub connect {
     my($drh, $dsn, $username, $password, $attrhash) = @_;
     my($port);
     my($cWarn);
+    my $connect_ref= { 'Name' => $dsn };
+    my $dbi_imp_data;
 
     # Avoid warnings for undefined values
     $username ||= '';
@@ -119,9 +121,18 @@ sub connect {
     DBD::mysql->_OdbcParse($dsn, $privateAttrHash,
 				    ['database', 'host', 'port']);
 
-    if (!defined($this = DBI::_new_dbh($drh, {'Name' => $dsn},
-				       $privateAttrHash))) {
-	return undef;
+    
+    if ($DBI::VERSION >= 1.49)
+    {
+      $dbi_imp_data = delete $attrhash->{dbi_imp_data};
+      $connect_ref->{'dbi_imp_data'} = $dbi_imp_data;
+    }
+
+    if (!defined($this = DBI::_new_dbh($drh,
+            $connect_ref,
+            $privateAttrHash)))
+    {
+      return undef;
     }
 
     # Call msqlConnect func in mSQL.xs file

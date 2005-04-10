@@ -564,7 +564,8 @@ rows(sth)
     D_imp_sth(sth);
     char buf[64];
 
-  if ((long long)imp_sth->row_num ==  -1)
+
+  if (imp_sth->row_num+1 ==  (my_ulonglong) -1LL)
     sprintf(buf, "%d", -1);
   else
     sprintf(buf, "%llu", imp_sth->row_num);
