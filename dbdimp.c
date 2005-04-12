@@ -1612,10 +1612,9 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
     return TRUE;
 }
-/* 
 
-/* 
-***************************************************************************
+
+/***************************************************************************
  *
  *  Name:    dbd_db_commit
  *           dbd_db_rollback
@@ -2352,7 +2351,7 @@ my_ulonglong mysql_st_internal_execute(
   char* sbuf = SvPV(statement, slen);
   char* salloc = parse_params(svsock, sbuf, &slen, params, num_params, imp_dbh->bind_type_guessing);
   char* table;
-  my_ulonglong rows;
+  my_ulonglong rows=0;
 
   if (salloc)
   {
