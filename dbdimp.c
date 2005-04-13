@@ -1630,7 +1630,7 @@ my_ulonglong mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
     D_imp_sth(h);
     D_imp_dbh_from_sth;
     STRLEN slen;
-    my_ulonglong rows;
+    my_ulonglong rows=0;
 
     char* sbuf = SvPV(statement, slen);
 
@@ -1716,16 +1716,9 @@ my_ulonglong mysql_st_internal_execute(SV* h, SV* statement, SV* attribs,
     else
       rows= mysql_num_rows(*cdaPtr);
 
-    if ((long long)rows == -1)
-    {      
-      if (dbis->debug >= 2) 
-	    PerlIO_printf(DBILOGFP,
-                         "      <- mysql_st_internal_execute ERROR: returning -1\n");
-         return(-1);
-    }
     if (dbis->debug >= 2) 
       PerlIO_printf(DBILOGFP,
-              "      <- mysql_st_internal_execute ERROR: returning -1\n");
+                    "      <- mysql_st_internal_execute returning rows %llu\n", rows);
     return(rows);
 }
 
@@ -1752,6 +1745,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 #if defined (dTHR)
     dTHR;
 #endif
+    char actual_row_num[64];
 
     if (dbis->debug >= 2) {
         PerlIO_printf(DBILOGFP,
@@ -1791,15 +1785,16 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 	}
     }
 
-    if (dbis->debug >= 2) {
-        PerlIO_printf(DBILOGFP, "    <- dbd_st_execute %d rows\n",
-		      imp_sth->row_num);
+    if (dbis->debug >= 2)
+    {
+      /* PerlIO_printf doesn't always handle imp_sth->row_num %llu consitently!! */
+      sprintf(actual_row_num, "%llu", imp_sth->row_num);
+      PerlIO_printf(DBILOGFP,
+                    "    <- dbd_st_execute returning imp_sth->row_num %s\n",
+                    actual_row_num);
     }
 
-    if ((long long) imp_sth->row_num == -1)
-      return -1;
-    else
-      return (int) imp_sth->row_num;
+    return (int) imp_sth->row_num;
 }
 
 
@@ -1960,10 +1955,6 @@ void dbd_st_destroy(SV* sth, imp_sth_t* imp_sth) {
      */
     for (i = 0;  i < AV_ATTRIB_LAST;  i++) {
 	if (imp_sth->av_attr[i]) {
-#ifdef DEBUGGING_MEMORY_LEAK
-	    PerlIO_printf("DESTROY: Decrementing refcnt: old = %d\n",
-			  SvREFCNT(imp_sth->av_attr[i]));
-#endif
 	    SvREFCNT_dec(imp_sth->av_attr[i]);
 	}
 	imp_sth->av_attr[i] = Nullav;
@@ -2327,12 +2318,31 @@ int dbd_st_blob_read (SV *sth, imp_sth_t *imp_sth, int field, long offset,
 int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
     int paramNum = SvIV(param);
+    char err_msg[128];
 
     if (paramNum <= 0  ||  paramNum > DBIc_NUM_PARAMS(imp_sth)) {
         do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM,
 		       "Illegal parameter number");
 	return FALSE;
     }
+
+    if (sql_type == SQL_NUMERIC  ||
+        sql_type == SQL_DECIMAL  ||
+        sql_type == SQL_INTEGER  ||
+        sql_type == SQL_SMALLINT ||
+        sql_type == SQL_FLOAT    ||
+        sql_type == SQL_REAL     ||
+        sql_type == SQL_DOUBLE)
+    {
+      if (! looks_like_number(value))
+      {
+        sprintf(err_msg,
+                "Binding non-numeric field %d, value %s as a numeric!",
+                paramNum, neatsvpv(value,0));
+        do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg);
+      }
+    }
+
 
     if (is_inout) {
         do_error(sth, JW_ERR_NOT_IMPLEMENTED,

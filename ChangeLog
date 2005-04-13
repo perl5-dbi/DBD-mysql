@@ -1,3 +1,10 @@
+2005-04-12 Patrick Galbraith <patg@mysql.com> (2.9006_1)
+        * Fix to Statement.pm for old API call for numfields that caused
+          warnings on 40numrows and akmisc tests
+        * Fix to bind_ph to throw an error if trying to bind a non-numeric 
+          value as numeric
+        * Better fix for dealing with error condition in $sth->rows()
+
 2005-04-04 Rudolf Lippan <rlippan@remotelinux.com> (2.9006)
 	* Fixed a bug in mysql_auto_reconnect whereby only the fist reconnect 
 	  would take place. The setting of mysql_auto_reconnect was getting 

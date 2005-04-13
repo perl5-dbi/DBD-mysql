@@ -298,9 +298,12 @@ rows(sth)
     char buf[64];
 
   /* fix to make rows able to handle errors and handle max value from 
-     affected rows
+     affected rows.
+     if mysql_affected_row returns an error, it's value is 18446744073709551614,
+     while a (my_ulonglong)-1 is  18446744073709551615, so we have to add 1 to
+     imp_sth->row_num to know if there's an error
   */
-  if ((long long)imp_sth->row_num ==  -1)
+  if (imp_sth->row_num+1 ==  (my_ulonglong) -1)
     sprintf(buf, "%d", -1);
   else
     sprintf(buf, "%llu", imp_sth->row_num);
@@ -333,8 +336,8 @@ dbd_mysql_get_info(dbh, sql_info_type)
   CODE:
     D_imp_dbh(dbh);
     IV type = 0;
-    SV* retsv;
-    bool using_322;
+    SV* retsv=NULL;
+    bool using_322=0;
 
 
     if (SvOK(sql_info_type))
