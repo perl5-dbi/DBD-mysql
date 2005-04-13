@@ -38,3 +38,4 @@ INSTALL.html
 ChangeLog
 MANIFEST
 mysql.xs
+META.yml                                Module meta-data (added by MakeMaker)

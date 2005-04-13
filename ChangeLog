@@ -1,8 +1,12 @@
 2005-04-10 Patrick Galbraith <patg@mysql.com> (2.9015_3)
-  * Removed t/mysql.t . Time to use DBI ;)
   * Added patch from Stas Beckman for new DBI feature take_imp_data, needed
    for DBI::Pool
-  * Fix for 'rows' being properly returned on error condition.
+  * Fix to Statement.pm for old API call for numfields that caused
+    warnings on 40numrows and akmisc tests
+  * Fix to bind_ph to throw an error if trying to bind a non-numeric 
+    value as numeric
+  * Better fix for dealing with error condition in $sth->rows()
+
 
 2005-04-04 Patrick Galbraith <patg@mysql.com> (2.9015_2)
   * Merged all code changes from 2.900x tree from the last 9 

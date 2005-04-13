@@ -203,7 +203,7 @@ struct imp_sth_st {
     MYSQL_BIND       *buffer;
     imp_sth_phb_t    *fbind;
     imp_sth_fbh_t    *fbh;
-    int              has_binded;
+    int              has_been_bound;
     int use_server_side_prepare;     /* does server support new binary protocol */
 #endif
 
