@@ -1742,10 +1742,11 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
     D_imp_dbh_from_sth;
     SV** statement;
     int i;
+
+    char actual_row_num[64];
 #if defined (dTHR)
     dTHR;
 #endif
-    char actual_row_num[64];
 
     if (dbis->debug >= 2) {
         PerlIO_printf(DBILOGFP,
@@ -1767,17 +1768,22 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
     }
 
     statement = hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
-    if ((imp_sth->row_num =
-	     mysql_st_internal_execute(sth, *statement, NULL,
-				       DBIc_NUM_PARAMS(imp_sth),
-				       imp_sth->params,
-				       &imp_sth->cda,
- 				       &imp_dbh->mysql,
-				       imp_sth->use_mysql_use_result))
-	!= -2) {
-	if (!imp_sth->cda) {
+    imp_sth->row_num= mysql_st_internal_execute(
+                                                sth, *statement, NULL,
+                                                DBIc_NUM_PARAMS(imp_sth),
+                                                imp_sth->params,
+                                                &imp_sth->cda,
+                                                &imp_dbh->mysql,
+                                                imp_sth->use_mysql_use_result);
+
+    if (imp_sth->row_num+1 != (my_ulonglong)-1)
+    {
+	if (!imp_sth->cda)
+        {
 	    imp_sth->insertid = mysql_insert_id(&imp_dbh->mysql);
-	} else {
+	}
+        else
+        {
 	    /** Store the result in the current statement handle */
 	    DBIc_ACTIVE_on(imp_sth);
 	    DBIc_NUM_FIELDS(imp_sth) = mysql_num_fields(imp_sth->cda);
@@ -1787,7 +1793,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth) {
 
     if (dbis->debug >= 2)
     {
-      /* PerlIO_printf doesn't always handle imp_sth->row_num %llu consitently!! */
+      /* 
+        PerlIO_printf doesn't always handle imp_sth->row_num %llu 
+        consistantly!!
+      */
       sprintf(actual_row_num, "%llu", imp_sth->row_num);
       PerlIO_printf(DBILOGFP,
                     "    <- dbd_st_execute returning imp_sth->row_num %s\n",
@@ -2326,6 +2335,10 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 	return FALSE;
     }
 
+    /* 
+      This fixes the bug whereby no warning was issued upone binding a 
+      non-numeric as numeric
+    */
     if (sql_type == SQL_NUMERIC  ||
         sql_type == SQL_DECIMAL  ||
         sql_type == SQL_INTEGER  ||

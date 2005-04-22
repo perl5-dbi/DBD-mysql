@@ -1,6 +1,7 @@
 2005-04-12 Patrick Galbraith <patg@mysql.com> (2.9006_1)
         * Fix to Statement.pm for old API call for numfields that caused
           warnings on 40numrows and akmisc tests
+        * Fix to warning - t/40listfields to check logic properly 
         * Fix to bind_ph to throw an error if trying to bind a non-numeric 
           value as numeric
         * Better fix for dealing with error condition in $sth->rows()
