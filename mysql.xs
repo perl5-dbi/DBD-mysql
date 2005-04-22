@@ -556,14 +556,12 @@ dataseek(sth, pos)
   OUTPUT:
     RETVAL
 
-
 void
 rows(sth)
     SV* sth
   CODE:
     D_imp_sth(sth);
     char buf[64];
-
   /* fix to make rows able to handle errors and handle max value from 
      affected rows.
      if mysql_affected_row returns an error, it's value is 18446744073709551614,

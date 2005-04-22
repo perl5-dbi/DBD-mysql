@@ -48,7 +48,7 @@ sub numrows {
 }
 sub numfields {
   my($self) = @_;
-  return(exists $self->{'NUM_OF_FIELDS'} ? $self->{'NUM_OF_FIELDS'} : 0);
+  return($self->{'NUM_OF_FIELDS'} ? $self->{'NUM_OF_FIELDS'} : 0);
 }
 sub arrAttr ($$)
 {

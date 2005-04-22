@@ -254,6 +254,7 @@ struct imp_sth_st {
 #define do_error		mysql_dr_error
 #define dbd_db_type_info_all    mysql_db_type_info_all
 #define dbd_db_quote            mysql_db_quote
+
 #ifdef DBD_MYSQL_INSERT_ID_IS_GOOD /* prototype was broken in some versions of dbi */
 #define dbd_db_last_insert_id   mysql_db_last_insert_id
 #endif
@@ -288,4 +289,3 @@ extern MYSQL* mysql_dr_connect(SV*, MYSQL*, char*, char*, char*, char*, char*,
 			       char*, imp_dbh_t*);
 
 extern int mysql_db_reconnect(SV*);
-
