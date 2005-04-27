@@ -303,7 +303,7 @@ rows(sth)
      while a (my_ulonglong)-1 is  18446744073709551615, so we have to add 1 to
      imp_sth->row_num to know if there's an error
   */
-  if (imp_sth->row_num+1 ==  (my_ulonglong) -1)
+  if (imp_sth->row_num >=  (my_ulonglong) -2)
     sprintf(buf, "%d", -1);
   else
     sprintf(buf, "%llu", imp_sth->row_num);
