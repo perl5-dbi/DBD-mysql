@@ -1850,6 +1850,7 @@ AV* dbd_st_fetch(SV* sth, imp_sth_t* imp_sth) {
     AV *av;
     MYSQL_ROW cols;
     unsigned long* lengths;
+    D_imp_dbh_from_sth;
 
     ChopBlanks = DBIc_is(imp_sth, DBIcf_ChopBlanks);
     if (dbis->debug >= 2) {
@@ -1863,9 +1864,9 @@ AV* dbd_st_fetch(SV* sth, imp_sth_t* imp_sth) {
       return Nullav;
     }
 
+    (imp_dbh->mysql).net.last_errno = 0;
     imp_sth->currow++;
     if (!(cols = mysql_fetch_row(imp_sth->cda))) {
-      D_imp_dbh_from_sth;
       if (mysql_errno(&imp_dbh->mysql)) {
 	do_error(sth, mysql_errno(&imp_dbh->mysql),
 		 mysql_error(&imp_dbh->mysql));
