@@ -1041,11 +1041,11 @@ By default AutoCommit mode is on, following the DBI specifications.
 
 If you execute
 
-    $dbh-E<gt>{'AutoCommit'} = 0;
+    $dbh->{'AutoCommit'} = 0;
 
 or
 
-    $dbh-E<gt>{'AutoCommit'} = 1;
+    $dbh->{'AutoCommit'} = 1;
 
 then the driver will set the MySQL server variable autocommit to 0 or
 1, respectively. Switching from 0 to 1 will also issue a COMMIT,
@@ -1055,8 +1055,8 @@ following the DBI specifications.
 
 The methods
 
-    $dbh-E<gt>rollback();
-    $dbh-E<gt>commit();
+    $dbh->rollback();
+    $dbh->commit();
 
 will issue the commands COMMIT and ROLLBACK, respectively. A
 ROLLBACK will also be issued if AutoCommit mode is off and the
@@ -1220,37 +1220,37 @@ in 2.13.
 
 =over
 
-=item C<$dbh-E<gt>{'errno'}>
+=item C<$dbh->{'errno'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_errno'}>
+Replaced by C<$dbh->{'mysql_errno'}>
 
-=item C<$dbh-E<gt>{'errmsg'}>
+=item C<$dbh->{'errmsg'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_error'}>
+Replaced by C<$dbh->{'mysql_error'}>
 
-=item C<$dbh-E<gt>{'hostinfo'}>
+=item C<$dbh->{'hostinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_hostinfo'}>
+Replaced by C<$dbh->{'mysql_hostinfo'}>
 
-=item C<$dbh-E<gt>{'info'}>
+=item C<$dbh->{'info'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_info'}>
+Replaced by C<$dbh->{'mysql_info'}>
 
-=item C<$dbh-E<gt>{'protoinfo'}>
+=item C<$dbh->{'protoinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_protoinfo'}>
+Replaced by C<$dbh->{'mysql_protoinfo'}>
 
-=item C<$dbh-E<gt>{'serverinfo'}>
+=item C<$dbh->{'serverinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_serverinfo'}>
+Replaced by C<$dbh->{'mysql_serverinfo'}>
 
-=item C<$dbh-E<gt>{'stats'}>
+=item C<$dbh->{'stats'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_stat'}>
+Replaced by C<$dbh->{'mysql_stat'}>
 
-=item C<$dbh-E<gt>{'thread_id'}>
+=item C<$dbh->{'thread_id'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_thread_id'}>
+Replaced by C<$dbh->{'mysql_thread_id'}>
 
 =back
 
@@ -1263,10 +1263,10 @@ Replaced by C<$dbh-E<gt>{'mysql_thread_id'}>
 
 =item _ListTables
 
-Replace with the standard DBI method C<$dbh-E<gt>tables()>. See also
-C<$dbh-E<gt>table_info()>. Portable applications will prefer
+Replace with the standard DBI method C<$dbh->tables()>. See also
+C<$dbh->table_info()>. Portable applications will prefer
 
-    @tables = map { $_ =~ s/.*\.//; $_ } $dbh-E<gt>tables()
+    @tables = map { $_ =~ s/.*\.//; $_ } $dbh->tables()
 
 because, depending on the engine, the string "user.table" will be
 returned, user being the table owner. The method will be removed
@@ -1285,25 +1285,25 @@ in DBD::mysql version 2.11xy.
 
 The methods
 
-    $dbh-E<gt>func($db, '_CreateDB');
-    $dbh-E<gt>func($db, '_DropDB');
+    $dbh->func($db, '_CreateDB');
+    $dbh->func($db, '_DropDB');
 
 have been used for creating or dropping databases. They have been removed
 in 1.21_07 in favour of
 
-    $drh-E<gt>func("createdb", $dbname, $host, "admin")
-    $drh-E<gt>func("dropdb", $dbname, $host, "admin")
+    $drh->func("createdb", $dbname, $host, "admin")
+    $drh->func("dropdb", $dbname, $host, "admin")
 
 =item _ListFields
 
 The method
 
-    $sth = $dbh-E<gt>func($table, '_ListFields');
+    $sth = $dbh->func($table, '_ListFields');
 
 has been used to list a tables columns names, types and other attributes.
 This method has been removed in 1.21_07 in favour of
 
-    $sth = $dbh-E<gt>prepare("LISTFIELDS $table");
+    $sth = $dbh->prepare("LISTFIELDS $table");
 
 =item _ListSelectedFields
 
@@ -1314,8 +1314,8 @@ The method
 use to return a hash ref of attributes like 'IS_NUM', 'IS_KEY' and so
 on. These attributes are now accessible via
 
-    $sth-E<gt>{'mysql_is_num'};
-    $sth-E<gt>{'mysql_is_key'};
+    $sth->{'mysql_is_num'};
+    $sth->{'mysql_is_key'};
 
 and so on. Thus the method has been removed in 1.21_07.
 
@@ -1323,11 +1323,11 @@ and so on. Thus the method has been removed in 1.21_07.
 
 The method
 
-    $sth-E<gt>func('_NumRows');
+    $sth->func('_NumRows');
 
 used to be equivalent to
 
-    $sth-E<gt>rows();
+    $sth->rows();
 
 and has been removed in 1.21_07.
 
@@ -1335,11 +1335,11 @@ and has been removed in 1.21_07.
 
 The method
 
-    $dbh-E<gt>func('_InsertID');
+    $dbh->func('_InsertID');
 
 used to be equivalent with
 
-    $dbh-E<gt>{'mysql_insertid'};
+    $dbh->{'mysql_insertid'};
 
 =item Statement handle attributes
 
@@ -1347,115 +1347,115 @@ used to be equivalent with
 
 =item affected_rows
 
-Replaced with $sth-E<gt>{'mysql_affected_rows'} or the result
-of $sth-E<gt>execute().
+Replaced with $sth->{'mysql_affected_rows'} or the result
+of $sth->execute().
 
 =item format_default_size
 
-Replaced with $sth-E<gt>{'PRECISION'}.
+Replaced with $sth->{'PRECISION'}.
 
 =item format_max_size
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item format_type_name
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_type_name'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_type_name'} (MySQL specific).
 
 =item format_right_justify
 
-Replaced with $sth-E<gt>->{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item insertid
 
-Replaced with $sth-E<gt>{'mysql_insertid'}.
+Replaced with $sth->{'mysql_insertid'}.
 
 =item IS_BLOB
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_blob'} (MySQL specific).
 
 =item is_blob
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_blob'} (MySQL specific).
 
 =item IS_PRI_KEY
 
-Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+Replaced with $sth->{'mysql_is_pri_key'}.
 
 =item is_pri_key
 
-Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+Replaced with $sth->{'mysql_is_pri_key'}.
 
 =item IS_NOT_NULL
 
-Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+Replaced with $sth->{'NULLABLE'} (do not forget to invert
 the boolean values).
 
 =item is_not_null
 
-Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+Replaced with $sth->{'NULLABLE'} (do not forget to invert
 the boolean values).
 
 =item IS_NUM
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item is_num
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item IS_KEY
 
-Replaced with $sth-E<gt>{'mysql_is_key'}.
+Replaced with $sth->{'mysql_is_key'}.
 
 =item is_key
 
-Replaced with $sth-E<gt>{'mysql_is_key'}.
+Replaced with $sth->{'mysql_is_key'}.
 
 =item MAXLENGTH
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item maxlength
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item LENGTH
 
-Replaced with $sth-E<gt>{'PRECISION'} (portable) or
-$sth-E<gt>{'mysql_length'} (MySQL specific)
+Replaced with $sth->{'PRECISION'} (portable) or
+$sth->{'mysql_length'} (MySQL specific)
 
 =item length
 
-Replaced with $sth-E<gt>{'PRECISION'} (portable) or
-$sth-E<gt>{'mysql_length'} (MySQL specific)
+Replaced with $sth->{'PRECISION'} (portable) or
+$sth->{'mysql_length'} (MySQL specific)
 
 =item NUMFIELDS
 
-Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+Replaced with $sth->{'NUM_OF_FIELDS'}.
 
 =item numfields
 
-Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+Replaced with $sth->{'NUM_OF_FIELDS'}.
 
 =item NUMROWS
 
-Replaced with the result of $sth-E<gt>execute() or
-$sth-E<gt>{'mysql_affected_rows'}.
+Replaced with the result of $sth->execute() or
+$sth->{'mysql_affected_rows'}.
 
 =item TABLE
 
-Replaced with $sth-E<gt>{'mysql_table'}.
+Replaced with $sth->{'mysql_table'}.
 
 =item table
 
-Replaced with $sth-E<gt>{'mysql_table'}.
+Replaced with $sth->{'mysql_table'}.
 
 =back
 
