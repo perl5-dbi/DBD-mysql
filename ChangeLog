@@ -1,3 +1,5 @@
+2005-06-02 Rudolf Lippan <rlippan@remotelinux.com> (2.9008)
+
 	* reset errorno before a fetch to prevent errors from showing up on
 	  the wrong $sth [spotted by: Joel Stevenson]
 	* removed "E<gt>" from pod [spotted by: Tim Heaney]
