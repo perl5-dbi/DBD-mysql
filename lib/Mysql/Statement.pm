@@ -42,13 +42,16 @@ sub dataseek ($$) {
     $self->func($pos, 'dataseek');
 }
 
-sub numrows { my($self) = shift; $self->rows() }
-sub numfields 
-{
-  my ($self) = @_;
-  return defined $self->{'NUM_OF_FIELDS'} ? $self->{'NUM_OF_FIELDS'} : 0;
+sub numrows {
+  my($self) = @_;
+  return($self->rows());
 }
-sub arrAttr ($$) {
+sub numfields {
+  my($self) = @_;
+  return($self->{'NUM_OF_FIELDS'} ? $self->{'NUM_OF_FIELDS'} : 0);
+}
+sub arrAttr ($$)
+{
     my($self, $attr) = @_;
     my $arr = $self->{$attr};
     wantarray ? @$arr : $arr

@@ -1,76 +1,53 @@
-2005-06-02 Rudolf Lippan <rlippan@remotelinux.com> (2.9008)
+2005-04-26 Patrick Galbraith <patg@mysql.com> (2.9015_3)
+  * Added patch from Stas Beckman for new DBI feature take_imp_data, needed
+   for DBI::Pool
+  * Fix to Statement.pm for old API call for numfields that caused
+    warnings on 40numrows and akmisc tests
+  * Fix to bind_ph to throw an error if trying to bind a non-numeric 
+    value as numeric
+  * Better fix for dealing with error condition in $sth->rows()
+  * Fix to bind_param to throw error when trying to bind a non-numeric as
+    numeric
 
-	* reset errorno before a fetch to prevent errors from showing up on
-	  the wrong $sth [spotted by: Joel Stevenson]
-	* removed "E<gt>" from pod [spotted by: Tim Heaney]
 
-2005-04-12 Patrick Galbraith <patg@mysql.com> (2.9007)
-        * Fix to Statement.pm for old API call for numfields that caused
-          warnings on 40numrows and akmisc tests
-        * Fix to warning - t/40listfields to check logic properly 
-        * Fix to bind_ph to throw an error if trying to bind a non-numeric 
-          value as numeric
-        * Better fix for dealing with error condition in $sth->rows()
+2005-04-04 Patrick Galbraith <patg@mysql.com> (2.9015_2)
+  * Merged all code changes from 2.900x tree from the last 9 
+    months
+    - unsafe bind type guessing patch from Dragonchild
+    - Removed mysql.mtest
+    - Fixed sth->rows to return my_ulongloong and also handle
+      error from client API
+    - Fix to make autocommit work was already part of this version
+    - Auto-reconnect bug fixed in 2.9006 included 
+  * Added simple test to 35limit test to check if using malicious code in
+   LIMIT ?, ? placeholders works, which it doesn't.
+  * Fix that sets mysql_server_prepare to 0 if SQL statement is 'SHOW ...'
+    which is not supported by prepared statement API currently
 
-2005-04-04 Rudolf Lippan <rlippan@remotelinux.com> (2.9006)
-	* Fixed a bug in mysql_auto_reconnect whereby only the fist reconnect 
-	  would take place. The setting of mysql_auto_reconnect was getting 
-	  reset to the default of false during the reconnect.
-        * Fixed a bug with AutoCommit that manifested itself when you would
-          start the database with autocommit turned off (with my.cnf
-          init-connect    = 'set autocommit=0'), setting AutoCommit in
-          connect with { AutoConnect => 1 } would not work, nor setting it
-          via $dbh->{AutoCommit}=1 work. Also added logic which uses the
-          mysql client API functions for rollback and commit if the server
-          version is 4.1.0 and above, old version logic cleaned up as well
-          and still functional.  [Patrick Galbraith <patg@mysql.com>]
-        * Found that mysql_internal_execute needed to return a type of
-          my_longlong, which caused type warnings and still resulted in the 
-          fix described in 2.9005_4 not working.
-	  [Patrick Galbraith <patg@mysql.com>]
-        * Various type cast warnings fixed [Patrick Galbraith <patg@mysql.com>]
-        * Fix for rows - changed num_rows to my_ulonglong in dbdimp.h and
-          how the buffer that contains the value returned from
-          mysql_affected_rows is printed to from %lu to %lli if an error
-          (-1) and %llu otherwise. This will now allow the number from rows
-          to be able to be the maximum that mysql_affected_rows is able to
-          return, where before was limitted to %lu max value. (CNET).
-	  [Patrick Galbraith <patg@mysql.com>]
-        * insert_id now a my_ulonglong (CNET) 
-	  [Patrick Galbraith <patg@mysql.com>]
-	* Removed requirement that mysql.mtest be included in the distribution.
-	* Added $dbh->{mysql_unsafe_bind_type_guessing} = 2 which will look at
-	  each bind_param and make guess based on whether it looks like a 
-	  number, and if the parameter looks like a number, it will not be 
-	  quoted.  [thanks to dragonchild for cleaning up the initial rough 
-	  draft impementation making it ready for prime time]
-	* Applied patch to fix column which broke with later version of mysql
-	  [Tim Bunce]
-	* Merged $dbh->last_inert_id() from the 3.0 dev tree
-	* If you are using perl 5.008 without a $ENV{LANG} of "C". Makefile.PL
-	  will now 1. Complain loudly, and 2. set LANG to "C" and then
-	  exec itself with the new lang setting.
-	* Added '$dbh->{mysql_unsafe_bind_type_guessing}'. When this flag is
-	  enabled any scalar that is passed to execute() and was used in
-	  numeric context will be treated as a number when being sent to the
-	  database backend. This can be a secuity problem in that if you 
-	  use a string in numeric context, it will NOT be quoted before being 
-	  passed to the database -- use at your own risk. The default is off.
-	* fixed typo in pod chaning  failed_auto_reconnects_failed to 
-	  auto_reconnects_failed [Paul DuBois <paul@snake.net>]
+2004-10-28 Rudolf Lippan <rlippan@remotelinux.com> (2.9015_1)
+	* Merged Makefile.PL from 2.9005_3
+	* Bumped version number to 2.9015 for release of Dev Branch. Which 
+	  will become 2.9020 when tested and merged into HEAD.
+	* fixed typo/compiler warning in bind_param_guessing 
+	  '*testchar' should have been 'testchar'.
 
-2004-07-13  Rudolf Lippan <rlippan@remotelinux.com> (2.9004)
-        * myld now exits with the return value of ld rather than always exiting
-          with a value of when when myld returned something other than 0.
-        * Table names that had '?'s in them and were quoted using '`' would thow
-          off placeholder counting.
-        * Add support for mysq 4.1.3's api change to shutdown 
-          [Patrick Galbraith]
-        * Fixed to error messages in t/50commit.t 
-          [Decker, Gero <gero.decker@sap.com>]
-        * Fix to documentation of mysql_local_info.  enabling 
-          mysql_local_infile is ineffective if LOCAL is disabled in the server
-          and not effective as docs had read. [Paul DuBois <paul@snake.net>]
+2004-10-20 Patrick Galbraith patg@mysql.com (Dev-2_9 - 2.9005)
+
+  * merged changes from 2.9005_1
+  * fix to blob in dbd_st_fetch (Alexey Stroganov ranger@mysql.com)
+  In case of BLOB/TEXT fields we allocate only 8192 bytes in dbd_describe()
+  for data. Here we know real size of field so we should increase buffer
+  size and refetch column value
+
+2004-07-25 Patrick Galbraith patg@mysql.com (2.9004)
+  * Prepared statement support
+* Use of mysql_stmt_* API (>= 4.1.3)
+  * mysql_shutdown fix
+* MySQL Embedded Server support (Alexey Stroganov)
+  * Fixed link failure on MacOSX
+  * Cleaned up tests
+  * Fixed various compile warnings
+
 
 2003-10-26  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
 	* Applied patch from Aaron and Chuck that added basic testing of the 

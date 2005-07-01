@@ -47,6 +47,7 @@ while (Testing()) {
     #   Connect to the database
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
+    #DBI->trace(2);
 
     #
     #   Find a possible new table name

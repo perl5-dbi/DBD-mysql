@@ -129,7 +129,8 @@ while (Testing()) {
 	or DbiError($cursor->err, $cursor->errstr);
 
     #  NUM_OF_FIELDS should be zero (Non-Select)
-    Test($state or (! defined $cursor->{'NUM_OF_FIELDS'} || $cursor->{'NUM_OF_FIELDS'} == 0))
+    Test($state or (! defined $cursor->{'NUM_OF_FIELDS'} ||
+          $cursor->{'NUM_OF_FIELDS'} == 0))
 	or !$verbose or printf("NUM_OF_FIELDS is %s, not zero.\n",
 			       $cursor->{'NUM_OF_FIELDS'});
     Test($state or (undef $cursor) or 1);

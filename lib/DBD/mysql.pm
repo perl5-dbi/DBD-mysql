@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '2.9008';
+$VERSION = '3.0000';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -103,6 +103,8 @@ sub connect {
     my($drh, $dsn, $username, $password, $attrhash) = @_;
     my($port);
     my($cWarn);
+    my $connect_ref= { 'Name' => $dsn };
+    my $dbi_imp_data;
 
     # Avoid warnings for undefined values
     $username ||= '';
@@ -119,9 +121,18 @@ sub connect {
     DBD::mysql->_OdbcParse($dsn, $privateAttrHash,
 				    ['database', 'host', 'port']);
 
-    if (!defined($this = DBI::_new_dbh($drh, {'Name' => $dsn},
-				       $privateAttrHash))) {
-	return undef;
+    
+    if ($DBI::VERSION >= 1.49)
+    {
+      $dbi_imp_data = delete $attrhash->{dbi_imp_data};
+      $connect_ref->{'dbi_imp_data'} = $dbi_imp_data;
+    }
+
+    if (!defined($this = DBI::_new_dbh($drh,
+            $connect_ref,
+            $privateAttrHash)))
+    {
+      return undef;
     }
 
     # Call msqlConnect func in mSQL.xs file
@@ -727,6 +738,46 @@ in the MySQL client library by default. If your DSN contains the option
 this option is *ineffective* if the server has also been configured to
 disallow LOCAL.)
 
+=item Prepared statement support (server side prepare)
+
+To use server side prepared statements, all you need to do is set the variable 
+mysql_server_prepare in the connect:
+
+$dbh = DBI->connect(
+                    "DBI:mysql:database=test;host=localhost:mysql_server_prepare=1",
+                    "",
+                    "",
+                    { RaiseError => 1, AutoCommit => 1 }
+                    );
+
+To make sure that the 'make test' step tests whether server prepare works, you just
+need to export the env variable MYSQL_SERVER_PREPARE:
+
+export MYSQL_SERVER_PREPARE=1
+
+Test first without server side prepare, then with.
+
+
+=item mysql_embedded_options
+
+The option <mysql_embedded_options> can be used to pass 'command-line' 
+options to embedded server.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
+
+
+=item mysql_embedded_groups
+
+The option <mysql_embedded_groups> can be used to specify the groups in the 
+config file(I<my.cnf>) which will be used to get options for embedded server. 
+If not specified [server] and [embedded] groups will be used.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
+
 
 =back
 
@@ -878,6 +929,29 @@ to on is not advised if 'lock tables' is used because if DBD::mysql reconnect
 to mysql all table locks will be lost.  This attribute is ignored when
 AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
+
+=item mysql_use_result
+
+This attribute forces the driver to use mysql_use_result rather than
+mysql_store_result. The former is faster and less memory consuming, but
+tends to block other processes. (That's why mysql_store_result is the
+default.)
+
+It is possible to set default value of the C<mysql_use_result> attribute 
+for $dbh using several ways:
+
+ - through DSN 
+
+   $dbh= DBI->connect("DBI:mysql:test;mysql_use_result=1", "root", "");
+
+ - after creation of database handle
+
+   $dbh->{'mysql_use_result'}=0; #disable
+   $dbh->{'mysql_use_result'}=1; #enable
+
+It is possible to set/unset the C<mysql_use_result> attribute after 
+creation of statement handle. See below.
+
 
 =head1 STATEMENT HANDLES
 
@@ -1365,7 +1439,7 @@ $sth->{'mysql_type_name'} (MySQL specific).
 
 =item format_right_justify
 
-Replaced with $sth->{'TYPE'} (portable) or
+Replaced with $sth->->{'TYPE'} (portable) or
 $sth->{'mysql_is_num'} (MySQL specific).
 
 =item insertid

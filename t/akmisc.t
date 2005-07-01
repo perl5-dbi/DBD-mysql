@@ -820,9 +820,6 @@ while (Testing()) {
     if ($mdriver eq 'mysql') {
 	my ($sth, $table);
 	Test($state or ($table = FindNewTable($dbh)));
-	Test($state or
-	     ($sth = $dbh->query("DROP TABLE IF EXISTS $table")))
-	    or printf("Error while executing query: %s\n", $Mysql::db_errstr);
 	Test($state or $dbh->query("CREATE TABLE $table ("
 				   . " id integer AUTO_INCREMENT PRIMARY KEY,"
 				   . " country char(30) NOT NULL)"))
