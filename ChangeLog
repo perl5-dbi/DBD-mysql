@@ -1,26 +1,53 @@
-Dev-3_0
-	* Added support for begin_work() so that it work as specified in the
-	  DBI spec.
-	* $sth->{ParamValues} now implemented per DBI spec
-	* removed re-implentation of do(). Cleaning up 
-	  prepare()/bind()/execute() allowed me to dispense with it so, 
-	  do() is() now the default DBI do(). woo_hoo()!
-	* Named place holder support added.
-	 TODO: (it is broken for server-side prepare *** FIX *** )
-	* ***NOTE*** calling execute without binding all placeholders is now
-	  an error. Before this version, unbound placeholders would silently
-	  be converted to NULLs in violation of the DBI sepc. This may cause
-	  some applions to thow errors if they had been relying on this
-	  behaviour
-	* Read my.conf file by default even when neither 
-	  msql_read_default_group nor mysq_read_default_file are specified. 
-	  If mysql_read default_group is not specified, the group "dbd_mysql" 
-	  will be read.
-	* Makefile.PL now generates version numbers based on release tag,
-	  so there is no way for an non-tagged release to make it into the wild.
-	* Applied Patch from Patick Galbraith wich adds support of serer-side 
-	  prepared staements and cleans up a few warnings.
-	  [Patrick Galbraith <patg@mysql.com>]
+2005-04-26 Patrick Galbraith <patg@mysql.com> (2.9015_3)
+  * Added patch from Stas Beckman for new DBI feature take_imp_data, needed
+   for DBI::Pool
+  * Fix to Statement.pm for old API call for numfields that caused
+    warnings on 40numrows and akmisc tests
+  * Fix to bind_ph to throw an error if trying to bind a non-numeric 
+    value as numeric
+  * Better fix for dealing with error condition in $sth->rows()
+  * Fix to bind_param to throw error when trying to bind a non-numeric as
+    numeric
+
+
+2005-04-04 Patrick Galbraith <patg@mysql.com> (2.9015_2)
+  * Merged all code changes from 2.900x tree from the last 9 
+    months
+    - unsafe bind type guessing patch from Dragonchild
+    - Removed mysql.mtest
+    - Fixed sth->rows to return my_ulongloong and also handle
+      error from client API
+    - Fix to make autocommit work was already part of this version
+    - Auto-reconnect bug fixed in 2.9006 included 
+  * Added simple test to 35limit test to check if using malicious code in
+   LIMIT ?, ? placeholders works, which it doesn't.
+  * Fix that sets mysql_server_prepare to 0 if SQL statement is 'SHOW ...'
+    which is not supported by prepared statement API currently
+
+2004-10-28 Rudolf Lippan <rlippan@remotelinux.com> (2.9015_1)
+	* Merged Makefile.PL from 2.9005_3
+	* Bumped version number to 2.9015 for release of Dev Branch. Which 
+	  will become 2.9020 when tested and merged into HEAD.
+	* fixed typo/compiler warning in bind_param_guessing 
+	  '*testchar' should have been 'testchar'.
+
+2004-10-20 Patrick Galbraith patg@mysql.com (Dev-2_9 - 2.9005)
+
+  * merged changes from 2.9005_1
+  * fix to blob in dbd_st_fetch (Alexey Stroganov ranger@mysql.com)
+  In case of BLOB/TEXT fields we allocate only 8192 bytes in dbd_describe()
+  for data. Here we know real size of field so we should increase buffer
+  size and refetch column value
+
+2004-07-25 Patrick Galbraith patg@mysql.com (2.9004)
+  * Prepared statement support
+* Use of mysql_stmt_* API (>= 4.1.3)
+  * mysql_shutdown fix
+* MySQL Embedded Server support (Alexey Stroganov)
+  * Fixed link failure on MacOSX
+  * Cleaned up tests
+  * Fixed various compile warnings
+
 
 2003-10-26  Rudy Lippan  <rlippan@remotelinux.com> (2.9003)
 	* Applied patch from Aaron and Chuck that added basic testing of the 

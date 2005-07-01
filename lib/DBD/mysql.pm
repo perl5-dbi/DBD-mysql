@@ -9,8 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION =our $VERSION = sprintf "%s.%s%s", q$Name$ =~ /^Name: dbd_mysql-(\d+)_(\d+)(_\d+|)\s*$/, 999,"00",join "", (gmtime)[5] +1900, map {sprintf "%02d", $_} (gmtime)[4]+1;
-
+$VERSION = '2.9015_3';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -104,6 +103,8 @@ sub connect {
     my($drh, $dsn, $username, $password, $attrhash) = @_;
     my($port);
     my($cWarn);
+    my $connect_ref= { 'Name' => $dsn };
+    my $dbi_imp_data;
 
     # Avoid warnings for undefined values
     $username ||= '';
@@ -120,9 +121,18 @@ sub connect {
     DBD::mysql->_OdbcParse($dsn, $privateAttrHash,
 				    ['database', 'host', 'port']);
 
-    if (!defined($this = DBI::_new_dbh($drh, {'Name' => $dsn},
-				       $privateAttrHash))) {
-	return undef;
+    
+    if ($DBI::VERSION >= 1.49)
+    {
+      $dbi_imp_data = delete $attrhash->{dbi_imp_data};
+      $connect_ref->{'dbi_imp_data'} = $dbi_imp_data;
+    }
+
+    if (!defined($this = DBI::_new_dbh($drh,
+            $connect_ref,
+            $privateAttrHash)))
+    {
+      return undef;
     }
 
     # Call msqlConnect func in mSQL.xs file
@@ -340,7 +350,7 @@ sub column_info {
 	#warn "$type: $basetype [@type_params] [@type_attr]\n";
 
 	$info->{DATA_TYPE} = SQL_VARCHAR();
-	if ($basetype =~ /char|text|blob/) {
+	if ($basetype =~ /^(char|varchar|\w*text|\w*blob)/) {
 	    $info->{DATA_TYPE} = SQL_CHAR() if $basetype eq 'char';
 	    if ($type_params[0]) {
 		$info->{COLUMN_SIZE} = $type_params[0];
@@ -352,7 +362,13 @@ sub column_info {
 		$info->{COLUMN_SIZE} = 4294967295 if $basetype =~ /^long/;
 	    }
 	}
-	elsif ($basetype =~ /enum|set/) {
+	elsif ($basetype =~ /^(binary|varbinary)/) {
+	    $info->{COLUMN_SIZE} = $type_params[0];
+	    # SQL_BINARY & SQL_VARBINARY are tempting here but don't match the
+	    # semantics for mysql (not hex). SQL_CHAR &  SQL_VARCHAR are correct here.
+	    $info->{DATA_TYPE} = ($basetype eq 'binary') ? SQL_CHAR() : SQL_VARCHAR();
+	}
+	elsif ($basetype =~ /^(enum|set)/) {
 	    if ($basetype eq 'set') {
 		$info->{COLUMN_SIZE} = length(join ",", @type_params);
 	    }
@@ -363,18 +379,18 @@ sub column_info {
 	    }
 	    $info->{"mysql_values"} = \@type_params;
 	}
-	elsif ($basetype =~ /int/) {
+	elsif ($basetype =~ /int/) { # big/medium/small/tiny etc + unsigned?
 	    $info->{DATA_TYPE} = SQL_INTEGER();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE} = $type_params[0];
 	}
-	elsif ($basetype =~ /decimal/) {
+	elsif ($basetype =~ /^decimal/) {
 	    $info->{DATA_TYPE} = SQL_DECIMAL();
 	    $info->{NUM_PREC_RADIX} = 10;
 	    $info->{COLUMN_SIZE}    = $type_params[0];
 	    $info->{DECIMAL_DIGITS} = $type_params[1];
 	}
-	elsif ($basetype =~ /float|double/) {
+	elsif ($basetype =~ /^(float|double)/) {
 	    $info->{DATA_TYPE} = ($basetype eq 'float') ? SQL_FLOAT() : SQL_DOUBLE();
 	    $info->{NUM_PREC_RADIX} = 2;
 	    $info->{COLUMN_SIZE} = ($basetype eq 'float') ? 32 : 64;
@@ -392,8 +408,13 @@ sub column_info {
 	    }
 	    $info->{DECIMAL_DIGITS} = 0; # no fractional seconds
 	}
+	elsif ($basetype eq 'year') {	# no close standard so treat as int
+	    $info->{DATA_TYPE} = SQL_INTEGER();
+	    $info->{NUM_PREC_RADIX} = 10;
+	    $info->{COLUMN_SIZE} = 4;
+	}
 	else {
-	    warn "unsupported column '$row->{field}' type '$basetype' treated as varchar";
+	    Carp::carp("column_info: unrecognized column type '$basetype' of $table_id.$row->{field} treated as varchar");
 	}
 	$info->{SQL_DATA_TYPE} ||= $info->{DATA_TYPE};
 	#warn Dumper($info);
@@ -422,38 +443,6 @@ sub get_info {
     my $v = $DBD::mysql::GetInfo::info{int($info_type)};
     $v = $v->($dbh) if ref $v eq 'CODE';
     return $v;
-}
-
-
-sub primary_key_info {
-    my ($dbh, $catalog, $schema, $table)  = @_;
-    return undef if $schema;
-
-    local $dbh->{FetchHashKeyName} = 'NAME_lc';
-
-    my $query = "SHOW indexes FROM ".$dbh->quote_identifier($table);
-    $query .= " FROM ".$dbh->quote_identifier( $catalog) if defined($catalog);
-
-    my $sth = $dbh->prepare_cached($query) || return undef;;
-    $sth->execute() || return undef;
-
-
-    my @pk_info;
-    while (my $pk_row = $sth->fetchrow_hashref()) {
-	next if $pk_row->{"key_name"} ne 'PRIMARY';
-        push @pk_info, [$catalog, undef, @{$pk_row}{ "table", "column_name", 
-	    "seq_in_index", "key_name"
-	}];
-
-    }
-    my $poriferan = DBI->connect("dbi:Sponge:","","",{ AutoCommit=>1 }); 
-    $poriferan  or return undef;
-    my $fk_data = $poriferan->prepare('primary_key_info', {
-        rows => \@pk_info, NAME => [qw(
-	    TABLE_CAT TABLE_SCHEME TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME
-        )]
-    });
-    return $fk_data;
 }
 
 
@@ -559,7 +548,7 @@ them. :-)
 
 In what follows we first discuss the use of DBD::mysql,
 because this is what you will need the most. For installation, see the
-sections on L<INSTALLATION>, L<WIN32 INSTALLATION>, and L<KNOWN BUGS>
+sections on L<INSTALLATION>, and L<WIN32 INSTALLATION>
 below. See L<EXAMPLE> for a simple example above.
 
 From perl you activate the interface with the statement
@@ -749,6 +738,46 @@ in the MySQL client library by default. If your DSN contains the option
 this option is *ineffective* if the server has also been configured to
 disallow LOCAL.)
 
+=item Prepared statement support (server side prepare)
+
+To use server side prepared statements, all you need to do is set the variable 
+mysql_server_prepare in the connect:
+
+$dbh = DBI->connect(
+                    "DBI:mysql:database=test;host=localhost:mysql_server_prepare=1",
+                    "",
+                    "",
+                    { RaiseError => 1, AutoCommit => 1 }
+                    );
+
+To make sure that the 'make test' step tests whether server prepare works, you just
+need to export the env variable MYSQL_SERVER_PREPARE:
+
+export MYSQL_SERVER_PREPARE=1
+
+Test first without server side prepare, then with.
+
+
+=item mysql_embedded_options
+
+The option <mysql_embedded_options> can be used to pass 'command-line' 
+options to embedded server.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
+
+
+=item mysql_embedded_groups
+
+The option <mysql_embedded_groups> can be used to specify the groups in the 
+config file(I<my.cnf>) which will be used to get options for embedded server. 
+If not specified [server] and [embedded] groups will be used.
+
+Example:
+
+$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
+
 
 =back
 
@@ -874,11 +903,12 @@ The following stats are being maintained:
 
 =item auto_reconnects_ok
 
-the number of times that DBD::mysql had to reconnect to mysql
+The number of times that DBD::mysql successfully reconnected to the mysql 
+server.
 
-=item failed_auto_reconnects_failed
+=item auto_reconnects_failed
 
-the number of times that DBD::mysql tried to reconnect to mysql but failed.
+The number of times that DBD::mysql tried to reconnect to mysql but failed.
 
 =back
 
@@ -899,6 +929,29 @@ to on is not advised if 'lock tables' is used because if DBD::mysql reconnect
 to mysql all table locks will be lost.  This attribute is ignored when
 AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
+
+=item mysql_use_result
+
+This attribute forces the driver to use mysql_use_result rather than
+mysql_store_result. The former is faster and less memory consuming, but
+tends to block other processes. (That's why mysql_store_result is the
+default.)
+
+It is possible to set default value of the C<mysql_use_result> attribute 
+for $dbh using several ways:
+
+ - through DSN 
+
+   $dbh= DBI->connect("DBI:mysql:test;mysql_use_result=1", "root", "");
+
+ - after creation of database handle
+
+   $dbh->{'mysql_use_result'}=0; #disable
+   $dbh->{'mysql_use_result'}=1; #enable
+
+It is possible to set/unset the C<mysql_use_result> attribute after 
+creation of statement handle. See below.
+
 
 =head1 STATEMENT HANDLES
 
@@ -1062,11 +1115,11 @@ By default AutoCommit mode is on, following the DBI specifications.
 
 If you execute
 
-    $dbh-E<gt>{'AutoCommit'} = 0;
+    $dbh->{'AutoCommit'} = 0;
 
 or
 
-    $dbh-E<gt>{'AutoCommit'} = 1;
+    $dbh->{'AutoCommit'} = 1;
 
 then the driver will set the MySQL server variable autocommit to 0 or
 1, respectively. Switching from 0 to 1 will also issue a COMMIT,
@@ -1076,8 +1129,8 @@ following the DBI specifications.
 
 The methods
 
-    $dbh-E<gt>rollback();
-    $dbh-E<gt>commit();
+    $dbh->rollback();
+    $dbh->commit();
 
 will issue the commands COMMIT and ROLLBACK, respectively. A
 ROLLBACK will also be issued if AutoCommit mode is off and the
@@ -1241,37 +1294,37 @@ in 2.13.
 
 =over
 
-=item C<$dbh-E<gt>{'errno'}>
+=item C<$dbh->{'errno'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_errno'}>
+Replaced by C<$dbh->{'mysql_errno'}>
 
-=item C<$dbh-E<gt>{'errmsg'}>
+=item C<$dbh->{'errmsg'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_error'}>
+Replaced by C<$dbh->{'mysql_error'}>
 
-=item C<$dbh-E<gt>{'hostinfo'}>
+=item C<$dbh->{'hostinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_hostinfo'}>
+Replaced by C<$dbh->{'mysql_hostinfo'}>
 
-=item C<$dbh-E<gt>{'info'}>
+=item C<$dbh->{'info'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_info'}>
+Replaced by C<$dbh->{'mysql_info'}>
 
-=item C<$dbh-E<gt>{'protoinfo'}>
+=item C<$dbh->{'protoinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_protoinfo'}>
+Replaced by C<$dbh->{'mysql_protoinfo'}>
 
-=item C<$dbh-E<gt>{'serverinfo'}>
+=item C<$dbh->{'serverinfo'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_serverinfo'}>
+Replaced by C<$dbh->{'mysql_serverinfo'}>
 
-=item C<$dbh-E<gt>{'stats'}>
+=item C<$dbh->{'stats'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_stat'}>
+Replaced by C<$dbh->{'mysql_stat'}>
 
-=item C<$dbh-E<gt>{'thread_id'}>
+=item C<$dbh->{'thread_id'}>
 
-Replaced by C<$dbh-E<gt>{'mysql_thread_id'}>
+Replaced by C<$dbh->{'mysql_thread_id'}>
 
 =back
 
@@ -1284,10 +1337,10 @@ Replaced by C<$dbh-E<gt>{'mysql_thread_id'}>
 
 =item _ListTables
 
-Replace with the standard DBI method C<$dbh-E<gt>tables()>. See also
-C<$dbh-E<gt>table_info()>. Portable applications will prefer
+Replace with the standard DBI method C<$dbh->tables()>. See also
+C<$dbh->table_info()>. Portable applications will prefer
 
-    @tables = map { $_ =~ s/.*\.//; $_ } $dbh-E<gt>tables()
+    @tables = map { $_ =~ s/.*\.//; $_ } $dbh->tables()
 
 because, depending on the engine, the string "user.table" will be
 returned, user being the table owner. The method will be removed
@@ -1306,25 +1359,25 @@ in DBD::mysql version 2.11xy.
 
 The methods
 
-    $dbh-E<gt>func($db, '_CreateDB');
-    $dbh-E<gt>func($db, '_DropDB');
+    $dbh->func($db, '_CreateDB');
+    $dbh->func($db, '_DropDB');
 
 have been used for creating or dropping databases. They have been removed
 in 1.21_07 in favour of
 
-    $drh-E<gt>func("createdb", $dbname, $host, "admin")
-    $drh-E<gt>func("dropdb", $dbname, $host, "admin")
+    $drh->func("createdb", $dbname, $host, "admin")
+    $drh->func("dropdb", $dbname, $host, "admin")
 
 =item _ListFields
 
 The method
 
-    $sth = $dbh-E<gt>func($table, '_ListFields');
+    $sth = $dbh->func($table, '_ListFields');
 
 has been used to list a tables columns names, types and other attributes.
 This method has been removed in 1.21_07 in favour of
 
-    $sth = $dbh-E<gt>prepare("LISTFIELDS $table");
+    $sth = $dbh->prepare("LISTFIELDS $table");
 
 =item _ListSelectedFields
 
@@ -1335,8 +1388,8 @@ The method
 use to return a hash ref of attributes like 'IS_NUM', 'IS_KEY' and so
 on. These attributes are now accessible via
 
-    $sth-E<gt>{'mysql_is_num'};
-    $sth-E<gt>{'mysql_is_key'};
+    $sth->{'mysql_is_num'};
+    $sth->{'mysql_is_key'};
 
 and so on. Thus the method has been removed in 1.21_07.
 
@@ -1344,11 +1397,11 @@ and so on. Thus the method has been removed in 1.21_07.
 
 The method
 
-    $sth-E<gt>func('_NumRows');
+    $sth->func('_NumRows');
 
 used to be equivalent to
 
-    $sth-E<gt>rows();
+    $sth->rows();
 
 and has been removed in 1.21_07.
 
@@ -1356,11 +1409,11 @@ and has been removed in 1.21_07.
 
 The method
 
-    $dbh-E<gt>func('_InsertID');
+    $dbh->func('_InsertID');
 
 used to be equivalent with
 
-    $dbh-E<gt>{'mysql_insertid'};
+    $dbh->{'mysql_insertid'};
 
 =item Statement handle attributes
 
@@ -1368,115 +1421,115 @@ used to be equivalent with
 
 =item affected_rows
 
-Replaced with $sth-E<gt>{'mysql_affected_rows'} or the result
-of $sth-E<gt>execute().
+Replaced with $sth->{'mysql_affected_rows'} or the result
+of $sth->execute().
 
 =item format_default_size
 
-Replaced with $sth-E<gt>{'PRECISION'}.
+Replaced with $sth->{'PRECISION'}.
 
 =item format_max_size
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item format_type_name
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_type_name'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_type_name'} (MySQL specific).
 
 =item format_right_justify
 
-Replaced with $sth-E<gt>->{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item insertid
 
-Replaced with $sth-E<gt>{'mysql_insertid'}.
+Replaced with $sth->{'mysql_insertid'}.
 
 =item IS_BLOB
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_blob'} (MySQL specific).
 
 =item is_blob
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_blob'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_blob'} (MySQL specific).
 
 =item IS_PRI_KEY
 
-Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+Replaced with $sth->{'mysql_is_pri_key'}.
 
 =item is_pri_key
 
-Replaced with $sth-E<gt>{'mysql_is_pri_key'}.
+Replaced with $sth->{'mysql_is_pri_key'}.
 
 =item IS_NOT_NULL
 
-Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+Replaced with $sth->{'NULLABLE'} (do not forget to invert
 the boolean values).
 
 =item is_not_null
 
-Replaced with $sth-E<gt>{'NULLABLE'} (do not forget to invert
+Replaced with $sth->{'NULLABLE'} (do not forget to invert
 the boolean values).
 
 =item IS_NUM
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item is_num
 
-Replaced with $sth-E<gt>{'TYPE'} (portable) or
-$sth-E<gt>{'mysql_is_num'} (MySQL specific).
+Replaced with $sth->{'TYPE'} (portable) or
+$sth->{'mysql_is_num'} (MySQL specific).
 
 =item IS_KEY
 
-Replaced with $sth-E<gt>{'mysql_is_key'}.
+Replaced with $sth->{'mysql_is_key'}.
 
 =item is_key
 
-Replaced with $sth-E<gt>{'mysql_is_key'}.
+Replaced with $sth->{'mysql_is_key'}.
 
 =item MAXLENGTH
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item maxlength
 
-Replaced with $sth-E<gt>{'mysql_max_length'}.
+Replaced with $sth->{'mysql_max_length'}.
 
 =item LENGTH
 
-Replaced with $sth-E<gt>{'PRECISION'} (portable) or
-$sth-E<gt>{'mysql_length'} (MySQL specific)
+Replaced with $sth->{'PRECISION'} (portable) or
+$sth->{'mysql_length'} (MySQL specific)
 
 =item length
 
-Replaced with $sth-E<gt>{'PRECISION'} (portable) or
-$sth-E<gt>{'mysql_length'} (MySQL specific)
+Replaced with $sth->{'PRECISION'} (portable) or
+$sth->{'mysql_length'} (MySQL specific)
 
 =item NUMFIELDS
 
-Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+Replaced with $sth->{'NUM_OF_FIELDS'}.
 
 =item numfields
 
-Replaced with $sth-E<gt>{'NUM_OF_FIELDS'}.
+Replaced with $sth->{'NUM_OF_FIELDS'}.
 
 =item NUMROWS
 
-Replaced with the result of $sth-E<gt>execute() or
-$sth-E<gt>{'mysql_affected_rows'}.
+Replaced with the result of $sth->execute() or
+$sth->{'mysql_affected_rows'}.
 
 =item TABLE
 
-Replaced with $sth-E<gt>{'mysql_table'}.
+Replaced with $sth->{'mysql_table'}.
 
 =item table
 
-Replaced with $sth-E<gt>{'mysql_table'}.
+Replaced with $sth->{'mysql_table'}.
 
 =back
 

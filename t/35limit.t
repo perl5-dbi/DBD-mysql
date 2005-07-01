@@ -50,6 +50,7 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
+    #Test($state or $dbh->trace(2));
     #
     #   Find a possible new table name
     #
@@ -132,4 +133,3 @@ while (Testing()) {
     Test($state or $dbh->disconnect)  or DBiError($dbh->err, $dbh-errstr);
 
 }
-
