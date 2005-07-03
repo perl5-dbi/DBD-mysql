@@ -45,46 +45,49 @@ Getopt::Long::GetOptions(
     "nofoundrows!",
     "embedded=s",
     "mysql_config=s",
-    "force_embedded"
+    "force-embedded"
     ) || die Usage();
 
 my $source = {};
 
-#Check for mysql_config first
-$source->{'mysql_config'}="guessed";
-if ($opt->{'mysql_config'})
-{  
-  if (-f $opt->{'mysql_config'})
-  {
-    $source->{'mysql_config'} = "Users choice";
-  }
-  else
-  {
-    print <<"MSG";
+if ($^O !~ /mswin32/i)
+{
+  #Check for mysql_config first
+  $source->{'mysql_config'}="guessed";
+  if ($opt->{'mysql_config'})
+  {  
+    if (-f $opt->{'mysql_config'})
+    {
+      $source->{'mysql_config'} = "Users choice";
+    }
+    else
+    {
+      print <<"MSG";
 
 Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist. 
 Please check path/permissions. Will try to use default mysql_config 
 script found through PATH.
 MSG
-    $opt->{'mysql_config'}= "mysql_config";
+      $opt->{'mysql_config'}= "mysql_config";
+    }
   }
-}
-else
-{
-  if (! `mysql_config`)
+  else
   {
-    print <<MSG;
+    if (! `mysql_config`)
+    {
+      print <<MSG;
 
 Cannot find the file 'mysql_config'! Your execution PATH doesn't seem 
 not contain the path to mysql_config. Resorting to guessed values!
 MSG
+    }
+    $opt->{'mysql_config'} = "mysql_config";
   }
-  $opt->{'mysql_config'} = "mysql_config";
 }
 
 foreach my $key (qw/testdb testhost testuser testpassword testsocket 
                     cflags embedded libs nocatchstderr ssl nofoundrows
-                    ps-protocol force_embedded/)
+                    ps-protocol force-embedded/)
 {
   Configure($opt, $source, $key);
 }
@@ -98,7 +101,7 @@ if (-f "mysqlEmb/Makefile.PL")
 }
 
 #Disable of building of dbd::mysqlEmb driver by default
-$opt->{'embedded'}="" if !$opt->{'force_embedded'};
+$opt->{'embedded'}="" if !$opt->{'force-embedded'};
 
 if ($opt->{'embedded'})
 {
@@ -373,9 +376,11 @@ Usage: perl $0 [options]
 Possible options are:
 
   --cflags=<flags>       Use <flags> for running the C compiler; defaults
-                         to the value of "mysql_config --cflags"
+                         to the value of "mysql_config --cflags" or a gussed
+                         value
   --libs=<libs>          Use <libs> for running the linker; defaults
-                         to the value of "mysql_config --libs"
+                         to the value of "mysql_config --libs" or a guessed
+                         value
   --embedded=<libs>      Build embedded version of DBD and use <libs> for this;
                          defaults to the value of "mysql_config --embedded" 
                          (default: off)
@@ -391,19 +396,21 @@ Possible options are:
                          by default the port number is choosen from the
                          mysqlclient library
   --mysql_config=<path>  Specify <path> for mysql_config script
+                         (Not supported on Win32)
   --nocatchstderr        Supress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavoiur of \$sth->rows() so that it
   			 returns the number of rows physically modified 
 			 instead of the rows matched
-  --ps-protocol          Toggle the use of server-side prepare, requires 
-                         MySQL server version 4.1.3 
-  --force_embedded       Force to build embedded version of driver
+  --ps-protocol    	 Toggle the use of server-side prepare, requires 
+                         MySQL server version 4.1.3 if set to 1 
+  --force-embedded       Force to build embedded version of driver
   --ssl			 Enable SSL support
   --help                 Print this message and exit
 
 All options may be configured on the command line. If they are
-not present on the command line, then mysql_config is called:
+not present on the command line, then mysql_config is called (if
+it can be found):
 
   mysql_config --cflags
   mysql_config --libs
@@ -434,42 +441,45 @@ sub Configure
 
   if (exists($opt->{$param}))
   {
-    $source->{$param} = "Users choice";
+    $source->{$param} = "User's choice";
     return;
   }
 
-  # First try to get options values from mysql_config
-  my $command = $opt->{'mysql_config'} . " --$param";
-  eval 
+  if ($^O !~ /mswin32/i)
   {
-    open(PIPE, "$command |") or die "Can't find mysql_config.";
-  };
-
-  if (!$@)
-  {
-    my $str = "";
-    while (defined(my $line = <PIPE>)) 
+    # First try to get options values from mysql_config
+    my $command = $opt->{'mysql_config'} . " --$param";
+    eval 
     {
+      open(PIPE, "$command |") or die "Can't find mysql_config.";
+    };
+
+    if (!$@)
+    {
+      my $str = "";
+      while (defined(my $line = <PIPE>)) 
+      {
       $str .= $line;
+      }
+      if ($str ne ""  &&  $str !~ /Options:/) 
+      {
+        $str =~ s/\s+$//s;
+        $str =~ s/^\s+//s;
+
+        # Unfortunately ExtUtils::MakeMaker doesn't deal very well
+        # with -L'...'
+        $str =~ s/\-L\'(.*?)\'/-L$1/sg;
+        $str =~ s/\-L\"(.*?)\"/-L$1/sg;
+
+        $opt->{$param} = $str;
+        $source->{$param} = "mysql_config";
+        return;
+      }
     }
-    if ($str ne ""  &&  $str !~ /Options:/) 
+    else
     {
-      $str =~ s/\s+$//s;
-      $str =~ s/^\s+//s;
-
-      # Unfortunately ExtUtils::MakeMaker doesn't deal very well
-      # with -L'...'
-      $str =~ s/\-L\'(.*?)\'/-L$1/sg;
-      $str =~ s/\-L\"(.*?)\"/-L$1/sg;
-
-      $opt->{$param} = $str;
-      $source->{$param} = "mysql_config";
-      return;
+      #print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
     }
-  }
-  else
-  {
-    #print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
   }
 
   # Ok, mysql_config doesn't work. We need to do our best
@@ -491,7 +501,7 @@ sub Configure
     $source->{$param} = "default";
     $opt->{$param} = "";
   }
-  elsif($param eq 'ps-protocol' || $param eq 'force_embedded')
+  elsif($param eq 'ps-protocol' || $param eq 'force-embedded')
   {
     $source->{$param} = $opt->{$param} ? "default" : 'not set';
   }
@@ -627,7 +637,8 @@ sub check_include_version {
   $dir =~ s/'//g;
   $dir =~ s/\s.*//g;
 
-  open(HEADERFILE ,"<${dir}/mysql_version.h") or (print "Unable to open header file ${dir}/mysql_version.h" && exit(0));
+  open(HEADERFILE ,"<${dir}/mysql_version.h") or
+  (print "Unable to open header file ${dir}/mysql_version.h" && exit(0));
   {
     local undef $/;
     $headerfile = <HEADERFILE>;
