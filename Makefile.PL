@@ -185,6 +185,8 @@ MSG
 sleep 5;
 
 eval { require File::Spec };
+my $ps_dsn= (exists $opt->{'ps-protocol'} && $opt->{'ps-protocol'} == 1) ?
+  "\$::test_dsn .= \":mysql_server_prepare=1;\"\n" : '';
 my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
 (open(FILE, ">$fileName") &&
@@ -199,7 +201,7 @@ my $fileName = $@ ?
 	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n" .
-              "\$::test_dsn .= \":mysql_server_prepare=1\" if \$opt->{'ps-protcol'} || \$ENV{'MYSQL_SERVER_PREPARE'};\n" .
+              $ps_dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
 
