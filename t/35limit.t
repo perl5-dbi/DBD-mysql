@@ -50,7 +50,7 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
-    #Test($state or $dbh->trace(2));
+    #Test($state or $dbh->trace(2, "/tmp/trace.log"));
     #
     #   Find a possible new table name
     #

@@ -173,8 +173,6 @@ typedef struct imp_sth_fbh_st {
     char           * data;
     double        ddata;
     long          ldata;
-    long long     lldata;
-
 } imp_sth_fbh_t;
 
 

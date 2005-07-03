@@ -44,6 +44,9 @@ while(Testing()) {
 #   Create a new table; EDIT THIS!
 #
 
+#  Test($state or $dbh->trace("3", "/tmp/dbd.trace"))
+#        or DbiError($dbh->err, $dbh->errstr);
+
 Test($state or $dbh->do("DROP TABLE IF EXISTS $table")) or DbiError($dbh->err, $dbh->errstr);
 
 Test($state or ($def = TableDefinition($table,
