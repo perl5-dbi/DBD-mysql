@@ -9,6 +9,7 @@
   * Changed strncasecmp to strncmp (still need a better long-term solution)
     in dbdimp.c
   * Modified Makefile.PM to make prepared statements default
+  * Removed // comments from mysql.xs, dbdimp.c (Thanks Bodo Bergmann!)
 
 2005-06-30 Patrick Galbraith <patg@mysql.com> (3.0000)
   * Release of prepared statement code

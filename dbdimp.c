@@ -1174,7 +1174,6 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 
         if (!imp_drh->embedded.state)
         {
-          //Init embedded server
           if ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE))  &&
               *svp  &&  SvTRUE(*svp))
           {

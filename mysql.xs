@@ -352,7 +352,6 @@ do(dbh, statement, attr=Nullsv, ...)
             break;
 
           case MYSQL_TYPE_LONGLONG:
-            //bind->buffer_type= MYSQL_TYPE_LONGLONG;
             /* perl handles long long as double
              * so we'll set this to string */
             buffer_type= MYSQL_TYPE_STRING;
@@ -391,7 +390,7 @@ do(dbh, statement, attr=Nullsv, ...)
             buffer_type= MYSQL_TYPE_STRING;
             param_type = SQL_VARCHAR;
             break;
-          } // end of switch
+          }
 
           bind[i].buffer_type = buffer_type; 
           bind[i].buffer_length= buffer_length; 
