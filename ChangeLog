@@ -1,3 +1,18 @@
+2005-07-04 Patrick Galbraith <patg@mysql.com> (3.0001)
+  * Special Thanks to Steve Hay for his patch to fix windows 
+    compiles!
+  * Changed uint argument in safe_sv_fetch to int due to 
+    uint not being available on windows unless you include
+    my_globals.h in dbdimp.h, which also breaks on unixen!
+  * Fixed Makefile.PM for windows compiles (thanks to Steve Hay!)
+  * Removed long long type from dbdimp.h
+  * Changed strncasecmp to strncmp (still need a better long-term solution)
+    in dbdimp.c
+  * Modified Makefile.PM to make prepared statements default
+
+2005-06-30 Patrick Galbraith <patg@mysql.com> (3.0000)
+  * Release of prepared statement code
+
 2005-04-26 Patrick Galbraith <patg@mysql.com> (2.9015_3)
   * Added patch from Stas Beckman for new DBI feature take_imp_data, needed
    for DBI::Pool

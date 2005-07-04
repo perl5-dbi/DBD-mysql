@@ -1432,7 +1432,7 @@ MYSQL* mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 /*
   safe_hv_fetch
 */
-static char *safe_hv_fetch(HV *hv, const char *name, uint name_length)
+static char *safe_hv_fetch(HV *hv, const char *name, int name_length)
 {
   SV** svp;
   STRLEN len;
