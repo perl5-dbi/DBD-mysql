@@ -1,4 +1,8 @@
-2005-07-04 Parick Galbraith <patg@mysql.com> (3.0001_0)
+2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_2)
+  * Fixed runtime bug (when inserting or updating quotes or double quotes)
+    (Thanks to Brad Choate)
+
+2005-07-04 Parick Galbraith <patg@mysql.com> (3.0001_1)
   * Changed uint argument in safe_sv_fetch to int due to 
     uint not being available on windows unless you include
     my_globals.h in dbdimp.h, which also breaks on unixen!
