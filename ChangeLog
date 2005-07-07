@@ -1,4 +1,4 @@
-2005-07-04 Patrick Galbraith <patg@mysql.com> (3.0001)
+2005-07-06 Patrick Galbraith <patg@mysql.com> (3.0001)
   * Special Thanks to Steve Hay for his patch to fix windows 
     compiles!
   * Changed uint argument in safe_sv_fetch to int due to 
@@ -10,6 +10,8 @@
     in dbdimp.c
   * Modified Makefile.PM to make prepared statements default
   * Removed // comments from mysql.xs, dbdimp.c (Thanks Bodo Bergmann!)
+  * Fixed runtime bug (when inserting or updating quotes or double quotes)
+    (Thanks to Brad Choate)
 
 2005-06-30 Patrick Galbraith <patg@mysql.com> (3.0000)
   * Release of prepared statement code
