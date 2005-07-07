@@ -1,6 +1,6 @@
-2005-07-07 Patrick Galbraith <patg@mysql.com> (3.0001)
+2005-07-07 Patrick Galbraith <patg@mysql.com> (3.0002)
   * Fix to ensure MYSQL_BIND is only defined when mysql
-    client version is >= 4.1.3
+    client version is >= 4.1.3. Thanks to Tom Parkison
 
 2005-07-06 Patrick Galbraith <patg@mysql.com> (3.0001)
   * Special Thanks to Steve Hay for his patch to fix windows 
