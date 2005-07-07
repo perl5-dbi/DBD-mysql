@@ -2772,7 +2772,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   unsigned long *lengths;
   int rc;
   imp_sth_fbh_t *fbh;
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *bind;
+#endif
   D_imp_dbh_from_sth;
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
