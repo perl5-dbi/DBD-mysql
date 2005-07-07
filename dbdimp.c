@@ -397,20 +397,26 @@ char **fill_out_embedded_options(char *options,
 static char *parse_params(
                           MYSQL *sock,
                           char *statement,
-                          STRLEN *slenPtr,
+                          STRLEN *slen_ptr,
                           imp_sth_ph_t* params,
                           int num_params,
                           bool bind_type_guessing)
 {
 
   bool seen_neg, seen_dec;
-  char *salloc, *statement_ptr, *statement_ptr_end, testchar, *ptr;
-  char *valbuf;
-  int i, alen, j;
-  int slen= *slenPtr;
+  char *salloc, *statement_ptr;
+  char *statement_ptr_end, testchar, *ptr, *valbuf;
+  int alen, i, j;
+  int slen= *slen_ptr;
   int limit_flag= 0;
   STRLEN vallen;
   imp_sth_ph_t *ph;
+
+  /* I want to add mysql DBUG_ENTER (DBUG_<> macros) */
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP,
+                  "---> parse_params with statement %s num params %d\n",
+                  statement, num_params);
 
   if (num_params == 0)
   {
@@ -422,12 +428,14 @@ static char *parse_params(
     ++statement;
     --slen;
   }
-
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP,
+                  "     parse_params slen %d\n", slen);
 
   /* Calculate the number of bytes being allocated for the statement */
   alen= slen;
 
-  for (i= 0, ph= params;  i < num_params;  i++, ph++)
+  for (i= 0, ph= params; i < num_params; i++, ph++)
   {
     if (!ph->value  ||  !SvOK(ph->value))
       alen+= 3;  /* Erase '?', insert 'NULL' */
@@ -439,14 +447,16 @@ static char *parse_params(
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
-        if ( bind_type_guessing > 1 ) {
-          valbuf = SvPV(ph->value, vallen);
-          ph->type = SQL_INTEGER;
+        if ( bind_type_guessing > 1 )
+        {
+          valbuf= SvPV(ph->value, vallen);
+          ph->type= SQL_INTEGER;
 
           /* patch from Dragonchild */
           seen_neg= 0;
           seen_dec= 0;
-          for (j= 0; j < vallen; ++j) {
+          for (j= 0; j < vallen; ++j)
+          {
             testchar= *(valbuf+j);
             if ('-' == testchar)
             {
@@ -461,8 +471,11 @@ static char *parse_params(
                 break;
               }
               seen_neg= 1;
-            } else if ('.' == testchar) {
-              if (seen_dec) {
+            }
+            else if ('.' == testchar)
+            {
+              if (seen_dec)
+              {
                 ph->type= SQL_VARCHAR;
                 break;
               }
@@ -475,7 +488,7 @@ static char *parse_params(
             }
           }
         }
-        else if(bind_type_guessing)
+        else if (bind_type_guessing)
           ph->type= SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
         else
           ph->type= SQL_VARCHAR;
@@ -483,16 +496,21 @@ static char *parse_params(
     }
   }
 
-  /* Allocate memory */
-  New(908, salloc, alen+1, char);
+  /* Allocate memory, why *2, well, because we have ptr and statement_ptr */
+  New(908, salloc, alen*2, char);
   ptr= salloc;
 
- /* Now create the statement string; compare count_params above */
   i= 0;
+ /* Now create the statement string; compare count_params above */
   statement_ptr_end= (statement_ptr= statement)+ slen;
 
   while (statement_ptr < statement_ptr_end)
   {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+                    "     parse_params statement_ptr %08lx = %s \
+                    statement_ptr_end %08lx\n",
+                    statement_ptr, statement_ptr, statement_ptr_end);
     /* LIMIT should be the last part of the query, in most cases */
     if (! limit_flag)
     {
@@ -515,7 +533,8 @@ static char *parse_params(
       {
         char endToken = *statement_ptr++;
         *ptr++ = endToken;
-        while (statement_ptr != statement_ptr_end && *statement_ptr != endToken)
+        while (statement_ptr != statement_ptr_end &&
+               *statement_ptr != endToken)
         {
           if (*statement_ptr == '\\')
           {
@@ -548,7 +567,7 @@ static char *parse_params(
         }
         else
         {
-          int isNum = FALSE;
+          int is_num = FALSE;
           int c;
 
           valbuf= SvPV(ph->value, vallen);
@@ -565,16 +584,16 @@ static char *parse_params(
               case SQL_DOUBLE:
               case SQL_BIGINT:
               case SQL_TINYINT:
-                isNum = TRUE;
+                is_num = TRUE;
                 break;
             }
 
             /* we're at the end of the query, so any placeholders if */
             /* after a LIMIT clause will be numbers and should not be quoted */
             if (limit_flag == 1)
-              isNum = TRUE;
+              is_num = TRUE;
 
-            if (!isNum)
+            if (!is_num)
             {
               *ptr++ = '\'';
               ptr += mysql_real_escape_string(sock, ptr, valbuf, vallen);
@@ -585,14 +604,13 @@ static char *parse_params(
               while (vallen--)
               {
 		c = *valbuf++;
-		if ((c <'0' || c >'9') && c != ' ')
-		  break;			/* Illegal character; ignore */
+		if ((c < '0' || c > '9') && c != ' ')
+		  break;
 		*ptr++= c;
               }
             }
           }
         }
-
         break;
 
 	/* in case this is a nested LIMIT */
@@ -608,10 +626,12 @@ static char *parse_params(
     }
   }
 
-  *slenPtr = ptr - salloc;
+  *slen_ptr = ptr - salloc;
   *ptr++ = '\0';
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, "<--- parse_params\n");
 
-  return salloc;
+  return(salloc);
 }
 
 int bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
@@ -1540,10 +1560,10 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 		  user ? user : "NULL",
 		  password ? password : "NULL");
 
-  imp_dbh->stats.auto_reconnects_ok = 0;
-  imp_dbh->stats.auto_reconnects_failed = 0;
-  imp_dbh->bind_type_guessing = FALSE;
-  imp_dbh->has_transactions = TRUE;
+  imp_dbh->stats.auto_reconnects_ok= 0;
+  imp_dbh->stats.auto_reconnects_failed= 0;
+  imp_dbh->bind_type_guessing= FALSE;
+  imp_dbh->has_transactions= TRUE;
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
   imp_dbh->auto_reconnect = FALSE;
 
@@ -2319,6 +2339,9 @@ my_ulonglong mysql_st_internal_execute(
   char *table;
   my_ulonglong rows= 0;
 
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, "mysql_st_internal_execute\n");
+
   if (salloc)
   {
     sbuf= salloc;
@@ -2548,6 +2571,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
     imp_sth->av_attr[i]= Nullav;
   }
 
+  
+
   statement= hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
@@ -2575,15 +2600,15 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   else
 #endif
     imp_sth->row_num= mysql_st_internal_execute(
-      sth,
-      *statement,
-      NULL,
-      DBIc_NUM_PARAMS(imp_sth),
-      imp_sth->params,
-      &imp_sth->result,
-      &imp_dbh->mysql,
-      imp_sth->use_mysql_use_result
-    );
+                                                sth,
+                                                *statement,
+                                                NULL,
+                                                DBIc_NUM_PARAMS(imp_sth),
+                                                imp_sth->params,
+                                                &imp_sth->result,
+                                                &imp_dbh->mysql,
+                                                imp_sth->use_mysql_use_result
+                                               );
 
   if (imp_sth->row_num+1 != (my_ulonglong)-1 )
   {
