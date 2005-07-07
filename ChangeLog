@@ -1,6 +1,10 @@
+2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_3)
+  * Fix to ensure MYSQL_BIND is only defined when mysql
+    client version is >= 4.1.3. Thanks to Tom Parkison
+
 2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_2)
   * Fixed runtime bug (when inserting or updating quotes or double quotes)
-    (Thanks to Brad Choate)
+    (Thanks to Brad Choate, Six Apart Ltd.)
 
 2005-07-04 Parick Galbraith <patg@mysql.com> (3.0001_1)
   * Changed uint argument in safe_sv_fetch to int due to 
