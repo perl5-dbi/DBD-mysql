@@ -225,19 +225,16 @@ do(dbh, statement, attr=Nullsv, ...)
   SV *        dbh
   SV *	statement
   SV *        attr
-  PROTOTYPE: $$;$@      
+  PROTOTYPE: $$;$@
   CODE:
 {
   D_imp_dbh(dbh);
-  struct imp_sth_ph_st* params = NULL;
-  int numParams = 0;
-  MYSQL_RES* result = NULL;
+  int num_params = 0;
   int retval;
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION 
+  struct imp_sth_ph_st* params = NULL;
+  MYSQL_RES* result = NULL;
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
-  MYSQL_STMT      *stmt = NULL;
-  MYSQL_BIND      *bind = NULL;
-  imp_sth_phb_t   *fbind = NULL;
   int             has_binded;
   char            *str;
   char            *buffer;
@@ -247,29 +244,34 @@ do(dbh, statement, attr=Nullsv, ...)
   int             buffer_type = 0;
   int             param_type = SQL_VARCHAR;
   int             use_server_side_prepare= 0;
-/* Globaly disabled using of server side prepared statement 
-   for dbh->do() statements. It is possible to force driver 
-   to use server side prepared statement mechanism by adding 
-   'mysql_server_prepare' attribute to do() method localy:
+  MYSQL_STMT      *stmt = NULL;
+  MYSQL_BIND      *bind = NULL;
+  imp_sth_phb_t   *fbind = NULL;
 
-   $dbh->do($stmt, {mysql_server_prepare=>1});
-*/
-#ifdef DBD_ENABLE_GLOBAL_PREPARE_FOR_DO
-  use_server_side_prepare = imp_dbh->use_server_side_prepare;
-#endif
+  /*
+   * Globaly enabled using of server side prepared statement
+   * for dbh->do() statements. It is possible to force driver
+   * to use server side prepared statement mechanism by adding
+   * 'mysql_emulated_prepare' attribute to do() method localy:
+   * $dbh->do($stmt, {mysql_emulated_prepared=>1});
+  */
+
+  use_server_side_prepare = imp_dbh->use_server_side_prepare; 
   if (attr)
   {
     SV **svp;
     DBD_ATTRIBS_CHECK("do", dbh, attr);
-    svp = DBD_ATTRIB_GET_SVP(attr, "mysql_server_prepare", 20);
+    svp = DBD_ATTRIB_GET_SVP(attr, "mysql_emulated_prepare", 22);
 
-    if (svp)
-    {
-      use_server_side_prepare = SvTRUE(*svp);
-    }
+    use_server_side_prepare = (svp) ?
+      !SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
   }
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP,
+                  "mysql.xs do() use_server_side_prepare %d\n",
+                  use_server_side_prepare);
 
-  if (use_server_side_prepare) 
+  if (use_server_side_prepare)
   {
     str = SvPV(statement, slen);
 
@@ -277,22 +279,22 @@ do(dbh, statement, attr=Nullsv, ...)
 
     if (! mysql_stmt_prepare(stmt, str , strlen(str)))
     {
-      /* 
+      /*
         * 'items' is the number of arguments passed to XSUB, supplied by xsubpp
         * compiler, as listed in manpage for perlxs
       */
-      if (items > 3) 
+      if (items > 3)
       {
         /*  Handle binding supplied values to placeholders	   */
         /*  Assume user has passed the correct number of parameters  */
         int i;
-        numParams = items - 3;
-        /*numParams = mysql_stmt_param_count(stmt);*/
-        Newz(0, params, sizeof(*params)*numParams, struct imp_sth_ph_st);
-        Newz(0, bind, numParams, MYSQL_BIND);
-        Newz(0, fbind, numParams, imp_sth_phb_t);
+        num_params = items - 3;
+        /*num_params = mysql_stmt_param_count(stmt);*/
+        Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
+        Newz(0, bind, num_params, MYSQL_BIND);
+        Newz(0, fbind, num_params, imp_sth_phb_t);
 
-        for (i = 0; i < numParams; i++)
+        for (i = 0; i < num_params; i++)
         {
           params[i].value = ST(i+3);
 
@@ -401,23 +403,17 @@ do(dbh, statement, attr=Nullsv, ...)
         }
         has_binded=0;
       }
-      retval = mysql_st_internal_execute41(dbh, statement, attr,
-                                           numParams,
-                                           params,
+      retval = mysql_st_internal_execute41(dbh,
+                                           num_params,
                                            &result,
-                                           &imp_dbh->mysql,
-                                           0,
                                            stmt,
                                            bind,
                                            &has_binded);
       if (bind)
-      {
         Safefree(bind);
-      }
       if (fbind)
-      {
         Safefree(fbind);
-      }
+
       if(mysql_stmt_close(stmt))
       {
         fprintf(stderr, "\n failed while closing the statement");
@@ -426,7 +422,8 @@ do(dbh, statement, attr=Nullsv, ...)
     }
     else
     {
-      fprintf(stderr,"DO: Something wrong while try to prepare query %s\n", mysql_error(&imp_dbh->mysql));
+      fprintf(stderr,"DO: Something wrong while try to prepare query %s\n",
+              mysql_error(&imp_dbh->mysql));
       retval=-2;
       mysql_stmt_close(stmt);
       stmt = NULL;
@@ -435,21 +432,22 @@ do(dbh, statement, attr=Nullsv, ...)
   else
   {
 #endif
-    if (items > 3) {
+    if (items > 3)
+    {
       /*  Handle binding supplied values to placeholders	   */
       /*  Assume user has passed the correct number of parameters  */
       int i;
-      numParams = items-3;
-      Newz(0, params, sizeof(*params)*numParams, struct imp_sth_ph_st);
-      for (i = 0;  i < numParams;  i++)
+      num_params = items-3;
+      Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
+      for (i = 0;  i < num_params;  i++)
       {
         params[i].value = ST(i+3);
         params[i].type = SQL_VARCHAR;
       }
     }
-    retval = mysql_st_internal_execute(dbh, statement, attr, numParams,
+    retval = mysql_st_internal_execute(dbh, statement, attr, num_params,
                                        params, &result, &imp_dbh->mysql, 0);
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   }
 #endif
   if (params)
@@ -645,7 +643,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    newSVpv(imp_dbh->mysql.host_info,strlen(imp_dbh->mysql.host_info));
 	    break;
     	default:
-    		croak("Unknown SQL Info type: %i",dbh);
+ 		croak("Unknown SQL Info type: %i",dbh);
     }
     ST(0) = sv_2mortal(retsv);
 

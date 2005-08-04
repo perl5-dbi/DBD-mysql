@@ -34,18 +34,17 @@ sub ServerError() {
 }
 
 while(Testing()) {
-  Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 1 })) or ServerError() ;
+  Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
 
   # don't want this during make test!
-  # Test($state or $dbh->trace("2")) or DbiError($dbh->err, $dbh->errstr);;
+  #Test($state or $dbh->trace("3", "/tmp/trace.log")) or DbiError($dbh->err, $dbh->errstr);
 
 
 #
 #   Create a new table; EDIT THIS!
 #
 
-#  Test($state or $dbh->trace("3", "/tmp/dbd.trace"))
-#        or DbiError($dbh->err, $dbh->errstr);
 
 Test($state or $dbh->do("DROP TABLE IF EXISTS $table")) or DbiError($dbh->err, $dbh->errstr);
 
@@ -72,8 +71,14 @@ Test($state or ($def = TableDefinition($table,
   Test ($state or ($row->[0] eq "$table")) 
       or print "results not equal to '$table' \n";
 
+  print "inserting values into $table using 'do' emulated.\n";
+  my $no_bind_insert = "INSERT INTO $table VALUES (1,'1st first value')";
+  Test($state or $sth = $dbh->do($no_bind_insert,
+  { 'mysql_emulated_prepare' => 1})) or 
+    DbiError($dbh->err, $dbh->errstr);
+
   print "inserting values into $table without placeholders.\n";
-  my $no_bind_insert = "INSERT INTO $table VALUES (1,'foo first value')";
+  $no_bind_insert = "INSERT INTO $table VALUES (1,'2nd second value')";
   Test($state or $sth = $dbh->prepare($no_bind_insert)) or 
     DbiError($dbh->err, $dbh->errstr);
 

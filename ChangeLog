@@ -1,3 +1,14 @@
+2005-08-04 Parick Galbraith <patg@mysql.com> (3.0002_1)
+  * Prepared statement support is default now. To turn it off
+    a parameter 'mysql_emulated_prepare' must be turned ON
+  * Better error handling in mysql_internal_execute_ps (renamed
+    from mysql_internal_execute41). Also free the result if error -
+    that could have been a memory bug
+  * Added a simply 'do' to t/35prepare.test to see if you can turn
+    off prepared statements in the 'do' call.
+  * Cleaned up a LOT of cruft. Added more 'caveat' blurbage to old
+    Mysql.pm lib, which will not work with prepared statements
+  
 2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_3)
   * Fix to ensure MYSQL_BIND is only defined when mysql
     client version is >= 4.1.3. Thanks to Tom Parkison

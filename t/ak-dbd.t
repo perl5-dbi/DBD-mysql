@@ -372,6 +372,8 @@ while (Testing()) {
 	Test($state or
 	     ($rc = $dbh->do($query, undef, "test")))
 	    or printf("Failed to update: %s\n", $dbh->errstr());
+#  Test($state or $dbh->trace("3", "/tmp/trace.log")) or DbiError($dbh->err, $dbh->errstr);
+#fail
 	Test($state or $rc == 1)
 	    or printf("Expected 1st Update to return 1 without"
 		      . " mysql_client_found_rows, got $rc\n");
@@ -393,11 +395,13 @@ while (Testing()) {
 	    or printf("Failed to update: %s\n", $dbh->errstr());
 	Test($state or ($rc = $dbh->do($query, undef, "test")))
 	    or printf("Failed to reupdate: %s\n", $dbh->errstr());
+#fail
 	Test($state or $rc == 1)
 	    or printf("Expected 1st Update to return 1 with"
 		      . " mysql_client_found_rows, got $rc\n");
 	Test($state or ($rc = $dbh->do($query, undef, "test")))
 	    or printf("Failed to reupdate: %s\n", $dbh->errstr());
+#fail
 	Test($state or $rc == 1)
 	    or printf("Expected 2nd Update to return 1 with"
 		      . " mysql_client_found_rows, got $rc\n");

@@ -68,6 +68,9 @@ sub connect ($;$$$$) {
     $self->{'drh'} = DBI->install_driver($self->{'driver'});
     if ($db) {
 	my $dsn = "DBI:mysql:database=$db;host=$host";
+        # ok, if you really want prepared statements, use DBI, not
+        # this outdated wrapper library!
+        $dsn .= ";mysql_emulated_prepare=1";
 	my $dbh = $class->SUPER::connect($dsn, $user, $password);
 	if (!$dbh) {
 	    $db_errstr = $DBI::errstr;
@@ -92,6 +95,7 @@ sub DESTROY {
 sub selectdb ($$) {
     my($self, $db) = @_;
     my $dsn = "DBI:mysql:database=$db:host=" . $self->{'host'};
+    $dsn .= ";mysql_emulated_prepare=1";
     my $dbh = DBI->connect($dsn, $self->{'user'}, $self->{'password'});
     if (!$dbh) {
 	$db_errstr = $self->{'errstr'} = $DBI::errstr;
@@ -293,7 +297,9 @@ __END__
 
 =head1 NAME
 
-Msql / Mysql - Perl interfaces to the mSQL and mysql databases
+Msql / Mysql - Perl interfaces to the mysql databases 
+
+(Soon to be deprecated!!!)
 
 =head1 SYNOPSIS
 
@@ -353,37 +359,28 @@ below.
 
 =head1 DESCRIPTION
 
-This package is designed as close as possible to its C API
-counterpart. The manual that comes with mSQL or MySQL describes most things
-you need. Due to popular demand it was decided though, that this interface
-does not use StudlyCaps (see below).
-
-As of March 1998, the Msql and Mysql modules are obsoleted by the
+Way back in March 1998, the Msql and Mysql modules were obsoleted by the
 DBI drivers DBD::mSQL and DBD::mysql, respectively. You are strongly
 encouraged to implement new code with the DBI drivers. In fact,
-Msql and Mysql are currently implemented as emulations on top of
-the DBI drivers.
+Mysql is currently implemented as emulations on top of
+the DBI drivers. Also, this wrapper library does not support new features
+such as prepared statements. Please look at switching to DBI, considering
+this driver hasn't been updated in 7 years!
 
-Internally you are dealing with the two classes C<Msql> and
-C<Msql::Statement> or C<Mysql> and C<Mysql::Statement>, respectively.
+This package was designed as close as possible to its C API
+counterpart. The manual that came with mSQL or MySQL describes most things
+you needed.
+
+Internally you are dealing with the two classes 
+C<Mysql> and C<Mysql::Statement>, respectively.
 You will never see the latter, because you reach
 it through a statement handle returned by a query or a listfields
 statement. The only class you name explicitly is Msql or Mysql. They
 offer you the connect command:
 
-  $dbh = Msql->connect($host);
-  $dbh = Msql->connect($host, $database);
-
-    or
 
   $dbh = Mysql->connect($host, undef, $user, $password);
   $dbh = Mysql->connect($host, $database, $user, $password);
-
-    or
-
-  $dbh = Msql1->connect($host);
-  $dbh = Msql1->connect($host, $database);
-
 
 This connects you with the desired host/database. With no argument or
 with an empty string as the first argument it connects to the UNIX
