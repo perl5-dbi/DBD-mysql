@@ -2090,17 +2090,19 @@ dbd_st_prepare(
   SV *attribs)
 {
   int i;
-  SV **svp;
-  D_imp_dbh_from_sth;
-
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   char *searchptr;
   int col_type;
   int limit_flag= 0;
   int statement_length= 0;
-  MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
+  MYSQL_BIND *bind, *bind_end;
+#endif
 
+  SV **svp;
+  D_imp_dbh_from_sth;
+
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   statement_length = strlen(statement);
   imp_sth->fetch_done= 0;
 #else
@@ -2443,18 +2445,18 @@ my_ulonglong mysql_st_internal_execute(
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
 my_ulonglong mysql_st_internal_execute41(
-                             SV *h,
-                             SV *statement,
-                             SV *attribs,
-                             int num_params,
-                             imp_sth_ph_t *params,
-                             MYSQL_RES **result,
-                             MYSQL *svsock,
-                             int use_mysql_use_result,
-                             MYSQL_STMT *stmt,
-                             MYSQL_BIND *bind,
-                             int *has_been_bound
-                            )
+                                         SV *h,
+                                         SV *statement,
+                                         SV *attribs,
+                                         int num_params,
+                                         imp_sth_ph_t *params,
+                                         MYSQL_RES **result,
+                                         MYSQL *svsock,
+                                         int use_mysql_use_result,
+                                         MYSQL_STMT *stmt,
+                                         MYSQL_BIND *bind,
+                                         int *has_been_bound
+                                        )
 {
   my_ulonglong rows;
 
@@ -2764,14 +2766,15 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 AV*
 dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 {
+  int rc;
   int num_fields;
   int ChopBlanks;
   unsigned int i;
+  unsigned long *lengths;
   AV *av;
   MYSQL_ROW cols;
-  unsigned long *lengths;
-  int rc;
   imp_sth_fbh_t *fbh;
+
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *bind;
 #endif
