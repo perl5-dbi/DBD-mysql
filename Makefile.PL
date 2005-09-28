@@ -186,7 +186,7 @@ sleep 5;
 
 eval { require File::Spec };
 my $ps_dsn= "";
-if (exists $opt->{'ps-protocol'}) 
+if (exists $opt->{'ps-protocol'} && $opt->{'ps-protocol'} == 0) 
 {
   $ps_dsn = "\$::test_dsn .= \";mysql_emulated_prepare=1\";\n"; 
 }
@@ -410,8 +410,9 @@ Possible options are:
   --nofoundrows          Change the behavoiur of \$sth->rows() so that it
   			 returns the number of rows physically modified 
 			 instead of the rows matched
-  --ps-protocol=<1|0>    Toggle the use of server-side prepare, requires 
-                         MySQL server version 4.1.3 if set to 1 
+  --ps-protocol=<1|0>    Toggle the use of driver emulated prepared statements
+                         prepare, requires MySQL server >= 4.1.3 for
+                         server side prepared statements, on by default 
   --force-embedded       Force to build embedded version of driver
   --ssl			 Enable SSL support
   --help                 Print this message and exit

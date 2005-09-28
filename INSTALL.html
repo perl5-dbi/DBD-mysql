@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <title>INSTALL - How to install and configure DBD::mysql</title>
-<link rev="made" href="mailto:root@hampsten.nonet" />
+<link rev="made" href="mailto:root@b28.apple.com" />
 </head>
 
 <body style="background-color: white">
@@ -21,6 +21,7 @@
 
 		<li><a href="#windows">Windows</a></li>
 		<li><a href="#red_hat_linux">Red Hat Linux</a></li>
+		<li><a href="#fedora_core_linux">Fedora Core Linux</a></li>
 		<li><a href="#other_systems">Other systems</a></li>
 	</ul>
 
@@ -99,11 +100,11 @@ come with Perl. For Windows, ActivePerl is recommended, see
 <dd>
 You need not install the actual MySQL database server, the
 client files and the devlopment files are sufficient. For
-example, the Red Hat Linux distribution comes with RPM files
-<strong>mysql-client</strong> and <strong>mysql-devel</strong>. These are sufficient,
-if the MySQL server is located on a foreign machine. You may
-also create client files by compiling from the MySQL source
-distribution and using
+example, Fedora Core 4 Linux distribution comes with RPM files
+(using YUM) <strong>mysql.i386</strong> and <strong>mysql-server.i386</strong> (use ``yum search'' 
+to find exact package names). These are sufficient, if the MySQL 
+server is located on a foreign machine.  You may also create client
+files by compiling from the MySQL source distribution and using
 </dd>
 <dd>
 <pre>
@@ -203,6 +204,27 @@ You need to ensure that the following RPM's are installed:</p>
 <p>Optional are</p>
 <pre>
   mysql-server</pre>
+<p>
+</p>
+<h2><a name="fedora_core_linux">Fedora Core Linux</a></h2>
+<p>As of version 3, Fedora Linux comes with MySQL and DBD::mysql.
+You need to ensure that the following RPM's are installed:</p>
+<pre>
+  mysql or mysql-server
+  perl-DBD-MySQL</pre>
+<p>For installation from source the following RPM's are required</p>
+<pre>
+  mysql-devel
+  libz-devel</pre>
+<p>Please try</p>
+<pre>
+  yum search mysql</pre>
+<p>To see the exact names</p>
+<p>Note: (important) FC 3 comes with MySQL 3.x, and some people have
+upgraded using MySQL RPMs for newer versions. If you do this, you 
+must re-compile you DBD::mysql because your existing DBD::mysql will be
+linked against the old version of MySQL's client libs. CPAN has no way to
+know or detect that you have upgraded MySQL.</p>
 <p>
 </p>
 <h2><a name="other_systems">Other systems</a></h2>
@@ -317,6 +339,14 @@ Host name or IP number of the test database; defaults to localhost.
 Port number of the test database
 </dd>
 <p></p>
+<dt><strong><a name="item_ps_2dprotcol_3d1_or_0">ps-protcol=1 or 0</a></strong><br />
+</dt>
+<dd>
+Whether to run the test suite using server prepared statements or driver
+emulated prepared statemetns. ps-protocol=1 means use server prepare,
+ps-protocol=0 means driver emulated.
+</dd>
+<p></p>
 <dt><strong><a name="item_cflags">cflags</a></strong><br />
 </dt>
 <dd>
@@ -392,6 +422,9 @@ the same name, that replies</p>
 <pre>
   
 =head2 C Compiler flags</pre>
+<p>Note: the folling info about compiler and linker flags, you shouldn't have
+to use these options because Makefile.PL is pretty good at utilising
+mysql_config to get the flags that you need for a successful compile.</p>
 <p>It is typically not so difficult to determine the appropriate
 flags for the C compiler. The linker flags, which you find in
 the next section, are another story.</p>

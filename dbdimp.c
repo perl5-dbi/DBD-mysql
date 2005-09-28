@@ -2145,6 +2145,8 @@ dbd_st_prepare(
              !strncmp(searchptr+1, "HOW ", 4)) ))
         imp_sth->use_server_side_prepare = 0;
       /* if there is a 'limit' in the statement... */
+#endif
+#if (MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION) && (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
       if (!limit_flag && ((*searchptr == 'l' || *searchptr == 'L') &&
            (!strncmp(searchptr+1, "imit ?",6) ||
             (!strncmp(searchptr+1, "IMIT ?",6)) )))
@@ -2152,6 +2154,8 @@ dbd_st_prepare(
         limit_flag= 1;
         i+= 6;
       }
+#endif
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
       if( limit_flag)
       {
         /* ... and place holders after the limit flag is set... */
@@ -2296,7 +2300,7 @@ dbd_st_prepare(
 
 
 my_ulonglong mysql_st_internal_execute(
-                          SV *h,
+                          SV *sth,
                           SV *statement,
                           SV *attribs,
                           int num_params,
@@ -2306,7 +2310,7 @@ my_ulonglong mysql_st_internal_execute(
                           int use_mysql_use_result
                          )
 {
-  D_imp_sth(h);
+  D_imp_sth(sth);
   D_imp_dbh_from_sth;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
@@ -2349,12 +2353,12 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!slen)
     {
-      do_error(h, JW_ERR_QUERY, "Missing table name");
+      do_error(sth, JW_ERR_QUERY, "Missing table name");
       return -2;
     }
     if (!(table= malloc(slen+1)))
     {
-      do_error(h, JW_ERR_MEM, "Out of memory");
+      do_error(sth, JW_ERR_MEM, "Out of memory");
       return -2;
     }
 
@@ -2373,7 +2377,7 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!(*result))
     {
-      do_error(h, mysql_errno(svsock), mysql_error(svsock));
+      do_error(sth, mysql_errno(svsock), mysql_error(svsock));
       return -2;
     }
 
@@ -2381,11 +2385,11 @@ my_ulonglong mysql_st_internal_execute(
   }
 
   if ((mysql_real_query(svsock, sbuf, slen))  &&
-      (!mysql_db_reconnect(h)  ||
+      (!mysql_db_reconnect(sth)  ||
        (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
-    do_error(h, mysql_errno(svsock), mysql_error(svsock));
+    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
     return -2;
   }
   Safefree(salloc);
@@ -2395,7 +2399,7 @@ my_ulonglong mysql_st_internal_execute(
     mysql_use_result(svsock) : mysql_store_result(svsock);
 
   if (mysql_errno(svsock))
-    do_error(h, mysql_errno(svsock), mysql_error(svsock));
+    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
 
   if (!*result)
     rows= mysql_affected_rows(svsock);

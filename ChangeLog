@@ -1,3 +1,15 @@
+
+
+2005-09-26 Parick Galbraith <patg@mysql.com> (3.0002_2)
+  * Fixed bug in dbd_st_execute where imp_sth was being 
+    imported unecessarily, when only imp_dbh is needed. This caused a 
+    core dump in some cases. Thanks to Andy Maas at Proofpoint for his 
+    execellent detective work!
+  * Small changes to Makefile.PL to make sure --ps-protocol works as
+    advertised.
+  * Updated install.html with current info about prepared statements and FC
+    RPM/YUM packages.
+
 2005-08-04 Parick Galbraith <patg@mysql.com> (3.0002_1)
   * Prepared statement support is default now. To turn it off
     a parameter 'mysql_emulated_prepare' must be turned ON

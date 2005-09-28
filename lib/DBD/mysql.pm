@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '3.0002_1';
+$VERSION = '3.0002_2';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -29,7 +29,7 @@ sub driver{
 				   'Version' => $VERSION,
 				   'Err'    => \$DBD::mysql::err,
 				   'Errstr' => \$DBD::mysql::errstr,
-				   'Attribution' => 'DBD::mysql by Rudy Lippan and Patrick Galbraith'
+				   'Attribution' => 'DBD::mysql by Patrick Galbraith'
 				 });
 
     $drh;
@@ -1593,14 +1593,14 @@ need to fetch the archives from any CPAN mirror, for example
 The following archives are required (version numbers may have
 changed, I choose those which are current as of this writing):
 
-  DBI/DBI-1.15.tar.gz
+  DBI/DBI-1.48.tar.gz
   Data/Data-ShowTable-3.3.tar.gz
-  DBD/DBD-mysql-2.1001.tar.gz
+  DBD/DBD-mysql-3.0002.tar.gz
 
-Then enter the following commands:
+Then enter the following commands (note - versions are just examples):
 
   gzip -cd DBI-1.15.tar.gz | tar xf -
-  cd DBI-1.15
+  cd DBI-1.48
   perl Makefile.PL
   make
   make test
@@ -1614,8 +1614,8 @@ Then enter the following commands:
   make install  # Don't try make test, the test suite is broken
 
   cd ..
-  gzip -cd DBD-mysql-2.1001.tar.gz | tar xf -
-  cd DBD-mysql-2.1001
+  gzip -cd DBD-mysql-3.0002.tar.gz | tar xf -
+  cd DBD-mysql-3.0002
   perl Makefile.PL
   make
   make test

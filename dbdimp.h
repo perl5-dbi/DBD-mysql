@@ -28,6 +28,7 @@
  * statements as opposed to emulation in the driver
 */
 #define SERVER_PREPARE_VERSION 40103
+#define LIMIT_PLACEHOLDER_VERSION 50007 
 
 /*
  *  The following are return codes passed in $h->err in case of
