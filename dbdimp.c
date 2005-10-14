@@ -2300,28 +2300,52 @@ dbd_st_prepare(
 
 
 my_ulonglong mysql_st_internal_execute(
-                          SV *sth,
-                          SV *statement,
-                          SV *attribs,
-                          int num_params,
-                          imp_sth_ph_t *params,
-                          MYSQL_RES **result,
-                          MYSQL *svsock,
-                          int use_mysql_use_result
-                         )
+                                       SV *h, /* could be sth or dbh */
+                                       SV *statement,
+                                       SV *attribs,
+                                       int num_params,
+                                       imp_sth_ph_t *params,
+                                       MYSQL_RES **result,
+                                       MYSQL *svsock,
+                                       int use_mysql_use_result
+                                      )
 {
-  D_imp_sth(sth);
-  D_imp_dbh_from_sth;
+  bool bind_type_guessing;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
+  char *table;
+  my_ulonglong rows= 0;
+
+  /* thank you DBI.c for this info! */
+  D_imp_xxh(h);
+  int htype= DBIc_TYPE(imp_xxh);
+  /*
+    It is important to import imp_dbh properly according to the htype
+    that it is! Also, one might ask why bind_type_guessing is assigned
+    in each block. Well, it's because D_imp_ macros called in these
+    blocks make it so imp_dbh is not "visible" or defined outside of the
+    if/else (when compiled, it fails for imp_dbh not being defined).
+  */
+  /* h is a dbh */
+  if (htype==DBIt_DB)
+  {
+    D_imp_dbh(h);
+    bind_type_guessing= imp_dbh->bind_type_guessing;
+  }
+  /* h is a sth */
+  else
+  {
+    D_imp_sth(h);
+    D_imp_dbh_from_sth;
+    bind_type_guessing= imp_dbh->bind_type_guessing;
+  }
+
   char *salloc = parse_params(svsock,
                               sbuf,
                               &slen,
                               params,
                               num_params,
-                              imp_dbh->bind_type_guessing);
-  char *table;
-  my_ulonglong rows= 0;
+                              bind_type_guessing);
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "mysql_st_internal_execute\n");
@@ -2353,12 +2377,12 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!slen)
     {
-      do_error(sth, JW_ERR_QUERY, "Missing table name");
+      do_error(h, JW_ERR_QUERY, "Missing table name");
       return -2;
     }
     if (!(table= malloc(slen+1)))
     {
-      do_error(sth, JW_ERR_MEM, "Out of memory");
+      do_error(h, JW_ERR_MEM, "Out of memory");
       return -2;
     }
 
@@ -2377,7 +2401,7 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!(*result))
     {
-      do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+      do_error(h, mysql_errno(svsock), mysql_error(svsock));
       return -2;
     }
 
@@ -2385,11 +2409,11 @@ my_ulonglong mysql_st_internal_execute(
   }
 
   if ((mysql_real_query(svsock, sbuf, slen))  &&
-      (!mysql_db_reconnect(sth)  ||
+      (!mysql_db_reconnect(h)  ||
        (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
-    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock));
     return -2;
   }
   Safefree(salloc);
@@ -2399,7 +2423,7 @@ my_ulonglong mysql_st_internal_execute(
     mysql_use_result(svsock) : mysql_store_result(svsock);
 
   if (mysql_errno(svsock))
-    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock));
 
   if (!*result)
     rows= mysql_affected_rows(svsock);

@@ -1,4 +1,6 @@
-
+2005-09-28 Parick Galbraith <patg@mysql.com> (3.0002_3)
+  * Added code to  mysql_st_internal_execute that determines whether the
+    SV *h is a sth or dbh, and then imports imp_dbh appropriately
 
 2005-09-26 Parick Galbraith <patg@mysql.com> (3.0002_2)
   * Fixed bug in dbd_st_execute where imp_sth was being 
