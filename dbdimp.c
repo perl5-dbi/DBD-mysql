@@ -3074,7 +3074,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     imp_sth->currow++;
 
     av= DBIS->get_fbav(imp_sth);
-    num_fields= av_len(av)+1;
+    /*av= my_get_fbav(imp_sth);*/
+    num_fields=mysql_stmt_field_count(imp_sth->stmt);
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP,
                     "dbd_st_fetch called mysql_fetch, rc %d num_fields %d\n",
@@ -3159,7 +3160,21 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
     imp_sth->currow++;
 
-    if (!(cols = mysql_fetch_row(imp_sth->result)))
+    if (dbis->debug >= 5)
+    {
+      PerlIO_printf(DBILOGFP, "      <- dbd_st_fetch result set details\n");
+      PerlIO_printf(DBILOGFP, "             imp_sth->result=%08lx\n",imp_sth->result);
+      PerlIO_printf(DBILOGFP, "             mysql_num_fields=%llu\n",
+                    mysql_num_fields(imp_sth->result));
+      PerlIO_printf(DBILOGFP, "      <-     mysql_num_rows=%llu\n",
+                    mysql_num_rows(imp_sth->result));
+      PerlIO_printf(DBILOGFP, "      <-     mysql_affected_rows=%llu\n",
+                    mysql_affected_rows(&imp_dbh->mysql));
+      PerlIO_printf(DBILOGFP, "    -> dbd_st_fetch for %08lx, currow= %d\n",
+                    (u_long) sth,imp_sth->currow);
+    }
+
+    if (!(cols= mysql_fetch_row(imp_sth->result)))
     {
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
@@ -3170,10 +3185,11 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       return Nullav;
     }
 
-    lengths = mysql_fetch_lengths(imp_sth->result);
-
-    av = DBIS->get_fbav(imp_sth);
-    num_fields = av_len(av)+1;
+    lengths= mysql_fetch_lengths(imp_sth->result);
+    /*av= DBIS->get_fbav(imp_sth);*/
+    av= my_get_fbav(imp_sth);
+    num_fields=mysql_num_fields(imp_sth->result);
+    /*num_fields= av_len(av)+1;*/
 
     for (i= 0;  i < num_fields; ++i)
     {
