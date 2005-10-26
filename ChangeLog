@@ -1,8 +1,11 @@
-2005-09-28 Parick Galbraith <patg@mysql.com> (3.0002_3)
+2005-10-26 Patrick Galbraith <patg@mysql.com> (3.0002_4)
+  * Added Guy Harrison's patch for multiple result sets
+
+2005-09-28 Patrick Galbraith <patg@mysql.com> (3.0002_3)
   * Added code to  mysql_st_internal_execute that determines whether the
     SV *h is a sth or dbh, and then imports imp_dbh appropriately
 
-2005-09-26 Parick Galbraith <patg@mysql.com> (3.0002_2)
+2005-09-26 Patrick Galbraith <patg@mysql.com> (3.0002_2)
   * Fixed bug in dbd_st_execute where imp_sth was being 
     imported unecessarily, when only imp_dbh is needed. This caused a 
     core dump in some cases. Thanks to Andy Maas at Proofpoint for his 
@@ -12,7 +15,7 @@
   * Updated install.html with current info about prepared statements and FC
     RPM/YUM packages.
 
-2005-08-04 Parick Galbraith <patg@mysql.com> (3.0002_1)
+2005-08-04 Patrick Galbraith <patg@mysql.com> (3.0002_1)
   * Prepared statement support is default now. To turn it off
     a parameter 'mysql_emulated_prepare' must be turned ON
   * Better error handling in mysql_internal_execute_ps (renamed
@@ -27,11 +30,11 @@
   * Fix to ensure MYSQL_BIND is only defined when mysql
     client version is >= 4.1.3. Thanks to Tom Parkison
 
-2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_2)
+2005-07-06 Patrick Galbraith <patg@mysql.com> (3.0001_2)
   * Fixed runtime bug (when inserting or updating quotes or double quotes)
     (Thanks to Brad Choate, Six Apart Ltd.)
 
-2005-07-04 Parick Galbraith <patg@mysql.com> (3.0001_1)
+2005-07-04 Patrick Galbraith <patg@mysql.com> (3.0001_1)
   * Changed uint argument in safe_sv_fetch to int due to 
     uint not being available on windows unless you include
     my_globals.h in dbdimp.h, which also breaks on unixen!

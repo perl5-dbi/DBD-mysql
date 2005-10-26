@@ -506,6 +506,25 @@ quote(dbh, str, type=NULL)
 MODULE = DBD::mysql    PACKAGE = DBD::mysql::st
 
 int
+more_results(sth)
+    SV *	sth
+    CODE:
+{
+  D_imp_sth(sth);
+  int retval;
+  if (dbd_st_more_results(sth, imp_sth))
+  {
+    RETVAL=1;
+  }
+  else
+  {
+    RETVAL=0;
+  }
+}
+    OUTPUT:
+      RETVAL
+
+int
 dataseek(sth, pos)
     SV* sth
     int pos

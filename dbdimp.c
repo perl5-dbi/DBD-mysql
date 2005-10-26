@@ -1427,6 +1427,7 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: client_flags = %d\n",
 		    client_flag);
+    client_flag|=CLIENT_MULTI_RESULTS;
     result = mysql_real_connect(sock, host, user, password, dbname,
 				portNr, mysql_socket, client_flag);
     if (dbis->debug >= 2)
@@ -2280,6 +2281,221 @@ dbd_st_prepare(
   DBIc_IMPSET_on(imp_sth);
 
   return 1;
+}
+
+/* My setup_fbav */
+AV *my_setup_fbav(imp_sth_t *imp_sth)
+{
+  /*dPERINTERP;*/
+  int i;
+  AV *av;
+
+  /*if (DBIc_FIELDS_AV(imp_sth))
+    return DBIc_FIELDS_AV(imp_sth);*/
+
+  i= DBIc_NUM_FIELDS(imp_sth);
+  if (dbis->debug >= 2)
+  {
+    PerlIO_printf(DBILOGFP, "\tmy_setup_fbav num_fields=%d\n",i);
+  }
+  if (i <= 0 || i > 32000)	/* trap obvious mistakes */
+    croak("my_setup_fbav: invalid number of fields: %d%s",
+          i, ", NUM_OF_FIELDS attribute probably not set right");
+  av = newAV();
+  if (dbis->debug >= 2)
+  {
+    PerlIO_printf(DBILOGFP, "\t->my_setup_fbav: created new AV");
+  }
+
+  /* load array with writeable SV's. Do this backwards so	*/
+  /* the array only gets extended once.			*/
+  while(i--)			/* field 1 stored at index 0	*/
+    av_store(av, i, newSV(0));
+  SvREADONLY_on(av);		/* protect against shift @$row etc */
+  /* row_count will need to be manually reset by the driver if the	*/
+  /* sth is re-executed (since this code won't get rerun)		*/
+  DBIc_ROW_COUNT(imp_sth)= 0;
+  DBIc_FIELDS_AV(imp_sth)= av;
+  return av;
+}
+
+/* *************************************************************
+ * "My" version of get_fbav.  The DBI implementation seems to retain
+ * a "memory" of the previous result set got by a statement, so this
+ * one re-initializes the array every time
+ *************************************************************/
+AV * my_get_fbav(imp_sth_t *imp_sth)
+{
+    AV *av;
+
+    av=  my_setup_fbav(imp_sth);
+
+    if (1)
+    { /* XXX turn into option later */
+	int i= DBIc_NUM_FIELDS(imp_sth);
+	if (dbis->debug >= 2)
+        {
+	  PerlIO_printf(DBILOGFP,
+		  "    -> my_get_fbav; DBIc_NUM_FIELDS=%llu\n", (u_long) i);
+	}
+
+	/* don't let SvUTF8 flag persist from one row to the next   */
+	/* (only affects drivers that use sv_setpv, but most XS do) */
+	while(i--)                  /* field 1 stored at index 0    */
+	    SvUTF8_off(AvARRAY(av)[i]);
+    }
+
+    if (DBIc_is(imp_sth, DBIcf_TaintOut))
+    {
+	dTHR;
+	TAINT;	/* affects sv_setsv()'s called within same perl statement */
+    }
+
+    /* XXX fancy stuff to happen here later (re scrolling etc)	*/
+    ++DBIc_ROW_COUNT(imp_sth);
+    return av;
+}
+
+
+
+/***************************************************************************
+ * Name: dbd_st_more_results
+ *
+ * Purpose: Move onto the next result set (if any)
+ *
+ * Inputs: sth - Statement handle
+ *         imp_sth - driver's private statement handle
+ *
+ * Returns: 0 if there are more results sets
+ *          1 if there are not
+ *         <1 for errors.
+ *************************************************************************/
+int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
+{
+  D_imp_dbh_from_sth;
+
+  int use_mysql_use_result=imp_sth->use_mysql_use_result;
+  int next_result_return_code, i;
+  MYSQL_RES** result= &imp_sth->result;
+  MYSQL* svsock= &imp_dbh->mysql;
+
+  if (dbis->debug >= 2)
+  {
+    PerlIO_printf(DBILOGFP,
+		  "    -> dbd_st_more_results for %08lx\n", (u_long) sth);
+  }
+
+  if (!SvROK(sth) || SvTYPE(SvRV(sth)) != SVt_PVHV)
+    croak("Expected hash array");
+
+  /*
+   *  Free cached array attributes
+   */
+  for (i= 0;  i < AV_ATTRIB_LAST;  i++)
+  {
+    if (imp_sth->av_attr[i])
+      SvREFCNT_dec(imp_sth->av_attr[i]);
+
+    imp_sth->av_attr[i]= Nullav;
+  }
+  if (dbis->debug >= 2)
+  {
+    AV* av= my_get_fbav(imp_sth);
+    PerlIO_printf(DBILOGFP,
+                  "      <- dbs_st_more_rows av_len(imp_sth->av_attr)=%d\n",
+                  AvFILL(av));
+  }
+
+  /* Release previous MySQL result*/
+  mysql_free_result(imp_sth->result);
+
+  if (mysql_errno(svsock))
+    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+
+  next_result_return_code= mysql_next_result(svsock);
+  /*
+    mysql_next_result returns
+     0 if there are more results1
+     -1 if there are no more results
+     >1 if there was an error
+   */
+  if (next_result_return_code > 0)
+  {
+    do_error(sth,mysql_errno(svsock),mysql_error(svsock));
+    return 0;
+  }
+  else if (next_result_return_code < 0)
+  {
+    /* No rowsets*/
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+		    "      <- dbs_st_more_rows no more results\n");
+    return 0;
+  }
+  else
+  {
+    /*if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+      "      <- dbd_st_more_rows use_mysql_use_result=%d\n",
+      use_mysql_use_result);
+      imp_sth->result= use_mysql_use_result ?
+      mysql_use_result(svsock) : mysql_store_result(svsock);*/
+    *result= mysql_store_result(svsock);
+
+    if (mysql_errno(svsock))
+      do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+
+    if (*result == NULL)
+    {
+      /* No "real" rowset*/
+      if (dbis->debug >= 2)
+	PerlIO_printf(DBILOGFP,
+		      "      <- dbs_st_more_rows: null result set\n");
+
+	return 0;
+    }
+    /* We have a new rowset */
+    imp_sth->currow=0;
+
+    if (dbis->debug >= 5)
+    {
+      PerlIO_printf(DBILOGFP, "   <- dbd_st_more_results result set details\n");
+      PerlIO_printf(DBILOGFP,
+                    "             imp_sth->result=%08lx\n",
+                    imp_sth->result);
+      PerlIO_printf(DBILOGFP, "             mysql_num_fields=%llu\n",
+                    mysql_num_fields(imp_sth->result));
+
+      PerlIO_printf(DBILOGFP, "      <-     mysql_num_rows=%llu\n",
+                    mysql_num_rows(imp_sth->result));
+      PerlIO_printf(DBILOGFP, "      <-     mysql_affected_rows=%llu\n",
+                    mysql_affected_rows(svsock));
+    }
+
+    /** Store the result in the current statement handle */
+    DBIc_ACTIVE_on(imp_sth);
+    int num_fields=mysql_num_fields(imp_sth->result);
+
+    DBIc_NUM_FIELDS(imp_sth) = num_fields;
+
+    if (dbis->debug >= 5)
+    {
+      PerlIO_printf(DBILOGFP,
+                    "      <- dbd_st_more_results num_fields=%d\n", num_fields);
+      PerlIO_printf(DBILOGFP,
+                    "         DBIc_NUM_FIELDS=%d\n",DBIc_NUM_FIELDS(imp_sth));
+    }
+    imp_sth->done_desc = 0;
+    if (dbis->debug >= 2)
+    {
+      AV* av= my_get_fbav(imp_sth);
+      PerlIO_printf(DBILOGFP,
+                    "      <- dbs_st_more_rows av_len(imp_sth->av_attr)=%d\n",
+                    AvFILL(av));
+    }
+    (imp_dbh->mysql).net.last_errno= 0;
+    return 1;
+  }
 }
 /**************************************************************************
  *
