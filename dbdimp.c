@@ -1427,7 +1427,10 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "imp_dbh->mysql_dr_connect: client_flags = %d\n",
 		    client_flag);
-    client_flag|=CLIENT_MULTI_RESULTS;
+ 
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+    client_flag|= CLIENT_MULTI_RESULTS;
+#endif
     result = mysql_real_connect(sock, host, user, password, dbname,
 				portNr, mysql_socket, client_flag);
     if (dbis->debug >= 2)
@@ -1667,9 +1670,8 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
              "Rollback ineffective while AutoCommit is on");
   return TRUE;
 }
-/* }}} */
 
-/* {{{ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
+/*
  ***************************************************************************
  *
  *  Name:    dbd_db_disconnect
@@ -2094,6 +2096,14 @@ dbd_st_prepare(
 {
   int i;
   SV **svp;
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+  char *str_ptr;
+  int col_type;
+  int limit_flag= 0;
+  MYSQL_BIND *bind, *bind_end;
+  imp_sth_phb_t *fbind;
+#endif 
+
   D_imp_dbh_from_sth;
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
@@ -2106,14 +2116,6 @@ dbd_st_prepare(
       SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
   }
 
-  char *searchptr;
-  int col_type;
-  int limit_flag= 0;
-  int statement_length= 0;
-  MYSQL_BIND *bind, *bind_end;
-  imp_sth_phb_t *fbind;
-
-  statement_length = strlen(statement);
   imp_sth->fetch_done= 0;
 #else
   /* Count the number of parameters (driver, vs server-side) */
@@ -2137,21 +2139,94 @@ dbd_st_prepare(
     * with placeholders, which MySQL currently doesn't support, so we
     * need to just parse the values and build an SQL statement with the
     * limit values replacing the placeholders */
-    for ( i = 0; i < statement_length - 1; i++)
+
+    for (str_ptr= statement; *str_ptr; str_ptr++)
     {
-      searchptr= &statement[i];
-      /* prepared statements for SHOW commands are not supported */
-      if ( ((*searchptr == 's' || *searchptr == 'S') &&
-            (!strncmp(searchptr+1,"how ", 4) ||
-             !strncmp(searchptr+1, "HOW ", 4)) ))
-        imp_sth->use_server_side_prepare = 0;
-      /* if there is a 'limit' in the statement... */
-#endif
-#if (MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION) && (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
-      if (!limit_flag && ((*searchptr == 'l' || *searchptr == 'L') &&
-           (!strncmp(searchptr+1, "imit ?",6) ||
-            (!strncmp(searchptr+1, "IMIT ?",6)) )))
+      i= (str_ptr - statement)/sizeof(char);
+
+      /*
+        CREATE and DROP procedure are not supported in the prepared statement
+        API, though CREATE and DROP table are. However, no need to make this
+        over-complicated, no real reason CREATE and DROP need to run through
+        a prepared statement, so I'll turn them off for both
+      */
+      if ( (statement[i]   == 'c' || statement[i]   == 'C') &&
+           (statement[i+1] == 'r' || statement[i+1] == 'R') &&
+           (statement[i+2] == 'e' || statement[i+2] == 'E') &&
+           (statement[i+3] == 'a' || statement[i+3] == 'A') &&
+           (statement[i+4] == 't' || statement[i+4] == 'T') &&
+           (statement[i+5] == 'e' || statement[i+5] == 'E'))
       {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "CREATE set use_server_side_prepare to 0\n");
+        imp_sth->use_server_side_prepare= 0;
+      }
+
+      /*
+        No alter in prep statement API
+      */
+      if ( (statement[i]   == 'a' || statement[i]   == 'A') &&
+           (statement[i+1] == 'l' || statement[i+1] == 'L') &&
+           (statement[i+2] == 't' || statement[i+2] == 'T') &&
+           (statement[i+3] == 'e' || statement[i+3] == 'E') &&
+           (statement[i+4] == 'r' || statement[i+4] == 'R'))
+      {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "ALTER set use_server_side_prepare to 0\n");
+        imp_sth->use_server_side_prepare= 0;
+      }
+
+      if ( (statement[i]   == 'd' || statement[i]   == 'D') &&
+           (statement[i+1] == 'r' || statement[i+1] == 'R') &&
+           (statement[i+2] == 'o' || statement[i+2] == 'O') &&
+           (statement[i+3] == 'p' || statement[i+3] == 'P'))
+      {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "DROP set use_server_side_prepare to 0\n");
+        imp_sth->use_server_side_prepare= 0;
+      }
+
+      /*
+       prepared statements for SHOW commands are not supported
+      */
+      if ( (statement[i]   == 's' || statement[i]   == 'S') &&
+           (statement[i+1] == 'h' || statement[i+1] == 'H') &&
+           (statement[i+2] == 'o' || statement[i+2] == 'O') &&
+           (statement[i+3] == 'w' || statement[i+3] == 'W'))
+      {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "SHOW set use_server_side_prepare to 0\n");
+        imp_sth->use_server_side_prepare= 0;
+      }
+
+      /*
+        multiple result sets are not supported in the prepared
+        statement API
+      */
+      if (   (statement[i]   == 'c' || statement[i]   == 'C') &&
+             (statement[i+1] == 'a' || statement[i+1] == 'A') &&
+             (statement[i+2] == 'l' || statement[i+2] == 'L') &&
+             (statement[i+3] == 'l' || statement[i+3] == 'L'))
+      {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "CALL set use_server_side_prepare to 0\n");
+        imp_sth->use_server_side_prepare= 0;
+      }
+
+#endif
+#if (MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION) && \
+      (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
+      /*
+        If there is a 'limit' in the statement and placeholders are
+        NOT supported
+      */
+      if ( (statement[i]   == 'l' || statement[i]   == 'L') &&
+           (statement[i+1] == 'i' || statement[i+1] == 'I') &&
+           (statement[i+2] == 'm' || statement[i+2] == 'M') &&
+           (statement[i+3] == 'i' || statement[i+3] == 'I') &&
+           (statement[i+4] == 't' || statement[i+4] == 'T'))
+      {
+        imp_sth->use_server_side_prepare= 0;
         limit_flag= 1;
         i+= 6;
       }
@@ -2163,7 +2238,7 @@ dbd_st_prepare(
         if (statement[i] == '?')
         {
           /* ... then we do not want to try server side prepare (use emulation) */
-          imp_sth->use_server_side_prepare = 0;
+          imp_sth->use_server_side_prepare= 0;
           break;
         }
       }
@@ -2221,7 +2296,7 @@ dbd_st_prepare(
                     mysql_error(&imp_dbh->mysql));
     }
 
-    if (mysql_stmt_prepare(imp_sth->stmt, statement, statement_length))
+    if (mysql_stmt_prepare(imp_sth->stmt, statement, strlen(statement)))
     {
 
       mysql_stmt_close(imp_sth->stmt);
@@ -2356,8 +2431,7 @@ AV * my_get_fbav(imp_sth_t *imp_sth)
     return av;
 }
 
-
-
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
 /***************************************************************************
  * Name: dbd_st_more_results
  *
@@ -2497,6 +2571,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     return 1;
   }
 }
+#endif
 /**************************************************************************
  *
  *  Name:    mysql_st_internal_execute
@@ -2530,11 +2605,13 @@ my_ulonglong mysql_st_internal_execute(
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
   char *table;
+  char *salloc;
+  int htype;
   my_ulonglong rows= 0;
 
   /* thank you DBI.c for this info! */
   D_imp_xxh(h);
-  int htype= DBIc_TYPE(imp_xxh);
+  htype= DBIc_TYPE(imp_xxh);
   /*
     It is important to import imp_dbh properly according to the htype
     that it is! Also, one might ask why bind_type_guessing is assigned
@@ -2556,7 +2633,7 @@ my_ulonglong mysql_st_internal_execute(
     bind_type_guessing= imp_dbh->bind_type_guessing;
   }
 
-  char *salloc = parse_params(svsock,
+  salloc= parse_params(svsock,
                               sbuf,
                               &slen,
                               params,

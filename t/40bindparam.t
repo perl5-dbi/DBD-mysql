@@ -163,7 +163,6 @@ while (Testing()) {
 		    $name eq 'Andreas König'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
-
     Test($state or (($ref = $cursor->fetch)  &&  $id == 5  &&
 		    !defined($name)))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
@@ -172,6 +171,7 @@ while (Testing()) {
     Test($state or (($ref = $cursor->fetch)  &&  $id == 6  &&
 		   $name eq '?'))
 	or print("Query returned id = $id, name = $name, expected 6,?\n");
+
     if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
 	Test($state or (($ref = $cursor->fetch)  &&  $id == 7  &&
 			$name eq '?'))

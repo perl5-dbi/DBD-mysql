@@ -27,6 +27,7 @@
  * the server will be used to process prepare
  * statements as opposed to emulation in the driver
 */
+#define MULTIPLE_RESULT_SET_VERSION 40102
 #define SERVER_PREPARE_VERSION 40103
 #define LIMIT_PLACEHOLDER_VERSION 50007 
 

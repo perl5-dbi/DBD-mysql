@@ -1769,10 +1769,10 @@ in the PPM program.
 
 The current version of B<DBD::mysql> is almost completely written
 by Jochen Wiedmann, and is now being maintained by
-Rudy Lippan (I<rlippan@remotelinux.com>). The first version's author
-was Alligator Descartes (I<descarte@symbolstone.org>), who has been
-aided and abetted by Gary Shea, Andreas König and Tim Bunce
-amongst others.
+Rudy Lippan (I<rlippan@remotelinux.com>) and Patrick Galbraith
+(I<patg@mysql.com>). The first version's author
+was Alligator Descartes, who was aided and abetted by Gary Shea,
+Andreas König and Tim Bunce amongst others.
 
 The B<Mysql> module was originally written by Andreas König
 <koenig@kulturbox.de>. The current version, mainly an emulation
@@ -1782,7 +1782,9 @@ layer, is from Jochen Wiedmann.
 =head1 COPYRIGHT
 
 
-This module is Copyright (c) 2003 Rudolf Lippan; Large Portions 
+This module is 
+Copyright (c) 2004-2005 Patrick Galbraith/MySQL, Large Portions
+Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
 Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
@@ -1795,37 +1797,33 @@ This module is maintained and supported on a mailing list,
 
     perl@lists.mysql.com
 
-To subscribe to this list, send a mail to
+To subscribe to this list, go to
 
-    perl-subscribe@lists.mysql.com
-
-or
-
-    perl-digest-subscribe@lists.mysql.com
+http://lists.mysql.com/perl?sub=1
 
 Mailing list archives are available at
 
-    http://www.progressive-comp.com/Lists/?l=msql-mysql-modules
-
+http://lists.mysql.com/perl
 
 Additionally you might try the dbi-user mailing list for questions about
 DBI and its modules in general. Subscribe via
 
-    http://www.fugue.com/dbi
+dbi-users-subscribe@perl.org
 
 Mailing list archives are at
 
-     http://www.rosat.mpe-garching.mpg.de/mailing-lists/PerlDB-Interest/
-     http://outside.organic.com/mail-archives/dbi-users/
-     http://www.coe.missouri.edu/~faq/lists/dbi.html
+http://groups.google.com/group/perl.dbi.users?hl=en&lr=
 
+Also, the main DBI site is at
+
+http://dbi.perl.org/
 
 =head1 ADDITIONAL DBI INFORMATION
 
 Additional information on the DBI project can be found on the World
 Wide Web at the following URL:
 
-    http://www.symbolstone.org/technology/perl/DBI
+    http://dbi.symbolstone.org/technology/perl/DBI
 
 where documentation, pointers to the mailing lists and mailing list
 archives and pointers to the most current versions of the modules can
@@ -1836,6 +1834,16 @@ Information on the DBI interface itself can be gained by typing:
     perldoc DBI
 
 right now!
+
+
+=head1 BUG REPORTING, ENHANCEMENT/FEATURE REQUESTS
+
+Please report bugs, including all the information needed
+such as DBD::mysql version, MySQL version, OS type/version, etc
+to this link:
+
+http://bugs.mysql.com/
+
 
 =cut
 

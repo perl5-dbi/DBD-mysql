@@ -1,5 +1,7 @@
 2005-10-26 Patrick Galbraith <patg@mysql.com> (3.0002_4)
   * Added Guy Harrison's patch for multiple result sets
+  * Fixed bugs with declarations in middle of functions
+  * Updated documentation
 
 2005-09-28 Patrick Galbraith <patg@mysql.com> (3.0002_3)
   * Added code to  mysql_st_internal_execute that determines whether the
