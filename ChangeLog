@@ -1,6 +1,10 @@
 2005-10-26 Patrick Galbraith <patg@mysql.com> (3.0002_4)
   * Added Guy Harrison's patch for multiple result sets
   * Fixed bugs with declarations in middle of functions
+  * Cleaned up code, rewrote several loops using pointers
+    instead of iterators
+  * Rewrote 'SHOW', 'ALTER', 'CALL', 'CREATE' toggling code that turns
+    off server prepared statements (these calls are not supported)
   * Updated documentation
 
 2005-09-28 Patrick Galbraith <patg@mysql.com> (3.0002_3)

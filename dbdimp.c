@@ -233,6 +233,9 @@ FreeParam(imp_sth_ph_t *params, int num_params)
 
 static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 {
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, " ----> mysql_to_perl_type\n");
+
   switch (type) {
   case MYSQL_TYPE_DOUBLE:
   case MYSQL_TYPE_FLOAT:
@@ -243,6 +246,7 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_LONG:
   case MYSQL_TYPE_INT24:
   case MYSQL_TYPE_YEAR:
+  case MYSQL_TYPE_BIT:
     return MYSQL_TYPE_LONG;
 
   case MYSQL_TYPE_DECIMAL:
@@ -252,17 +256,22 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_DATETIME:
   case MYSQL_TYPE_NEWDATE:
   case MYSQL_TYPE_VAR_STRING:
+  case MYSQL_TYPE_VARCHAR:
   case MYSQL_TYPE_STRING:
   case MYSQL_TYPE_BLOB:
+  case MYSQL_TYPE_TINY_BLOB:
+#ifdef MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+  case MYSQL_TYPE_GEOMETRY:
+#endif
   case MYSQL_TYPE_TIMESTAMP:
   /* case MYSQL_TYPE_UNKNOWN: */
     return MYSQL_TYPE_STRING;
 
   default:
-    if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "case default for col_type => %d\n", type);
     return MYSQL_TYPE_STRING;    /* MySQL can handle all types as strings */
   }
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, "col_type => %d\n", type);
 }
 #endif
 
@@ -2102,9 +2111,11 @@ dbd_st_prepare(
   int limit_flag= 0;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
-#endif 
+#endif
 
   D_imp_dbh_from_sth;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "  > dbd_st_prepare MYSQL_VERSION_ID %d\n", MYSQL_VERSION_ID);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
  /* Set default value of 'mysql_emulated_prepare' attribute for sth from dbh */
@@ -2220,15 +2231,18 @@ dbd_st_prepare(
         If there is a 'limit' in the statement and placeholders are
         NOT supported
       */
+
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "CALL set use_server_side_prepare to 0\n");
       if ( (statement[i]   == 'l' || statement[i]   == 'L') &&
            (statement[i+1] == 'i' || statement[i+1] == 'I') &&
            (statement[i+2] == 'm' || statement[i+2] == 'M') &&
            (statement[i+3] == 'i' || statement[i+3] == 'I') &&
            (statement[i+4] == 't' || statement[i+4] == 'T'))
       {
-        imp_sth->use_server_side_prepare= 0;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "LIMIT set limit flag to 1\n");
         limit_flag= 1;
-        i+= 6;
       }
 #endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
@@ -2338,8 +2352,16 @@ dbd_st_prepare(
           */
           col_type= (has_statement_fields ?
                      imp_sth->stmt->fields[i].type : MYSQL_TYPE_STRING);
+          /*if (dbis->debug >= 2)
+            PerlIO_printf(DBILOGFP, "buf_len%d type %d\n",
+                          imp_sth->stmt->fields[i].length, imp_sth->stmt->fields[i].type);
+          */
 
           bind->buffer_type=  mysql_to_perl_type(col_type);
+
+          if (dbis->debug >= 2)
+            PerlIO_printf(DBILOGFP, "mysql_to_perl_type returned %d\n", col_type);
+
           bind->buffer=       NULL;
           bind->length=       &(fbind->length);
           bind->is_null=      (char*) &(fbind->is_null);
@@ -3013,10 +3035,12 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
       if (dbis->debug >= 2)
         PerlIO_printf(DBILOGFP,
-                      "col %d\ncol type %d\ncol len%d\ncol buf_len%d\n",
-                      i, col_type, fbh->length, fields[i].length);
+                      "col %d\ncol type %d\ncol len%d\ncol buf_len%d type %d\n",
+                      i, col_type, fbh->length, fields[i].length, fields[i].type);
 
       bind->buffer_type= mysql_to_perl_type(col_type);
+      if (dbis->debug >= 2)
+        PerlIO_printf(DBILOGFP, "mysql_to_perl_type returned %d\n", col_type);
       bind->buffer_length= fields[i].length;
       bind->length= &(fbh->length);
       bind->is_null= &(fbh->is_null);
@@ -3151,7 +3175,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     imp_sth->currow++;
 
     av= DBIS->get_fbav(imp_sth);
-    /*av= my_get_fbav(imp_sth);*/
     num_fields=mysql_stmt_field_count(imp_sth->stmt);
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP,
@@ -3263,10 +3286,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     }
 
     lengths= mysql_fetch_lengths(imp_sth->result);
-    /*av= DBIS->get_fbav(imp_sth);*/
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     av= my_get_fbav(imp_sth);
+#else
+    av= DBIS->get_fbav(imp_sth);
+#endif
     num_fields=mysql_num_fields(imp_sth->result);
-    /*num_fields= av_len(av)+1;*/
 
     for (i= 0;  i < num_fields; ++i)
     {
