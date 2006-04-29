@@ -1,6 +1,9 @@
 2006-04-29 Patrick Galbraith <patg@mysql.com> (3.0003)
   * Fix to typo in Makefile.PL (Thanks Martin Evans!)
   * Added mysql_stmt_reset for when mysql_stmt_execute fails
+  * Added test for mysql_stmt_execute bug (Martin Evans)
+  * Fixed syntax for create table ENGINE=InnoDB isntead of type=innobase
+  * Removed tests for old driver emulation
 
 2005-07-07 Patrick Galbraith <patg@mysql.com> (3.0002)
   * Fix to ensure MYSQL_BIND is only defined when mysql
