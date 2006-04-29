@@ -177,7 +177,11 @@ Test($state or ($def = TableDefinition($table,
     (!defined($errstr = $sth->errstr) || $sth->errstr eq '')))
          or DbiError($cursor->err, $cursor->errstr);
 
-    if ($row->[0] !~ /^4\.0/ || $row->[0] !~ /^3/) {
+    # 
+    # DROP/CREATE PROCEDURE will give syntax error 
+    # for these versions
+    #
+    if ($row->[0] !~ /^4/ || $row->[0] !~ /^3/) {
       $state= 1;
     }
 
