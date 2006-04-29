@@ -2117,7 +2117,7 @@ dbd_st_prepare(
   SV **svp;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   char *str_ptr;
-  int col_type, prepare_retval;
+  int col_type, prepare_retval, limit_flag=0;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
 #endif
@@ -2153,9 +2153,59 @@ dbd_st_prepare(
   for (i= 0; i < AV_ATTRIB_LAST; i++)
     imp_sth->av_attr[i]= Nullav;
 
+#if (MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION) && \
+      (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
+  if (imp_sth->use_server_side_prepare)
+  {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+                    "\t\tuse_server_side_prepare set, check LIMIT\n");
+/*
+ This code is here because mysql 5.0 didn't support placeholders
+ in prepared statements
+ */ 
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+                    "\t\tneed to test for LIMIT\n");
+    for (str_ptr= statement; *str_ptr; str_ptr++)
+    {
+      i= (str_ptr - statement)/sizeof(char);
+      /*
+        If there is a 'limit' in the statement and placeholders are
+        NOT supported
+      */
+      if ( (statement[i]   == 'l' || statement[i]   == 'L') &&
+           (statement[i+1] == 'i' || statement[i+1] == 'I') &&
+           (statement[i+2] == 'm' || statement[i+2] == 'M') &&
+           (statement[i+3] == 'i' || statement[i+3] == 'I') &&
+           (statement[i+4] == 't' || statement[i+4] == 'T'))
+      {
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "LIMIT set limit flag to 1\n");
+        limit_flag= 1;
+      }
+      if( limit_flag)
+      {
+        /* ... and place holders after the limit flag is set... */
+        if (statement[i] == '?')
+        {
+          if (dbis->debug >= 2)
+            PerlIO_printf(DBILOGFP,
+                    "\t\tLIMIT and ? found, set to use_server_side_prepare=0\n");
+          /* ... then we do not want to try server side prepare (use emulation) */
+          imp_sth->use_server_side_prepare= 0;
+          break;
+        }
+      }
+    }
+  }
+#endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP,
+                    "\t\tuse_server_side_prepare set\n");
     /* do we really need this? If we do, we should return, not just continue */
     if (imp_sth->stmt)
       fprintf(stderr,

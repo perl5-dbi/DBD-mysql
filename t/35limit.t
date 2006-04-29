@@ -50,6 +50,7 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
+  #Test($state or $dbh->trace("3", "/tmp/trace.log")) or DbiError($dbh->err, $dbh->errstr);
     #
     #   Find a possible new table name
     #
@@ -113,10 +114,6 @@ while (Testing()) {
 	  or DbiError($cursor->err, $cursor->errstr);
 
     Test ($state or @$array_ref == 50) or print "results not equaling 50\n";
-    #for (@$array_ref) {
-    #  print "id $_->[0] name $_->[1]\n";
-    #}
-     
     
     Test($state or $cursor->finish, "\$sth->finish failed")
       or DbiError($cursor->err, $cursor->errstr);

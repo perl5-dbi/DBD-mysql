@@ -61,7 +61,7 @@ Test($state or ($def = TableDefinition($table,
         or DbiError($dbh->err, $dbh->errstr);
   Test($state or $cursor->execute())
 	   or DbiError($dbh->err, $dbh->errstr);
-  my ($row, $errstr);
+  my ($row, $errstr, $vers, $supported);
   Test(
     $state or 
     (defined($row= $cursor->fetchrow_arrayref)  &&
@@ -165,18 +165,33 @@ Test($state or ($def = TableDefinition($table,
   Test($state or $sth->execute(1, "first val", 2, "second val")) or 
     DbiError($dbh->err, $dbh->errstr);
 
-
-  my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
-  Test($state or $sth = $dbh->prepare($drop_proc)) or
+  Test($state or $sth= 
+    $dbh->prepare("select version()")) or
     DbiError($dbh->err, $dbh->errstr);
 
   Test($state or $sth->execute()) or 
     DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or $sth = $dbh->do($drop_proc)) or 
-    DbiError($dbh->err, $dbh->errstr);
+  Test($state or 
+    (defined($row= $sth->fetchrow_arrayref)  &&
+    (!defined($errstr = $sth->errstr) || $sth->errstr eq '')))
+         or DbiError($cursor->err, $cursor->errstr);
 
-   my $proc_create = <<EOPROC;
+    if ($row->[0] !~ /^4\.0/ || $row->[0] !~ /^3/) {
+      $state= 1;
+    }
+
+    my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
+    Test($state or ($sth = $dbh->prepare($drop_proc))) or
+     DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or ($sth->execute())) or 
+     DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or ($sth= $dbh->do($drop_proc))) or 
+     DbiError($dbh->err, $dbh->errstr);
+
+    my $proc_create = <<EOPROC;
 create procedure testproc() deterministic
   begin
     declare a,b,c,d int;
@@ -198,7 +213,7 @@ EOPROC
       DbiError($dbh->err, $dbh->errstr);
 #
 #    my $proc_call = 'CALL testproc()';
-#    Test($state or $sth = $dbh->prepare($proc_call)) or
+#    Test(($state && !$supported) or $sth = $dbh->prepare($proc_call)) or
 #    DbiError($dbh->err, $dbh->errstr);
 #
 #    Test($state or $sth->execute()) or 
@@ -213,14 +228,14 @@ EOPROC
 
     $drop = "DROP PROCEDURE IF EXISTS testproc";
 
-    Test($state or $sth = $dbh->prepare($drop)) or
+    Test($state or $dbh->prepare($drop)) or
       DbiError($dbh->err, $dbh->errstr);
 
     Test($state or $sth->execute()) or 
       DbiError($dbh->err, $dbh->errstr);
 
     $drop = "DROP TABLE IF EXISTS t1";
-    Test($state or $sth = $dbh->prepare($drop)) or
+    Test($state or $sth= $dbh->prepare($drop)) or
       DbiError($dbh->err, $dbh->errstr);
 
     Test($state or $sth->execute()) or 
