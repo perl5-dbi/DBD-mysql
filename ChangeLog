@@ -1,3 +1,22 @@
+2006-04-29 Patrick Galbraith <patg@mysql.com) (3.0002_6)
+  * Removed old Msql-Mysql Driver emulation code - finally!!!
+  * Removed aweful string testing code (that I wrote) for unsported
+    statements and now use mysql_stmt_prepare, if statement not
+    supported, toggle to mysql_emulated_prepare
+  * Fixed bug where failed stmt execution caused later statements
+    to fail with mysql_stmt_reset
+  * Added tests for unsupported statements
+  * Added test for test of failed statement with subsequent executes 
+    (thanks to Martin Evans!)
+  * Added typo fix (Martin Evans)
+  * Removed old emulated driver tests (HOORAY!)
+  * Cleaned up debug printing code
+
+2006-01-31 Patrick Galbraith <patg@mysql.com> (3.0002_5)
+  * Fixed bugs 15546 (selectcol_arrayref failing on SHOW TABLES)
+    and 15665, 'USE dbname' failing when driver is not in emulated
+    prepare mode
+
 2005-10-26 Patrick Galbraith <patg@mysql.com> (3.0002_4)
   * Added Guy Harrison's patch for multiple result sets
   * Fixed bugs with declarations in middle of functions

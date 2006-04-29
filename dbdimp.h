@@ -30,7 +30,8 @@
 #define MULTIPLE_RESULT_SET_VERSION 40102
 #define SERVER_PREPARE_VERSION 40103
 #define LIMIT_PLACEHOLDER_VERSION 50007
-#define NEW_DATATYPE_VERSION 50007
+#define GEO_DATATYPE_VERSION 50007
+#define NEW_DATATYPE_VERSION 50003
 
 /*
  *  The following are return codes passed in $h->err in case of

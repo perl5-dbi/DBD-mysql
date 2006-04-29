@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '3.0002_4';
+$VERSION = '3.0002_6';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -590,7 +590,7 @@ statement handle with:
 This statement handle can be used for multiple things. First of all
 you can retreive a row of data:
 
-  my $row = $sth->fetchow_hashref();
+  my $row = $sth->fetchrow_hashref();
 
 If your table has columns ID and NAME, then $row will be hash ref with
 keys ID and NAME. See L<STATEMENT HANDLES> below for more details on

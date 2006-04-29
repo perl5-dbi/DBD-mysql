@@ -83,7 +83,7 @@ sub TableDefinition ($@) {
     }
     my $suffix = "";
     if ($have_transactions) {
-      $suffix = " TYPE=$have_transactions";
+      $suffix = " ENGINE=$have_transactions";
     }
     $def = sprintf("CREATE TABLE %s (%s%s)%s", $tablename,
 		   join(", ", @colDefs), $keyDef, $suffix);
@@ -144,7 +144,7 @@ sub HaveTransactions () {
 	    }
 	    if ($row->{'Variable_name'} eq 'have_innodb'  &&
 		$row->{'Value'} eq 'YES') {
-		$have_transactions = "innobase";
+		$have_transactions = "innodb";
 		last;
 	    }
 	    if ($row->{'Variable_name'} eq 'have_gemini'  &&

@@ -73,8 +73,7 @@ Test($state or ($def = TableDefinition($table,
 
   print "inserting values into $table using 'do' emulated.\n";
   my $no_bind_insert = "INSERT INTO $table VALUES (1,'1st first value')";
-  Test($state or $sth = $dbh->do($no_bind_insert,
-  { 'mysql_emulated_prepare' => 1})) or 
+  Test($state or $sth = $dbh->do($no_bind_insert)) or 
     DbiError($dbh->err, $dbh->errstr);
 
   print "inserting values into $table without placeholders.\n";
@@ -136,4 +135,95 @@ Test($state or ($def = TableDefinition($table,
 
 	Test($state or $sth->execute()) or 
     DbiError($dbh->err, $dbh->errstr);
+
+    $drop= "DROP TABLE IF EXISTS t1";
+    Test($state or $sth = $dbh->prepare($drop)) or
+      DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
+
+	$create = "CREATE TABLE t1 (a int)";
+	Test($state or $sth = $dbh->prepare($create)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+	Test($state or $sth->execute()) or 
+    DbiError($dbh->err, $dbh->errstr);
+
+  my $alter= "ALTER TABLE t1 ADD COLUMN b varchar(32)";
+  Test($state or $sth = $dbh->prepare($alter)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+	Test($state or $sth->execute()) or 
+    DbiError($dbh->err, $dbh->errstr);
+
+  $bind_insert= "INSERT INTO t1 VALUES (?, ?), (?,?)"; 
+  Test($state or $sth =
+   $dbh->prepare($bind_insert)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+  Test($state or $sth->execute(1, "first val", 2, "second val")) or 
+    DbiError($dbh->err, $dbh->errstr);
+
+
+  my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
+  Test($state or $sth = $dbh->prepare($drop_proc)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+  Test($state or $sth->execute()) or 
+    DbiError($dbh->err, $dbh->errstr);
+
+  Test($state or $sth = $dbh->do($drop_proc)) or 
+    DbiError($dbh->err, $dbh->errstr);
+
+   my $proc_create = <<EOPROC;
+create procedure testproc() deterministic
+  begin
+    declare a,b,c,d int;
+    set a=1;
+    set b=2;
+    set c=3;
+    set d=4;
+    select a, b, c, d;
+    select d, c, b, a;
+    select b, a, c, d;
+    select c, b, d, a;
+  end
+EOPROC
+
+    Test($state or $sth = $dbh->prepare($proc_create)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
+#
+#    my $proc_call = 'CALL testproc()';
+#    Test($state or $sth = $dbh->prepare($proc_call)) or
+#    DbiError($dbh->err, $dbh->errstr);
+#
+#    Test($state or $sth->execute()) or 
+#      DbiError($dbh->err, $dbh->errstr);
+#
+#    my $proc_select = 'SELECT @a';
+#    Test($state or $sth = $dbh->prepare($proc_select)) or
+#    DbiError($dbh->err, $dbh->errstr);
+#
+#    Test($state or $sth->execute()) or 
+#      DbiError($dbh->err, $dbh->errstr);
+
+    $drop = "DROP PROCEDURE IF EXISTS testproc";
+
+    Test($state or $sth = $dbh->prepare($drop)) or
+      DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
+
+    $drop = "DROP TABLE IF EXISTS t1";
+    Test($state or $sth = $dbh->prepare($drop)) or
+      DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
+
 }

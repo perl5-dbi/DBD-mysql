@@ -270,97 +270,29 @@ do(dbh, statement, attr=Nullsv, ...)
                   "mysql.xs do() use_server_side_prepare %d\n",
                   use_server_side_prepare);
 
-  /*
-    loop through the statement and make sure that we turn off
-    server-side prepare if there are any statements that the
-    API doesn't support
-  */
-  statement_ptr= SvPV(statement, slen);
-  for (str_ptr= statement_ptr; *str_ptr; str_ptr++)
-  {
-    int i= (str_ptr - statement_ptr)/sizeof(char);
-    if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "STATEMENT %c%c%c%c%c%c%c",
-                    statement_ptr[i], statement_ptr[i+1], statement_ptr[i+2],
-                    statement_ptr[i+3], statement_ptr[i+4], statement_ptr[i+5],
-                    statement_ptr[i+6]);
-    /*
-      CREATE and DROP procedure are not supported in the prepared statement_ptr
-      API, though CREATE and DROP table are. However, no need to make this
-      over-complicated, no real reason CREATE and DROP need to run through
-      a prepared statement_ptr, so I'll turn them off for both
-    */
-    if ( (statement_ptr[i]   == 'c' || statement_ptr[i]   == 'C') &&
-         (statement_ptr[i+1] == 'r' || statement_ptr[i+1] == 'R') &&
-         (statement_ptr[i+2] == 'e' || statement_ptr[i+2] == 'E') &&
-         (statement_ptr[i+3] == 'a' || statement_ptr[i+3] == 'A') &&
-         (statement_ptr[i+4] == 't' || statement_ptr[i+4] == 'T') &&
-         (statement_ptr[i+5] == 'e' || statement_ptr[i+5] == 'E'))
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "CREATE set use_server_side_prepare to 0\n");
-      use_server_side_prepare= 0;
-    }
-
-    /*
-      No alter in prep statement_ptr API
-    */
-    if ( (statement_ptr[i]   == 'a' || statement_ptr[i]   == 'A') &&
-         (statement_ptr[i+1] == 'l' || statement_ptr[i+1] == 'L') &&
-         (statement_ptr[i+2] == 't' || statement_ptr[i+2] == 'T') &&
-         (statement_ptr[i+3] == 'e' || statement_ptr[i+3] == 'E') &&
-         (statement_ptr[i+4] == 'r' || statement_ptr[i+4] == 'R'))
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "ALTER set use_server_side_prepare to 0\n");
-      use_server_side_prepare= 0;
-    }
-
-    if ( (statement_ptr[i]   == 'd' || statement_ptr[i]   == 'D') &&
-         (statement_ptr[i+1] == 'r' || statement_ptr[i+1] == 'R') &&
-         (statement_ptr[i+2] == 'o' || statement_ptr[i+2] == 'O') &&
-         (statement_ptr[i+3] == 'p' || statement_ptr[i+3] == 'P'))
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "DROP set use_server_side_prepare to 0\n");
-      use_server_side_prepare= 0;
-    }
-
-    /*
-      prepared statement_ptrs for SHOW commands are not supported
-    */
-    if ( (statement_ptr[i]   == 's' || statement_ptr[i]   == 'S') &&
-         (statement_ptr[i+1] == 'h' || statement_ptr[i+1] == 'H') &&
-         (statement_ptr[i+2] == 'o' || statement_ptr[i+2] == 'O') &&
-         (statement_ptr[i+3] == 'w' || statement_ptr[i+3] == 'W'))
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "SHOW set use_server_side_prepare to 0\n");
-      use_server_side_prepare= 0;
-    }
-
-    /*
-      multiple result sets are not supported in the prepared
-      statement API
-    */
-    if (   (statement_ptr[i]   == 'c' || statement_ptr[i]   == 'C') &&
-           (statement_ptr[i+1] == 'a' || statement_ptr[i+1] == 'A') &&
-           (statement_ptr[i+2] == 'l' || statement_ptr[i+2] == 'L') &&
-           (statement_ptr[i+3] == 'l' || statement_ptr[i+3] == 'L'))
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "CALL set use_server_side_prepare to 0\n");
-      use_server_side_prepare= 0;
-    }
-  }
-
   if (use_server_side_prepare)
   {
     str_ptr= SvPV(statement, slen);
 
     stmt= mysql_stmt_init(&imp_dbh->mysql);
 
-    if (! mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))
+    if (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))
+    {
+      /* For commands that are not supported by server side prepared statement
+         mechanism lets try to pass them through regular API */
+      if (mysql_stmt_errno(stmt) == ER_UNSUPPORTED_PS)
+      {
+        imp_dbh->use_server_side_prepare= use_server_side_prepare= 0;
+      }
+      else
+      {
+        do_error(dbh, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
+        retval=-2;
+      }
+      mysql_stmt_close(stmt);
+      stmt= NULL;
+    }
+    else
     {
       /*
         * 'items' is the number of arguments passed to XSUB, supplied by xsubpp
@@ -508,16 +440,9 @@ do(dbh, statement, attr=Nullsv, ...)
         fprintf(stderr, "\n %s", mysql_stmt_error(stmt));
       }
     }
-    else
-    {
-      fprintf(stderr,"DO: Something wrong while try to prepare query %s\n",
-              mysql_error(&imp_dbh->mysql));
-      retval=-2;
-      mysql_stmt_close(stmt);
-      stmt= NULL;
-    }
   }
-  else
+
+  if (! use_server_side_prepare)
   {
 #endif
     if (items > 3)

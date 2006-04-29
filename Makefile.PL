@@ -293,22 +293,13 @@ if ($opt->{'embedded'})
                        't/60leaks.t' => { filename => 'mysqlEmb/t/60leaks.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
-                       't/ak-dbd.t' => { filename => 'mysqlEmb/t/ak-dbd.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/akmisc.t' => { filename => 'mysqlEmb/t/akmisc.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
                        't/dbdadmin.t' => { filename => 'mysqlEmb/t/dbdadmin.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
                        't/insertid.t' => { filename => 'mysqlEmb/t/insertid.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
-                       't/mysql.t' => { filename => 'mysqlEmb/t/mysql.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/mysql2.t' => { filename => 'mysqlEmb/t/mysql2.t',
+                       't/texecute.t' => { filename => 'mysqlEmb/t/texecute.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
                        't/00base.t' => { filename => 'mysqlEmb/t/00base.t',
