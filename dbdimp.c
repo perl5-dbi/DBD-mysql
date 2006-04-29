@@ -2491,6 +2491,7 @@ my_ulonglong mysql_st_internal_execute41(
   if (mysql_stmt_execute(stmt))
   {
     do_error(h, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
+    mysql_stmt_reset(stmt);
     return  -2;
   }
 

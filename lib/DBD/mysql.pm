@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '3.0002';
+$VERSION = '3.0003';
 
 bootstrap DBD::mysql $VERSION;
 
