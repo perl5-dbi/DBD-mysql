@@ -85,9 +85,10 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 {
     # Note the use of the pairing {} in order to get local, but static,
     # variables.
-    my (@stateStack, $count, $off);
+    my (@stateStack, $count, $off, $skip_all_reason, $skip_n_reason, @skip_n);
 
     $count = 0;
+    @skip_n = ();
 
     sub Testing(;$) {
 	my ($command) = shift;
@@ -148,6 +149,14 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 #
     sub Test ($;$$) {
 	my($result, $error, $diag) = @_;
+	return Skip($skip_all_reason) if (defined($skip_all_reason));
+	if (scalar(@skip_n)) {
+	    my $skipped = 0;
+	    my $t = $::numTests + 1;
+	    foreach my $n (@skip_n) {
+		return Skip($skip_n_reason) if ($n == $t);
+	    }
+	}
 	++$::numTests;
 	if ($count == 2) {
 	    if (defined($diag)) {
@@ -179,6 +188,13 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 	    }
 	}
 	return 1;
+    }
+    sub SkipAll($) {
+	$skip_all_reason = shift;
+    }
+    sub SkipN($@) {
+	$skip_n_reason = shift;
+	@skip_n = @_;
     }
 }
 
