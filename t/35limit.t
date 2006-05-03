@@ -70,7 +70,7 @@ while (Testing()) {
 
 
     print "PERL testing prepare of insert statement:\n";
-    Test($state or $cursor = $dbh->prepare("INSERT INTO $table VALUES (?,?)"))
+    Test($state or $sth = $dbh->prepare("INSERT INTO $table VALUES (?,?)"))
 	    or DbiError($dbh->err, $dbh->errstr);
 
     print "PERL testing insertion of values from previous prepare of insert statement:\n";
@@ -82,7 +82,7 @@ while (Testing()) {
         $testInsertVals->{$i} = $random_chars;
         Test(
           $state or 
-          $rows = $cursor->execute($i, $random_chars)
+          $rows = $sth->execute($i, $random_chars)
         ) or 
         DbiError($dbh->err, $dbh->errstr);
         
@@ -90,35 +90,35 @@ while (Testing()) {
     print "PERL rows : " . $rows . "\n"; 
 
     print "PERL testing prepare of select statement with INT and VARCHAR placeholders:\n";
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table WHERE id = ? AND name = ?"))
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table WHERE id = ? AND name = ?"))
 	    or DbiError($dbh->err, $dbh->errstr);
 
     for my $id (keys %$testVals) {
-      Test($state or $cursor->execute($id, $testVals->{$id}))
-        or DbiError($cursor->err, $cursor->errstr);
+      Test($state or $sth->execute($id, $testVals->{$id}))
+        or DbiError($sth->err, $sth->errstr);
     }
  
     print "PERL testing prepare of select statement with LIMIT placeholders:\n";
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table LIMIT ?, ?"))
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table LIMIT ?, ?"))
 	    or DbiError($dbh->err, $dbh->errstr);
 
     print "PERL testing exec of bind vars for LIMIT\n";
-    Test($state or $cursor->execute(20, 50))
-	   or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->execute(20, 50))
+	   or DbiError($sth->err, $sth->errstr);
 
     my ($row, $errstr, $array_ref);
     Test(
       $state or 
-      (defined($array_ref = $cursor->fetchall_arrayref)  &&
-      (!defined($errstr = $cursor->errstr) || $cursor->errstr eq '')))
-	  or DbiError($cursor->err, $cursor->errstr);
+      (defined($array_ref = $sth->fetchall_arrayref)  &&
+      (!defined($errstr = $sth->errstr) || $sth->errstr eq '')))
+	  or DbiError($sth->err, $sth->errstr);
 
     Test ($state or @$array_ref == 50) or print "results not equaling 50\n";
     
-    Test($state or $cursor->finish, "\$sth->finish failed")
-      or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->finish, "\$sth->finish failed")
+      or DbiError($sth->err, $sth->errstr);
 
-    Test($state or undef $cursor || 1);
+    Test($state or undef $sth || 1);
 
 
     #

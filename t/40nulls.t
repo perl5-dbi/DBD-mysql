@@ -74,24 +74,24 @@ while (Testing()) {
 	                    . " ( NULL, 'NULL-valued id' )"))
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
 	                                   . " WHERE " . IsNull("id")))
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($rv = $cursor->fetchrow_arrayref) or $dbdriver eq 'CSV')
+    Test($state or ($rv = $sth->fetchrow_arrayref) or $dbdriver eq 'CSV')
            or DbiError($dbh->err, $dbh->errstr);
 
     Test($state or (!defined($$rv[0])  and  defined($$rv[1])) or
 	 $dbdriver eq 'CSV')
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->finish)
+    Test($state or $sth->finish)
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or undef $cursor  ||  1);
+    Test($state or undef $sth  ||  1);
 
 
     #

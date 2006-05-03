@@ -73,23 +73,23 @@ while (Testing()) {
     Test($state or $dbh->table_info(undef,undef,$table));
     Test($state or $dbh->column_info(undef,undef,$table,'%'));
 
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"))
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
-	   or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->execute)
+	   or DbiError($sth->err, $sth->errstr);
 
     my $res;
-    Test($state or (($res = $cursor->{'NUM_OF_FIELDS'}) == @table_def))
-	   or DbiError($cursor->err, $cursor->errstr);
+    Test($state or (($res = $sth->{'NUM_OF_FIELDS'}) == @table_def))
+	   or DbiError($sth->err, $sth->errstr);
     if (!$state && $verbose) {
 	printf("Number of fields: %s\n", defined($res) ? $res : "undef");
     }
 
-    Test($state or ($ref = $cursor->{'NAME'})  &&  @$ref == @table_def
+    Test($state or ($ref = $sth->{'NAME'})  &&  @$ref == @table_def
 	            &&  (lc $$ref[0]) eq $table_def[0][0]
 		    &&  (lc $$ref[1]) eq $table_def[1][0])
-	   or DbiError($cursor->err, $cursor->errstr);
+	   or DbiError($sth->err, $sth->errstr);
     if (!$state && $verbose) {
 	print "Names:\n";
 	for ($i = 0;  $i < @$ref;  $i++) {
@@ -97,10 +97,10 @@ while (Testing()) {
 	}
     }
 
-    Test($state or ($ref = $cursor->{'NULLABLE'})  &&  @$ref == @table_def
+    Test($state or ($ref = $sth->{'NULLABLE'})  &&  @$ref == @table_def
 		    &&  !($$ref[0] xor ($table_def[0][3] & $COL_NULLABLE))
 		    &&  !($$ref[1] xor ($table_def[1][3] & $COL_NULLABLE)))
-	   or DbiError($cursor->err, $cursor->errstr);
+	   or DbiError($sth->err, $sth->errstr);
     if (!$state && $verbose) {
 	print "Nullable:\n";
 	for ($i = 0;  $i < @$ref;  $i++) {
@@ -108,7 +108,7 @@ while (Testing()) {
 	}
     }
 
-    Test($state or (($ref = $cursor->{TYPE})  &&  (@$ref == @table_def)
+    Test($state or (($ref = $sth->{TYPE})  &&  (@$ref == @table_def)
 		    &&  ($ref->[0] eq DBI::SQL_INTEGER())
 		    &&  ($ref->[1] eq DBI::SQL_VARCHAR()  ||
 			 $ref->[1] eq DBI::SQL_CHAR())))
@@ -117,23 +117,23 @@ while (Testing()) {
 		  defined($ref->[0]) ? $ref->[0] : "undef",
 		  defined($ref->[1]) ? $ref->[1] : "undef");
 
-    Test($state or undef $cursor  ||  1);
+    Test($state or undef $sth  ||  1);
 
 
     #
     #  Drop the test table
     #
-    Test($state or ($cursor = $dbh->prepare("DROP TABLE $table")))
+    Test($state or ($sth = $dbh->prepare("DROP TABLE $table")))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $cursor->execute)
-	or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->execute)
+	or DbiError($sth->err, $sth->errstr);
 
     #  NUM_OF_FIELDS should be zero (Non-Select)
-    Test($state or (! defined $cursor->{'NUM_OF_FIELDS'} ||
-          $cursor->{'NUM_OF_FIELDS'} == 0))
+    Test($state or (! defined $sth->{'NUM_OF_FIELDS'} ||
+          $sth->{'NUM_OF_FIELDS'} == 0))
 	or !$verbose or printf("NUM_OF_FIELDS is %s, not zero.\n",
-			       $cursor->{'NUM_OF_FIELDS'});
-    Test($state or (undef $cursor) or 1);
+			       $sth->{'NUM_OF_FIELDS'});
+    Test($state or (undef $sth) or 1);
 
     #
     #  Test different flavours of quote. Need to work around a bug in

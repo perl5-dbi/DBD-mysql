@@ -87,67 +87,67 @@ while (Testing()) {
 			    . " VALUES( 1, 'Alligator Descartes' )"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
 					   . " WHERE id = 1")))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($numrows = $cursor->rows) == 1  or  ($numrows == -1))
+    Test($state or ($numrows = $sth->rows) == 1  or  ($numrows == -1))
 	or ErrMsgF("Expected 1 rows, got %s.\n", $numrows);
 
-    Test($state or ($numrows = TrueRows($cursor)) == 1)
+    Test($state or ($numrows = TrueRows($sth)) == 1)
 	or ErrMsgF("Expected to fetch 1 rows, got %s.\n", $numrows);
 
-    Test($state or $cursor->finish)
+    Test($state or $sth->finish)
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or undef $cursor or 1);
+    Test($state or undef $sth or 1);
 
     Test($state or $dbh->do("INSERT INTO $table"
 			    . " VALUES( 2, 'Jochen Wiedmann' )"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
 					    . " WHERE id >= 1")))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($numrows = $cursor->rows) == 2  or  ($numrows == -1))
+    Test($state or ($numrows = $sth->rows) == 2  or  ($numrows == -1))
 	or ErrMsgF("Expected 2 rows, got %s.\n", $numrows);
 
-    Test($state or ($numrows = TrueRows($cursor)) == 2)
+    Test($state or ($numrows = TrueRows($sth)) == 2)
 	or ErrMsgF("Expected to fetch 2 rows, got %s.\n", $numrows);
 
-    Test($state or $cursor->finish)
+    Test($state or $sth->finish)
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or undef $cursor or 1);
+    Test($state or undef $sth or 1);
 
     Test($state or $dbh->do("INSERT INTO $table"
 			    . " VALUES(3, 'Tim Bunce')"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
 					    . " WHERE id >= 2")))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($numrows = $cursor->rows) == 2  or  ($numrows == -1))
+    Test($state or ($numrows = $sth->rows) == 2  or  ($numrows == -1))
 	or ErrMsgF("Expected 2 rows, got %s.\n", $numrows);
 
-    Test($state or ($numrows = TrueRows($cursor)) == 2)
+    Test($state or ($numrows = TrueRows($sth)) == 2)
 	or ErrMsgF("Expected to fetch 2 rows, got %s.\n", $numrows);
 
-    Test($state or $cursor->finish)
+    Test($state or $sth->finish)
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or undef $cursor or 1);
+    Test($state or undef $sth or 1);
 
     #
     #   Finally drop the test table.

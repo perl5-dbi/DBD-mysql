@@ -9,9 +9,11 @@
   * Added test for test of failed statement with subsequent executes 
     (thanks to Martin Evans!)
   * Added typo fix (Martin Evans)
+  * Added support for ParamValues and associated test (Martin Evans)
   * Removed old emulated driver tests (HOORAY!)
   * Cleaned up debug printing code
-  * Fixed syntax for create table ENGINE=InnoDB isntead of type=innobase
+  * Fixed syntax for create table ENGINE=InnoDB instead of type=innobase
+  * Cleaned up tests 
 
 2006-01-31 Patrick Galbraith <patg@mysql.com> (3.0002_5)
   * Fixed bugs 15546 (selectcol_arrayref failing on SHOW TABLES)

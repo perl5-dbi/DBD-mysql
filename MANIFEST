@@ -13,11 +13,16 @@ t/41blobs_prepare.t
 t/50chopblanks.t
 t/50commit.t
 t/60leaks.t
+t/70takeimp.t
+t/75supported_sql.t
+t/80procs.t
 t/dbdadmin.t
 t/lib.pl
 t/insertid.t
 t/mysql.dbtest
 t/texecute.t
+t/prepare_noerror.t
+t/param_values.t
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 lib/DBD/mysql.pm

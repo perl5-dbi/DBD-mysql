@@ -82,7 +82,7 @@ while (Testing()) {
 
 
 
-    Test($state or $cursor = $dbh->prepare("INSERT INTO $table"
+    Test($state or $sth = $dbh->prepare("INSERT INTO $table"
 	                                   . " VALUES (?, ?)"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
@@ -93,31 +93,31 @@ while (Testing()) {
     # Automatic type detection
     my $numericVal = 1;
     my $charVal = "Alligator Descartes";
-    Test($state or $cursor->execute($numericVal, $charVal))
+    Test($state or $sth->execute($numericVal, $charVal))
 	   or DbiError($dbh->err, $dbh->errstr);
 
     # Does the driver remember the automatically detected type?
-    Test($state or $cursor->execute("3", "Jochen Wiedmann"))
+    Test($state or $sth->execute("3", "Jochen Wiedmann"))
 	   or DbiError($dbh->err, $dbh->errstr);
     $numericVal = 2;
     $charVal = "Tim Bunce";
-    Test($state or $cursor->execute($numericVal, $charVal))
+    Test($state or $sth->execute($numericVal, $charVal))
 	   or DbiError($dbh->err, $dbh->errstr);
 
     # Now try the explicit type settings
-    Test($state or $cursor->bind_param(1, " 4", SQL_INTEGER()))
+    Test($state or $sth->bind_param(1, " 4", SQL_INTEGER()))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $cursor->bind_param(2, "Andreas König"))
+    Test($state or $sth->bind_param(2, "Andreas König"))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
 	   or DbiError($dbh->err, $dbh->errstr);
 
     # Works undef -> NULL?
-    Test($state or $cursor->bind_param(1, 5, SQL_INTEGER()))
+    Test($state or $sth->bind_param(1, 5, SQL_INTEGER()))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $cursor->bind_param(2, undef))
+    Test($state or $sth->bind_param(2, undef))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
  	or DbiError($dbh->err, $dbh->errstr);
 
     #
@@ -130,56 +130,56 @@ while (Testing()) {
 	    or DbiError($dbh->err, $dbh->errstr);
     }
 
-    Test($state or undef $cursor  ||  1);
+    Test($state or undef $sth  ||  1);
 
     #
     #   And now retreive the rows using bind_columns
     #
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
 					   . " ORDER BY id"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
+    Test($state or $sth->execute)
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->bind_columns(undef, \$id, \$name))
+    Test($state or $sth->bind_columns(undef, \$id, \$name))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or ($ref = $cursor->fetch)  &&  $id == 1  &&
+    Test($state or ($ref = $sth->fetch)  &&  $id == 1  &&
 	 $name eq 'Alligator Descartes')
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
 
-    Test($state or (($ref = $cursor->fetch)  &&  $id == 2  &&
+    Test($state or (($ref = $sth->fetch)  &&  $id == 2  &&
 		    $name eq 'Tim Bunce'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
 
-    Test($state or (($ref = $cursor->fetch)  &&  $id == 3  &&
+    Test($state or (($ref = $sth->fetch)  &&  $id == 3  &&
 		    $name eq 'Jochen Wiedmann'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
 
-    Test($state or (($ref = $cursor->fetch)  &&  $id == 4  &&
+    Test($state or (($ref = $sth->fetch)  &&  $id == 4  &&
 		    $name eq 'Andreas König'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
-    Test($state or (($ref = $cursor->fetch)  &&  $id == 5  &&
+    Test($state or (($ref = $sth->fetch)  &&  $id == 5  &&
 		    !defined($name)))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
 
-    Test($state or (($ref = $cursor->fetch)  &&  $id == 6  &&
+    Test($state or (($ref = $sth->fetch)  &&  $id == 6  &&
 		   $name eq '?'))
 	or print("Query returned id = $id, name = $name, expected 6,?\n");
 
     if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
-	Test($state or (($ref = $cursor->fetch)  &&  $id == 7  &&
+	Test($state or (($ref = $sth->fetch)  &&  $id == 7  &&
 			$name eq '?'))
 	    or print("Query returned id = $id, name = $name, expected 7,?\n");
     }
 
-    Test($state or undef $cursor  or  1);
+    Test($state or undef $sth  or  1);
 
 
     #

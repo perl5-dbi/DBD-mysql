@@ -302,6 +302,9 @@ if ($opt->{'embedded'})
                        't/texecute.t' => { filename => 'mysqlEmb/t/texecute.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
+                       't/param_values.t' => { filename => 'mysqlEmb/t/param_values.t',
+                                                                    makedir => 'mysqlEmb/t'
+                                                                  },
                        't/00base.t' => { filename => 'mysqlEmb/t/00base.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },

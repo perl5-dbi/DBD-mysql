@@ -3715,6 +3715,24 @@ dbd_st_FETCH_internal(
   case 'P':
     if (strEQ(key, "PRECISION"))
       retsv= ST_FETCH_AV(AV_ATTRIB_PRECISION);
+    if (strEQ(key, "ParamValues"))
+    {
+        HV *pvhv= newHV();
+        if (DBIc_NUM_PARAMS(imp_sth))
+        {
+            unsigned int n;
+            SV *sv;
+            char key[100];
+            I32 keylen;
+            for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
+            {
+                keylen= sprintf(key, "%d", n);
+                hv_store(pvhv, key,
+                         keylen, newSVsv(imp_sth->params[n].value), 0);
+            }
+        }
+        retsv= newRV_noinc((SV*)pvhv);
+    }
     break;
   case 'S':
     if (strEQ(key, "SCALE"))
