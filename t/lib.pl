@@ -44,7 +44,7 @@ if (-f ($file = "t/$dbdriver.dbtest")  ||
     }
     $::test_dsn      = $::test_dsn || $ENV{'DBI_DSN'} || 'DBI:mysql:database=test';
     $::test_user     = $::test_user|| $ENV{'DBI_USER'}  ||  '';
-    $::test_password = $::test_passowrd || $ENV{'DBI_PASS'}  ||  '';
+    $::test_password = $::test_password || $ENV{'DBI_PASS'}  ||  '';
 }
 if (-f ($file = "t/$mdriver.mtest")  ||
     -f ($file = "$mdriver.mtest")    ||

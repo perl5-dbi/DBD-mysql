@@ -17,6 +17,8 @@ t/40blobs.t
 t/41blobs_prepare.t
 t/50chopblanks.t
 t/texecute.t
+t/param_values.t
+t/prepare_noerror
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 lib/DBD/mysql.pm

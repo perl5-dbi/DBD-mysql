@@ -1,8 +1,14 @@
 2006-04-29 Patrick Galbraith <patg@mysql.com> (3.0003)
-  * Fix to typo in Makefile.PL (Thanks Martin Evans!)
+  * Fixed bug where if mysql_server_prepare is set and a prepare
+    fails, only a warning is issued and no error text is
+    available (Thanks Martin Evans!)
+  * Added support for ParamValues and associated test (Martin Evans)
+  * Removed declaration of int num_fields outside a block which
+    was causing compilation error with some C compilers.
+  * Fix to typo in Makefile.PL (Martin Evans)
   * Added mysql_stmt_reset for when mysql_stmt_execute fails
   * Added test for mysql_stmt_execute bug (Martin Evans)
-  * Fixed syntax for create table ENGINE=InnoDB isntead of type=innobase
+  * Fixed syntax for create table ENGINE=InnoDB instead of type=innobase
   * Removed tests for old driver emulation
 
 2005-07-07 Patrick Galbraith <patg@mysql.com> (3.0002)

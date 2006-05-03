@@ -29,7 +29,7 @@ sections. L<BINARY INSTALLATION>. L<SOURCE INSTALLATION>.
 Finally, if you encounter any problems, do not forget to
 read the section on known problems. L<KNOWN PROBLEMS>. If
 that doesn't help, you should look into the archive of the
-mailing list B<msql-mysql-modules@lists.mysql.com>. See
+mailing list B<perl@lists.mysql.com>. See
 http://www.mysql.com for archive locations. And if that
 still doesn't help, please post a question on this mailing
 list.
@@ -176,6 +176,18 @@ of multiple sites, will choose automatic installation. All of
 these installation types have an own section. L</CPAN installation>.
 L</Manual installation>. L</Configuration>.
 
+The DBD::mysql Makefile.PL needs to know where to find your MySQL
+installation. This may be achieved using command line switches
+(see L</Configuration>) or automatically using the mysql_config binary
+which comes with most MySQL distributions. If your MySQL distribution
+contains mysql_config the easiest method is to ensure this binary
+is on your path.
+
+e.g.
+
+  PATH=$PATH:/usr/local/mysql/bin
+  export PATH
+
 
 =head2 CPAN installation
 
@@ -193,10 +205,11 @@ instead need a
   install DBD::mysql
 
 If you cannot get the CPAN module working, you might try manual
-installation. If installation with CPAN fails because the your
-local settings have been guessed wrong, you might try to
-create a script called C<mysql_config>. This is described in
-more details later. L</Configuration>.
+installation. If installation with CPAN fails because the your local
+settings have been guessed wrong, you need to ensure MySQL's
+mysql_config is on your path (see L</SOURCE INSTALLATION>) or
+alternatively create a script called C<mysql_config>. This is
+described in more details later. L</Configuration>.
 
 
 =head2 Manual installation
@@ -228,10 +241,10 @@ subdirectory and type
 
   make install
 
-If the tests fail, you might need to configure some settings.
+If the make or tests fail, you might need to configure some settings.
 For example you might choose a different database, the C
 compiler or the linker might need some flags. L</Configuration>.
-L</C Compiler flags>. L</Linker flags>.
+L</Compiler flags>. L</Linker flags>.
 
 For Windows/CygWin there is a special section below.
 L<Windows/CygWin>.
@@ -292,7 +305,7 @@ The default flags are determined by running
   mysql_config --cflags
 
 More details on the C compiler flags can be found in the following
-section. L</C Compiler flags>.
+section. L</Compiler flags>.
 
 =item libs
 
@@ -329,7 +342,7 @@ database user and so on, then you have to create a script with
 the same name, that replies
 
   
-=head2 C Compiler flags
+=head2 Compiler flags
 
 It is typically not so difficult to determine the appropriate
 flags for the C compiler. The linker flags, which you find in
@@ -744,7 +757,7 @@ before runing 'perl Makefile.PL'
 
 Finally, if everything else fails, you are not alone. First of
 all, for an immediate answer, you should look into the archives
-of the mailing list B<msql-mysql-modules@lists.mysql.com>. See
+of the mailing list B<perl@lists.mysql.com>. See
 http://www.mysql.com for archive locations.
 
 If you don't find an appropriate posting and reply in the
