@@ -3397,7 +3397,6 @@ dbd_st_FETCH_internal(
         if (DBIc_NUM_PARAMS(imp_sth))
         {
             unsigned int n;
-            SV *sv;
             char key[100];
             I32 keylen;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
