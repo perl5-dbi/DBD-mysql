@@ -297,6 +297,9 @@ if ($opt->{'embedded'})
                        't/texecute.t' => { filename => 'mysqlEmb/t/texecute.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
+                       't/prepare_noerror.t' => { filename => 'mysqlEmb/t/prepare_noerror.t',
+                                                                    makedir => 'mysqlEmb/t'
+                                                                  },
                        't/param_values.t' => { filename => 'mysqlEmb/t/param_values.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
