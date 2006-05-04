@@ -1193,350 +1193,67 @@ indication of such loss.
 
 =back
 
-
-=head1 SQL EXTENSIONS
-
-Certain metadata functions of MySQL that are available on the
-C API level, haven't been implemented here. Instead they are implemented
-as "SQL extensions" because they return in fact nothing else but the
-equivalent of a statement handle. These are:
-
 =over
 
-=item LISTFIELDS $table
-
-Returns a statement handle that describes the columns of $table.
-Ses the docs of mysql_list_fields (C API) for details.
-
-=back
-
-
-
-=head1 COMPATIBILITY ALERT
-
-The statement attribute I<TYPE> has changed its meaning, as of
-DBD::mysql 2.0119. Formerly it used to be the an array
-of native engine's column types, but it is now an array of
-portable SQL column types. The old attribute is still available
-as I<mysql_type>.
-
-DBD::mysql is a moving target, due to a number of reasons:
-
-=over
-
-=item -
-
-Of course we have to conform the DBI guidelines and developments.
-
-=item -
-
-We have to keep track with the latest MySQL developments.
-
-=item -
-
-And, surprisingly, we have to be as close to ODBC as possible: This is
-due to the current direction of DBI.
-
-=item -
-
-And, last not least, as any tool it has a little bit life of its own.
-
-=back
-
-This means that a lot of things had to and have to be changed.
-As I am not interested in maintaining a lot of compatibility kludges,
-which only increase the drivers code without being really usefull,
-I did and will remove some features, methods or attributes.
-
-To ensure a smooth upgrade, the following policy will be applied:
-
-=over
-
-=item Obsolete features
-
-The first step is to declare something obsolete. This means, that no code
-is changed, but the feature appears in the list of obsolete features. See
-L<Obsolete Features> below.
-
-=item Deprecated features
-
-If the feature has been obsolete for quite some time, typically in the
-next major stable release, warnings will be inserted in the code. You
-can suppress these warnings by setting
-
-    $DBD::mysql = 1;
-
-In the docs the feature will be moved from the list of obsolete features
-to the list of deprecated features. See L<Deprecated Features> below.
-
-=item Removing features
-
-Finally features will be removed silently in the next major stable
-release. The feature will be shown in the list of historic features.
-See L<Historic Features> below.
-
-=back
-
-Example: The statement handle attribute
-
-    $sth->{'LENGTH'}
-
-was declared obsolete in DBD::mysql 2.00xy. It was considered
-deprecated in DBD::mysql 2.02xy and removed in 2.04xy.
-
-
-=head2 Obsolete Features
-
-=over
-
-=item Database handle attributes
-
-The following database handle attributes are declared obsolete
-in DBD::mysql 2.09. They will be deprecated in 2.11 and removed
-in 2.13.
-
-=over
-
-=item C<$dbh->{'errno'}>
-
-Replaced by C<$dbh->{'mysql_errno'}>
-
-=item C<$dbh->{'errmsg'}>
-
-Replaced by C<$dbh->{'mysql_error'}>
-
-=item C<$dbh->{'hostinfo'}>
-
-Replaced by C<$dbh->{'mysql_hostinfo'}>
-
-=item C<$dbh->{'info'}>
-
-Replaced by C<$dbh->{'mysql_info'}>
-
-=item C<$dbh->{'protoinfo'}>
-
-Replaced by C<$dbh->{'mysql_protoinfo'}>
-
-=item C<$dbh->{'serverinfo'}>
-
-Replaced by C<$dbh->{'mysql_serverinfo'}>
-
-=item C<$dbh->{'stats'}>
-
-Replaced by C<$dbh->{'mysql_stat'}>
-
-=item C<$dbh->{'thread_id'}>
-
-Replaced by C<$dbh->{'mysql_thread_id'}>
-
-=back
-
-=back
-
-
-=head2 Deprecated Features
-
-=over
-
-=item _ListTables
-
-Replace with the standard DBI method C<$dbh->tables()>. See also
-C<$dbh->table_info()>. Portable applications will prefer
-
-    @tables = map { $_ =~ s/.*\.//; $_ } $dbh->tables()
-
-because, depending on the engine, the string "user.table" will be
-returned, user being the table owner. The method will be removed
-in DBD::mysql version 2.11xy.
-
-=back
-
-
-=head2 Historic Features
-
-=over
-
-=item _CreateDB
-
-=item _DropDB
-
-The methods
-
-    $dbh->func($db, '_CreateDB');
-    $dbh->func($db, '_DropDB');
-
-have been used for creating or dropping databases. They have been removed
-in 1.21_07 in favour of
-
-    $drh->func("createdb", $dbname, $host, "admin")
-    $drh->func("dropdb", $dbname, $host, "admin")
-
-=item _ListFields
-
-The method
-
-    $sth = $dbh->func($table, '_ListFields');
-
-has been used to list a tables columns names, types and other attributes.
-This method has been removed in 1.21_07 in favour of
-
-    $sth = $dbh->prepare("LISTFIELDS $table");
-
-=item _ListSelectedFields
-
-The method
-
-    $sth->func('_ListSelectedFields');
-
-use to return a hash ref of attributes like 'IS_NUM', 'IS_KEY' and so
-on. These attributes are now accessible via
-
-    $sth->{'mysql_is_num'};
-    $sth->{'mysql_is_key'};
-
-and so on. Thus the method has been removed in 1.21_07.
-
-=item _NumRows
-
-The method
-
-    $sth->func('_NumRows');
-
-used to be equivalent to
-
-    $sth->rows();
-
-and has been removed in 1.21_07.
-
-=item _InsertID
-
-The method
-
-    $dbh->func('_InsertID');
-
-used to be equivalent with
-
-    $dbh->{'mysql_insertid'};
-
-=item Statement handle attributes
-
-=over
-
-=item affected_rows
-
-Replaced with $sth->{'mysql_affected_rows'} or the result
-of $sth->execute().
-
-=item format_default_size
-
-Replaced with $sth->{'PRECISION'}.
-
-=item format_max_size
-
-Replaced with $sth->{'mysql_max_length'}.
-
-=item format_type_name
-
-Replaced with $sth->{'TYPE'} (portable) or
-$sth->{'mysql_type_name'} (MySQL specific).
-
-=item format_right_justify
-
-Replaced with $sth->->{'TYPE'} (portable) or
-$sth->{'mysql_is_num'} (MySQL specific).
-
-=item insertid
-
-Replaced with $sth->{'mysql_insertid'}.
-
-=item IS_BLOB
-
-Replaced with $sth->{'TYPE'} (portable) or
-$sth->{'mysql_is_blob'} (MySQL specific).
-
-=item is_blob
-
-Replaced with $sth->{'TYPE'} (portable) or
-$sth->{'mysql_is_blob'} (MySQL specific).
-
-=item IS_PRI_KEY
-
-Replaced with $sth->{'mysql_is_pri_key'}.
-
-=item is_pri_key
-
-Replaced with $sth->{'mysql_is_pri_key'}.
-
-=item IS_NOT_NULL
-
-Replaced with $sth->{'NULLABLE'} (do not forget to invert
-the boolean values).
-
-=item is_not_null
-
-Replaced with $sth->{'NULLABLE'} (do not forget to invert
-the boolean values).
-
-=item IS_NUM
-
-Replaced with $sth->{'TYPE'} (portable) or
-$sth->{'mysql_is_num'} (MySQL specific).
-
-=item is_num
-
-Replaced with $sth->{'TYPE'} (portable) or
-$sth->{'mysql_is_num'} (MySQL specific).
-
-=item IS_KEY
-
-Replaced with $sth->{'mysql_is_key'}.
-
-=item is_key
-
-Replaced with $sth->{'mysql_is_key'}.
-
-=item MAXLENGTH
-
-Replaced with $sth->{'mysql_max_length'}.
-
-=item maxlength
-
-Replaced with $sth->{'mysql_max_length'}.
-
-=item LENGTH
-
-Replaced with $sth->{'PRECISION'} (portable) or
-$sth->{'mysql_length'} (MySQL specific)
-
-=item length
-
-Replaced with $sth->{'PRECISION'} (portable) or
-$sth->{'mysql_length'} (MySQL specific)
-
-=item NUMFIELDS
-
-Replaced with $sth->{'NUM_OF_FIELDS'}.
-
-=item numfields
-
-Replaced with $sth->{'NUM_OF_FIELDS'}.
-
-=item NUMROWS
-
-Replaced with the result of $sth->execute() or
-$sth->{'mysql_affected_rows'}.
-
-=item TABLE
-
-Replaced with $sth->{'mysql_table'}.
-
-=item table
-
-Replaced with $sth->{'mysql_table'}.
-
-=back
-
-=back
+=head1 MULTIPLE RESULT SETS
+
+As of version 3.0002_5, DBD::mysql supports multiple result sets (Thanks
+to Guy Harrison!). This is the first release of this functionality, so 
+there may be issues. Please report bugs if you run into them!
+
+The basic usage of multiple result sets is
+
+  do 
+  {
+    while (@row= $sth->fetchrow_array())
+    {
+      do stuff;
+    }
+  } while ($sth->more_results)
+
+An example would be:
+
+  $dbh->do("drop procedure if exists someproc") or print $DBI::errstr;
+
+  $dbh->do("create procedure somproc() deterministic
+   begin
+   declare a,b,c,d int;
+   set a=1;
+   set b=2;
+   set c=3;
+   set d=4;
+   select a, b, c, d;
+   select d, c, b, a;
+   select b, a, c, d;
+   select c, b, d, a;
+  end") or print $DBI::errstr;
+
+  $sth=$dbh->prepare('call someproc()') || 
+  die $DBI::err.": ".$DBI::errstr;
+
+  $sth->execute || die DBI::err.": ".$DBI::errstr; $rowset=0;
+  do {
+    print "\nRowset ".++$i."\n---------------------------------------\n\n";
+    foreach $colno (0..$sth->{NUM_OF_FIELDS}) {
+      print $sth->{NAME}->[$colno]."\t";
+    }
+    print "\n";
+    while (@row= $sth->fetchrow_array())  {
+      foreach $field (0..$#row) {
+        print $row[$field]."\t";
+      }
+      print "\n";
+    }
+  } until (!$sth->more_results)
+ 
+For more examples, please see the eg/ directory. This is where helpful
+DBD::mysql code snippits will be added in the future.
+
+=head2 Issues with Multiple result sets
+
+So far, the main issue is if your result sets are "jagged", meaning, the
+number of columns of your results vary. Varying numbers of columns could
+result in your script crashing. This is something that will be fixed soon.
 
 
 =head1 MULTITHREADING
@@ -1586,36 +1303,35 @@ you a lot of questions. If you finally receive the CPAN prompt, enter
 If this fails (which may be the case for a number of reasons, for
 example because you are behind a firewall or don't have network
 access), you need to do a manual installation. First of all you
-need to fetch the archives from any CPAN mirror, for example
+need to fetch the modules from CPAN search
 
-  ftp://ftp.funet.fi/pub/languages/perl/CPAN/modules/by-module
+   http://search.cpan.org/ 
 
-The following archives are required (version numbers may have
-changed, I choose those which are current as of this writing):
+The following modules are required
 
-  DBI/DBI-1.48.tar.gz
-  Data/Data-ShowTable-3.3.tar.gz
-  DBD/DBD-mysql-3.0002.tar.gz
+  DBI
+  Data::ShowTable
+  DBD::mysql
 
 Then enter the following commands (note - versions are just examples):
 
-  gzip -cd DBI-1.15.tar.gz | tar xf -
-  cd DBI-1.48
+  gzip -cd DBI-(version).tar.gz | tar xf -
+  cd DBI-(version)
   perl Makefile.PL
   make
   make test
   make install
 
   cd ..
-  gzip -cd Data-ShowTable-3.3.tar.gz | tar xf -
+  gzip -cd Data-ShowTable-(version).tar.gz | tar xf -
   cd Data-ShowTable-3.3
   perl Makefile.PL
   make
-  make install  # Don't try make test, the test suite is broken
+  make install
 
   cd ..
-  gzip -cd DBD-mysql-3.0002.tar.gz | tar xf -
-  cd DBD-mysql-3.0002
+  gzip -cd DBD-mysql-(version)-tar.gz | tar xf -
+  cd DBD-mysql-(version)
   perl Makefile.PL
   make
   make test
@@ -1652,10 +1368,9 @@ Otherwise you definitely *need* a C compiler. And it *must* be the same
 compiler that was being used for compiling Perl itself. If you don't
 have a C compiler, the file README.win32 from the Perl source
 distribution tells you where to obtain freely distributable C compilers
-like egcs or gcc. The Perl sources are available on any CPAN mirror in
-the src directory, for example
+like egcs or gcc. The Perl sources are available via CPAN search
 
-    ftp://ftp.funet.fi/pub/languages/perl/CPAN/src/latest.tar.gz
+  http://search.cpan.org
 
 I recommend using the win32clients package for installing DBD::mysql
 under Win32, available for download on www.tcx.se. The following steps
@@ -1769,10 +1484,9 @@ in the PPM program.
 
 The current version of B<DBD::mysql> is almost completely written
 by Jochen Wiedmann, and is now being maintained by
-Rudy Lippan (I<rlippan@remotelinux.com>) and Patrick Galbraith
-(I<patg@mysql.com>). The first version's author
-was Alligator Descartes, who was aided and abetted by Gary Shea,
-Andreas König and Tim Bunce amongst others.
+Patrick Galbraith (I<patg@mysql.com>). 
+The first version's author was Alligator Descartes, who was aided
+and abetted by Gary Shea, Andreas König and Tim Bunce amongst others.
 
 The B<Mysql> module was originally written by Andreas König
 <koenig@kulturbox.de>. The current version, mainly an emulation
@@ -1783,7 +1497,7 @@ layer, is from Jochen Wiedmann.
 
 
 This module is 
-Copyright (c) 2004-2005 Patrick Galbraith/MySQL, Large Portions
+Copyright (c) 2004-2006 Patrick Galbraith/MySQL, Large Portions
 Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
 Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
@@ -1823,7 +1537,7 @@ http://dbi.perl.org/
 Additional information on the DBI project can be found on the World
 Wide Web at the following URL:
 
-    http://dbi.symbolstone.org/technology/perl/DBI
+    http://dbi.perl.org
 
 where documentation, pointers to the mailing lists and mailing list
 archives and pointers to the most current versions of the modules can

@@ -7,13 +7,13 @@ $HOST='localhost';
 $PORT=3306; $USER='root';
 $PASSWORD='';
 
-$db_my = DBI->connect("DBI:mysql:$DATABASE:$HOST:$PORT",
+$dbh = DBI->connect("DBI:mysql:$DATABASE:$HOST:$PORT",
 		    "$USER", "$PASSWORD",
 		  { PrintError => 0}) || die $DBI::errstr;
 
- $db_my->do("drop procedure if exists testproc") or print $DBI::errstr;
+ $dbh->do("drop procedure if exists testproc") or print $DBI::errstr;
 
- $db_my->do("create procedure testproc() deterministic
+ $dbh->do("create procedure testproc() deterministic
   begin
   declare a,b,c,d int;
   set a=1;
@@ -26,7 +26,7 @@ $db_my = DBI->connect("DBI:mysql:$DATABASE:$HOST:$PORT",
   select c, b, d, a;
   end") or print $DBI::errstr;
 
- $sth=$db_my->prepare('call testproc()') || 
+ $sth=$dbh->prepare('call testproc()') || 
  die $DBI::err.": ".$DBI::errstr;
 
  $sth->execute || die DBI::err.": ".$DBI::errstr; $rowset=0;
