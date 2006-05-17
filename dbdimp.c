@@ -3154,9 +3154,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         imp_sth->fetch_done=1;
       }
 
-      if (!DBIc_COMPAT(imp_sth))
-        dbd_st_finish(sth, imp_sth);
-
       return Nullav;
     }
 
@@ -3269,9 +3266,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
                  mysql_error(&imp_dbh->mysql));
-
-      if (!DBIc_COMPAT(imp_sth))
-        dbd_st_finish(sth, imp_sth);
       return Nullav;
     }
 
@@ -3456,16 +3450,9 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
   /* Free values allocated by dbd_bind_ph */
   FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
   imp_sth->params= NULL;
-/*
-  if (imp_sth->params)
-  {
-    FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
-    imp_sth->params= NULL;
-  }
 
-*/
   /* Free cached array attributes */
-  for (i= 0;  i < AV_ATTRIB_LAST;  i++)
+  for (i= 0; i < AV_ATTRIB_LAST; i++)
   {
     if (imp_sth->av_attr[i])
       SvREFCNT_dec(imp_sth->av_attr[i]);
@@ -3929,16 +3916,11 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     if (imp_sth->use_server_side_prepare)
     {
       if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
-      {
-       // buffer= SvPV(imp_sth->params[idx].value, slen);
         buffer_is_null= 0;
-       // buffer_length= slen;
-      }
       else
       {
         buffer= NULL;
         buffer_is_null= 1;
-        //buffer_length= 0;
       }
 
       switch(sql_type) {
@@ -3964,20 +3946,17 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_DECIMAL:
         case SQL_FLOAT:
         case SQL_REAL:
-        if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
-          PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
+          if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
+            PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
 
-          /*if (SvNOK(imp_sth->params[idx].value))
-            {*/
             buffer_type= MYSQL_TYPE_DOUBLE;
             imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
             buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
-        
+
             if (dbis->debug >= 2)
               PerlIO_printf(DBILOGFP,
                           "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
                           sql_type, (double)(*buffer));
-            /*}*/
           break;
 
         case SQL_CHAR:
@@ -3999,6 +3978,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
       if (buffer_is_null)
         buffer_type= MYSQL_TYPE_NULL;
+
       if (buffer_type == MYSQL_TYPE_STRING)
       {
         buffer= SvPV(imp_sth->params[idx].value, slen);
@@ -4022,7 +4002,6 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       }
       else /* prepare has been called */
       {
-        //imp_sth->stmt->params[idx].buffer_type= buffer_type;
         imp_sth->stmt->params[idx].buffer= buffer;
         imp_sth->stmt->params[idx].buffer_length= buffer_length;
       }
