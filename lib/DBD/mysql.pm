@@ -1497,8 +1497,8 @@ layer, is from Jochen Wiedmann.
 
 
 This module is 
-Copyright (c) 2004-2006 Patrick Galbraith/MySQL, Large Portions
-Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
+Large Portions Copyright (c) 2004-2006 MySQL Patrick Galbraith, Alexey Stroganov,
+Large Portions Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
 Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
