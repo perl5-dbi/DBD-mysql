@@ -1,22 +1,22 @@
-#!/usr/local/bin/perl
+#!/usr/bin/perl
 #
 #   Test suite for the admin functions of DBD::mSQL and DBD::mysql.
 #
 
-
-#
-#   Make -w happy
-#
-$test_dsn = $test_host = $test_user = $test_password = $verbose = '';
+use strict;
+use vars qw($test_dsn $test_port $test_host $test_user $test_password
+            $mdriver $state $mdriver $verbose);
+use DBI;
+use Carp qw(croak);
+$^W = 1;
 $| = 1;
+my ($row, $dbh, @dsn, $result, $file);
+$mdriver ||= "";
 
 
 #
 #   Include lib.pl
 #
-$DBI::errstr = ''; # Make -w happy
-require DBI;
-$mdriver = "";
 foreach $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
     do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
 			   exit 10;

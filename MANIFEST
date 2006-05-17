@@ -13,12 +13,14 @@ t/lib.pl
 t/20createdrop.t
 t/mysql.dbtest
 t/40bindparam.t
+t/41bindparam.t
+t/42bindparam.t
 t/40blobs.t
 t/41blobs_prepare.t
 t/50chopblanks.t
 t/texecute.t
 t/param_values.t
-t/prepare_noerror
+t/prepare_noerror.t
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 lib/DBD/mysql.pm

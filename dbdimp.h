@@ -156,6 +156,11 @@ typedef struct imp_sth_ph_st {
  *  parameters.
  */
 typedef struct imp_sth_phb_st {
+    union
+    {
+      long lval;
+      double dval;
+    } numeric_val;
     unsigned long   length;
     char            is_null;
 } imp_sth_phb_t;

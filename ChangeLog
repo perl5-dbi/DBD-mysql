@@ -1,3 +1,10 @@
+2006-05-17 Patrick Galbraith <patg@mysql.com) (3.0004)
+  * Fix dbd_st_finish which closed the handle prematurely (Martin Evans)
+  * Compile issues (Martin Evans)
+  * Fix to dbd_bind_ph to deal with numbers (ints, floats) correctly
+    (Alexey Stroganov)
+  * Test changes - bind_param 41 and 42
+
 2006-04-29 Patrick Galbraith <patg@mysql.com> (3.0003)
   * Fixed bug where if mysql_server_prepare is set and a prepare
     fails, only a warning is issued and no error text is
