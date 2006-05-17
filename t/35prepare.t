@@ -1,17 +1,15 @@
 #!/usr/bin/perl
 
 use strict;
-use vars qw($test_dsn $test_user $test_password $mdriver $state);
+use vars qw($test_dsn $test_user $test_password $mdriver $state $mdriver);
 use DBI;
 use Carp qw(croak);
 use Data::Dumper;
 
 $^W =1;
 
-
-use DBI;
-$mdriver = "";
 my ($row, $sth, $dbh);
+$mdriver ||= "";
 foreach my $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
   do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
     exit 10;

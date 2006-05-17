@@ -77,7 +77,7 @@ sections. <a href="#binary_installation">BINARY INSTALLATION</a>. <a href="#sour
 <p>Finally, if you encounter any problems, do not forget to
 read the section on known problems. <a href="#known_problems">KNOWN PROBLEMS</a>. If
 that doesn't help, you should look into the archive of the
-mailing list <strong><a href="mailto:msql-mysql-modules@lists.mysql.com">msql-mysql-modules@lists.mysql.com</a></strong>. See
+mailing list <strong><a href="mailto:perl@lists.mysql.com">perl@lists.mysql.com</a></strong>. See
 <a href="http://www.mysql.com">http://www.mysql.com</a> for archive locations. And if that
 still doesn't help, please post a question on this mailing
 list.</p>
@@ -245,6 +245,19 @@ installation. Some of you, in particular system administrators
 of multiple sites, will choose automatic installation. All of
 these installation types have an own section. <a href="#cpan_installation">CPAN installation</a>.
 <a href="#manual_installation">Manual installation</a>. <a href="#configuration">Configuration</a>.</p>
+<p>The DBD::mysql Makefile.PL needs to know where to find your MySQL
+installation. This may be achieved using command line switches
+(see <a href="#configuration">Configuration</a>) or automatically using the mysql_config binary
+which comes with most MySQL distributions. If your MySQL distribution
+contains mysql_config the easiest method is to ensure this binary
+is on your path.
+</p>
+<pre>
+
+e.g.</pre>
+<pre>
+  PATH=$PATH:/usr/local/mysql/bin
+  export PATH</pre>
 <p>
 </p>
 <h2><a name="cpan_installation">CPAN installation</a></h2>
@@ -260,10 +273,11 @@ instead need a</p>
   perl -MCPAN -e shell
   install DBD::mysql</pre>
 <p>If you cannot get the CPAN module working, you might try manual
-installation. If installation with CPAN fails because the your
-local settings have been guessed wrong, you might try to
-create a script called <code>mysql_config</code>. This is described in
-more details later. <a href="#configuration">Configuration</a>.</p>
+installation. If installation with CPAN fails because the your local
+settings have been guessed wrong, you need to ensure MySQL's
+mysql_config is on your path (see <a href="#source_installation">SOURCE INSTALLATION</a>) or
+alternatively create a script called <code>mysql_config</code>. This is
+described in more details later. <a href="#configuration">Configuration</a>.</p>
 <p>
 </p>
 <h2><a name="manual_installation">Manual installation</a></h2>
@@ -289,10 +303,11 @@ subdirectory and type</p>
 ``dmake''.) If the tests seem to look fine, you may continue with</p>
 <pre>
   make install</pre>
-<p>If the tests fail, you might need to configure some settings.
-For example you might choose a different database, the C
+<p>If the compilation (make) or tests fail, you might need to
+configure some settings.</p>
+<p>For example you might choose a different database, the C
 compiler or the linker might need some flags. <a href="#configuration">Configuration</a>.
-<a href="#c_compiler_flags">C Compiler flags</a>. <a href="#linker_flags">Linker flags</a>.</p>
+<a href="#compiler_flags">Compiler flags</a>. <a href="#linker_flags">Linker flags</a>.</p>
 <p>For Windows/CygWin there is a special section below.
 <em>Windows/CygWin</em>.</p>
 <p>
@@ -375,7 +390,7 @@ and you might try
 </dd>
 <dd>
 <p>More details on the C compiler flags can be found in the following
-section. <a href="#c_compiler_flags">C Compiler flags</a>.</p>
+section. <a href="#compiler_flags">Compiler flags</a>.</p>
 </dd>
 <p></p>
 <dt><strong><a name="item_libs">libs</a></strong><br />
@@ -421,7 +436,7 @@ database user and so on, then you have to create a script with
 the same name, that replies</p>
 <pre>
   
-=head2 C Compiler flags</pre>
+=head2 Compiler flags</pre>
 <p>Note: the folling info about compiler and linker flags, you shouldn't have
 to use these options because Makefile.PL is pretty good at utilising
 mysql_config to get the flags that you need for a successful compile.</p>
@@ -863,11 +878,12 @@ before runing 'perl Makefile.PL'
 <h1><a name="support">SUPPORT</a></h1>
 <p>Finally, if everything else fails, you are not alone. First of
 all, for an immediate answer, you should look into the archives
-of the mailing list <strong><a href="mailto:msql-mysql-modules@lists.mysql.com">msql-mysql-modules@lists.mysql.com</a></strong>. See
+of the mailing list <strong><a href="mailto:perl@lists.mysql.com">perl@lists.mysql.com</a></strong>. See
 <a href="http://www.mysql.com">http://www.mysql.com</a> for archive locations.</p>
 <p>If you don't find an appropriate posting and reply in the
 mailing list, please post a question. Typically a reply will
-be seen within one or two days.</p>
+be seen within one or two days.
+</p>
 
 </body>
 

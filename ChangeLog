@@ -1,4 +1,18 @@
-2006-04-29 Patrick Galbraith <patg@mysql.com) (3.0002_6)
+2006-05-17 Patrick Galbraith <patg@mysql.com) (3.0003_2)
+  * Fix dbd_st_finish which closed the handle prematurely (Martin Evans)
+  * Compile issues (Martin Evans)
+  * Small change to get utf8 data returned. One still has to:
+      $dbh->do("set character set utf8");
+      $dbh->do("set names utf8");
+
+    to get utf8 back and even then you only get it back if the
+    column is defined as utf8 in mysql.
+  * Fix to dbd_bind_ph to deal with numbers (ints, floats) correctly
+    (Alexy Stroganov)
+  * Test changes - bind_param 41 and 42
+  * Turned off 70takeimp test
+
+2006-04-29 Patrick Galbraith <patg@mysql.com) (3.0003_1)
   * Removed old Msql-Mysql Driver emulation code - finally!!!
   * Removed aweful string testing code (that I wrote) for unsported
     statements and now use mysql_stmt_prepare, if statement not

@@ -174,7 +174,11 @@ static void FreeBind(MYSQL_BIND* bind)
   if (bind)
     Safefree(bind);
   else
+  {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR BIND!\n");
     fprintf(stderr,"FREE ERROR BIND!");
+  }
 }
 
 /*
@@ -185,7 +189,11 @@ static void FreeFBind(imp_sth_phb_t *fbind)
   if (fbind)
     Safefree(fbind);
   else
-    fprintf(stderr,"FREE ERROR  FBIND!");
+  {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR FBIND!\n");
+    fprintf(stderr,"FREE ERROR FBIND!");
+  }
 }
 
 /* 
@@ -1092,10 +1100,11 @@ void do_error(SV* h, int rc, const char* what)
 {
   D_imp_xxh(h);
   STRLEN lna;
+  SV *errstr;
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t\t--> do_error\n");
-  SV *errstr = DBIc_ERRSTR(imp_xxh);
+  errstr= DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
   sv_setpv(errstr, what);
   DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr);
@@ -2485,12 +2494,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
   }
   else
   {
-    /*if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP,
-      "      <- dbd_st_more_rows use_mysql_use_result=%d\n",
-      use_mysql_use_result);
-      imp_sth->result= use_mysql_use_result ?
-      mysql_use_result(svsock) : mysql_store_result(svsock);*/
+    int num_fields;
+
     *result= mysql_store_result(svsock);
 
     if (mysql_errno(svsock))
@@ -2525,7 +2530,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
     /** Store the result in the current statement handle */
     DBIc_ACTIVE_on(imp_sth);
-    int num_fields=mysql_num_fields(imp_sth->result);
+    num_fields=mysql_num_fields(imp_sth->result);
 
     DBIc_NUM_FIELDS(imp_sth) = num_fields;
 
@@ -2762,8 +2767,7 @@ my_ulonglong mysql_st_internal_execute41(
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP,
-                  "\t\tmysql_st_internal_execute41 calling mysql_execute\
-                  with %d num_params %d\n",
+                  "\t\tmysql_st_internal_execute41 calling mysql_execute with %d num_params\n",
                   num_params);
 
   execute_retval= mysql_stmt_execute(stmt);
@@ -3011,13 +3015,16 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       {
         PerlIO_printf(DBILOGFP,"\t\tcol %d type %d len %d\n",
                       i, col_type, fbh->length);
-        PerlIO_printf(DBILOGFP,"\t\tcol buf_len%d type %d\n",
-                      fields[i].length, fields[i].type);
+        PerlIO_printf(DBILOGFP,"\t\tcol buf_len%d type %d chrset %d\n",
+                      fields[i].length, fields[i].type,
+                      fields[i].charsetnr);
       }
+      fbh->charsetnr = fields[i].charsetnr;
 
       bind->buffer_type= mysql_to_perl_type(col_type);
       if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "\t\tmysql_to_perl_type returned %d\n", col_type);
+        PerlIO_printf(DBILOGFP, "\t\tmysql_to_perl_type returned %d\n",
+                      col_type);
       bind->buffer_length= fields[i].length;
       bind->length= &(fbh->length);
       bind->is_null= &(fbh->is_null);
@@ -3218,6 +3225,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           if (dbis->debug > 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch string data %s\n", fbh->data);
           sv_setpvn(sv, fbh->data, fbh->length);
+          if (fbh->charsetnr == 33)
+            SvUTF8_on(sv);
           break;
 
         default:
@@ -3342,11 +3351,6 @@ int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
 
 int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-  int i, num_fields;
-  imp_sth_fbh_t *fbh;
-#endif
-
 #if defined (dTHR)
   dTHR;
 #endif
@@ -3362,22 +3366,6 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
                  "Error happened while tried to clean up stmt");
         return 0;
       }
-
-      if (imp_sth->fbh)
-      {
-        num_fields= DBIc_NUM_FIELDS(imp_sth);
-
-        for (fbh= imp_sth->fbh, i= 0; i < num_fields; i++, fbh++)
-        {
-          if (fbh->data)
-            Safefree(fbh->data);
-        }
-        FreeFBuffer(imp_sth->fbh);
-      }
-      FreeBind(imp_sth->buffer);
-
-      imp_sth->buffer= NULL;
-      imp_sth->fbh= NULL;
     }
   }
 #endif
@@ -3415,29 +3403,50 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   int num_fields;
+  imp_sth_fbh_t *fbh;
 
   if (imp_sth->use_server_side_prepare)
   {
     if (imp_sth->stmt)
     {
-      num_fields= DBIc_NUM_FIELDS(imp_sth);
-
+      if (dbis->debug >= 2)
+        PerlIO_printf(DBILOGFP,
+                      "\tdbd_st_destroy/server_side_prepare and stmt\n");
       if (mysql_stmt_close(imp_sth->stmt))
       {
         PerlIO_printf(DBILOGFP,
                       "DESTROY: Error %s while close stmt\n",
                       (char *) mysql_stmt_error(imp_sth->stmt));
-        do_error(sth, mysql_stmt_errno(imp_sth->stmt),mysql_stmt_error(imp_sth->stmt));
+        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
+                 mysql_stmt_error(imp_sth->stmt));
       }
-
       if (DBIc_NUM_PARAMS(imp_sth) > 0)
       {
+       if (dbis->debug >= 2)
+           PerlIO_printf(DBILOGFP,
+                         "\tFreeing %d parameters\n",
+                         DBIc_NUM_PARAMS(imp_sth));
         FreeBind(imp_sth->bind);
         FreeFBind(imp_sth->fbind);
+        imp_sth->bind= NULL;
+        imp_sth->fbind= NULL;
       }
+      num_fields= DBIc_NUM_FIELDS(imp_sth);
 
-      imp_sth->bind= NULL;
-      imp_sth->fbind= NULL;
+      if (imp_sth->fbh)
+      {
+        num_fields= DBIc_NUM_FIELDS(imp_sth);
+
+        for (fbh= imp_sth->fbh, i= 0; i < num_fields; i++, fbh++)
+        {
+          if (fbh->data)
+            Safefree(fbh->data);
+        }
+        FreeFBuffer(imp_sth->fbh);
+        FreeBind(imp_sth->buffer);
+        imp_sth->buffer= NULL;
+        imp_sth->fbh= NULL;
+      }
     }
   }
 #endif
@@ -3447,13 +3456,14 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
   /* Free values allocated by dbd_bind_ph */
   FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
   imp_sth->params= NULL;
-
+/*
   if (imp_sth->params)
   {
     FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
     imp_sth->params= NULL;
   }
 
+*/
   /* Free cached array attributes */
   for (i= 0;  i < AV_ATTRIB_LAST;  i++)
   {
@@ -3920,15 +3930,15 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     {
       if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
       {
-        buffer= SvPV(imp_sth->params[idx].value, slen);
+       // buffer= SvPV(imp_sth->params[idx].value, slen);
         buffer_is_null= 0;
-        buffer_length= slen;
+       // buffer_length= slen;
       }
       else
       {
         buffer= NULL;
         buffer_is_null= 1;
-        buffer_length= 0;
+        //buffer_length= 0;
       }
 
       switch(sql_type) {
@@ -3938,23 +3948,36 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_BIGINT:
         case SQL_TINYINT:
           /* INT */
-          buffer_type= MYSQL_TYPE_LONG;
-          if (dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP,
-                          "   SCALAR type %d ->%s<- IS A INT NUMBER\n",
-                          sql_type, buffer);
+        if (!SvIOK(imp_sth->params[idx].value) && dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND AN INT NUMBER\n");
+
+        buffer_type= MYSQL_TYPE_LONG;
+        imp_sth->fbind[idx].numeric_val.lval= SvIV(imp_sth->params[idx].value);
+        buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP,
+                        "   SCALAR type %d ->%ld<- IS A INT NUMBER\n",
+                        sql_type, (long) (*buffer));
           break;
 
         case SQL_DOUBLE:
         case SQL_DECIMAL:
         case SQL_FLOAT:
         case SQL_REAL:
-          /* FLOAT */
-          buffer_type= MYSQL_TYPE_DOUBLE;
-          if (dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP,
-                          "   SCALAR type %d ->%s<- IS A FLOAT NUMBER\n",
-                          sql_type, buffer);
+        if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
+
+          /*if (SvNOK(imp_sth->params[idx].value))
+            {*/
+            buffer_type= MYSQL_TYPE_DOUBLE;
+            imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
+            buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
+        
+            if (dbis->debug >= 2)
+              PerlIO_printf(DBILOGFP,
+                          "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
+                          sql_type, (double)(*buffer));
+            /*}*/
           break;
 
         case SQL_CHAR:
@@ -3967,22 +3990,31 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case SQL_VARBINARY:
         case SQL_LONGVARBINARY:
           buffer_type= MYSQL_TYPE_STRING;
-          if (dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A STRING\n", sql_type, buffer);
           break;
 
         default:
           buffer_type= MYSQL_TYPE_STRING;
-          if (dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP, "   SCALAR type %d ->%s<- IS A STRING\n", sql_type, buffer);
           break;
       }
 
       if (buffer_is_null)
         buffer_type= MYSQL_TYPE_NULL;
+      if (buffer_type == MYSQL_TYPE_STRING)
+      {
+        buffer= SvPV(imp_sth->params[idx].value, slen);
+        buffer_length= slen;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP,
+                        "   SCALAR type %d ->%s<- IS A STRING\n",
+                        sql_type, buffer);
+      }
+
+      /* Type of column was changed. Force to rebind */
+      if (imp_sth->bind[idx].buffer_type != buffer_type)
+        imp_sth->has_been_bound = 0;
 
       /* prepare has not been called */
-      if (imp_sth->has_been_bound == 0) 
+      if (imp_sth->has_been_bound == 0)
       {
         imp_sth->bind[idx].buffer_type= buffer_type;
         imp_sth->bind[idx].buffer= buffer;
@@ -3990,7 +4022,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       }
       else /* prepare has been called */
       {
-        imp_sth->stmt->params[idx].buffer_type= buffer_type;
+        //imp_sth->stmt->params[idx].buffer_type= buffer_type;
         imp_sth->stmt->params[idx].buffer= buffer;
         imp_sth->stmt->params[idx].buffer_length= buffer_length;
       }

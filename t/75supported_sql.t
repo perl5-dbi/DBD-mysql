@@ -36,8 +36,8 @@ while(Testing())
   { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
 
   # don't want this during make test!
-  #Test($state or (1 || $dbh->trace("3", "/tmp/trace.log"))) or
-  #  DbiError($dbh->err, $dbh->errstr);
+  Test($state or (!$dbh->trace("3", "/tmp/trace.log"))) or
+    DbiError($dbh->err, $dbh->errstr);
 
   #
   #   Create a new table; EDIT THIS!

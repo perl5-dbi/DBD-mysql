@@ -160,6 +160,11 @@ typedef struct imp_sth_ph_st {
  *  parameters.
  */
 typedef struct imp_sth_phb_st {
+    union
+    {
+      long lval;
+      double dval;
+    } numeric_val;
     unsigned long   length;
     char            is_null;
 } imp_sth_phb_t;
@@ -174,7 +179,8 @@ typedef struct imp_sth_phb_st {
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
     bool           is_null;
-    char           * data;
+    char           *data;
+    int           charsetnr; 
     double        ddata;
     long          ldata;
 } imp_sth_fbh_t;

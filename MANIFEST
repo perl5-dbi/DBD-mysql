@@ -5,6 +5,8 @@ t/30insertfetch.t
 t/35limit.t
 t/35prepare.t
 t/40bindparam.t
+t/41bindparam.t
+t/42bindparam.t
 t/40blobs.t
 t/40listfields.t
 t/40nulls.t
