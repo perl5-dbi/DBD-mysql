@@ -1418,9 +1418,12 @@ in the PPM program.
 
 =head1 AUTHORS
 
-The current version of B<DBD::mysql> is almost completely written
-by Jochen Wiedmann, and is now being maintained by
-Rudy Lippan (I<rlippan@remotelinux.com>). The first version's author
+A good part of the current version of B<DBD::mysql> is written
+by Jochen Wiedmann, then was maintained by
+Rudy Lippan (I<rlippan@remotelinux.com>), and Prepared Statement
+code written by Alexey Stroganov and Patrick Galbraith, and now 
+maintained by Patrick Galbraith (I<patg@mysql.com>), with the
+help of various people in the community. The first version's author
 was Alligator Descartes (I<descarte@symbolstone.org>), who has been
 aided and abetted by Gary Shea, Andreas König and Tim Bunce
 amongst others.
@@ -1433,7 +1436,9 @@ layer, is from Jochen Wiedmann.
 =head1 COPYRIGHT
 
 
-This module is Copyright (c) 2003 Rudolf Lippan; Large Portions 
+This module is 
+Large Portions Copyright (c) 2004-2006 MySQL Patrick Galbraith, Alexey Stroganov,
+Large Portions Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
 Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
