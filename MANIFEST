@@ -7,6 +7,7 @@ t/00base.t
 t/insertid.t
 t/50commit.t
 t/35limit.t
+t/35prepare.t
 t/40nulls.t
 t/dbdadmin.t
 t/lib.pl
