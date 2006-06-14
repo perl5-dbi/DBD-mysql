@@ -1,3 +1,13 @@
+2006-06-10 Patrick Galbraith <patg@mysql.com) (3.0005)
+  * Fix dbd_st_finish in 3.0004 didn't clean up bind buffers resulting in
+    a memory leak. See eg/prepare_memory_usage.pl to see how this manifests
+    itself. Thanks to Jason Snell for giving me a good script to reproduce
+    this!
+  * Fix to parse_params, mysql.xs dbh->do, and bind_param to deal with
+    passing substr to "do" for placeholder value. Thanks Martin Waite for
+    the patch to parse_params (extended to mysql.xs "do" and bind_param for
+    server-side prepared statements.
+
 2006-05-17 Patrick Galbraith <patg@mysql.com) (3.0004)
   * Fix dbd_st_finish which closed the handle prematurely (Martin Evans)
   * Compile issues (Martin Evans)

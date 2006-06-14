@@ -294,9 +294,17 @@ do(dbh, statement, attr=Nullsv, ...)
 
         for (i = 0; i < numParams; i++)
         {
+          int defined= 0;
           params[i].value = ST(i+3);
 
-          if ((SvOK(params[i].value) && params[i].value))
+          if (params[i].value)
+          {
+            if (SvMAGICAL(params[i].value))
+              mg_get(params[i].value);
+            if (SvOK(params[i].value))
+              defined= 1;
+          }
+          if (defined)
           {
             buffer = SvPV(params[i].value, slen);
             buffer_is_null = 0;
