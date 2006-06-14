@@ -29,6 +29,10 @@ lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 lib/DBD/mysql.pm
 lib/Bundle/DBD/mysql.pm
+eg/prepare_memory_usage.pl
+eg/proc_example1.pl
+eg/proc_example2.pl
+eg/proc_example3.pl
 TODO
 myld
 constants.h

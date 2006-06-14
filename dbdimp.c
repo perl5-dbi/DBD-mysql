@@ -462,7 +462,15 @@ static char *parse_params(
 
   for (i= 0, ph= params; i < num_params; i++, ph++)
   {
-    if (!ph->value  ||  !SvOK(ph->value))
+    int defined= 0;
+    if (ph->value)
+    {
+      if (SvMAGICAL(ph->value))
+        mg_get(ph->value);
+      if (SvOK(ph->value))
+        defined=1;
+    }
+    if (!defined)
       alen+= 3;  /* Erase '?', insert 'NULL' */
     else
     {
@@ -662,9 +670,13 @@ static char *parse_params(
 int bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
 {
   if (ph->value)
+  {
+    if (SvMAGICAL(ph->value))
+      mg_get(ph->value);
     (void) SvREFCNT_dec(ph->value);
+  }
 
-  ph->value = newSVsv(value);
+  ph->value= newSVsv(value);
 
   if (sql_type)
     ph->type = sql_type;
@@ -1132,7 +1144,6 @@ void do_warn(SV* h, int rc, char* what)
     what, rc, SvPV(errstr,lna));
   warn("%s", what);
 }
-/* }}} */
 
 #if defined(DBD_MYSQL_EMBEDDED)
  #define DBD_MYSQL_NAMESPACE "DBD::mysqlEmb::QUIET";
@@ -1382,9 +1393,11 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
         /*client_flag |= CLIENT_PROTOCOL_41;*/
         imp_dbh->use_server_side_prepare= TRUE;
         if (dbis->debug >= 2)
-          PerlIO_printf(DBILOGFP, "server side prepare %d\n",imp_dbh->use_server_side_prepare);
+          PerlIO_printf(DBILOGFP, "server side prepare %d\n",
+                        imp_dbh->use_server_side_prepare);
 
-	if ((svp = hv_fetch(hv, "mysql_emulated_prepare", 22, FALSE)) && *svp)
+	if ((svp = hv_fetch(hv, "mysql_emulated_prepare", 22, FALSE))
+            && *svp)
         {
 	  if (SvTRUE(*svp))
           {
@@ -3323,7 +3336,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
 int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
 
-  if (DBIc_ACTIVE(imp_sth) && dbd_describe(sth, imp_sth) && !imp_sth->fetch_done)
+  if (DBIc_ACTIVE(imp_sth) && dbd_describe(sth, imp_sth) &&
+      !imp_sth->fetch_done)
     mysql_stmt_free_result(imp_sth->stmt);
   return 1;
 }
@@ -3350,6 +3364,9 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 #endif
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+  int i;
+  int num_fields;
+  imp_sth_fbh_t *fbh;
   if (imp_sth->use_server_side_prepare)
   {
     if (imp_sth && imp_sth->stmt)
@@ -3360,6 +3377,34 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
                  "Error happened while tried to clean up stmt");
         return 0;
       }
+    }
+    /* clean up other statement allocations */
+    if (DBIc_NUM_PARAMS(imp_sth) > 0)
+    {
+      if (dbis->debug >= 2)
+        PerlIO_printf(DBILOGFP,
+                      "\tFreeing %d parameters\n",
+                      DBIc_NUM_PARAMS(imp_sth));
+      FreeBind(imp_sth->bind);
+      FreeFBind(imp_sth->fbind);
+      imp_sth->bind= NULL;
+      imp_sth->fbind= NULL;
+    }
+    num_fields= DBIc_NUM_FIELDS(imp_sth);
+
+    if (imp_sth->fbh)
+    {
+      num_fields= DBIc_NUM_FIELDS(imp_sth);
+
+      for (fbh= imp_sth->fbh, i= 0; i < num_fields; i++, fbh++)
+      {
+        if (fbh->data)
+          Safefree(fbh->data);
+      }
+      FreeFBuffer(imp_sth->fbh);
+      FreeBind(imp_sth->buffer);
+      imp_sth->buffer= NULL;
+      imp_sth->fbh= NULL;
     }
   }
 #endif

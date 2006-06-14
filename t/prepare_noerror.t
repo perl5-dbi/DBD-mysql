@@ -14,7 +14,7 @@ while (Testing()) {
   #
   # Connect to the database
   Test($state or
-       ($dbh = DBI->connect("$test_dsn;mysql_server_prepare=1", $test_user, $test_password,
+       ($dbh = DBI->connect("$test_dsn", $test_user, $test_password,
                            {RaiseError => 0})));
 
   #
