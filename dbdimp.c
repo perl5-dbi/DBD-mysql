@@ -3160,12 +3160,14 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                  mysql_stmt_error(imp_sth->stmt));
 
-      if (rc == 100)
+      if (rc == MYSQL_NO_DATA)
       {
         /* Update row_num to affected_rows value */
         imp_sth->row_num= mysql_stmt_affected_rows(imp_sth->stmt);
         imp_sth->fetch_done=1;
       }
+
+      dbd_st_finish(sth, imp_sth);
 
       return Nullav;
     }
@@ -3279,6 +3281,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
                  mysql_error(&imp_dbh->mysql));
+
+      dbd_st_finish(sth, imp_sth);
+
       return Nullav;
     }
 

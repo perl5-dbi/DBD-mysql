@@ -1,3 +1,7 @@
+2006-08-14 Jim Winstead <jimw@mysql.com>
+  * Make sure to call dbd_st_finish when all rows from a statement handle
+    have been fetched. (Bug #20153)
+
 2006-06-10 Patrick Galbraith <patg@mysql.com) (3.0005)
   * Fix dbd_st_finish in 3.0004 didn't clean up bind buffers resulting in
     a memory leak. See eg/prepare_memory_usage.pl to see how this manifests

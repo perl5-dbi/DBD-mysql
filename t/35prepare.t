@@ -64,6 +64,9 @@ while(Testing())
   Test ($state or ($row->[0] eq "$table")) 
       or print "results not equal to '$table' \n";
 
+  Test($state or $sth->finish)
+    or DbiError($dbh->err, $dbh->errstr);
+
   Test($state or $sth=
     $dbh->do("INSERT INTO $table VALUES (1,'1st first value')")) or 
     DbiError($dbh->err, $dbh->errstr);
@@ -127,5 +130,20 @@ while(Testing())
     DbiError($dbh->err, $dbh->errstr);
 
   Test($state or $sth->execute()) or 
+    DbiError($dbh->err, $dbh->errstr);
+ 
+  # Bug #20153: Fetching all data from a statement handle does not mark it
+  # as finished
+  Test($state or $sth= $dbh->prepare("SELECT 1 FROM DUAL")) or
+    DbiError($dbh->err, $dbh->errstr);
+  Test($state or $sth->execute()) or 
+    DbiError($dbh->err, $dbh->errstr);
+  Test($state or $sth->fetchrow_arrayref()) or 
+    DbiError($dbh->err, $dbh->errstr);
+  Test($state or not $sth->fetchrow_arrayref()) or 
+    DbiError($dbh->err, $dbh->errstr);
+  # Install a handler so that a warning about unfreed resources gets caught
+  $SIG{__WARN__} = sub { die @_ };
+  Test($state or $dbh->disconnect()) or 
     DbiError($dbh->err, $dbh->errstr);
 }
