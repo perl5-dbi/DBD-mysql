@@ -381,10 +381,10 @@ Usage: perl $0 [options]
 Possible options are:
 
   --cflags=<flags>       Use <flags> for running the C compiler; defaults
-                         to the value of "mysql_config --cflags" or a gussed
+                         to the value of "mysql_config --cflags" or a guessed
                          value
   --libs=<libs>          Use <libs> for running the linker; defaults
-                         to the value of "mysql_config --libs" or a guessed
+                         to the value of "mysql_config --libs" or a gussed
                          value
   --embedded=<libs>      Build embedded version of DBD and use <libs> for this;
                          defaults to the value of "mysql_config --embedded" 

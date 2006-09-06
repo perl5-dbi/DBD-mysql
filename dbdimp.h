@@ -143,6 +143,9 @@ struct imp_dbh_st {
                                */
     int use_server_side_prepare;
     int has_autodetect_prepare;
+#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+    bool enable_utf8;
+#endif
 };
 
 

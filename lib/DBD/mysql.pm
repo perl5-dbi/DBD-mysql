@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '3.0006_1';
+$VERSION = '3.0006_2';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -955,6 +955,20 @@ for $dbh using several ways:
 It is possible to set/unset the C<mysql_use_result> attribute after 
 creation of statement handle. See below.
 
+=item mysql_enable_utf8
+
+This attribute determines whether DBD::mysql should assume strings
+stored in the database are utf8.  This feature defaults to off.
+
+When set, a data retrieved from a textual column type (char, varchar,
+etc) will have the UTF-8 flag turned on if necessary.  This enables
+character semantics on that string.
+
+Additionally, turning on this flag tells MySQL that incoming data should
+be treated as UTF-8.  This will only take effect if used as part of the
+call to connect().
+
+This option is experimental and may change in future versions.
 
 =head1 STATEMENT HANDLES
 
