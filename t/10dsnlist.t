@@ -61,7 +61,7 @@ while (Testing()) {
     #   Try different DSN's
     #
     my(@dsnList);
-    if (($mdriver eq 'mysql'  or  $mdriver eq 'mSQL' or $mdriver eq 'mysqlEmb')
+    if (($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb')
 	and  $test_dsn eq "DBI:$mdriver:test") {
 	@dsnList = ("DBI:$mdriver:test:localhost",
 		    "DBI:$mdriver:test;localhost",

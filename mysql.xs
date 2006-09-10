@@ -29,7 +29,7 @@ constant(name, arg)
     char* name
     char* arg
   CODE:
-    RETVAL = mymsql_constant(name, arg);
+    RETVAL = mysql_constant(name, arg);
   OUTPUT:
     RETVAL
 

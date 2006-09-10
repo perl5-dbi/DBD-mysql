@@ -2342,14 +2342,51 @@ my_ulonglong mysql_st_internal_execute(
   D_imp_sth(h);
   D_imp_dbh_from_sth;
   STRLEN slen;
+  bool bind_type_guessing;
   char *sbuf = SvPV(statement, slen);
-  char *salloc = parse_params(svsock,
-                              sbuf,
-                              &slen,
-                              params,
-                              num_params,
-                              imp_dbh->bind_type_guessing);
   char *table;
+  char *salloc;
+  int htype;
+
+  /* thank you DBI.c for this info! */
+  D_imp_xxh(h);
+  htype= DBIc_TYPE(imp_xxh);
+  /*
+    It is important to import imp_dbh properly according to the htype
+    that it is! Also, one might ask why bind_type_guessing is assigned
+    in each block. Well, it's because D_imp_ macros called in these
+    blocks make it so imp_dbh is not "visible" or defined outside of the
+    if/else (when compiled, it fails for imp_dbh not being defined).
+  */
+  /* h is a dbh */
+  if (htype==DBIt_DB)
+  {
+    D_imp_dbh(h);
+    /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
+    if (imp_dbh)
+      bind_type_guessing= imp_dbh->bind_type_guessing;
+    else
+      bind_type_guessing=0;
+  }
+  /* h is a sth */
+  else
+  {
+    D_imp_sth(h);
+    D_imp_dbh_from_sth;
+    /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
+    if (imp_dbh)
+      bind_type_guessing= imp_dbh->bind_type_guessing;
+    else
+      bind_type_guessing=0;
+  }
+
+  salloc= parse_params(svsock,
+                       sbuf,
+                       &slen,
+                       params,
+                       num_params,
+                       imp_dbh->bind_type_guessing);
+
   my_ulonglong rows= 0;
 
   if (dbis->debug >= 2)
@@ -2848,12 +2885,14 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                  mysql_stmt_error(imp_sth->stmt));
 
-      if (rc == 100)
+      if (rc == MYSQL_NO_DATA)
       {
         /* Update row_num to affected_rows value */
         imp_sth->row_num= mysql_stmt_affected_rows(imp_sth->stmt);
         imp_sth->fetch_done=1;
       }
+
+      dbd_st_finish(sth, imp_sth);
 
       return Nullav;
     }
@@ -2951,6 +2990,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
                  mysql_error(&imp_dbh->mysql));
+
+      dbd_st_finish(sth, imp_sth);
 
       return Nullav;
     }
@@ -3575,7 +3616,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
   int rc;
   int param_num= SvIV(param);
-  int idx= param_num - 1;   
+  int idx= param_num - 1;
   char err_msg[64];
 
 #if MYSQL_VERSION_ID >=40101
@@ -3625,23 +3666,19 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   rc = bind_param(&imp_sth->params[idx], value, sql_type);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-    if (imp_sth->use_server_side_prepare)
+  if (imp_sth->use_server_side_prepare)
+  {
+    if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
     {
-      if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
-        buffer_is_null= 0;
-      else
-      {
-        buffer= NULL;
-        buffer_is_null= 1;
-      }
+      buffer_is_null= 0;
 
       switch(sql_type) {
-        case SQL_NUMERIC:
-        case SQL_INTEGER:
-        case SQL_SMALLINT:
-        case SQL_BIGINT:
-        case SQL_TINYINT:
-          /* INT */
+      case SQL_NUMERIC:
+      case SQL_INTEGER:
+      case SQL_SMALLINT:
+      case SQL_BIGINT:
+      case SQL_TINYINT:
+        /* INT */
         if (!SvIOK(imp_sth->params[idx].value) && dbis->debug >= 2)
           PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND AN INT NUMBER\n");
 
@@ -3652,45 +3689,42 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           PerlIO_printf(DBILOGFP,
                         "   SCALAR type %d ->%ld<- IS A INT NUMBER\n",
                         sql_type, (long) (*buffer));
-          break;
+        break;
 
-        case SQL_DOUBLE:
-        case SQL_DECIMAL:
-        case SQL_FLOAT:
-        case SQL_REAL:
-          /* FLOAT */
-          if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
+      case SQL_DOUBLE:
+      case SQL_DECIMAL:
+      case SQL_FLOAT:
+      case SQL_REAL:
+        /* FLOAT */
+        if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
 
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
-            buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
+        buffer_type= MYSQL_TYPE_DOUBLE;
+        imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
+        buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
 
-            if (dbis->debug >= 2)
-              PerlIO_printf(DBILOGFP,
-                          "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
-                          sql_type, (double)(*buffer));
-          break;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP,
+                        "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
+                        sql_type, (double)(*buffer));
+        break;
 
-        case SQL_CHAR:
-        case SQL_VARCHAR:
-        case SQL_DATE:
-        case SQL_TIME:
-        case SQL_TIMESTAMP:
-        case SQL_LONGVARCHAR:
-        case SQL_BINARY:
-        case SQL_VARBINARY:
-        case SQL_LONGVARBINARY:
-          buffer_type= MYSQL_TYPE_STRING;
-          break;
+      case SQL_CHAR:
+      case SQL_VARCHAR:
+      case SQL_DATE:
+      case SQL_TIME:
+      case SQL_TIMESTAMP:
+      case SQL_LONGVARCHAR:
+      case SQL_BINARY:
+      case SQL_VARBINARY:
+      case SQL_LONGVARBINARY:
+        buffer_type= MYSQL_TYPE_STRING;
+        break;
 
-        default:
-          buffer_type= MYSQL_TYPE_STRING;
-          break;
+      default:
+        buffer_type= MYSQL_TYPE_STRING;
+        break;
       }
-
-      if (buffer_is_null)
-        buffer_type= MYSQL_TYPE_NULL;
 
       if (buffer_type == MYSQL_TYPE_STRING)
       {
@@ -3701,29 +3735,36 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
                         "   SCALAR type %d ->%s<- IS A STRING\n",
                         sql_type, buffer);
       }
-
-      /* Type of column was changed. Force to rebind */
-      if (imp_sth->bind[idx].buffer_type != buffer_type)
-        imp_sth->has_been_bound = 0;
-
-
-      /* prepare has not been called */
-      if (imp_sth->has_been_bound == 0) 
-      {
-        imp_sth->bind[idx].buffer_type= buffer_type;
-        imp_sth->bind[idx].buffer= buffer;
-        imp_sth->bind[idx].buffer_length= buffer_length;
-      }
-      else /* prepare has been called */
-      {
-        imp_sth->stmt->params[idx].buffer= buffer;
-        imp_sth->stmt->params[idx].buffer_length= buffer_length;
-      }
-      imp_sth->fbind[idx].length= buffer_length;
-      imp_sth->fbind[idx].is_null= buffer_is_null;
     }
+    else
+    {
+      buffer= NULL;
+      buffer_is_null= 1;
+      buffer_type= MYSQL_TYPE_NULL;
+    }
+
+    /* Type of column was changed. Force to rebind */
+    if (imp_sth->bind[idx].buffer_type != buffer_type)
+      imp_sth->has_been_bound = 0;
+
+
+    /* prepare has not been called */
+    if (imp_sth->has_been_bound == 0)
+    {
+      imp_sth->bind[idx].buffer_type= buffer_type;
+      imp_sth->bind[idx].buffer= buffer;
+      imp_sth->bind[idx].buffer_length= buffer_length;
+    }
+    else /* prepare has been called */
+    {
+      imp_sth->stmt->params[idx].buffer= buffer;
+      imp_sth->stmt->params[idx].buffer_length= buffer_length;
+    }
+    imp_sth->fbind[idx].length= buffer_length;
+    imp_sth->fbind[idx].is_null= buffer_is_null;
+  }
 #endif
-    return rc;
+  return rc;
 }
 
 

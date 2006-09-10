@@ -53,10 +53,6 @@ sub TableDefinition ($@) {
     #
     #   Should be acceptable for most ANSI conformant databases;
     #
-    #   msql 1 uses a non-ANSI definition of the primary key: A
-    #   column definition has the attribute "PRIMARY KEY". On
-    #   the other hand, msql 2 uses the ANSI fashion ...
-    #
     my($col, @keys, @colDefs, $keyDef);
 
     #

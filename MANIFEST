@@ -14,6 +14,7 @@ t/lib.pl
 t/20createdrop.t
 t/mysql.dbtest
 t/40bindparam.t
+t/40bindparam2.t
 t/41bindparam.t
 t/42bindparam.t
 t/40blobs.t

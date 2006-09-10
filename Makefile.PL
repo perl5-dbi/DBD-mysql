@@ -154,6 +154,7 @@ I will use the following settings for compiling and testing:
 
 MSG
 
+$opt->{'test_user'} ||= "";
 delete $opt->{'help'};
 my $keylen = 0;
 foreach my $key (keys %$opt)

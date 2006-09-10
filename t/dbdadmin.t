@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-#   Test suite for the admin functions of DBD::mSQL and DBD::mysql.
+#   Test suite for the admin functions of DBD::mysql.
 #
 
 use strict;
@@ -98,7 +98,7 @@ while (Testing()) {
 	or ErrMsgF("Ping failed: %s.\n", $dbh->errstr);
 
 
-    if ($mdriver eq 'mSQL'  or $mdriver eq 'mysql') {
+    if ($mdriver eq 'mysql') {
 	my($testdsn) = "testaa";
 	my($testdsn1, $testdsn2);
 	my($accessDenied) = 0;
