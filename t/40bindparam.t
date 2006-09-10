@@ -118,6 +118,7 @@ while (Testing()) {
 	or DbiError($dbh->err, $dbh->errstr);
     Test($state or $sth->bind_param(2, undef))
 	or DbiError($dbh->err, $dbh->errstr);
+
     Test($state or $sth->execute)
  	or DbiError($dbh->err, $dbh->errstr);
 
@@ -179,13 +180,12 @@ while (Testing()) {
 			$name eq '?'))
 	    or print("Query returned id = $id, name = $name, expected 7,?\n");
     }
-
-    Test($state or undef $sth  or  1);
-
-
     #
     #   Finally drop the test table.
     #
-    #Test($state or $dbh->do("DROP TABLE $table"))
-#	  # or DbiError($dbh->err, $dbh->errstr);
+    Test($state or $dbh->do("DROP TABLE $table"))
+	   or DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or undef $sth  or  1);
+
 }

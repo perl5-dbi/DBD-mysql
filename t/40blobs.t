@@ -28,10 +28,6 @@ foreach $file ("lib.pl", "t/lib.pl") {
 	last;
     }
 }
-if ($dbdriver eq 'mSQL'  ||  $dbdriver eq 'mSQL1') {
-    print "1..0\n";
-    exit 0;
-}
 
 sub ServerError() {
     my $err = $DBI::errstr; # Hate -w ...
@@ -101,12 +97,7 @@ while (Testing()) {
 	    for ($i = 0;  $i < $size;  $i++) {
 		$blob .= $b;
 	    }
-	    if ($mdriver eq 'pNET') {
-		# Quote manually, no remote quote
-		$qblob = eval "DBD::" . $dbdriver . "::db->quote(\$blob)";
-	    } else {
-		$qblob = $dbh->quote($blob);
-	    }
+            $qblob = $dbh->quote($blob);
 	}
 
 	#

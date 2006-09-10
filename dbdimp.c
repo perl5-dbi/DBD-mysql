@@ -1839,9 +1839,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
  *  Name:    dbd_db_commit
  *           dbd_db_rollback
  *
- *  Purpose: You guess what they should do. mSQL doesn't support
- *           transactions, so we stub commit to return OK
- *           and rollback to return ERROR in any case.
+ *  Purpose: You guess what they should do. 
  *
  *  Input:   dbh - database handle being commited or rolled back
  *           imp_dbh - drivers private database handle data
@@ -1863,7 +1861,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION                 
+#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
     if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6))
 #else
       if (mysql_commit(&imp_dbh->mysql))
@@ -2826,14 +2824,22 @@ my_ulonglong mysql_st_internal_execute(
   if (htype==DBIt_DB)
   {
     D_imp_dbh(h);
-    bind_type_guessing= imp_dbh->bind_type_guessing;
+    /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
+    if (imp_dbh)
+      bind_type_guessing= imp_dbh->bind_type_guessing;
+    else
+      bind_type_guessing=0;
   }
   /* h is a sth */
   else
   {
     D_imp_sth(h);
     D_imp_dbh_from_sth;
-    bind_type_guessing= imp_dbh->bind_type_guessing;
+    /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
+    if (imp_dbh)
+      bind_type_guessing= imp_dbh->bind_type_guessing;
+    else
+      bind_type_guessing=0;
   }
 
   salloc= parse_params(svsock,
@@ -4178,23 +4184,19 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   rc = bind_param(&imp_sth->params[idx], value, sql_type);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-    if (imp_sth->use_server_side_prepare)
+  if (imp_sth->use_server_side_prepare)
+  {
+    if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
     {
-      if (SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value)
-        buffer_is_null= 0;
-      else
-      {
-        buffer= NULL;
-        buffer_is_null= 1;
-      }
+      buffer_is_null= 0;
 
       switch(sql_type) {
-        case SQL_NUMERIC:
-        case SQL_INTEGER:
-        case SQL_SMALLINT:
-        case SQL_BIGINT:
-        case SQL_TINYINT:
-          /* INT */
+      case SQL_NUMERIC:
+      case SQL_INTEGER:
+      case SQL_SMALLINT:
+      case SQL_BIGINT:
+      case SQL_TINYINT:
+        /* INT */
         if (!SvIOK(imp_sth->params[idx].value) && dbis->debug >= 2)
           PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND AN INT NUMBER\n");
 
@@ -4205,44 +4207,41 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           PerlIO_printf(DBILOGFP,
                         "   SCALAR type %d ->%ld<- IS A INT NUMBER\n",
                         sql_type, (long) (*buffer));
-          break;
+        break;
 
-        case SQL_DOUBLE:
-        case SQL_DECIMAL:
-        case SQL_FLOAT:
-        case SQL_REAL:
-          if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
-            PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
+      case SQL_DOUBLE:
+      case SQL_DECIMAL:
+      case SQL_FLOAT:
+      case SQL_REAL:
+        if (!SvNOK(imp_sth->params[idx].value) && dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
 
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
-            buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
+        buffer_type= MYSQL_TYPE_DOUBLE;
+        imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
+        buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
 
-            if (dbis->debug >= 2)
-              PerlIO_printf(DBILOGFP,
-                          "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
-                          sql_type, (double)(*buffer));
-          break;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP,
+                        "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
+                        sql_type, (double)(*buffer));
+        break;
 
-        case SQL_CHAR:
-        case SQL_VARCHAR:
-        case SQL_DATE:
-        case SQL_TIME:
-        case SQL_TIMESTAMP:
-        case SQL_LONGVARCHAR:
-        case SQL_BINARY:
-        case SQL_VARBINARY:
-        case SQL_LONGVARBINARY:
-          buffer_type= MYSQL_TYPE_STRING;
-          break;
+      case SQL_CHAR:
+      case SQL_VARCHAR:
+      case SQL_DATE:
+      case SQL_TIME:
+      case SQL_TIMESTAMP:
+      case SQL_LONGVARCHAR:
+      case SQL_BINARY:
+      case SQL_VARBINARY:
+      case SQL_LONGVARBINARY:
+        buffer_type= MYSQL_TYPE_STRING;
+        break;
 
-        default:
-          buffer_type= MYSQL_TYPE_STRING;
-          break;
+      default:
+        buffer_type= MYSQL_TYPE_STRING;
+        break;
       }
-
-      if (buffer_is_null)
-        buffer_type= MYSQL_TYPE_NULL;
 
       if (buffer_type == MYSQL_TYPE_STRING)
       {
@@ -4253,28 +4252,35 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
                         "   SCALAR type %d ->%s<- IS A STRING\n",
                         sql_type, buffer);
       }
-
-      /* Type of column was changed. Force to rebind */
-      if (imp_sth->bind[idx].buffer_type != buffer_type)
-        imp_sth->has_been_bound = 0;
-
-      /* prepare has not been called */
-      if (imp_sth->has_been_bound == 0)
-      {
-        imp_sth->bind[idx].buffer_type= buffer_type;
-        imp_sth->bind[idx].buffer= buffer;
-        imp_sth->bind[idx].buffer_length= buffer_length;
-      }
-      else /* prepare has been called */
-      {
-        imp_sth->stmt->params[idx].buffer= buffer;
-        imp_sth->stmt->params[idx].buffer_length= buffer_length;
-      }
-      imp_sth->fbind[idx].length= buffer_length;
-      imp_sth->fbind[idx].is_null= buffer_is_null;
     }
+    else
+    {
+      buffer= NULL;
+      buffer_is_null= 1;
+      buffer_type= MYSQL_TYPE_NULL;
+    }
+
+    /* Type of column was changed. Force to rebind */
+    if (imp_sth->bind[idx].buffer_type != buffer_type)
+      imp_sth->has_been_bound = 0;
+
+    /* prepare has not been called */
+    if (imp_sth->has_been_bound == 0)
+    {
+      imp_sth->bind[idx].buffer_type= buffer_type;
+      imp_sth->bind[idx].buffer= buffer;
+      imp_sth->bind[idx].buffer_length= buffer_length;
+    }
+    else /* prepare has been called */
+    {
+      imp_sth->stmt->params[idx].buffer= buffer;
+      imp_sth->stmt->params[idx].buffer_length= buffer_length;
+    }
+    imp_sth->fbind[idx].length= buffer_length;
+    imp_sth->fbind[idx].is_null= buffer_is_null;
+  }
 #endif
-    return rc;
+  return rc;
 }
 
 

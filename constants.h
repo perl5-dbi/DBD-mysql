@@ -3,7 +3,7 @@
 #include "XSUB.h"
 #include <mysql.h>
 
-static double mymsql_constant(char* name, char* arg) {
+static double mysql_constant(char* name, char* arg) {
   errno = 0;
   switch (*name) {
   case 'B':

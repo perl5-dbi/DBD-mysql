@@ -91,13 +91,11 @@ while (Testing()) {
     Test($state or $sth->finish)
            or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or undef $sth  ||  1);
-
-
     #
     #   Finally drop the test table.
     #
     Test($state or $dbh->do("DROP TABLE $table"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
+    Test($state or undef $sth  ||  1);
 }

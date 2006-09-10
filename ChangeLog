@@ -1,6 +1,17 @@
-2006-08-14 Jim Winstead <jimw@mysql.com>
+2006-09-08 Jim Winstead <jimw@mysql.com>, Patrick Galbraith <patg@mysql.com>
+(3.0007_1) (3.0006/3.0006_1 is the same as 3.0005/3.0005_1)
   * Make sure to call dbd_st_finish when all rows from a statement handle
-    have been fetched. (Bug #20153)
+    have been fetched. (Bug #20153, Bug# 21607, as rt.cpan.org ticket #s
+    20464, 21241) Jim Winstead
+  * Patch from Steve Hay to fix bind_param to deal properly with insertion
+    of a NULL into an INT or DOUBLE column using server-side prepare.
+    Converted Steve's dbi.pl script to expose this problem to 40bindparam2
+    test.
+  * Fix to mysql_st_internal_execute to keep from passing undefined dbh
+    handle member (bind_type_guessing) to parse_param causing crash on
+    OpenBSD. Reported on rt.cpan.org (#20868) by Kyle Georg, as well as
+    info from Sam Smith and Federico Giannici
+  * Cleaned up tests to make sure test table is dropped at end of test.
 
 2006-06-10 Patrick Galbraith <patg@mysql.com) (3.0005)
   * Fix dbd_st_finish in 3.0004 didn't clean up bind buffers resulting in
