@@ -621,8 +621,8 @@ A C<database> must always be specified.
 
 =item port
 
-The hostname, if not specified or specified as '', will default to an
-MySQL daemon running on the local machine on the default port
+The hostname, if not specified or specified as '' or 'localhost', will
+default to an MySQL daemon running on the local machine using the default
 for the UNIX socket.
 
 Should the MySQL daemon be running on a non-standard port number,
@@ -630,6 +630,8 @@ you may explicitly state the port number to connect to in the C<hostname>
 argument, by concatenating the I<hostname> and I<port number> together
 separated by a colon ( C<:> ) character or by using the  C<port> argument.
 
+To connect to a MySQL server on localhost using TCP/IP, you must specify the
+hostname as 127.0.0.1 (with the optional port).
 
 =item mysql_client_found_rows
 

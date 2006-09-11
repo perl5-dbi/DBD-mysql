@@ -1,4 +1,7 @@
 2006-? Jim Winstead <jimw@mysql.com>
+  * Mention in POD that 'localhost' always means to connect via UNIX socket,
+    and 127.0.0.1 must be used for TCP/IP to localhost (RT #14942, reported by
+    Alessandro Ranellucci)
   * Fix typos in Makefile.PL (RT#16178, reported by Gavin Shelley)
 
 2006-09-08 Jim Winstead <jimw@mysql.com>, Patrick Galbraith <patg@mysql.com>
