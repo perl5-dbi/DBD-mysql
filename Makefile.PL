@@ -404,7 +404,7 @@ Possible options are:
                          (Not supported on Win32)
   --nocatchstderr        Supress using the "myld" script that redirects
                          STDERR while running the linker.
-  --nofoundrows          Change the behavoiur of \$sth->rows() so that it
+  --nofoundrows          Change the behavior of \$sth->rows() so that it
   			 returns the number of rows physically modified 
 			 instead of the rows matched
   --ps-protocol=<1|0>    Toggle the use of driver emulated prepared statements
