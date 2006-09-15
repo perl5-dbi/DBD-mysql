@@ -473,7 +473,7 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
     @databases = DBI->data_sources("mysql");
        or
     @databases = DBI->data_sources("mysql",
-				   {"host" => $host, "port" => $port});
+      {"host" => $host, "port" => $port, "user" => $user, password => $pass});
 
     $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
        or
@@ -801,15 +801,10 @@ $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,commo
     @dbs = $dbh->func('_ListDBs');
 
 Returns a list of all databases managed by the MySQL daemon
-running on C<$hostname>, port C<$port>. This method
-is rarely needed for databases running on C<localhost>: You should
-use the portable method
+running on C<$hostname>, port C<$port>. This is a legacy
+method.  Instead, you should use the portable method
 
     @dbs = DBI->data_sources("mysql");
-
-whenever possible. It is a design problem of this method, that there's
-no way of supplying a host name or port number to C<data_sources>, that's
-the only reason why we still support C<ListDBs>. :-(
 
 =back
 
