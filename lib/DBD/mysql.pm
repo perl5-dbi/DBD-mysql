@@ -884,7 +884,7 @@ The DBD::mysql driver supports the following attributes of database
 handles (read only):
 
   $errno = $dbh->{'mysql_errno'};
-  $error = $dbh->{'mysql_error};
+  $error = $dbh->{'mysql_error'};
   $info = $dbh->{'mysql_hostinfo'};
   $info = $dbh->{'mysql_info'};
   $insertid = $dbh->{'mysql_insertid'};

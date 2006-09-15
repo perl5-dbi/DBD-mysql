@@ -1,4 +1,5 @@
 2006-? Jim Winstead <jimw@mysql.com>
+  * Fix typo in example (missing quote). (RT #15086)
   * Mention in POD that 'localhost' always means to connect via UNIX socket,
     and 127.0.0.1 must be used for TCP/IP to localhost (RT #14942, reported by
     Alessandro Ranellucci)
