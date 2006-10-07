@@ -1592,7 +1592,7 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 	}
         if (dbis->debug >= 2)
           PerlIO_printf(DBILOGFP,
-                        "imp_dbh->use_server_side_prepare: %d",
+                        "imp_dbh->use_server_side_prepare: %d\n",
                         imp_dbh->use_server_side_prepare);
 #endif
 
@@ -1604,6 +1604,10 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
           */
          mysql_options(sock, MYSQL_SET_CHARSET_NAME,
                        (SvTRUE(*svp) ? "utf8" : "latin1"));
+         if (dbis->debug >= 2)
+           PerlIO_printf(DBILOGFP,
+                         "mysql_options: MYSQL_SET_CHARSET_NAME=%s\n",
+                         (SvTRUE(*svp) ? "utf8" : "latin1"));
         }
 #endif
 

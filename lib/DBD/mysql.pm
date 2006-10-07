@@ -959,11 +959,14 @@ stored in the database are utf8.  This feature defaults to off.
 
 When set, a data retrieved from a textual column type (char, varchar,
 etc) will have the UTF-8 flag turned on if necessary.  This enables
-character semantics on that string.
+character semantics on that string.  You will also need to ensure that
+your database / table / column is configured to use UTF8.  See Chapter
+10 of the mysql manual for details.
 
 Additionally, turning on this flag tells MySQL that incoming data should
 be treated as UTF-8.  This will only take effect if used as part of the
-call to connect().
+call to connect().  If you turn the flag on after connecting, you will
+need to issue the command C<SET NAMES utf8> to get the same effect.
 
 This option is experimental and may change in future versions.
 
