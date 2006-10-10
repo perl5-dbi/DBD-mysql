@@ -2347,6 +2347,7 @@ my_ulonglong mysql_st_internal_execute(
   char *table;
   char *salloc;
   int htype;
+  my_ulonglong rows= 0;
 
   /* thank you DBI.c for this info! */
   D_imp_xxh(h);
@@ -2387,7 +2388,6 @@ my_ulonglong mysql_st_internal_execute(
                        num_params,
                        imp_dbh->bind_type_guessing);
 
-  my_ulonglong rows= 0;
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "mysql_st_internal_execute\n");
