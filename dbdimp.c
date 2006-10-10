@@ -3218,7 +3218,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
   if (imp_sth->use_server_side_prepare)
   {
     int i;
-    enum_field_types col_type;
+    int col_type;
     int num_fields= DBIc_NUM_FIELDS(imp_sth);
     imp_sth_fbh_t *fbh;
     MYSQL_BIND *bind;
@@ -3258,13 +3258,14 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         )
     {
       /* get the column type */
-      col_type = fields ? (enum_field_types) fields[i].type : MYSQL_TYPE_STRING;
+      col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
 
       if (dbis->debug >= 2)
       {
-        PerlIO_printf(DBILOGFP,"\t\tcol %d type %d len %d\n",
+        PerlIO_printf(DBILOGFP,"\t\ti %d col_type %d fbh->length %d\n",
                       i, col_type, fbh->length);
-        PerlIO_printf(DBILOGFP,"\t\tcol buf_len%d type %d chrset %d\n",
+        PerlIO_printf(DBILOGFP,
+                      "\t\tfields[i].length %d fields[i].type %d fields[i].charsetnr %d\n",
                       fields[i].length, fields[i].type,
                       fields[i].charsetnr);
       }
