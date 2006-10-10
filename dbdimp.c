@@ -243,6 +243,8 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 {
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t-> mysql_to_perl_type\n");
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, "\t->type %d\n");
 
   switch (type) {
   case MYSQL_TYPE_DOUBLE:
@@ -260,6 +262,8 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
     return MYSQL_TYPE_LONG;
 
   case MYSQL_TYPE_DECIMAL:
+    return MYSQL_TYPE_DECIMAL;
+
   case MYSQL_TYPE_LONGLONG:			/* No longlong in perl */
   case MYSQL_TYPE_DATE:
   case MYSQL_TYPE_TIME:
@@ -1617,12 +1621,22 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
         {
 	  if (SvTRUE(*svp))
           {
-	    char* client_key = NULL;
-	    char* client_cert = NULL;
-	    char* ca_file = NULL;
-	    char* ca_path = NULL;
-	    char* cipher = NULL;
+	    char *client_key = NULL;
+	    char *client_cert = NULL;
+	    char *ca_file = NULL;
+	    char *ca_path = NULL;
+	    char *cipher = NULL;
 	    STRLEN lna;
+#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION
+            /*
+              New code to utilise MySQLs new feature that verifies that the
+              server's hostname that the client connects to matches that of
+              the certificate
+            */
+	    my_bool ssl_verify_true = 0;
+	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE))  &&  *svp)
+	      ssl_verify_true = SvTRUE(*svp);
+#endif
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
 
@@ -1644,6 +1658,9 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 
 	    mysql_ssl_set(sock, client_key, client_cert, ca_file,
 			  ca_path, cipher);
+#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION
+	    mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify_true);
+#endif
 	    client_flag |= CLIENT_SSL;
 	  }
 	}
@@ -2401,16 +2418,15 @@ dbd_st_prepare(
                     "\t\tneed to test for LIMIT\n");
     for (str_ptr= statement; *str_ptr; str_ptr++)
     {
-      i= (str_ptr - statement)/sizeof(char);
       /*
         If there is a 'limit' in the statement and placeholders are
         NOT supported
       */
-      if ( (statement[i]   == 'l' || statement[i]   == 'L') &&
-           (statement[i+1] == 'i' || statement[i+1] == 'I') &&
-           (statement[i+2] == 'm' || statement[i+2] == 'M') &&
-           (statement[i+3] == 'i' || statement[i+3] == 'I') &&
-           (statement[i+4] == 't' || statement[i+4] == 'T'))
+      if ( (tolower(*(str_ptr + 0)) == 'l') &&
+           (tolower(*(str_ptr + 1)) == 'i') &&
+           (tolower(*(str_ptr + 2)) == 'm') &&
+           (tolower(*(str_ptr + 3)) == 'i') &&
+           (tolower(*(str_ptr + 4)) == 't'))
       {
         if (dbis->debug >= 2)
           PerlIO_printf(DBILOGFP, "LIMIT set limit flag to 1\n");
@@ -2419,7 +2435,7 @@ dbd_st_prepare(
       if( limit_flag)
       {
         /* ... and place holders after the limit flag is set... */
-        if (statement[i] == '?')
+        if (*str_ptr == '?')
         {
           if (dbis->debug >= 2)
             PerlIO_printf(DBILOGFP,
@@ -2505,11 +2521,12 @@ dbd_st_prepare(
         imp_sth->has_been_bound=  0;
 
         /* Initialize ph variables with  NULL values */
-        for (bind=      imp_sth->bind,
+        for (i= 0,
+             bind=      imp_sth->bind,
              fbind=     imp_sth->fbind,
              bind_end=  bind+DBIc_NUM_PARAMS(imp_sth);
              bind < bind_end ;
-             bind++, fbind++ )
+             bind++, fbind++, i++ )
         {
           /*
             if this statement has a result set, field types will be
@@ -3201,7 +3218,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
   if (imp_sth->use_server_side_prepare)
   {
     int i;
-    int col_type;
+    enum_field_types col_type;
     int num_fields= DBIc_NUM_FIELDS(imp_sth);
     imp_sth_fbh_t *fbh;
     MYSQL_BIND *bind;
@@ -3241,7 +3258,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         )
     {
       /* get the column type */
-      col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
+      col_type = fields ? (enum_field_types) fields[i].type : MYSQL_TYPE_STRING;
+
       if (dbis->debug >= 2)
       {
         PerlIO_printf(DBILOGFP,"\t\tcol %d type %d len %d\n",

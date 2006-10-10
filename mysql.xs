@@ -308,8 +308,8 @@ do(dbh, statement, attr=Nullsv, ...)
         num_params= items - 3;
         /*num_params = mysql_stmt_param_count(stmt);*/
         Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
-        Newz(0, bind, num_params, MYSQL_BIND);
-        Newz(0, fbind, num_params, imp_sth_phb_t);
+        Newz(0, bind, (unsigned int) num_params, MYSQL_BIND);
+        Newz(0, fbind, (unsigned int) num_params, imp_sth_phb_t);
 
         for (i = 0; i < num_params; i++)
         {

@@ -33,6 +33,7 @@
 #define LIMIT_PLACEHOLDER_VERSION 50100
 #define GEO_DATATYPE_VERSION 50007
 #define NEW_DATATYPE_VERSION 50003
+#define SSL_VERIFY_VERSION 50023
 
 /*
  *  The following are return codes passed in $h->err in case of
