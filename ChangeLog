@@ -1,3 +1,15 @@
+2006-10-10 Patrick Galbraith <patg@patg.net> (3.0008)
+* Added multiple fixes to dbd_st_prepare which fixed variable overwrite
+  and unset increment counter. Also improved loop which checks statements
+  for presence of "LIMIT" by using a pointer as opposed to char array
+  increment variable. These errors were showing up in OpenBSD and other
+  Unixen (which I think all BSD-based) (Thanks to Kyle George!)
+* Added fix to Makefile.PL to obtain correct build flags on VMS (Thanks to Eric Milkie!)
+* Fixed declaration of "row" in mysql_st_internal_execute which caused compile 
+  errors on some platforms
+* Fixed casting of num_params to unsigned int in calls to NewZ in mysql.xs
+* Fixed typo in Makefile.PL for test_user which was supposed to be testuser
+
 2006-09-08 Jim Winstead <jimw@mysql.com>, Patrick Galbraith <patg@mysql.com>
 (3.0007) (3.0006 is the same as 3.0005)
   * Make sure to call dbd_st_finish when all rows from a statement handle

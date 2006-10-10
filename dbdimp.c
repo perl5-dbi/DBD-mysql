@@ -2277,11 +2277,12 @@ dbd_st_prepare(
         imp_sth->has_been_bound=  0;
 
         /* Initialize ph variables with  NULL values */
-        for (bind=      imp_sth->bind,
+        for (i= 0,
+             bind=      imp_sth->bind,
              fbind=     imp_sth->fbind,
              bind_end=  bind+DBIc_NUM_PARAMS(imp_sth);
              bind < bind_end ;
-             bind++, fbind++ )
+             bind++, fbind++, i++)
         {
           /*
             if this statement has a result set, field types will be
@@ -2386,7 +2387,7 @@ my_ulonglong mysql_st_internal_execute(
                        &slen,
                        params,
                        num_params,
-                       imp_dbh->bind_type_guessing);
+                       bind_type_guessing);
 
 
   if (dbis->debug >= 2)

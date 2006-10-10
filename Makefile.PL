@@ -154,7 +154,7 @@ I will use the following settings for compiling and testing:
 
 MSG
 
-$opt->{'test_user'} ||= "";
+$opt->{'testuser'} ||= "";
 delete $opt->{'help'};
 my $keylen = 0;
 foreach my $key (keys %$opt)
@@ -203,6 +203,9 @@ my $fileName = $@ ?
 
 
 my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
+if ($^O eq 'VMS') {
+  $cflags = "\$(DBI_INSTARCH_DIR),$opt->{'cflags'}";
+}
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
 $cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
@@ -720,7 +723,7 @@ sub libscan {
     $path;
 }
 
-sub postamble {
+sub macro {
   "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
 
 installhtml: lib/DBD/mysql/INSTALL.pod
