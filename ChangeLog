@@ -1,4 +1,8 @@
-2006-? Jim Winstead <jimw@mysql.com>
+2006-10-07 Patrick Galbraith <patg@patg.net>, Jim Winstead <jimw@mysql.com>
+  (3.0007_2)
+  * Added UTF8 patch from Dominic Mitchell (Thanks!)
+  * Fixed declaration of "row" in mysql_st_internal_execute which caused compile
+    errors on some platforms
   * Fix documentation for _ListDBs to remove incorrect information about
     limitations of data_sources(). (RT #20843, patch by Ann Barcomb)
   * Fix typo in example (missing quote). (RT #15086)
