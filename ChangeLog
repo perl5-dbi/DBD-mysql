@@ -1,3 +1,7 @@
+2006-10-10 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (3.0009)
+* Added fbind and bind alloc to dbd_st_describe. This was causing a crash
+  when using with mod_perl
+
 2006-10-10 Patrick Galbraith <patg@patg.net> (3.0008)
 * Added multiple fixes to dbd_st_prepare which fixed variable overwrite
   and unset increment counter. Also improved loop which checks statements

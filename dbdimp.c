@@ -173,8 +173,6 @@ static void FreeBind(MYSQL_BIND* bind)
 {
   if (bind)
     Safefree(bind);
-  else
-    fprintf(stderr,"FREE ERROR BIND!");
 }
 
 /*
@@ -184,8 +182,6 @@ static void FreeFBind(imp_sth_phb_t *fbind)
 {
   if (fbind)
     Safefree(fbind);
-  else
-    fprintf(stderr,"FREE ERROR  FBIND!");
 }
 
 /* 
@@ -195,8 +191,6 @@ static void FreeFBuffer(imp_sth_fbh_t * fbh)
 {
   if (fbh)
     Safefree(fbh);
-  else
-    fprintf(stderr,"FREE ERROR FBUFFER!");
 }
 
 #endif
