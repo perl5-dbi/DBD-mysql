@@ -2054,7 +2054,7 @@ dbd_db_FETCH_attrib(
       result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
-    else if (kl == 14 && strEQ(key,"server_prepare"))
+    else if (kl == 20 && strEQ(key,"mysql_server_prepare"))
       result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
     break;
 
@@ -2127,9 +2127,11 @@ dbd_st_prepare(
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
  /* Set default value of 'mysql_server_prepare' attribute for sth from dbh */
-  svp= DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);
-  imp_sth->use_server_side_prepare = svp ?
+  /*svp= DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);*/
+  /*imp_sth->use_server_side_prepare = svp ?
     SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
+  */
+  imp_sth->use_server_side_prepare= imp_dbh->use_server_side_prepare;
 
   if (imp_sth->use_server_side_prepare)
   {
