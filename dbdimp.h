@@ -274,7 +274,7 @@ struct imp_sth_st {
 #endif
 
 #include <dbd_xsh.h>
-void	 do_error (SV* h, int rc, const char *what);
+void    do_error (SV* h, int rc, const char *what, const char *sqlstate);
 SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);

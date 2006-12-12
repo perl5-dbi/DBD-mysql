@@ -241,6 +241,7 @@ FreeParam(imp_sth_ph_t *params, int num_params)
 
 static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 {
+  static enum enum_field_types enum_type;
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t-> mysql_to_perl_type\n");
   if (dbis->debug >= 2)
@@ -249,7 +250,8 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   switch (type) {
   case MYSQL_TYPE_DOUBLE:
   case MYSQL_TYPE_FLOAT:
-    return MYSQL_TYPE_DOUBLE;
+    enum_type= MYSQL_TYPE_DOUBLE;
+    break;
 
   case MYSQL_TYPE_SHORT:
   case MYSQL_TYPE_TINY:
@@ -259,10 +261,12 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
   case MYSQL_TYPE_BIT:
 #endif
-    return MYSQL_TYPE_LONG;
+    enum_type= MYSQL_TYPE_LONG;
+    break;
 
   case MYSQL_TYPE_DECIMAL:
-    return MYSQL_TYPE_DECIMAL;
+    enum_type= MYSQL_TYPE_DECIMAL;
+    break;
 
   case MYSQL_TYPE_LONGLONG:			/* No longlong in perl */
   case MYSQL_TYPE_DATE:
@@ -281,15 +285,17 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_TINY_BLOB:
   case MYSQL_TYPE_TIMESTAMP:
   /* case MYSQL_TYPE_UNKNOWN: */
-    return MYSQL_TYPE_STRING;
+    enum_type= MYSQL_TYPE_STRING;
+    break;
 
   default:
-    return MYSQL_TYPE_STRING;    /* MySQL can handle all types as strings */
+    enum_type= MYSQL_TYPE_STRING;    /* MySQL can handle all types as strings */
   }
   if (dbis->debug >= 2)
-    PerlIO_printf(DBILOGFP, "\t\tcol_type => %d\n", type);
+    PerlIO_printf(DBILOGFP, "\t\ttype => %d, enum_type %d\n", type, enum_type);
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t<- mysql_to_perl_type\n");
+  return(enum_type);
 }
 #endif
 
@@ -1297,17 +1303,25 @@ void dbd_init(dbistate_t* dbistate)
  *
  **************************************************************************/
 
-void do_error(SV* h, int rc, const char* what)
+void do_error(SV* h, int rc, const char* what, const char* sqlstate)
 {
   D_imp_xxh(h);
   STRLEN lna;
   SV *errstr;
+  SV *errstate;
 
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t\t--> do_error\n");
   errstr= DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
   sv_setpv(errstr, what);
+
+  if (sqlstate)
+  {
+    errstate= DBIc_STATE(imp_xxh);
+    sv_setpvn(errstate, sqlstate, 5);
+  }
+
   DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr);
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
@@ -1578,20 +1592,20 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
         }
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-
-        /*client_flag |= CLIENT_PROTOCOL_41;*/
-        imp_dbh->use_server_side_prepare= TRUE;
-        if (dbis->debug >= 2)
-          PerlIO_printf(DBILOGFP, "server side prepare %d\n",
-                        imp_dbh->use_server_side_prepare);
-
-	if ((svp = hv_fetch(hv, "mysql_emulated_prepare", 22, FALSE))
+	/* took out  client_flag |= CLIENT_PROTOCOL_41; */
+	/* because libmysql.c already sets this no matter what */
+	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE))
             && *svp)
         {
 	  if (SvTRUE(*svp))
           {
+	    client_flag |= CLIENT_PROTOCOL_41;
+            imp_dbh->use_server_side_prepare = TRUE;
+	  }
+          else
+          {
 	    client_flag &= ~CLIENT_PROTOCOL_41;
-            imp_dbh->use_server_side_prepare= FALSE;
+            imp_dbh->use_server_side_prepare = FALSE;
 	  }
 	}
         if (dbis->debug >= 2)
@@ -1839,7 +1853,8 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
   if (!my_login(dbh, imp_dbh))
   {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
-	     mysql_error(&imp_dbh->mysql));
+            mysql_error(&imp_dbh->mysql),
+              mysql_sqlstate(&imp_dbh->mysql));
     return FALSE;
   }
 
@@ -1889,7 +1904,8 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 #endif
       {
         do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql),
+                mysql_sqlstate(&imp_dbh->mysql));
         return FALSE;
       }
   }
@@ -1921,13 +1937,14 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 #endif
       {
         do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql),
+                mysql_sqlstate(&imp_dbh->mysql));
         return FALSE;
       }
   }
   else
     do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-             "Rollback ineffective while AutoCommit is on");
+             "Rollback ineffective while AutoCommit is on",NULL);
   return TRUE;
 }
 
@@ -2050,7 +2067,7 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
 #else
         if (mysql_rollback(&imp_dbh->mysql))
 #endif
-            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed");
+            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed",NULL);
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
@@ -2102,7 +2119,8 @@ dbd_db_STORE_attrib(
       if (mysql_autocommit(&imp_dbh->mysql, bool_value))
       {
         do_error(dbh, TX_ERR_AUTOCOMMIT,
-                 bool_value ? "Turning on AutoCommit failed" : "Turning off AutoCommit failed");
+                 bool_value ? "Turning on AutoCommit failed" : "Turning off AutoCommit failed",
+                 NULL);
         return FALSE;
       }
 #else
@@ -2112,7 +2130,8 @@ dbd_db_STORE_attrib(
         /* Setting autocommit will do a commit of any pending statement */
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=1", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed");
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed",
+                   NULL);
           return FALSE;
         }
       }
@@ -2120,7 +2139,8 @@ dbd_db_STORE_attrib(
       {
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=0", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed");
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed",
+                   NULL);
           return FALSE;
         }
       }
@@ -2136,7 +2156,8 @@ dbd_db_STORE_attrib(
       if (!SvTRUE(valuesv))
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-                 "Transactions not supported by database");
+                 "Transactions not supported by database",
+                 NULL);
         croak("Transactions not supported by database");
       }
     }
@@ -2145,8 +2166,8 @@ dbd_db_STORE_attrib(
     imp_dbh->use_mysql_use_result = bool_value;
   else if (kl == 20 && strEQ(key,"mysql_auto_reconnect"))
     imp_dbh->auto_reconnect = bool_value;
-  else if (kl == 22 && strEQ(key, "mysql_emulated_prepare"))
-    imp_dbh->use_server_side_prepare= SvTRUE(valuesv) ? 0 : 1;
+  else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
+    imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
 
   else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing"))
 	imp_dbh->bind_type_guessing = SvIV(valuesv);
@@ -2321,7 +2342,7 @@ dbd_db_FETCH_attrib(
       result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
-    else if (kl == 14 && strEQ(key,"server_prepare"))
+    else if (kl == 20 && strEQ(key,"mysql_server_prepare"))
       result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
     break;
 
@@ -2378,11 +2399,11 @@ dbd_st_prepare(
                         MYSQL_VERSION_ID);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
- /* Set default value of 'mysql_emulated_prepare' attribute for sth from dbh */
+ /* Set default value of 'mysql_server_prepare' attribute for sth from dbh */
   imp_sth->use_server_side_prepare= imp_dbh->use_server_side_prepare;
   if (attribs)
   {
-    svp= DBD_ATTRIB_GET_SVP(attribs, "mysql_emulated_prepare", 22);
+    svp= DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare", 20);
     imp_sth->use_server_side_prepare = (svp) ?
       SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
   }
@@ -2501,7 +2522,8 @@ dbd_st_prepare(
       else
       {
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt));
+                 mysql_stmt_error(imp_sth->stmt),
+                mysql_sqlstate(&imp_dbh->mysql));
         mysql_stmt_close(imp_sth->stmt);
         imp_sth->stmt= NULL;
         return FALSE;
@@ -2710,7 +2732,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
   mysql_free_result(imp_sth->result);
 
   if (mysql_errno(svsock))
-    do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+    do_error(sth, mysql_errno(svsock), mysql_error(svsock),
+             mysql_sqlstate(svsock));
 
   next_result_return_code= mysql_next_result(svsock);
   /*
@@ -2721,7 +2744,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
    */
   if (next_result_return_code > 0)
   {
-    do_error(sth,mysql_errno(svsock),mysql_error(svsock));
+    do_error(sth,mysql_errno(svsock),mysql_error(svsock),
+             mysql_sqlstate(svsock));
     return 0;
   }
   else if (next_result_return_code < 0)
@@ -2739,7 +2763,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     *result= mysql_store_result(svsock);
 
     if (mysql_errno(svsock))
-      do_error(sth, mysql_errno(svsock), mysql_error(svsock));
+      do_error(sth, mysql_errno(svsock), mysql_error(svsock),
+               mysql_sqlstate(svsock));
 
     if (*result == NULL)
     {
@@ -2900,12 +2925,12 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!slen)
     {
-      do_error(h, JW_ERR_QUERY, "Missing table name");
+      do_error(h, JW_ERR_QUERY, "Missing table name",NULL);
       return -2;
     }
     if (!(table= malloc(slen+1)))
     {
-      do_error(h, JW_ERR_MEM, "Out of memory");
+      do_error(h, JW_ERR_MEM, "Out of memory",NULL);
       return -2;
     }
 
@@ -2924,7 +2949,8 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!(*result))
     {
-      do_error(h, mysql_errno(svsock), mysql_error(svsock));
+      do_error(h, mysql_errno(svsock), mysql_error(svsock),
+               mysql_sqlstate(svsock));
       return -2;
     }
 
@@ -2936,7 +2962,8 @@ my_ulonglong mysql_st_internal_execute(
        (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
-    do_error(h, mysql_errno(svsock), mysql_error(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock),
+             mysql_sqlstate(svsock));
     return -2;
   }
   Safefree(salloc);
@@ -2946,7 +2973,8 @@ my_ulonglong mysql_st_internal_execute(
     mysql_use_result(svsock) : mysql_store_result(svsock);
 
   if (mysql_errno(svsock))
-    do_error(h, mysql_errno(svsock), mysql_error(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock),
+             mysql_sqlstate(svsock));
 
   if (!*result)
     rows= mysql_affected_rows(svsock);
@@ -3064,7 +3092,8 @@ error:
                   "     errno %d err message %s\n",
                   mysql_stmt_errno(stmt),
                   mysql_stmt_error(stmt));
-  do_error(sth, mysql_stmt_errno(stmt), mysql_stmt_error(stmt));
+  do_error(sth, mysql_stmt_errno(stmt), mysql_stmt_error(stmt),
+           mysql_stmt_sqlstate(stmt));
   mysql_stmt_reset(stmt);
 
   if (dbis->debug >= 2)
@@ -3137,7 +3166,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
     if (DBIc_ACTIVE(imp_sth) && !(mysql_st_clean_cursor(sth, imp_sth)))
     {
       do_error(sth, JW_ERR_SEQUENCE,
-               "Error happened while tried to clean up stmt");
+               "Error happened while tried to clean up stmt", NULL);
       return 0;
     }
 
@@ -3235,7 +3264,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     {
       /* no metadata */
       do_error(sth, JW_ERR_SEQUENCE,
-               "no metadata information while trying describe result set");
+               "no metadata information while trying describe result set",
+               NULL);
       return 0;
     }
 
@@ -3245,7 +3275,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     {
       /* Out of memory */
       do_error(sth, JW_ERR_SEQUENCE,
-               "Out of memory in dbd_sescribe()");
+               "Out of memory in dbd_sescribe()",NULL);
       return 0;
     }
 
@@ -3291,6 +3321,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 
       case MYSQL_TYPE_STRING:
         bind->buffer= (char *) fbh->data;
+        break;
 
       default:
         bind->buffer= (char *) fbh->data;
@@ -3301,7 +3332,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     if (mysql_stmt_bind_result(imp_sth->stmt, imp_sth->buffer))
     {
       do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-               mysql_stmt_error(imp_sth->stmt));
+               mysql_stmt_error(imp_sth->stmt),
+               mysql_stmt_sqlstate(imp_sth->stmt));
       return 0;
     }
   }
@@ -3348,13 +3380,13 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   {
     if (!DBIc_ACTIVE(imp_sth) )
     {
-      do_error(sth, JW_ERR_SEQUENCE, "no statement executing\n");
+      do_error(sth, JW_ERR_SEQUENCE, "no statement executing\n",NULL);
       return Nullav;
     }
 
     if (imp_sth->fetch_done)
     {
-      do_error(sth, JW_ERR_SEQUENCE, "fetch() but fetch already done");
+      do_error(sth, JW_ERR_SEQUENCE, "fetch() but fetch already done",NULL);
       return Nullav;
     }
 
@@ -3362,7 +3394,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     {
       if (!dbd_describe(sth, imp_sth))
       {
-        do_error(sth, JW_ERR_SEQUENCE, "Error while describe result set.");
+        do_error(sth, JW_ERR_SEQUENCE, "Error while describe result set.",
+                 NULL);
         return Nullav;
       }
     }
@@ -3378,7 +3411,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
   if (!imp_sth->result)
   {
-    do_error(sth, JW_ERR_SEQUENCE, "fetch() without execute()");
+    do_error(sth, JW_ERR_SEQUENCE, "fetch() without execute()", NULL);
     return Nullav;
   }
 
@@ -3395,7 +3428,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     {
       if (rc == 1)
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt));
+                 mysql_stmt_error(imp_sth->stmt),
+                mysql_stmt_sqlstate(imp_sth->stmt));
 
       if (rc == MYSQL_NO_DATA)
       {
@@ -3452,11 +3486,11 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           /*TODO: Use offset instead of 0 to fetch only remain part of data*/
           if (mysql_stmt_fetch_column(imp_sth->stmt, bind , i, 0))
             do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                     mysql_stmt_error(imp_sth->stmt));
+                     mysql_stmt_error(imp_sth->stmt),
+                    mysql_stmt_sqlstate(imp_sth->stmt));
         }
 
-        /* This does look a lot like Georg's PHP driver doesn't it?  --Brian */
-        /* Credit due to Georg - mysqli_api.c  ;) --PMG */
+        /* Inspired by Georg's mysqli_api.c  ;) --PMG */
         switch (bind->buffer_type) {
         case MYSQL_TYPE_DOUBLE:
           if (dbis->debug > 2)
@@ -3519,7 +3553,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     {
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql),
+               mysql_sqlstate(&imp_dbh->mysql));
 
       dbd_st_finish(sth, imp_sth);
       return Nullav;
@@ -3623,7 +3658,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
       if (!mysql_st_clean_cursor(sth, imp_sth))
       {
         do_error(sth, JW_ERR_SEQUENCE,
-                 "Error happened while tried to clean up stmt");
+                 "Error happened while tried to clean up stmt",NULL);
         return 0;
       }
     }
@@ -3706,7 +3741,8 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
                       "DESTROY: Error %s while close stmt\n",
                       (char *) mysql_stmt_error(imp_sth->stmt));
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt));
+                 mysql_stmt_error(imp_sth->stmt),
+                 mysql_stmt_sqlstate(imp_sth->stmt));
       }
       if (DBIc_NUM_PARAMS(imp_sth) > 0)
       {
@@ -3851,7 +3887,7 @@ dbd_st_FETCH_internal(
 
   /* Are we asking for a legal value? */
   if (what < 0 ||  what >= AV_ATTRIB_LAST)
-    do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented");
+    do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented", NULL);
 
   /* Return cached value, if possible */
   else if (cacheit  &&  imp_sth->av_attr[what])
@@ -3860,7 +3896,7 @@ dbd_st_FETCH_internal(
   /* Does this sth really have a result? */
   else if (!res)
     do_error(sth, JW_ERR_NOT_ACTIVE,
-	     "statement contains no result");
+	     "statement contains no result", NULL);
   /* Do the real work. */
   else
   {
@@ -4079,10 +4115,10 @@ dbd_st_FETCH_internal(
       else if (strEQ(key, "mysql_use_result"))
         retsv= boolSV(imp_sth->use_mysql_use_result);
       break;
-    case 22:
-      if (strEQ(key, "mysql_emulated_prepare"))
+    case 20:
+      if (strEQ(key, "mysql_server_prepare"))
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-        retsv= imp_sth->use_server_side_prepare ? boolSV(1) : boolSV(0);
+        retsv= sv_2mortal(newSViv((IV) imp_sth->use_server_side_prepare));
 #else
         retsv= boolSV(0);
 #endif
@@ -4171,7 +4207,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   if (param_num <= 0  ||  param_num > DBIc_NUM_PARAMS(imp_sth))
   {
     do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM,
-             "Illegal parameter number");
+             "Illegal parameter number", NULL);
     return FALSE;
   }
 
@@ -4193,14 +4229,14 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       sprintf(err_msg,
               "Binding non-numeric field %d, value %s as a numeric!",
               param_num, neatsvpv(value,0));
-      do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg);
+      do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg, NULL);
     }
   }
 
   if (is_inout)
   {
     do_error(sth, JW_ERR_NOT_IMPLEMENTED,
-             "Output parameters not implemented");
+             "Output parameters not implemented", NULL);
     return FALSE;
   }
 
@@ -4357,7 +4393,8 @@ int mysql_db_reconnect(SV* h)
 
   if (!my_login(h, imp_dbh))
   {
-    do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql));
+    do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
+             mysql_sqlstate(&imp_dbh->mysql));
     memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
