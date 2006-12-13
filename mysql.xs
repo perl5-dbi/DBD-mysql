@@ -252,19 +252,19 @@ do(dbh, statement, attr=Nullsv, ...)
    * Globaly enabled using of server side prepared statement
    * for dbh->do() statements. It is possible to force driver
    * to use server side prepared statement mechanism by adding
-   * 'mysql_emulated_prepare' attribute to do() method localy:
-   * $dbh->do($stmt, {mysql_emulated_prepared=>1});
+   * 'mysql_server_prepare' attribute to do() method localy:
+   * $dbh->do($stmt, {mysql_server_prepared=>1});
   */
 
-  use_server_side_prepare = imp_dbh->use_server_side_prepare; 
+  use_server_side_prepare = imp_dbh->use_server_side_prepare;
   if (attr)
   {
     SV **svp;
     DBD_ATTRIBS_CHECK("do", dbh, attr);
-    svp = DBD_ATTRIB_GET_SVP(attr, "mysql_emulated_prepare", 22);
+    svp = DBD_ATTRIB_GET_SVP(attr, "mysql_server_prepare", 20);
 
     use_server_side_prepare = (svp) ?
-      !SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
+      SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
   }
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP,
