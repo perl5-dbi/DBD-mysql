@@ -622,10 +622,11 @@ A C<database> must always be specified.
 =item port
 
 The hostname, if not specified or specified as '' or 'localhost', will
-default to an MySQL daemon running on the local machine using the default
-for the UNIX socket.
+default to a MySQL server running on the local machine using the default for
+the UNIX socket. To connect to a MySQL server on the local machine via TCP,
+you must specify the loopback IP address (127.0.0.1) as the host.
 
-Should the MySQL daemon be running on a non-standard port number,
+Should the MySQL server be running on a non-standard port number,
 you may explicitly state the port number to connect to in the C<hostname>
 argument, by concatenating the I<hostname> and I<port number> together
 separated by a colon ( C<:> ) character or by using the  C<port> argument.
@@ -807,7 +808,7 @@ $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,commo
     @dbs = $drh->func($hostname, $port, '_ListDBs');
     @dbs = $dbh->func('_ListDBs');
 
-Returns a list of all databases managed by the MySQL daemon
+Returns a list of all databases managed by the MySQL server
 running on C<$hostname>, port C<$port>. This is a legacy
 method.  Instead, you should use the portable method
 
