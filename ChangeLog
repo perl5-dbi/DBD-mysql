@@ -6,7 +6,7 @@
   (Thanks Philip!) 
 * Reworked (for working with 4.0, which doesn't support sqlstate) Philip Stoev's 
   patch for sqlstate, bug #23935 (Thanks Philip!)
-* New Versioning! 4.0.0 now. This dev tree will now become trunk
+* New Versioning! 4.00 now. This dev tree will now become trunk
 * Cleaned up much code that failed between versions (!!!)
 * Turned off prepared statements by default
 * Tested this with 5.1, 5.0, 4.1, 4.0. Works with ALL these versions!
