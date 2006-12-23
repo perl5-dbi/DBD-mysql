@@ -81,23 +81,23 @@ while (Testing()) {
     #
     #   Now, try SELECT'ing the row out. This should fail.
     #
-    Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"
+    Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
 					   . " WHERE id = 1"))
 	   or DbiError($dbh->err, $dbh->errstr);
 
-    Test($state or $cursor->execute)
-	   or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->execute)
+	   or DbiError($sth->err, $sth->errstr);
 
     my ($row, $errstr);
-    Test($state or (!defined($row = $cursor->fetchrow_arrayref)  &&
-		    (!defined($errstr = $cursor->errstr) ||
-		     $cursor->errstr eq '')))
-	or DbiError($cursor->err, $cursor->errstr);
+    Test($state or (!defined($row = $sth->fetchrow_arrayref)  &&
+		    (!defined($errstr = $sth->errstr) ||
+		     $sth->errstr eq '')))
+	or DbiError($sth->err, $sth->errstr);
 
-    Test($state or $cursor->finish, "\$sth->finish failed")
-	   or DbiError($cursor->err, $cursor->errstr);
+    Test($state or $sth->finish, "\$sth->finish failed")
+	   or DbiError($sth->err, $sth->errstr);
 
-    Test($state or undef $cursor || 1);
+    Test($state or undef $sth || 1);
 
 
     #

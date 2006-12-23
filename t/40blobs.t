@@ -117,25 +117,25 @@ while (Testing()) {
 	#
 	#   Now, try SELECT'ing the row out.
 	#
-	Test($state or $cursor = $dbh->prepare("SELECT * FROM $table"
+	Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
 					       . " WHERE id = 1"))
 	       or DbiError($dbh->err, $dbh->errstr);
 
-	Test($state or $cursor->execute)
+	Test($state or $sth->execute)
 	       or DbiError($dbh->err, $dbh->errstr);
 
-	Test($state or (defined($row = $cursor->fetchrow_arrayref)))
-	    or DbiError($cursor->err, $cursor->errstr);
+	Test($state or (defined($row = $sth->fetchrow_arrayref)))
+	    or DbiError($sth->err, $sth->errstr);
 
 	Test($state or (@$row == 2  &&  $$row[0] == 1  &&  $$row[1] eq $blob))
 	    or (ShowBlob($blob),
 		ShowBlob(defined($$row[1]) ? $$row[1] : ""));
 
-	Test($state or $cursor->finish)
-	    or DbiError($cursor->err, $cursor->errstr);
+	Test($state or $sth->finish)
+	    or DbiError($sth->err, $sth->errstr);
 
-	Test($state or undef $cursor || 1)
-	    or DbiError($cursor->err, $cursor->errstr);
+	Test($state or undef $sth || 1)
+	    or DbiError($sth->err, $sth->errstr);
 
 	#
 	#   Finally drop the test table.

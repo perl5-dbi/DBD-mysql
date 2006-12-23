@@ -50,11 +50,11 @@ http://www.activestate.com for details.
 
 You need not install the actual MySQL database server, the
 client files and the devlopment files are sufficient. For
-example, the Red Hat Linux distribution comes with RPM files
-B<mysql-client> and B<mysql-devel>. These are sufficient,
-if the MySQL server is located on a foreign machine. You may
-also create client files by compiling from the MySQL source
-distribution and using
+example, Fedora Core 4 Linux distribution comes with RPM files
+(using YUM) B<mysql.i386> and B<mysql-server.i386> (use "yum search" 
+to find exact package names). These are sufficient, if the MySQL 
+server is located on a foreign machine.  You may also create client
+files by compiling from the MySQL source distribution and using
 
   configure --without-server
 
@@ -154,6 +154,30 @@ Optional are
 
   mysql-server
 
+=head2 Fedora Core Linux
+
+As of version 3, Fedora Linux comes with MySQL and DBD::mysql.
+You need to ensure that the following RPM's are installed:
+
+  mysql or mysql-server
+  perl-DBD-MySQL
+
+For installation from source the following RPM's are required
+
+  mysql-devel
+  libz-devel
+
+Please try 
+
+  yum search mysql
+
+To see the exact names
+
+Note: (important) FC 3 comes with MySQL 3.x, and some people have
+upgraded using MySQL RPMs for newer versions. If you do this, you 
+must re-compile you DBD::mysql because your existing DBD::mysql will be
+linked against the old version of MySQL's client libs. CPAN has no way to
+know or detect that you have upgraded MySQL.
 
 =head2 Other systems
 
@@ -182,7 +206,7 @@ installation. This may be achieved using command line switches
 which comes with most MySQL distributions. If your MySQL distribution
 contains mysql_config the easiest method is to ensure this binary
 is on your path.
-
+ 
 e.g.
 
   PATH=$PATH:/usr/local/mysql/bin
@@ -241,7 +265,9 @@ subdirectory and type
 
   make install
 
-If the make or tests fail, you might need to configure some settings.
+If the compilation (make) or tests fail, you might need to
+configure some settings.
+
 For example you might choose a different database, the C
 compiler or the linker might need some flags. L</Configuration>.
 L</Compiler flags>. L</Linker flags>.
@@ -286,6 +312,12 @@ Host name or IP number of the test database; defaults to localhost.
 =item testport
 
 Port number of the test database
+
+=item ps-protcol=1 or 0
+
+Whether to run the test suite using server prepared statements or driver
+emulated prepared statemetns. ps-protocol=1 means use server prepare,
+ps-protocol=0 means driver emulated.
 
 =item cflags
 
@@ -343,6 +375,10 @@ the same name, that replies
 
   
 =head2 Compiler flags
+
+Note: the folling info about compiler and linker flags, you shouldn't have
+to use these options because Makefile.PL is pretty good at utilising
+mysql_config to get the flags that you need for a successful compile.
 
 It is typically not so difficult to determine the appropriate
 flags for the C compiler. The linker flags, which you find in

@@ -64,6 +64,8 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
+    #sleep 60;
+    Test($state or !$dbh->trace(2, "/tmp/trace.log"));
     #
     #   Find a possible new table name
     #
@@ -116,6 +118,7 @@ while (Testing()) {
 	or DbiError($dbh->err, $dbh->errstr);
     Test($state or $sth->bind_param(2, undef))
 	or DbiError($dbh->err, $dbh->errstr);
+
     Test($state or $sth->execute)
  	or DbiError($dbh->err, $dbh->errstr);
 
@@ -163,7 +166,6 @@ while (Testing()) {
 		    $name eq 'Andreas König'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
-
     Test($state or (($ref = $sth->fetch)  &&  $id == 5  &&
 		    !defined($name)))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
@@ -172,18 +174,18 @@ while (Testing()) {
     Test($state or (($ref = $sth->fetch)  &&  $id == 6  &&
 		   $name eq '?'))
 	or print("Query returned id = $id, name = $name, expected 6,?\n");
+
     if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
 	Test($state or (($ref = $sth->fetch)  &&  $id == 7  &&
 			$name eq '?'))
 	    or print("Query returned id = $id, name = $name, expected 7,?\n");
     }
-
-    Test($state or undef $sth  or  1);
-
-
     #
     #   Finally drop the test table.
     #
     Test($state or $dbh->do("DROP TABLE $table"))
 	   or DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or undef $sth  or  1);
+
 }

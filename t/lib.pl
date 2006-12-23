@@ -203,7 +203,7 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 #   Print a DBI error message
 #
 sub DbiError ($$) {
-    my($rc, $err) = @_;
+    my ($rc, $err) = @_;
     $rc ||= 0;
     $err ||= '';
     print "Test $::numTests: DBI error $rc, $err\n";

@@ -1,24 +1,42 @@
-2006-10-10 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (3.0009)
+2006-12-22 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (4.00)
+* Added Alexey Stroganov's patch which fixes varying number of columns in 
+  multiple result sets. Added new test cases to 80procs.t (bug #21028) 
+* Added Philip Stoev's patch for DATA_TYPE date and time columns (bug #23988)
+* New Versioning! 4.0 now. This dev tree will now become trunk
+* Turned off prepared statements by default
+
+2006-10-10 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (3.0009_1)
 * Added fbind and bind alloc to dbd_st_describe. This was causing a crash
   when using with mod_perl
 
-2006-10-10 Patrick Galbraith <patg@patg.net> (3.0008)
+2006-10-10 Patrick Galbraith <patg@patg.net> (3.0008_1)
+* Added patch for SSL Verify Certificate (Thanks Eric Chen!)
 * Added multiple fixes to dbd_st_prepare which fixed variable overwrite
   and unset increment counter. Also improved loop which checks statements
   for presence of "LIMIT" by using a pointer as opposed to char array
   increment variable. These errors were showing up in OpenBSD and other
   Unixen (which I think all BSD-based) (Thanks to Kyle George!)
-* Added fix to Makefile.PL to obtain correct build flags on VMS (Thanks to Eric Milkie!)
-* Fixed declaration of "row" in mysql_st_internal_execute which caused compile 
-  errors on some platforms
+* Added fix to Makefile.PL to obtain correct build flags on VMS 
+  (Thanks to Eric Milkie!)
 * Fixed casting of num_params to unsigned int in calls to NewZ in mysql.xs
-* Fixed typo in Makefile.PL for test_user which was supposed to be testuser
+
+2006-10-07 Patrick Galbraith <patg@patg.net>, Jim Winstead <jimw@mysql.com>
+  (3.0007_2)
+  * Added UTF8 patch from Dominic Mitchell (Thanks!)
+  * Fixed declaration of "row" in mysql_st_internal_execute which caused compile
+    errors on some platforms
+  * Fix documentation for _ListDBs to remove incorrect information about
+    limitations of data_sources(). (RT #20843, patch by Ann Barcomb)
+  * Fix typo in example (missing quote). (RT #15086)
+  * Mention in POD that 'localhost' always means to connect via UNIX socket,
+    and 127.0.0.1 must be used for TCP/IP to localhost (RT #14942, reported by
+    Alessandro Ranellucci)
+  * Fix typos in Makefile.PL (RT#16178, reported by Gavin Shelley)
 
 2006-09-08 Jim Winstead <jimw@mysql.com>, Patrick Galbraith <patg@mysql.com>
-(3.0007) (3.0006 is the same as 3.0005)
+(3.0007_1) (3.0006/3.0006_1 is the same as 3.0005/3.0005_1)
   * Make sure to call dbd_st_finish when all rows from a statement handle
-    have been fetched. (Bug #20153, Bug# 21607, as rt.cpan.org ticket #s
-    20464, 21241) Jim Winstead
+    have been fetched. (Bug #20153, Bug #21607, RT #20464, RT #21241)
   * Patch from Steve Hay to fix bind_param to deal properly with insertion
     of a NULL into an INT or DOUBLE column using server-side prepare.
     Converted Steve's dbi.pl script to expose this problem to 40bindparam2
@@ -28,7 +46,6 @@
     OpenBSD. Reported on rt.cpan.org (#20868) by Kyle Georg, as well as
     info from Sam Smith and Federico Giannici
   * Cleaned up tests to make sure test table is dropped at end of test.
-
 
 2006-06-10 Patrick Galbraith <patg@mysql.com) (3.0005)
   * Fix dbd_st_finish in 3.0004 didn't clean up bind buffers resulting in
@@ -40,49 +57,97 @@
     the patch to parse_params (extended to mysql.xs "do" and bind_param for
     server-side prepared statements.
 
-2006-05-17 Patrick Galbraith <patg@mysql.com) (3.0004)
+2006-05-17 Patrick Galbraith <patg@mysql.com) (3.0004_1)
   * Fix dbd_st_finish which closed the handle prematurely (Martin Evans)
   * Compile issues (Martin Evans)
+  * Small change to get utf8 data returned. One still has to:
+      $dbh->do("set character set utf8");
+      $dbh->do("set names utf8");
+
+    to get utf8 back and even then you only get it back if the
+    column is defined as utf8 in mysql.
   * Fix to dbd_bind_ph to deal with numbers (ints, floats) correctly
     (Alexey Stroganov)
   * Test changes - bind_param 41 and 42
+  * Turned off 70takeimp test
 
-2006-04-29 Patrick Galbraith <patg@mysql.com> (3.0003)
-  * Fixed bug where if mysql_server_prepare is set and a prepare
-    fails, only a warning is issued and no error text is
-    available (Thanks Martin Evans!)
+2006-04-29 Patrick Galbraith <patg@mysql.com) (3.0003_1)
+  * Removed old Msql-Mysql Driver emulation code - finally!!!
+  * Removed aweful string testing code (that I wrote) for unsported
+    statements and now use mysql_stmt_prepare, if statement not
+    supported, toggle to mysql_emulated_prepare
+  * Fixed bug where failed stmt execution caused later statements
+    to fail with mysql_stmt_reset
+  * Added tests for unsupported statements
+  * Added test for test of failed statement with subsequent executes 
+    (thanks to Martin Evans!)
+  * Added typo fix (Martin Evans)
   * Added support for ParamValues and associated test (Martin Evans)
-  * Removed declaration of int num_fields outside a block which
-    was causing compilation error with some C compilers.
-  * Fix to typo in Makefile.PL (Martin Evans)
-  * Added mysql_stmt_reset for when mysql_stmt_execute fails
-  * Added test for mysql_stmt_execute bug (Martin Evans)
+  * Removed old emulated driver tests (HOORAY!)
+  * Cleaned up debug printing code
   * Fixed syntax for create table ENGINE=InnoDB instead of type=innobase
-  * Removed tests for old driver emulation
+  * Cleaned up tests 
 
-2005-07-07 Patrick Galbraith <patg@mysql.com> (3.0002)
+2006-01-31 Patrick Galbraith <patg@mysql.com> (3.0002_5)
+  * Fixed bugs 15546 (selectcol_arrayref failing on SHOW TABLES)
+    and 15665, 'USE dbname' failing when driver is not in emulated
+    prepare mode
+
+2005-10-26 Patrick Galbraith <patg@mysql.com> (3.0002_4)
+  * Added Guy Harrison's patch for multiple result sets
+  * Fixed bugs with declarations in middle of functions
+  * Cleaned up code, rewrote several loops using pointers
+    instead of iterators
+  * Rewrote 'SHOW', 'ALTER', 'CALL', 'CREATE' toggling code that turns
+    off server prepared statements (these calls are not supported)
+  * Updated documentation
+
+2005-09-28 Patrick Galbraith <patg@mysql.com> (3.0002_3)
+  * Added code to  mysql_st_internal_execute that determines whether the
+    SV *h is a sth or dbh, and then imports imp_dbh appropriately
+
+2005-09-26 Patrick Galbraith <patg@mysql.com> (3.0002_2)
+  * Fixed bug in dbd_st_execute where imp_sth was being 
+    imported unecessarily, when only imp_dbh is needed. This caused a 
+    core dump in some cases. Thanks to Andy Maas at Proofpoint for his 
+    execellent detective work!
+  * Small changes to Makefile.PL to make sure --ps-protocol works as
+    advertised.
+  * Updated install.html with current info about prepared statements and FC
+    RPM/YUM packages.
+
+2005-08-04 Patrick Galbraith <patg@mysql.com> (3.0002_1)
+  * Prepared statement support is default now. To turn it off
+    a parameter 'mysql_emulated_prepare' must be turned ON
+  * Better error handling in mysql_internal_execute_ps (renamed
+    from mysql_internal_execute41). Also free the result if error -
+    that could have been a memory bug
+  * Added a simply 'do' to t/35prepare.test to see if you can turn
+    off prepared statements in the 'do' call.
+  * Cleaned up a LOT of cruft. Added more 'caveat' blurbage to old
+    Mysql.pm lib, which will not work with prepared statements
+  
+2005-07-06 Parick Galbraith <patg@mysql.com> (3.0001_3)
   * Fix to ensure MYSQL_BIND is only defined when mysql
-    client version is >= 4.1.3. Thanks to Tom Parkison, 
-    Anup Singh, Sergey Skvortsov, and other users who informed
-    me about this issue.
+    client version is >= 4.1.3. Thanks to Tom Parkison
 
-2005-07-06 Patrick Galbraith <patg@mysql.com> (3.0001)
-  * Special Thanks to Steve Hay for his patch to fix windows 
-    compiles!
+2005-07-06 Patrick Galbraith <patg@mysql.com> (3.0001_2)
+  * Fixed runtime bug (when inserting or updating quotes or double quotes)
+    (Thanks to Brad Choate, Six Apart Ltd.)
+
+2005-07-04 Patrick Galbraith <patg@mysql.com> (3.0001_1)
   * Changed uint argument in safe_sv_fetch to int due to 
     uint not being available on windows unless you include
     my_globals.h in dbdimp.h, which also breaks on unixen!
-  * Fixed Makefile.PM for windows compiles (thanks to Steve Hay!)
+  * Removed // comments from mysql.xs (thanks Bodo Bergman!)
+
+2005-07-03 Patrick Galbraith <patg@mysql.com> (3.0000_0)
+  * Special Thanks to Steve Hay for his patch to fix windows 
+  * Fixed Makefile.PM for windows compiles
   * Removed long long type from dbdimp.h
   * Changed strncasecmp to strncmp (still need a better long-term solution)
     in dbdimp.c
-  * Modified Makefile.PM to make prepared statements default
-  * Removed // comments from mysql.xs, dbdimp.c (Thanks Bodo Bergmann!)
-  * Fixed runtime bug (when inserting or updating quotes or double quotes)
-    (Thanks to Brad Choate)
-
-2005-06-30 Patrick Galbraith <patg@mysql.com> (3.0000)
-  * Release of prepared statement code
+  * Modified Makefile.PM to make prepared statements on by default
 
 2005-04-26 Patrick Galbraith <patg@mysql.com> (2.9015_3)
   * Added patch from Stas Beckman for new DBI feature take_imp_data, needed
