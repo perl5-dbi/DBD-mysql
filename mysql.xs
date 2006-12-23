@@ -54,7 +54,12 @@ _ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL)
       MYSQL_RES* res = mysql_list_dbs(sock, NULL);
       if (!res)
       {
-        do_error(drh, mysql_errno(sock), mysql_error(sock), mysql_sqlstate(sock));
+        do_error(drh, mysql_errno(sock), mysql_error(sock)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                 , mysql_sqlstate(sock));
+#else
+                );
+#endif
       }
       else
       {
@@ -98,8 +103,12 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
     sock = mysql_dr_connect(drh, &mysql, NULL, host, port, user,  password, NULL, NULL);
     if (sock == NULL)
     {
-      do_error(drh, mysql_errno(&mysql), mysql_error(&mysql),
-               mysql_sqlstate(&mysql));
+      do_error(drh, mysql_errno(&mysql), mysql_error(&mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               , mysql_sqlstate(&mysql));
+#else
+              );
+#endif
       XSRETURN_NO;
     }
   }
@@ -120,7 +129,12 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
     char* buffer = malloc(strlen(dbname)+50);
     if (buffer == NULL)
     {
-      do_error(drh, JW_ERR_MEM, "Out of memory",NULL);
+      do_error(drh, JW_ERR_MEM, "Out of memory"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+              );
+#endif
       XSRETURN_NO;
     }
     else
@@ -140,7 +154,12 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
     char* buffer = malloc(strlen(dbname)+50);
     if (buffer == NULL)
     {
-      do_error(drh, JW_ERR_MEM, "Out of memory",NULL);
+      do_error(drh, JW_ERR_MEM, "Out of memory"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+              );
+#endif
       XSRETURN_NO;
     }
     else
@@ -159,7 +178,12 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   if (retval)
   {
     do_error(SvOK(dbh) ? dbh : drh, mysql_errno(sock),
-             mysql_error(sock), mysql_sqlstate(sock));
+             mysql_error(sock)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,mysql_sqlstate(sock));
+#else
+            );
+#endif
   }
 
   if (SvOK(dbh))
@@ -208,7 +232,12 @@ _ListDBs(dbh)
        !(res = mysql_list_dbs(&imp_dbh->mysql, NULL))))
 {
   do_error(dbh, mysql_errno(&imp_dbh->mysql),
-           mysql_error(&imp_dbh->mysql), mysql_sqlstate(&imp_dbh->mysql));
+           mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+           ,mysql_sqlstate(&imp_dbh->mysql));
+#else
+          );
+#endif
 }
 else
 {
@@ -287,8 +316,12 @@ do(dbh, statement, attr=Nullsv, ...)
       }
       else
       {
-        do_error(dbh, mysql_stmt_errno(stmt), mysql_stmt_error(stmt),
-                 mysql_stmt_sqlstate(stmt));
+        do_error(dbh, mysql_stmt_errno(stmt), mysql_stmt_error(stmt)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                 ,mysql_stmt_sqlstate(stmt));
+#else
+                );
+#endif
         retval=-2;
       }
       mysql_stmt_close(stmt);
@@ -571,13 +604,23 @@ dataseek(sth, pos)
       else
       {
         RETVAL = 0;
-        do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active",NULL);
+        do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                 ,NULL);
+#else
+                );
+#endif
       }
     }
     else
     {
       RETVAL = 0;
-      do_error(sth, JW_ERR_NOT_ACTIVE, "No result set",NULL);
+      do_error(sth, JW_ERR_NOT_ACTIVE, "No result set"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+              );
+#endif
     }
   }
   else
@@ -588,7 +631,12 @@ dataseek(sth, pos)
     RETVAL = 1;
   } else {
     RETVAL = 0;
-    do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active",NULL);
+    do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,NULL);
+#else
+            );
+#endif
   }
 #if (MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION) 
   }

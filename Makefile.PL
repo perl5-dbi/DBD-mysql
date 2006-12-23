@@ -447,7 +447,7 @@ sub Configure
 
   if ($param eq 'ps-protocol')
   {
-      $source->{$param}= ($opt->{$param} == 1) ? "User's choice" : 'default';
+      $source->{$param}= ($opt->{$param}) ? "User's choice" : 'default';
       return;
   }
   if (exists($opt->{$param}))

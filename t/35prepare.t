@@ -134,7 +134,7 @@ while(Testing())
  
   # Bug #20153: Fetching all data from a statement handle does not mark it
   # as finished
-  Test($state or $sth= $dbh->prepare("SELECT 1 FROM DUAL")) or
+  Test($state or $sth= $dbh->prepare("SELECT 1")) or
     DbiError($dbh->err, $dbh->errstr);
   Test($state or $sth->execute()) or 
     DbiError($dbh->err, $dbh->errstr);

@@ -1303,7 +1303,11 @@ void dbd_init(dbistate_t* dbistate)
  *
  **************************************************************************/
 
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
 void do_error(SV* h, int rc, const char* what, const char* sqlstate)
+#else
+void do_error(SV* h, int rc, const char* what)
+#endif
 {
   D_imp_xxh(h);
   STRLEN lna;
@@ -1316,11 +1320,13 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
   sv_setpv(errstr, what);
 
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
   if (sqlstate)
   {
     errstate= DBIc_STATE(imp_xxh);
     sv_setpvn(errstate, sqlstate, 5);
   }
+#endif
 
   DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr);
   if (dbis->debug >= 2)
@@ -1853,8 +1859,12 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
   if (!my_login(dbh, imp_dbh))
   {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
-            mysql_error(&imp_dbh->mysql),
-              mysql_sqlstate(&imp_dbh->mysql));
+            mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+            ,mysql_sqlstate(&imp_dbh->mysql));
+#else
+            );
+#endif
     return FALSE;
   }
 
@@ -1904,8 +1914,12 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 #endif
       {
         do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql),
-                mysql_sqlstate(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                ,mysql_sqlstate(&imp_dbh->mysql));
+#else
+                );
+#endif
         return FALSE;
       }
   }
@@ -1937,14 +1951,23 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 #endif
       {
         do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql),
-                mysql_sqlstate(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                ,mysql_sqlstate(&imp_dbh->mysql));
+#else
+                );
+#endif
         return FALSE;
       }
   }
   else
     do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-             "Rollback ineffective while AutoCommit is on",NULL);
+             "Rollback ineffective while AutoCommit is on"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,NULL);
+#else
+            );
+#endif
   return TRUE;
 }
 
@@ -2067,7 +2090,12 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
 #else
         if (mysql_rollback(&imp_dbh->mysql))
 #endif
-            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed",NULL);
+            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                     ,NULL);
+#else
+                    );
+#endif
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
@@ -2115,12 +2143,14 @@ dbd_db_STORE_attrib(
       if (bool_value == oldval)
         return TRUE;
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION                 
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
       if (mysql_autocommit(&imp_dbh->mysql, bool_value))
       {
         do_error(dbh, TX_ERR_AUTOCOMMIT,
-                 bool_value ? "Turning on AutoCommit failed" : "Turning off AutoCommit failed",
-                 NULL);
+                 bool_value ?
+                  "Turning on AutoCommit failed" :
+                  "Turning off AutoCommit failed"
+                 ,NULL);
         return FALSE;
       }
 #else
@@ -2130,8 +2160,7 @@ dbd_db_STORE_attrib(
         /* Setting autocommit will do a commit of any pending statement */
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=1", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed",
-                   NULL);
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed");
           return FALSE;
         }
       }
@@ -2139,8 +2168,7 @@ dbd_db_STORE_attrib(
       {
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=0", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed",
-                   NULL);
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed");
           return FALSE;
         }
       }
@@ -2156,8 +2184,12 @@ dbd_db_STORE_attrib(
       if (!SvTRUE(valuesv))
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-                 "Transactions not supported by database",
-                 NULL);
+                 "Transactions not supported by database"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                 ,NULL);
+#else
+                );
+#endif
         croak("Transactions not supported by database");
       }
     }
@@ -2932,12 +2964,22 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!slen)
     {
-      do_error(h, JW_ERR_QUERY, "Missing table name",NULL);
+      do_error(h, JW_ERR_QUERY, "Missing table name"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+              );
+#endif
       return -2;
     }
     if (!(table= malloc(slen+1)))
     {
-      do_error(h, JW_ERR_MEM, "Out of memory",NULL);
+      do_error(h, JW_ERR_MEM, "Out of memory"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+              );
+#endif
       return -2;
     }
 
@@ -2956,8 +2998,12 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!(*result))
     {
-      do_error(h, mysql_errno(svsock), mysql_error(svsock),
-               mysql_sqlstate(svsock));
+      do_error(h, mysql_errno(svsock), mysql_error(svsock)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,mysql_sqlstate(svsock));
+#else
+              );
+#endif
       return -2;
     }
 
@@ -2969,8 +3015,12 @@ my_ulonglong mysql_st_internal_execute(
        (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
-    do_error(h, mysql_errno(svsock), mysql_error(svsock),
-             mysql_sqlstate(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,mysql_sqlstate(svsock));
+#else
+            );
+#endif
     return -2;
   }
   Safefree(salloc);
@@ -2980,8 +3030,12 @@ my_ulonglong mysql_st_internal_execute(
     mysql_use_result(svsock) : mysql_store_result(svsock);
 
   if (mysql_errno(svsock))
-    do_error(h, mysql_errno(svsock), mysql_error(svsock),
-             mysql_sqlstate(svsock));
+    do_error(h, mysql_errno(svsock), mysql_error(svsock)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,mysql_sqlstate(svsock));
+#else
+            );
+#endif
 
   if (!*result)
     rows= mysql_affected_rows(svsock);
@@ -3424,7 +3478,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
   if (!imp_sth->result)
   {
-    do_error(sth, JW_ERR_SEQUENCE, "fetch() without execute()", NULL);
+    do_error(sth, JW_ERR_SEQUENCE, "fetch() without execute()"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,NULL);
+#else
+            );
+#endif
     return Nullav;
   }
 
@@ -3567,8 +3626,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     {
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql),
-                 mysql_sqlstate(&imp_dbh->mysql));
+                 mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+                 , mysql_sqlstate(&imp_dbh->mysql));
+#else
+                );
+#endif
 
 
       dbd_st_finish(sth, imp_sth);
@@ -3626,7 +3689,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         }
         sv_setpvn(sv, col, len);
 	/* UTF8 */
-#ifdef sv_utf8_decode
+#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
 	if(imp_dbh->enable_utf8)
 	  sv_utf8_decode(sv);
 #endif	  
@@ -3931,7 +3994,12 @@ dbd_st_FETCH_internal(
 
   /* Are we asking for a legal value? */
   if (what < 0 ||  what >= AV_ATTRIB_LAST)
-    do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented", NULL);
+    do_error(sth, JW_ERR_NOT_IMPLEMENTED, "Not implemented"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             , NULL);
+#else
+              );
+#endif
 
   /* Return cached value, if possible */
   else if (cacheit  &&  imp_sth->av_attr[what])
@@ -3940,7 +4008,12 @@ dbd_st_FETCH_internal(
   /* Does this sth really have a result? */
   else if (!res)
     do_error(sth, JW_ERR_NOT_ACTIVE,
-	     "statement contains no result", NULL);
+	     "statement contains no result"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,NULL);
+#else
+            );
+#endif
   /* Do the real work. */
   else
   {
@@ -4251,7 +4324,12 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   if (param_num <= 0  ||  param_num > DBIc_NUM_PARAMS(imp_sth))
   {
     do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM,
-             "Illegal parameter number", NULL);
+             "Illegal parameter number"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             , NULL);
+#else
+            );
+#endif
     return FALSE;
   }
 
@@ -4273,14 +4351,24 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       sprintf(err_msg,
               "Binding non-numeric field %d, value %s as a numeric!",
               param_num, neatsvpv(value,0));
-      do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg, NULL);
+      do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+               ,NULL);
+#else
+                );
+#endif
     }
   }
 
   if (is_inout)
   {
     do_error(sth, JW_ERR_NOT_IMPLEMENTED,
-             "Output parameters not implemented", NULL);
+             "Output parameters not implemented"
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             ,NULL);
+#else
+                );
+#endif
     return FALSE;
   }
 
@@ -4437,8 +4525,12 @@ int mysql_db_reconnect(SV* h)
 
   if (!my_login(h, imp_dbh))
   {
-    do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
-             mysql_sqlstate(&imp_dbh->mysql));
+    do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql)
+#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
+             , mysql_sqlstate(&imp_dbh->mysql));
+#else
+              );
+#endif
     memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;

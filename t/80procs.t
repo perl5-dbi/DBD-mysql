@@ -54,7 +54,7 @@ $dbh->disconnect();
 
 if (! $test_procs)
 {
-  print "1..0 # Skip MySQL Server version doesn't support stored procedures\n";
+  print "1..0 # Skip MySQL Server version $row->[0] doesn't support stored procedures\n";
   exit(0);
 }
 
