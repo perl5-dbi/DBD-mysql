@@ -2674,7 +2674,7 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
   do 
   {
     if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_all_results RC %d\n", next_result_rc);
+      PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_result_sets RC %d\n", next_result_rc);
 
     if (next_result_rc == 0)
     {
@@ -2684,7 +2684,7 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
         if (mysql_field_count(&imp_dbh->mysql))
         {
           if (dbis->debug >= 2)
-          PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_all_results ERROR: %s\n", 
+          PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_result_sets ERROR: %s\n", 
                                   mysql_error(&imp_dbh->mysql));
 
           do_error(sth, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
@@ -2703,7 +2703,7 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
   if (next_result_rc > 0)
   {
     if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_all_results: Error while processing multi-result set: %s\n",
+      PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_result_sets: Error while processing multi-result set: %s\n",
                               mysql_error(&imp_dbh->mysql));
     do_error(sth, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
              mysql_sqlstate(&imp_dbh->mysql));
@@ -3641,38 +3641,41 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     lengths= mysql_fetch_lengths(imp_sth->result);
     num_fields=mysql_num_fields(imp_sth->result);
 
-    av= DBIS->get_fbav(imp_sth);
-    av_length= av_len(av)+1;
-
-    if (av_length != num_fields)              /* Resize array if necessary */
+    if ((av= DBIc_FIELDS_AV(imp_sth)) != Nullav)
     {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "\t<- dbd_st_fetch, size of results array(%d) != num_fields(%d)\n",
-                                 av_length, num_fields);
+      av_length= av_len(av)+1;
 
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP, "\t<- dbd_st_fetch, result fields(%d)\n",
-                                 DBIc_NUM_FIELDS(imp_sth));
-
-      av_readonly = SvREADONLY(av);
-
-      if (av_readonly)
-        SvREADONLY_off( av );              /* DBI sets this readonly */
-
-      while (av_length < num_fields)
+      if (av_length != num_fields)              /* Resize array if necessary */
       {
-        av_store(av, av_length++, newSV(0));
-      }
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t<- dbd_st_fetch, size of results array(%d) != num_fields(%d)\n",
+                                   av_length, num_fields);
 
-      while (av_length > num_fields)
-      {
-        SvREFCNT_dec(av_pop(av));
-        av_length--;
-      }
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t<- dbd_st_fetch, result fields(%d)\n",
+                                   DBIc_NUM_FIELDS(imp_sth));
 
-      if (av_readonly)
-        SvREADONLY_on(av);
+        av_readonly = SvREADONLY(av);
+
+        if (av_readonly)
+          SvREADONLY_off( av );              /* DBI sets this readonly */
+
+        while (av_length < num_fields)
+        {
+          av_store(av, av_length++, newSV(0));
+        }
+
+        while (av_length > num_fields)
+        {
+          SvREFCNT_dec(av_pop(av));
+          av_length--;
+        }
+        if (av_readonly)
+          SvREADONLY_on(av);
+      }
     }
+    
+    av= DBIS->get_fbav(imp_sth);
 
     for (i= 0;  i < num_fields; ++i)
     {
