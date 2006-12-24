@@ -105,20 +105,20 @@ EOPROC
   Test($state or $sth->execute()) or 
     DbiError($dbh->err, $dbh->errstr);
 
-#
-#    my $proc_call = 'CALL testproc()';
-#    Test(($state && !$supported) or $sth = $dbh->prepare($proc_call)) or
-#    DbiError($dbh->err, $dbh->errstr);
-#
-#    Test($state or $sth->execute()) or 
-#      DbiError($dbh->err, $dbh->errstr);
-#
-#    my $proc_select = 'SELECT @a';
-#    Test($state or $sth = $dbh->prepare($proc_select)) or
-#    DbiError($dbh->err, $dbh->errstr);
-#
-#    Test($state or $sth->execute()) or 
-#      DbiError($dbh->err, $dbh->errstr);
+
+    my $proc_call = 'CALL testproc()';
+    Test($state or $sth = $dbh->prepare($proc_call)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
+
+    my $proc_select = 'SELECT @a';
+    Test($state or $sth = $dbh->prepare($proc_select)) or
+    DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or $sth->execute()) or 
+      DbiError($dbh->err, $dbh->errstr);
 
   Test($state or ($sth=$dbh->prepare("DROP PROCEDURE testproc"))) or
     DbiError($dbh->err, $dbh->errstr);
