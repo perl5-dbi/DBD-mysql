@@ -1,4 +1,5 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Add support for the primary_key_info method. [rt.cpan.org #8541]
 * Fixed Bundle::DBD::mysql to only include modules required for using
   DBD::mysql, not the old Mysql package. [rt.cpan.org #24096]
 * Updated Makefile.PL to not include files in .svn directories

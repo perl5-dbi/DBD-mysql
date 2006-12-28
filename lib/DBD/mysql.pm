@@ -434,6 +434,42 @@ sub column_info {
 }
 
 
+sub primary_key_info {
+    my ($dbh, $catalog, $schema, $table) = @_;
+
+    my $table_id = $dbh->quote_identifier($catalog, $schema, $table);
+
+    my @names = qw(
+	TABLE_CAT TABLE_SCHEM TABLE_NAME COLUMN_NAME KEY_SEQ PK_NAME
+    );
+    my %col_info;
+
+    local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    my $desc_sth = $dbh->prepare("SHOW KEYS FROM $table_id");
+    my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
+    my $ordinal_pos = 0;
+    foreach my $row (@$desc) {
+	$col_info{ $row->{column_name} } = {
+	    TABLE_CAT   => $catalog,
+	    TABLE_SCHEM => $schema,
+	    TABLE_NAME  => $table,
+	    COLUMN_NAME => $row->{column_name},
+            KEY_SEQ     => $row->{seq_in_index},
+            PK_NAME     => $row->{key_name},
+	};
+    }
+
+    my $sponge = DBI->connect("DBI:Sponge:", '','')
+	or return $dbh->DBI::set_err($DBI::err, "DBI::Sponge: $DBI::errstr");
+    my $sth = $sponge->prepare("primary_key_info $table", {
+	rows => [ map { [ @{$_}{@names} ] } values %col_info ],
+	NUM_OF_FIELDS => scalar @names,
+	NAME => \@names,
+    }) or return $dbh->DBI::set_err($sponge->err(), $sponge->errstr());
+
+    return $sth;
+}
+
 
 ####################
 # get_info()
