@@ -730,7 +730,7 @@ package MY;
 
 sub libscan {
     my($self, $path) = @_;
-    if ($path =~ /~$|SCCS/) { return undef; }
+    return '' if $path =~ /\B\.svn\b|~#|\BSCCS\b/;
     $path;
 }
 

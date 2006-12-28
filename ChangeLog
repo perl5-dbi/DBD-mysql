@@ -1,3 +1,8 @@
+<unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Fixed Bundle::DBD::mysql to only include modules required for using
+  DBD::mysql, not the old Mysql package. [rt.cpan.org #24096]
+* Updated Makefile.PL to not include files in .svn directories
+
 2006-12-22 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (4.00)
 * Added Alexey Stroganov's patch which fixes varying number of columns in 
   multiple result sets. Added new test cases to 80procs.t based of his
