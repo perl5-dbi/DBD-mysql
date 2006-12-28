@@ -58,10 +58,10 @@ while (Testing()) {
 	or ServerError();
 
     #
-    #   Find a possible new table name
-    #
-    Test($state or $table = FindNewTable($dbh))
-	   or DbiError($dbh->err, $dbh->errstr);
+    # We use a hardcoded special table name to test for a regression of
+    # http://bugs.mysql.com/22005
+    #  
+    $table= 't1$special';
 
     #
     #   Create a new table

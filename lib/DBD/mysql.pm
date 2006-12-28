@@ -296,8 +296,6 @@ sub _ListTables {
 
 sub column_info {
     my ($dbh, $catalog, $schema, $table, $column) = @_;
-    return $dbh->set_err(1, "column_info doesn't support table wildcard")
-	if $table !~ /^\w+$/;
     return $dbh->set_err(1, "column_info doesn't support column selection")
 	if $column ne "%";
 
