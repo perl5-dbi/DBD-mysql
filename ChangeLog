@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Fix handling of negative integers bound to a column marked as SQL_INTEGER.
+  [rt.cpan.org #18976], patch from Mike Schilli.
 * Add support for the primary_key_info method. [rt.cpan.org #8541]
 * Fixed Bundle::DBD::mysql to only include modules required for using
   DBD::mysql, not the old Mysql package. [rt.cpan.org #24096]

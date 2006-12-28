@@ -25,8 +25,6 @@
 typedef short WORD;
 #endif
 
-
-
 DBISTATE_DECLARE;
 
 typedef struct sql_type_info_s
@@ -438,9 +436,10 @@ static char *parse_params(
                           bool bind_type_guessing)
 {
 
-  bool seen_neg, seen_dec;
+  int rc;
   char *salloc, *statement_ptr;
   char *statement_ptr_end, testchar, *ptr, *valbuf;
+  char *cp, *end;
   int alen, i, j;
   int slen= *slen_ptr;
   int limit_flag= 0;
@@ -495,40 +494,9 @@ static char *parse_params(
           valbuf= SvPV(ph->value, vallen);
           ph->type= SQL_INTEGER;
 
-          /* patch from Dragonchild */
-          seen_neg= 0;
-          seen_dec= 0;
-          for (j= 0; j < (int)vallen; ++j)
+          if (parse_number(valbuf, vallen, &end) != 0)
           {
-            testchar= *(valbuf+j);
-            if ('-' == testchar)
-            {
-              if (seen_neg)
-              {
-                ph->type= SQL_VARCHAR;
-                break;
-              }
-              else if (j)
-              {
-                ph->type= SQL_VARCHAR;
-                break;
-              }
-              seen_neg= 1;
-            }
-            else if ('.' == testchar)
-            {
-              if (seen_dec)
-              {
-                ph->type= SQL_VARCHAR;
-                break;
-              }
-              seen_dec= 1;
-            }
-            else if (!isdigit(testchar))
-            {
               ph->type= SQL_VARCHAR;
-              break;
-            }
           }
         }
         else if (bind_type_guessing)
@@ -644,13 +612,9 @@ static char *parse_params(
             }
             else
             {
-              while (vallen--)
-              {
-		c = *valbuf++;
-		if ((c < '0' || c > '9') && c != ' ')
-		  break;
-		*ptr++= c;
-              }
+              parse_number(valbuf, vallen, &end);
+              for (cp= valbuf; cp < end; cp++)
+                  *ptr++= *cp;
             }
           }
         }
@@ -2836,12 +2800,12 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
         PerlIO_printf(DBILOGFP,
                       "             imp_sth->result=%08lx\n",
                       imp_sth->result);
-      PerlIO_printf(DBILOGFP,
+        PerlIO_printf(DBILOGFP,
                       "             imp_sth->fields_count=%08lx\n",
                       mysql_field_count(svsock));
         PerlIO_printf(DBILOGFP, "             mysql_num_fields=%llu\n",
                       mysql_num_fields(imp_sth->result));
-  
+
         PerlIO_printf(DBILOGFP, "      <-     mysql_num_rows=%llu\n",
                       mysql_num_rows(imp_sth->result));
         PerlIO_printf(DBILOGFP, "      <-     mysql_affected_rows=%llu\n",
@@ -4710,3 +4674,63 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
   return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
 }
 #endif
+
+
+int parse_number(char *string, STRLEN len, char **end)
+{
+    int seen_neg;
+    int seen_dec;
+    char *cp;
+
+    seen_neg= 0;
+    seen_dec= 0;
+
+    if (len <= 0) {
+        len= strlen(string);
+    }
+
+    cp= string;
+
+    /* Skip leading whitespace */
+    while (*cp && isspace(*cp))
+        cp++;
+
+    for ( ; *cp; cp++)
+    {
+        if ('-' == *cp)
+        {
+            if (seen_neg)
+            {
+              /* second '-' */
+              break;
+            }
+            else if (cp > string)
+            {
+              /* '-' after digit(s) */
+              break;
+            }
+            seen_neg= 1;
+        }
+        else if ('.' == *cp)
+        {
+            if (seen_dec)
+            {
+                /* second '.' */
+                break;
+            }
+            seen_dec= 1;
+        }
+        else if (!isdigit(*cp))
+        {
+            break;
+        }
+    }
+
+    *end= cp;
+
+    if (cp - string < len) {
+        return -1;
+    }
+
+    return 0;
+}

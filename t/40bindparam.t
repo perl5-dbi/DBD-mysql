@@ -122,6 +122,16 @@ while (Testing()) {
     Test($state or $sth->execute)
  	or DbiError($dbh->err, $dbh->errstr);
 
+    # Test binding negative numbers [rt.cpan.org #18976]
+    Test($state or $sth->bind_param(1, undef, SQL_INTEGER()))
+      or DbiError($dbh->err, $dbh->errstr);
+    Test($state or $sth->bind_param(2, undef))
+      or DbiError($dbh->err, $dbh->errstr);
+    Test($state or $sth->execute(-1, "abc"))
+      or DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or undef $sth  ||  1);
+
     #
     #   Try various mixes of question marks, single and double quotes
     #
@@ -131,8 +141,6 @@ while (Testing()) {
 	Test($state or $dbh->do("INSERT INTO $table VALUES (7, \"?\")"))
 	    or DbiError($dbh->err, $dbh->errstr);
     }
-
-    Test($state or undef $sth  ||  1);
 
     #
     #   And now retreive the rows using bind_columns
@@ -146,6 +154,10 @@ while (Testing()) {
 
     Test($state or $sth->bind_columns(undef, \$id, \$name))
 	   or DbiError($dbh->err, $dbh->errstr);
+
+    Test($state or (($ref = $sth->fetch)  &&  $id == -1  &&
+		   $name eq 'abc'))
+	or print("Query returned id = $id, name = $name, expected -1,abc\n");
 
     Test($state or ($ref = $sth->fetch)  &&  $id == 1  &&
 	 $name eq 'Alligator Descartes')
