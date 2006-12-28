@@ -62,6 +62,7 @@ while (Testing()) {
     # http://bugs.mysql.com/22005
     #  
     $table= 't1$special';
+    $state or $dbh->do("DROP TABLE IF EXISTS `$table`" );
 
     #
     #   Create a new table
@@ -72,6 +73,16 @@ while (Testing()) {
 
     Test($state or $dbh->table_info(undef,undef,$table));
     Test($state or $dbh->column_info(undef,undef,$table,'%'));
+
+    #
+    # Bug #23974: column_info does not return error when table does not exist
+    #
+    {
+     local $dbh->{PrintError}= 0;
+      Test($state or
+           ($sth= $dbh->column_info(undef,undef,"this_does_not_exist",'%')));
+      Test($sth and $sth->err());
+    }
 
     Test($state or $sth = $dbh->prepare("SELECT * FROM $table"))
 	   or DbiError($dbh->err, $dbh->errstr);

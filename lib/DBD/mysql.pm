@@ -318,6 +318,9 @@ sub column_info {
     local $dbh->{FetchHashKeyName} = 'NAME_lc';
     my $desc_sth = $dbh->prepare("DESCRIBE $table_id");
     my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
+
+    return $desc_sth if $desc_sth->err();
+
     my $ordinal_pos = 0;
     foreach my $row (@$desc) {
 	my $type = $row->{type};

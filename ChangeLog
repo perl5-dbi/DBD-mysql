@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Return a statement handle with an error when column_info is called on
+  a table that does not exist. (Bug #23974, patch by Philip Stoev)
 * Fix handling of table names with characters that did not match /\w/ in
   the column_info method. (Bug #22005, reported by Philip Stoev)
 * Fix handling of negative integers bound to a column marked as SQL_INTEGER.
