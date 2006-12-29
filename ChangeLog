@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Removed redundant warnings when commit or rollback is called while
+  AutoCommit is enabled. [rt.cpan.org #15802], reported by Tyler MacDonald
 * Report correct type for decimal columns from MySQL 5.0 and later
   [rt.cpan.org #18294], reported by Ray Zimmerman
 * Fix t/40bindparam.t to work when ANSI_QUOTES SQL_MODE is set.

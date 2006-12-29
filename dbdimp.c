@@ -1869,33 +1869,27 @@ int
 dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 {
   if (DBIc_has(imp_dbh, DBIcf_AutoCommit))
-  {
-    do_warn(dbh, TX_ERR_AUTOCOMMIT,
-	    "Commmit ineffective while AutoCommit is on");
-    return TRUE;
-  }
+    return FALSE;
 
   if (imp_dbh->has_transactions)
   {
 #if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
     if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6))
 #else
-      if (mysql_commit(&imp_dbh->mysql))
+    if (mysql_commit(&imp_dbh->mysql))
 #endif
-      {
-        do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql)
+    {
+      do_error(dbh, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql)
 #if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-                ,mysql_sqlstate(&imp_dbh->mysql));
-#else
-                );
+               ,mysql_sqlstate(&imp_dbh->mysql)
 #endif
-        return FALSE;
-      }
+              );
+      return FALSE;
+    }
   }
   else
     do_warn(dbh, JW_ERR_NOT_IMPLEMENTED,
-            "Commmit ineffective while AutoCommit is on");
+            "Commit ineffective because transactions are not available");
   return TRUE;
 }
 
@@ -1906,11 +1900,7 @@ int
 dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
   /* croak, if not in AutoCommit mode */
   if (DBIc_has(imp_dbh, DBIcf_AutoCommit))
-  {
-    do_warn(dbh, TX_ERR_AUTOCOMMIT,
-            "Rollback ineffective while AutoCommit is on");
     return FALSE;
-  }
 
   if (imp_dbh->has_transactions)
   {
@@ -1932,12 +1922,11 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
   }
   else
     do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-             "Rollback ineffective while AutoCommit is on"
+             "Rollback ineffective because transactions are not available"
 #if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-             ,NULL);
-#else
-            );
+             ,NULL
 #endif
+            );
   return TRUE;
 }
 
