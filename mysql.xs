@@ -697,6 +697,8 @@ dbd_mysql_get_info(dbh, sql_info_type)
     SV* retsv=NULL;
     bool using_322=0;
 
+    if (SvMAGICAL(sql_info_type))
+        mg_get(sql_info_type);
 
     if (SvOK(sql_info_type))
     	type = SvIV(sql_info_type);

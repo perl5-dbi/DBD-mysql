@@ -4631,6 +4631,9 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 
     D_imp_dbh(dbh);
 
+    if (type && SvMAGICAL(type))
+      mg_get(type);
+
     if (type  &&  SvOK(type))
     {
       int i;
