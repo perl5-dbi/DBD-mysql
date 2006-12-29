@@ -1434,7 +1434,7 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
               }
             }
           }
- 
+
           if ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE))  &&
               *svp  &&  SvTRUE(*svp))
           {
@@ -1490,6 +1490,8 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
         }
       }
     }
+#else
+    mysql_server_init(0, NULL, NULL);
 #endif
 
 #ifdef MYSQL_NO_CLIENT_FOUND_ROWS
@@ -2005,6 +2007,8 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 
 
     }
+#else
+    mysql_server_end();
 #endif
 
     /* The disconnect_all concept is flawed and needs more work */
