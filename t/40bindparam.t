@@ -138,8 +138,10 @@ while (Testing()) {
     Test($state or $dbh->do("INSERT INTO $table VALUES (6, '?')"))
 	   or DbiError($dbh->err, $dbh->errstr);
     if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
+        $state or $dbh->do('SET @old_sql_mode = @@sql_mode, @@sql_mode = \'\'');
 	Test($state or $dbh->do("INSERT INTO $table VALUES (7, \"?\")"))
 	    or DbiError($dbh->err, $dbh->errstr);
+        $state or $dbh->do('SET @@sql_mode = @old_sql_mode');
     }
 
     #
