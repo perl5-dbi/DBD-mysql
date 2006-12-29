@@ -11,9 +11,14 @@ my $COUNT_PREPARE = 10000;  # Number of prepare/execute/finish iterations
 
 
 my $haveStorable;
+
+if (!$ENV{SLOW_TESTS}) {
+    print "1..0 # Skip \$ENV{SLOW_TESTS} is not set\n";
+    exit 0;
+}
 eval { require Proc::ProcessTable; };
-if ($@  ||  !$ENV{SLOW_TESTS}) {
-    print "1..0 # Skip \$ENV{SLOW_TESTS} is not set or Proc::ProcessTable not installed \n";
+if ($@) {
+    print "1..0 # Skip Proc::ProcessTable not installed \n";
     exit 0;
 }
 eval { require Storable };
