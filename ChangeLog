@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Update the hints about what to do when zlib is found missing while
+  linking. (Bug #13803, reported by Philip Stoev)
 * Explicitly initialize the MySQL client library to avoid possible race
   conditions in a multithreaded application. (Bug #21792)
 * Fix warning when no connection attributes are passed to the connect
