@@ -380,6 +380,9 @@ do(dbh, statement, attr=Nullsv, ...)
           col_type= (stmt->fields) ? stmt->fields[i].type : MYSQL_TYPE_STRING;
 
           switch (col_type) {
+#if MYSQL_VERSION_ID > 50003
+          case MYSQL_TYPE_NEWDECIMAL:
+#endif
           case MYSQL_TYPE_DECIMAL:
             param_type= SQL_DECIMAL;
             buffer_type= MYSQL_TYPE_DOUBLE;

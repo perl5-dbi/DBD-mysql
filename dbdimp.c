@@ -262,6 +262,9 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
     enum_type= MYSQL_TYPE_LONG;
     break;
 
+#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+  case MYSQL_TYPE_NEWDECIMAL:
+#endif
   case MYSQL_TYPE_DECIMAL:
     enum_type= MYSQL_TYPE_DECIMAL;
     break;
@@ -1202,6 +1205,9 @@ static const sql_type_info_t *native2sql(int t)
   switch (t) {
     case FIELD_TYPE_VAR_STRING:  return &SQL_GET_TYPE_INFO_values[0];
     case FIELD_TYPE_DECIMAL:     return &SQL_GET_TYPE_INFO_values[1];
+#ifdef FIELD_TYPE_NEWDECIMAL
+    case FIELD_TYPE_NEWDECIMAL:  return &SQL_GET_TYPE_INFO_values[1];
+#endif
     case FIELD_TYPE_TINY:        return &SQL_GET_TYPE_INFO_values[2];
     case FIELD_TYPE_SHORT:       return &SQL_GET_TYPE_INFO_values[3];
     case FIELD_TYPE_LONG:        return &SQL_GET_TYPE_INFO_values[4];
