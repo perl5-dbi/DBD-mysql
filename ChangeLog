@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.01)
+* Fix warning when no connection attributes are passed to the connect
+  method (Bug #17323, reported by Phil Randal)
 * Removed redundant warnings when commit or rollback is called while
   AutoCommit is enabled. [rt.cpan.org #15802], reported by Tyler MacDonald
 * Report correct type for decimal columns from MySQL 5.0 and later

@@ -109,6 +109,7 @@ sub connect {
     # Avoid warnings for undefined values
     $username ||= '';
     $password ||= '';
+    $attrhash ||= {};
 
     # create a 'blank' dbh
     my($this, $privateAttrHash) = (undef, $attrhash);
