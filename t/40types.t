@@ -1,7 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 13;
+use Test::More tests => 16;
 use DBI;
 use strict;
 $|= 1;
@@ -36,6 +36,7 @@ ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 
 #
 # Bug #23936: bind_param() doesn't work with SQL_DOUBLE datatype
+# Bug #24256: Another failure in bind_param() with SQL_DOUBLE datatype
 #
 ok($dbh->do(qq{CREATE TABLE t1 (num DOUBLE)}), "creating table");
 
@@ -43,8 +44,11 @@ $sth= $dbh->prepare("INSERT INTO t1 VALUES (?)");
 ok($sth->bind_param(1, 2.1, DBI::SQL_DOUBLE), "binding parameter");
 ok($sth->execute(), "inserting data");
 ok($sth->finish);
+ok($sth->bind_param(1, -1, DBI::SQL_DOUBLE), "binding parameter");
+ok($sth->execute(), "inserting data");
+ok($sth->finish);
 
-is_deeply($dbh->selectrow_arrayref("SELECT * FROM t1"), [ '2.1' ]);
+is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"), [ ['2.1'],  ['-1'] ]);
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 
