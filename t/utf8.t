@@ -86,9 +86,9 @@ while (Testing()) {
     Test($state or ($dbh = DBI->connect($test_dsn, $test_user,
 					$test_password, {mysql_enable_utf8 => 1})))
 	   or ServerError();
-	
-	# Test($state or ($dbh->do("SET NAMES UTF8")))
-	#     or ErrMsg( "Couldn't set connection to UTF-8 mode\n" );
+
+    # Test($state or ($dbh->do("SET NAMES utf8")))
+    #    or ErrMsg( "Couldn't set connection to UTF-8 mode\n" );
 
     #
     #   Find a possible new table name
@@ -102,7 +102,7 @@ while (Testing()) {
     #   Create a new table; In an ideal world, it'd be more sensible to
     #   make the whole database UTF8...
     #
-    $query = "CREATE TABLE $table (name VARCHAR(64)) CHARACTER SET utf8";
+    $query = "CREATE TABLE $table (name VARCHAR(64) CHARACTER SET utf8, bincol BLOB, shape GEOMETRY)";
     Test($state or $dbh->do($query))
     	or ErrMsgF("Cannot create table: Error %s.\n", $dbh->errstr);
 
@@ -113,17 +113,24 @@ while (Testing()) {
 
     my $utf8_str        = "\x{0100}dam";     # "Adam" with a macron.
     my $quoted_utf8_str = "'\x{0100}dam'";
+
+    my $blob = "\x{c4}\x{80}dam"; # same as utf8_str but not utf8 encoded
+    my $quoted_blob = "'\x{c4}\x{80}dam'";
+
     Test( $state or ( $dbh->quote( $utf8_str ) eq $quoted_utf8_str ) )
       or ErrMsg( "Failed to retain UTF-8 flag when quoting.\n" );
+
+    Test( $state or ( $dbh->quote( $blob ) eq $quoted_blob ) )
+      or ErrMsg( "UTF-8 flag was set when quoting.\n" );
 
     Test( $state or ( $dbh->{ mysql_enable_utf8 } ) )
       or ErrMsg( "mysql_enable_utf8 didn't survive connect()\n" );
 
-    $query = qq{INSERT INTO $table (name) VALUES (?)};
-    Test( $state or $dbh->do( $query, {}, $utf8_str ) )
+    $query = qq{INSERT INTO $table (name, bincol, shape) VALUES (?,?, GeomFromText('Point(132865 501937)'))};
+    Test( $state or $dbh->do( $query, {}, $utf8_str,$blob ) )
       or ErrMsgF( "INSERT failed: query $query, error %s.\n", $dbh->errstr );
 
-    $query = "SELECT name FROM $table LIMIT 1";
+    $query = "SELECT name,bincol,asbinary(shape) FROM $table LIMIT 1";
     Test( $state or ($sth = $dbh->prepare( $query ) ) )
       or ErrMsgF( "prepare failed: query $query, error %s.\n", $dbh->errstr );
 
@@ -137,6 +144,20 @@ while (Testing()) {
     # Finally, check that we got back UTF-8 correctly.
     Test( $state or ($ref->[0] eq $utf8_str) )
       or ErrMsgF( "got back '$ref->[0]' instead of '$utf8_str'.\n" );
+
+    if (eval "use Encode;") {
+      # Check for utf8 flag
+      Test( $state or (!Encode::is_utf8($ref->[1])) )
+        or ErrMsgF( "blob was made utf8!.\n" );
+
+      Test( $state or (!Encode::is_utf8($ref->[2])) )
+        or ErrMsgF( "shape was made utf8!.\n" );
+    }
+
+    # Finally, check that we got back bincol correctly.
+    Test( $state or ($ref->[1] eq $blob) )
+      or ErrMsgF( "got back '$ref->[1]' instead of '$blob'.\n" );
+
 
     Test( $state or $sth->finish )
       or ErrMsgF( "Cannot finish: %s.\n", $sth->errstr );

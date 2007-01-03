@@ -274,19 +274,21 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_TIME:
   case MYSQL_TYPE_DATETIME:
   case MYSQL_TYPE_NEWDATE:
+  case MYSQL_TYPE_TIMESTAMP:
   case MYSQL_TYPE_VAR_STRING:
-#if MYSQL_VERSION_ID > GEO_DATATYPE_VERSION
-  case MYSQL_TYPE_GEOMETRY:
-#endif
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
   case MYSQL_TYPE_VARCHAR:
 #endif
   case MYSQL_TYPE_STRING:
+    enum_type= MYSQL_TYPE_STRING;
+    break;
+
+#if MYSQL_VERSION_ID > GEO_DATATYPE_VERSION
+  case MYSQL_TYPE_GEOMETRY:
+#endif
   case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_TINY_BLOB:
-  case MYSQL_TYPE_TIMESTAMP:
-  /* case MYSQL_TYPE_UNKNOWN: */
-    enum_type= MYSQL_TYPE_STRING;
+    enum_type= MYSQL_TYPE_BLOB;
     break;
 
   default:
@@ -3401,6 +3403,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *buffer;
 #endif
+  MYSQL_FIELD *fields;
   D_imp_dbh_from_sth;
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t-> dbd_st_fetch\n");
@@ -3601,8 +3604,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       return Nullav;
     }
 
+    num_fields= mysql_num_fields(imp_sth->result);
+    fields= mysql_fetch_fields(imp_sth->result);
     lengths= mysql_fetch_lengths(imp_sth->result);
-    num_fields=mysql_num_fields(imp_sth->result);
 
     if ((av= DBIc_FIELDS_AV(imp_sth)) != Nullav)
     {
@@ -3637,7 +3641,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           SvREADONLY_on(av);
       }
     }
-    
+
     av= DBIS->get_fbav(imp_sth);
 
     for (i= 0;  i < num_fields; ++i)
@@ -3656,9 +3660,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         sv_setpvn(sv, col, len);
 	/* UTF8 */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-	if(imp_dbh->enable_utf8)
+	if (imp_dbh->enable_utf8 && !(fields[i].flags & BINARY_FLAG))
 	  sv_utf8_decode(sv);
-#endif	  
+#endif
 	/* END OF UTF8 */
       }
       else
@@ -4339,7 +4343,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       case SQL_BINARY:
       case SQL_VARBINARY:
       case SQL_LONGVARBINARY:
-        buffer_type= MYSQL_TYPE_STRING;
+        buffer_type= MYSQL_TYPE_BLOB;
         break;
 
       default:

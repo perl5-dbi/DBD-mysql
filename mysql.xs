@@ -450,9 +450,15 @@ do(dbh, statement, attr=Nullsv, ...)
             break;
 
           case MYSQL_TYPE_BLOB:
-            buffer_type= MYSQL_TYPE_STRING;
+            buffer_type= MYSQL_TYPE_BLOB;
             param_type= SQL_BINARY;
             break;
+
+          case MYSQL_TYPE_GEOMETRY:
+            buffer_type= MYSQL_TYPE_BLOB;
+            param_type= SQL_BINARY;
+            break;
+
 
           default:
             buffer_type= MYSQL_TYPE_STRING;
