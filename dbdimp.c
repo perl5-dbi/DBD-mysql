@@ -166,14 +166,13 @@ static imp_sth_fbh_t *alloc_fbuffer(int num_fields)
 /*
   free MYSQL_BIND bind struct
 */
-static void free_bind(MYSQL_BIND* bind)
+static void free_bind(MYSQL_BIND *bind)
 {
   if (bind)
     Safefree(bind);
   else {
     if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR BIND!\n");
-    fprintf(stderr,"FREE ERROR BIND!");
+      PerlIO_printf(DBILOGFP, "Warning: called free_bind() on NULL pointer");
   }
 }
 
@@ -186,22 +185,20 @@ static void free_fbind(imp_sth_phb_t *fbind)
     Safefree(fbind);
   else {
     if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR FBIND!\n");
-    fprintf(stderr,"FREE ERROR FBIND!");
+      PerlIO_printf(DBILOGFP, "Warning: called free_fbind() on NULL pointer");
   }
 }
 
 /*
   free imp_sth_fbh_t fbh structure
 */
-static void free_fbuffer(imp_sth_fbh_t * fbh)
+static void free_fbuffer(imp_sth_fbh_t *fbh)
 {
   if (fbh)
     Safefree(fbh);
   else {
     if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR FBUFFER!\n");
-    fprintf(stderr,"FREE ERROR FBUFFER!");
+      PerlIO_printf(DBILOGFP, "Warning: called free_fbuffer() on NULL pointer");
   }
 }
 
