@@ -116,8 +116,7 @@ static imp_sth_ph_t *alloc_param(int num_params)
 
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-/* 
-
+/*
   allocate memory in MYSQL_BIND bind structure per
   number of placeholders
 */
@@ -167,12 +166,11 @@ static imp_sth_fbh_t *alloc_fbuffer(int num_fields)
 /*
   free MYSQL_BIND bind struct
 */
-static void FreeBind(MYSQL_BIND* bind)
+static void free_bind(MYSQL_BIND* bind)
 {
   if (bind)
     Safefree(bind);
-  else
-  {
+  else {
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "\t\tFREE ERROR BIND!\n");
     fprintf(stderr,"FREE ERROR BIND!");
@@ -182,27 +180,29 @@ static void FreeBind(MYSQL_BIND* bind)
 /*
    free imp_sth_phb_t fbind structure
 */
-static void FreeFBind(imp_sth_phb_t *fbind)
+static void free_fbind(imp_sth_phb_t *fbind)
 {
   if (fbind)
     Safefree(fbind);
-  else
-  {
+  else {
     if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP, "\t\tFREE ERROR FBIND!\n");
     fprintf(stderr,"FREE ERROR FBIND!");
   }
 }
 
-/* 
+/*
   free imp_sth_fbh_t fbh structure
 */
-static void FreeFBuffer(imp_sth_fbh_t * fbh)
+static void free_fbuffer(imp_sth_fbh_t * fbh)
 {
   if (fbh)
     Safefree(fbh);
-  else
+  else {
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP, "\t\tFREE ERROR FBUFFER!\n");
     fprintf(stderr,"FREE ERROR FBUFFER!");
+  }
 }
 
 #endif
@@ -211,7 +211,7 @@ static void FreeFBuffer(imp_sth_fbh_t * fbh)
   free statement param structure per num_params
 */
 static void
-FreeParam(imp_sth_ph_t *params, int num_params)
+free_param(imp_sth_ph_t *params, int num_params)
 {
   if (params)
   {
@@ -3734,8 +3734,8 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
         PerlIO_printf(DBILOGFP,
                       "\tFreeing %d parameters\n",
                       DBIc_NUM_PARAMS(imp_sth));
-      FreeBind(imp_sth->bind);
-      FreeFBind(imp_sth->fbind);
+      free_bind(imp_sth->bind);
+      free_fbind(imp_sth->fbind);
       imp_sth->bind= NULL;
       imp_sth->fbind= NULL;
     }
@@ -3743,15 +3743,13 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 
     if (imp_sth->fbh)
     {
-      num_fields= DBIc_NUM_FIELDS(imp_sth);
-
       for (fbh= imp_sth->fbh, i= 0; i < num_fields; i++, fbh++)
       {
         if (fbh->data)
           Safefree(fbh->data);
       }
-      FreeFBuffer(imp_sth->fbh);
-      FreeBind(imp_sth->buffer);
+      free_fbuffer(imp_sth->fbh);
+      free_bind(imp_sth->buffer);
       imp_sth->buffer= NULL;
       imp_sth->fbh= NULL;
     }
@@ -3797,61 +3795,10 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 
   int i;
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-  int num_fields;
-  imp_sth_fbh_t *fbh;
-
-  if (imp_sth->use_server_side_prepare)
-  {
-    if (imp_sth->stmt)
-    {
-      if (dbis->debug >= 2)
-        PerlIO_printf(DBILOGFP,
-                      "\tdbd_st_destroy/server_side_prepare and stmt\n");
-      if (mysql_stmt_close(imp_sth->stmt))
-      {
-        PerlIO_printf(DBILOGFP,
-                      "DESTROY: Error %s while close stmt\n",
-                      (char *) mysql_stmt_error(imp_sth->stmt));
-        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt),
-                 mysql_stmt_sqlstate(imp_sth->stmt));
-      }
-      if (DBIc_NUM_PARAMS(imp_sth) > 0)
-      {
-       if (dbis->debug >= 2)
-           PerlIO_printf(DBILOGFP,
-                         "\tFreeing %d parameters\n",
-                         DBIc_NUM_PARAMS(imp_sth));
-        FreeBind(imp_sth->bind);
-        FreeFBind(imp_sth->fbind);
-        imp_sth->bind= NULL;
-        imp_sth->fbind= NULL;
-      }
-      num_fields= DBIc_NUM_FIELDS(imp_sth);
-
-      if (imp_sth->fbh)
-      {
-        num_fields= DBIc_NUM_FIELDS(imp_sth);
-
-        for (fbh= imp_sth->fbh, i= 0; i < num_fields; i++, fbh++)
-        {
-          if (fbh->data)
-            Safefree(fbh->data);
-        }
-        FreeFBuffer(imp_sth->fbh);
-        FreeBind(imp_sth->buffer);
-        imp_sth->buffer= NULL;
-        imp_sth->fbh= NULL;
-      }
-    }
-  }
-#endif
-
   /* dbd_st_finish has already been called by .xs code if needed.	*/
 
   /* Free values allocated by dbd_bind_ph */
-  FreeParam(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
+  free_param(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
   imp_sth->params= NULL;
 
   /* Free cached array attributes */

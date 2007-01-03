@@ -1,4 +1,5 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.001)
+* Fix double-free of bound parameters when freeing statements. (Bug #20559)
 * Make sure to handle "magical" values in a couple of places. (Bug #20104)
 * Update the hints about what to do when zlib is found missing while
   linking. (Bug #13803, reported by Philip Stoev)
