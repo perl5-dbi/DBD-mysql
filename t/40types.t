@@ -1,7 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 16;
+use Test::More tests => 20;
 use DBI;
 use strict;
 $|= 1;
@@ -49,6 +49,16 @@ ok($sth->execute(), "inserting data");
 ok($sth->finish);
 
 is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"), [ ['2.1'],  ['-1'] ]);
+
+ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
+
+#
+# [rt.cpan.org #19212] Mysql Unsigned Integer Fields
+#
+ok($dbh->do(qq{CREATE TABLE t1 (num INT UNSIGNED)}), "creating table");
+ok($dbh->do(qq{INSERT INTO t1 VALUES (0),(4294967295)}), "loading data");
+
+is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"), [ ['0'],  ['4294967295'] ]);
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 
