@@ -3337,6 +3337,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->buffer_length= fields[i].length;
       buffer->length= &(fbh->length);
       buffer->is_null= &(fbh->is_null);
+      buffer->is_unsigned= fbh->is_unsigned;
       Newz(908, fbh->data, fields[i].length, char);
 
       switch (buffer->buffer_type) {
@@ -3536,8 +3537,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
         case MYSQL_TYPE_LONG:
           if (dbis->debug > 2)
-            PerlIO_printf(DBILOGFP, "\t\tst_fetch int data %d\n", fbh->ldata);
-          sv_setuv(sv, fbh->ldata);
+            PerlIO_printf(DBILOGFP, "\t\tst_fetch int data %d, unsigned? %d\n",
+                          fbh->ldata, fbh->is_unsigned);
+          if (fbh->is_unsigned)
+            sv_setuv(sv, fbh->ldata);
+          else
+            sv_setiv(sv, fbh->ldata);
           break;
 
         case MYSQL_TYPE_STRING:
