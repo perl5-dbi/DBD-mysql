@@ -764,7 +764,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
     MYSQL_TYPE_LONGLONG,     1
 #endif
   },
-  { "middleint", SQL_INTEGER,                       8, NULL, NULL, NULL,
+  { "mediumint", SQL_INTEGER,                       8, NULL, NULL, NULL,
     1, 0, 3, 0, 0, 0, "Medium integer",
     0, 0, 10,
     SQL_INTEGER, 0, 0,
@@ -925,7 +925,7 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
     MYSQL_TYPE_SHORT,       1
 #endif
   },
-  { "middleint unsigned", SQL_INTEGER,              8, NULL, NULL, NULL,
+  { "mediumint unsigned", SQL_INTEGER,              8, NULL, NULL, NULL,
     1, 0, 3, 1, 0, 0, "Medium integer unsigned",
     0, 0, 10,
     SQL_INTEGER, 0, 0,
