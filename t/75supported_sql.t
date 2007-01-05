@@ -35,10 +35,6 @@ while(Testing())
   Test($state or my $dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
 
-  # don't want this during make test!
-  Test($state or (!$dbh->trace("3", "/tmp/trace.log"))) or
-    DbiError($dbh->err, $dbh->errstr);
-
   #
   #   Create a new table; EDIT THIS!
   #

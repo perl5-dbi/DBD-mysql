@@ -76,7 +76,6 @@ while(Testing())
     $sth->execute()) or
     DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or $sth=
-    $dbh->prepare("DROP TABLE $table")) or
+  Test($state or $dbh->do("DROP TABLE $table")) or
     DbiError($dbh->err, $dbh->errstr);
 }
