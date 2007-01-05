@@ -186,7 +186,6 @@ typedef struct imp_sth_phb_st {
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
     bool           is_null;
-    bool           is_unsigned;
     char           *data;
     int            charsetnr;
     double         ddata;

@@ -1,4 +1,6 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.001)
+* Fix handling of unsigned integer values in result sets when using
+  server-side prepared statements (they were not retrieved at all).
 * Fix handling of signed integer values when using server-side prepared
   statements (they were being forced to unsigned values).
 * Do not tell Perl that the contents of binary fields are UTF-8.

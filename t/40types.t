@@ -58,7 +58,8 @@ ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 ok($dbh->do(qq{CREATE TABLE t1 (num INT UNSIGNED)}), "creating table");
 ok($dbh->do(qq{INSERT INTO t1 VALUES (0),(4294967295)}), "loading data");
 
-is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"), [ ['0'],  ['4294967295'] ]);
+is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"),
+          [ ['0'],  ['4294967295'] ]);
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 

@@ -3337,7 +3337,6 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->buffer_length= fields[i].length;
       buffer->length= &(fbh->length);
       buffer->is_null= &(fbh->is_null);
-      buffer->is_unsigned= fbh->is_unsigned;
       Newz(908, fbh->data, fields[i].length, char);
 
       switch (buffer->buffer_type) {
@@ -3347,6 +3346,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 
       case MYSQL_TYPE_LONG:
         buffer->buffer= (char*) &fbh->ldata;
+        buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
       case MYSQL_TYPE_STRING:
@@ -3467,11 +3467,17 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
                  mysql_stmt_error(imp_sth->stmt),
                 mysql_stmt_sqlstate(imp_sth->stmt));
 
+      if (rc == MYSQL_DATA_TRUNCATED)
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tdbd_st_fetch data truncated\n");
+
       if (rc == MYSQL_NO_DATA)
       {
         /* Update row_num to affected_rows value */
         imp_sth->row_num= mysql_stmt_affected_rows(imp_sth->stmt);
         imp_sth->fetch_done=1;
+        if (dbis->debug >= 2)
+          PerlIO_printf(DBILOGFP, "\t\tdbd_st_fetch no data\n");
       }
 
       dbd_st_finish(sth, imp_sth);
@@ -3538,8 +3544,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         case MYSQL_TYPE_LONG:
           if (dbis->debug > 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch int data %d, unsigned? %d\n",
-                          fbh->ldata, fbh->is_unsigned);
-          if (fbh->is_unsigned)
+                          fbh->ldata, buffer->is_unsigned);
+          if (buffer->is_unsigned)
             sv_setuv(sv, fbh->ldata);
           else
             sv_setiv(sv, fbh->ldata);
