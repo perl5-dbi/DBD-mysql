@@ -519,12 +519,6 @@ static char *parse_params(
 
   while (statement_ptr < statement_ptr_end)
   {
-    /*if (dbis->debug >= 2)
-      PerlIO_printf(DBILOGFP,
-                    "     parse_params statement_ptr %08lx = %s \
-                    statement_ptr_end %08lx\n",
-                    statement_ptr, statement_ptr, statement_ptr_end);
-                  */
     /* LIMIT should be the last part of the query, in most cases */
     if (! limit_flag)
     {
