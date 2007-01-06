@@ -1490,7 +1490,7 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
       }
     }
 #else
-    mysql_server_init(0, NULL, NULL);
+    mysql_server_init(-1, NULL, NULL);
 #endif
 
 #ifdef MYSQL_NO_CLIENT_FOUND_ROWS
