@@ -15,6 +15,7 @@ $^W = 1;
 $test_dsn = '';
 $test_user = '';
 $test_password = '';
+$sql_mode_feature=1;
 
 
 #
@@ -53,6 +54,26 @@ if (!defined(&SQL_VARCHAR)) {
 if (!defined(&SQL_INTEGER)) {
     eval "sub SQL_INTEGER { 4 }";
 }
+$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;
+
+$sth= $dbh->prepare("select version()") or
+  DbiError($dbh->err, $dbh->errstr);
+
+$sth->execute() or 
+  DbiError($dbh->err, $dbh->errstr);
+
+$row= $sth->fetchrow_arrayref() or
+  DbiError($dbh->err, $dbh->errstr);
+
+# 
+# DROP/CREATE PROCEDURE will give syntax error 
+# for these versions
+#
+if ($row->[0] =~ /^4\.0/ || $row->[0] =~ /^3/)
+{
+  $sql_mode_feature= 0;
+}
 
 #
 #   Main loop; leave this untouched, put tests after creating
@@ -61,8 +82,9 @@ if (!defined(&SQL_INTEGER)) {
 while (Testing()) {
     #
     #   Connect to the database
-    Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-	or ServerError();
+    Test($state or ($dbh = DBI->connect($test_dsn, $test_user,
+					$test_password, {mysql_enable_utf8 => 1})))
+	   or ServerError();
 
     #
     #   Find a possible new table name
@@ -106,7 +128,8 @@ while (Testing()) {
     # Now try the explicit type settings
     Test($state or $sth->bind_param(1, " 4", SQL_INTEGER()))
 	or DbiError($dbh->err, $dbh->errstr);
-    Test($state or $sth->bind_param(2, "Andreas König"))
+    # umlaut equivelant is vowel followed by 'e'
+    Test($state or $sth->bind_param(2, 'Andreas Koenig'))
 	or DbiError($dbh->err, $dbh->errstr);
     Test($state or $sth->execute)
 	   or DbiError($dbh->err, $dbh->errstr);
@@ -136,10 +159,10 @@ while (Testing()) {
     Test($state or $dbh->do("INSERT INTO $table VALUES (6, '?')"))
 	   or DbiError($dbh->err, $dbh->errstr);
     if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
-        $state or $dbh->do('SET @old_sql_mode = @@sql_mode, @@sql_mode = \'\'');
-	Test($state or $dbh->do("INSERT INTO $table VALUES (7, \"?\")"))
+        ($state or ! $sql_mode_feature) or $dbh->do('SET @old_sql_mode = @@sql_mode, @@sql_mode = \'\'');
+	Test(($state or !$sql_mode_feature) or ($sql_mode_feature and $dbh->do("INSERT INTO $table VALUES (7, \"?\")")))
 	    or DbiError($dbh->err, $dbh->errstr);
-        $state or $dbh->do('SET @@sql_mode = @old_sql_mode');
+        ($state or ! $sql_mode_feature)  or ($sql_mode_feature and $dbh->do('SET @@sql_mode = @old_sql_mode'));
     }
 
     #
@@ -175,7 +198,7 @@ while (Testing()) {
 		  $id, $name, $ref, scalar(@$ref));
 
     Test($state or (($ref = $sth->fetch)  &&  $id == 4  &&
-		    $name eq 'Andreas König'))
+		    $name eq 'Andreas Koenig'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
     Test($state or (($ref = $sth->fetch)  &&  $id == 5  &&
@@ -187,11 +210,9 @@ while (Testing()) {
 		   $name eq '?'))
 	or print("Query returned id = $id, name = $name, expected 6,?\n");
 
-    if ($mdriver eq 'mysql' or $mdriver eq 'mysqlEmb') {
-	Test($state or (($ref = $sth->fetch)  &&  $id == 7  &&
-			$name eq '?'))
-	    or print("Query returned id = $id, name = $name, expected 7,?\n");
-    }
+    Test(($state || !$sql_mode_feature) or (($ref = $sth->fetch)  &&  $id == 7  &&
+          $name eq '?'))
+      or print("Query returned id = $id, name = $name, expected 7,?\n");
     #
     #   Finally drop the test table.
     #

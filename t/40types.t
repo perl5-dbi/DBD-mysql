@@ -1,12 +1,14 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 20;
+use Test::More;
 use DBI;
 use strict;
 $|= 1;
 
 my $mdriver= "";
+my $new_data_types_version= 0;
+
 our ($test_dsn, $test_user, $test_password);
 foreach my $file ("lib.pl", "t/lib.pl") {
   do $file;
@@ -19,13 +21,45 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;
+
+my $sth= $dbh->prepare("select version()") or
+  DbiError($dbh->err, $dbh->errstr);
+
+$sth->execute() or 
+  DbiError($dbh->err, $dbh->errstr);
+
+my $row= $sth->fetchrow_arrayref() or
+  DbiError($dbh->err, $dbh->errstr);
+
+# 
+# DROP/CREATE PROCEDURE will give syntax error 
+# for these versions
+#
+if ($row->[0] =~ /^5/)
+{
+  $new_data_types_version= 1;
+}
+$sth->finish();
+$dbh->disconnect();
+
+if( !$new_data_types_version)
+{
+  plan skip_all => "New data types not supported in version $row->[0], skipping";
+}
+else
+{
+  plan tests => 20;
+}
+
 ok(defined $dbh, "connecting");
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 
 ok($dbh->do(qq{CREATE TABLE t1 (d DECIMAL(5,2))}), "creating table");
 
-my $sth= $dbh->prepare("SELECT * FROM t1 WHERE 1 = 0");
+$sth= $dbh->prepare("SELECT * FROM t1 WHERE 1 = 0");
 ok($sth->execute(), "getting table information");
 
 is_deeply($sth->{TYPE}, [ 3 ], "checking column type");

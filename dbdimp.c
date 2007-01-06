@@ -3470,9 +3470,11 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
                  mysql_stmt_error(imp_sth->stmt),
                 mysql_stmt_sqlstate(imp_sth->stmt));
 
+#if MYSQL_VERSION_ID >= MYSQL_VERSION_5_0 
       if (rc == MYSQL_DATA_TRUNCATED)
         if (dbis->debug >= 2)
           PerlIO_printf(DBILOGFP, "\t\tdbd_st_fetch data truncated\n");
+#endif
 
       if (rc == MYSQL_NO_DATA)
       {
@@ -3615,7 +3617,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 #endif
 
 
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
       if (!mysql_more_results(svsock))
+#endif
         dbd_st_finish(sth, imp_sth);
       return Nullav;
     }
