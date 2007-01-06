@@ -519,11 +519,12 @@ static char *parse_params(
 
   while (statement_ptr < statement_ptr_end)
   {
-    if (dbis->debug >= 2)
+    /*if (dbis->debug >= 2)
       PerlIO_printf(DBILOGFP,
                     "     parse_params statement_ptr %08lx = %s \
                     statement_ptr_end %08lx\n",
                     statement_ptr, statement_ptr, statement_ptr_end);
+                  */
     /* LIMIT should be the last part of the query, in most cases */
     if (! limit_flag)
     {
@@ -1364,6 +1365,7 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 			char* port, char* user, char* password,
 			char* dbname, imp_dbh_t *imp_dbh) {
   int portNr;
+  unsigned int client_flag;
   MYSQL* result;
 
   /* per Monty, already in client.c in API */
@@ -1494,9 +1496,9 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
 #endif
 
 #ifdef MYSQL_NO_CLIENT_FOUND_ROWS
-    unsigned int client_flag = 0;
+    client_flag = 0;
 #else
-    unsigned int client_flag = CLIENT_FOUND_ROWS;
+    client_flag = CLIENT_FOUND_ROWS;
 #endif
     mysql_init(sock);
 
@@ -2752,11 +2754,11 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     DBIc_ACTIVE_off(imp_sth);
 
   next_result_return_code= mysql_next_result(svsock);
-  
+
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP,
                            "\n      <-!!!!!!!!!! dbs_st_more_rows %d\n", next_result_return_code);
-                              
+
   /*
     mysql_next_result returns
       0 if there are more results
@@ -2765,7 +2767,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
    */
   if (next_result_return_code > 0)
   {
-    do_error(sth, mysql_errno(svsock), mysql_error(svsock), 
+    do_error(sth, mysql_errno(svsock), mysql_error(svsock),
              mysql_sqlstate(svsock));
     return 0;
   }
@@ -3397,12 +3399,13 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   AV *av;
   int av_length, av_readonly;
   MYSQL_ROW cols;
+  D_imp_dbh_from_sth;
+  MYSQL* svsock= &imp_dbh->mysql;
   imp_sth_fbh_t *fbh;
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *buffer;
 #endif
   MYSQL_FIELD *fields;
-  D_imp_dbh_from_sth;
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, "\t-> dbd_st_fetch\n");
 
@@ -3598,6 +3601,10 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
     if (!(cols= mysql_fetch_row(imp_sth->result)))
     {
+      if (dbis->debug > 2)
+      {
+        PerlIO_printf(DBILOGFP, "\tdbd_st_fetch, no more rows to fetch");
+      }
       if (mysql_errno(&imp_dbh->mysql))
         do_error(sth, mysql_errno(&imp_dbh->mysql),
                  mysql_error(&imp_dbh->mysql)
@@ -3608,7 +3615,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 #endif
 
 
-      dbd_st_finish(sth, imp_sth);
+      if (!mysql_more_results(svsock))
+        dbd_st_finish(sth, imp_sth);
       return Nullav;
     }
 
@@ -3728,6 +3736,12 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
   int i;
   int num_fields;
   imp_sth_fbh_t *fbh;
+
+  if (dbis->debug >= 2)
+  {
+    PerlIO_printf(DBILOGFP, "\n--> dbd_st_finish\n");
+  }
+
   if (imp_sth->use_server_side_prepare)
   {
     if (imp_sth && imp_sth->stmt)
@@ -3782,6 +3796,10 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
     mysql_st_free_result_sets(sth, imp_sth);
   }
   DBIc_ACTIVE_off(imp_sth);
+  if (dbis->debug >= 2)
+  {
+    PerlIO_printf(DBILOGFP, "\n<-- dbd_st_finish\n");
+  }
   return 1;
 }
 

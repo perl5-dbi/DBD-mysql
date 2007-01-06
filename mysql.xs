@@ -737,13 +737,14 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    break;
 	case SQL_MAXIMUM_TABLES_IN_SELECT:
 	    /* newSViv((sizeof(int) > 32) ? sizeof(int)-1 : 31 ); in general? */
-	    newSViv((sizeof(int) == 64 ) ? 63 : 31 );
+            (sizeof(int) == 64) ? 63: 31;
+	    retsv= newSViv((sizeof(int) == 64 ) ? 63 : 31 );
 	    break;
 	case SQL_MAX_TABLE_NAME_LEN:
-	    newSViv(NAME_LEN);
+	    retsv= newSViv(NAME_LEN);
 	    break;
 	case SQL_SERVER_NAME:
-	    newSVpv(imp_dbh->mysql.host_info,strlen(imp_dbh->mysql.host_info));
+	    retsv= newSVpv(imp_dbh->mysql.host_info,strlen(imp_dbh->mysql.host_info));
 	    break;
     	default:
  		croak("Unknown SQL Info type: %i",dbh);
