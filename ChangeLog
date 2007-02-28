@@ -1,4 +1,7 @@
 <unreleased> Jim Winstead <jimw@mysql.com> (4.002)
+* Added support for wildcards in last argument of column_info().
+* Add mysql_is_auto_increment to results of column_info(). (Bug #26603,
+  original patch from Dave Rolsky)
 * Return the correct table type for both tables and views from the table_info()
   method. (Bug #26603, original patch from Dave Rolsky)
 * Add implementation of foreign_key_info() (Bug #26604, original patch from

@@ -300,8 +300,8 @@ sub _ListTables {
 
 sub column_info {
     my ($dbh, $catalog, $schema, $table, $column) = @_;
-    return $dbh->set_err(1, "column_info doesn't support column selection")
-	if $column ne "%";
+    # ODBC allows a NULL to mean all columns, so we'll accept undef
+    $column = '%' unless defined $column;
 
     my $table_id = $dbh->quote_identifier($catalog, $schema, $table);
 
@@ -316,11 +316,12 @@ sub column_info {
 	SCOPE_CAT SCOPE_SCHEM SCOPE_NAME MAX_CARDINALITY
 	DTD_IDENTIFIER IS_SELF_REF
 	mysql_is_pri_key mysql_type_name mysql_values
+        mysql_is_auto_increment
     );
     my %col_info;
 
     local $dbh->{FetchHashKeyName} = 'NAME_lc';
-    my $desc_sth = $dbh->prepare("DESCRIBE $table_id");
+    my $desc_sth = $dbh->prepare("DESCRIBE $table_id " . $dbh->quote($column));
     my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
 
     return $desc_sth if $desc_sth->err();
@@ -330,6 +331,8 @@ sub column_info {
 	my $type = $row->{type};
 	$type =~ m/^(\w+)(?:\((.*?)\))?\s*(.*)/;
 	my $basetype = lc($1);
+        my $typemod = $2;
+        my $attr = $3;
 
 	my $info = $col_info{ $row->{field} } = {
 	    TABLE_CAT   => $catalog,
@@ -343,15 +346,17 @@ sub column_info {
 	    ORDINAL_POSITION => ++$ordinal_pos,
 	    mysql_is_pri_key => ($row->{key}  eq 'PRI'),
 	    mysql_type_name  => $row->{type},
+            mysql_is_auto_increment => ($row->{extra} =~ /auto_increment/i ? 1 :
+                                        0),
 	};
 	# This code won't deal with a pathalogical case where a value
 	# contains a single quote followed by a comma, and doesn't unescape
 	# any escaped values. But who would use those in an enum or set?
-	my @type_params = ($2 && index($2,"'")>=0)
-			? ("$2," =~ /'(.*?)',/g)  # assume all are quoted
-			: split /,/, $2||'';      # no quotes, plain list
+	my @type_params = ($typemod && index($typemod,"'")>=0)
+			? ("$typemod," =~ /'(.*?)',/g)  # assume all are quoted
+			: split /,/, $typemod||'';      # no quotes, plain list
 	s/''/'/g for @type_params;                # undo doubling of quotes
-	my @type_attr = split / /, $3||'';
+	my @type_attr = split / /, $attr||'';
 	#warn "$type: $basetype [@type_params] [@type_attr]\n";
 
 	$info->{DATA_TYPE} = SQL_VARCHAR();

@@ -21,7 +21,7 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
-plan tests => 24;
+plan tests => 32;
 
 ok(defined $dbh, "connecting");
 
@@ -81,8 +81,7 @@ SKIP: {
 };
 
 #
-# Bug #26603: support views in table_info(), add primary_key_info(),
-# add mysql_is_autoincrement
+# Bug #26603: (one part) support views in table_info()
 #
 SKIP: {
   skip "Server is too old to support views", 16
@@ -105,6 +104,45 @@ SKIP: {
   ok($dbh->do(qq{DROP VIEW IF EXISTS v1}) and
      $dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
 
+};
+
+#
+# column_info() tests
+#
+SKIP: {
+  ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+  ok($dbh->do(qq{CREATE TABLE t1 (a INT PRIMARY KEY AUTO_INCREMENT,
+                                  b INT,
+                                  `a_` INT,
+                                  `a'b` INT,
+                                  bar INT
+                                  )}), "creating table");
+
+  #
+  # Bug #26603: (one part) add mysql_is_autoincrement
+  #
+  $sth= $dbh->column_info(undef, undef, "t1", 'a');
+  my ($info)= $sth->fetchall_arrayref({});
+  is($info->[0]->{mysql_is_auto_increment}, 1);
+
+  $sth= $dbh->column_info(undef, undef, "t1", 'b');
+  ($info)= $sth->fetchall_arrayref({});
+  is($info->[0]->{mysql_is_auto_increment}, 0);
+
+  #
+  # Test that wildcards and odd names are handled correctly
+  #
+  $sth= $dbh->column_info(undef, undef, "t1", "a%");
+  ($info)= $sth->fetchall_arrayref({});
+  is(scalar @$info, 3);
+  $sth= $dbh->column_info(undef, undef, "t1", "a" . $dbh->get_info(14) . "_");
+  ($info)= $sth->fetchall_arrayref({});
+  is(scalar @$info, 1);
+  $sth= $dbh->column_info(undef, undef, "t1", "a'b");
+  ($info)= $sth->fetchall_arrayref({});
+  is(scalar @$info, 1);
+
+  ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
 };
 
 
