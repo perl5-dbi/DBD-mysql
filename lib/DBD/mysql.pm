@@ -98,6 +98,7 @@ sub AUTOLOAD {
 package DBD::mysql::dr; # ====== DRIVER ======
 use strict;
 use DBI qw(:sql_types);
+use DBI::Const::GetInfoType;
 
 sub connect {
     my($drh, $dsn, $username, $password, $attrhash) = @_;
@@ -470,6 +471,103 @@ sub primary_key_info {
     }) or return $dbh->DBI::set_err($sponge->err(), $sponge->errstr());
 
     return $sth;
+}
+
+
+sub foreign_key_info {
+    my ($dbh,
+        $pk_catalog, $pk_schema, $pk_table,
+        $fk_catalog, $fk_schema, $fk_table,
+       ) = @_;
+
+    # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
+    my ($maj, $min, $point) = _version($dbh);
+    return if $maj < 5 || ($maj == 5 && $point < 6);
+
+    my @names = qw(
+        UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
+        FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
+        ORDINAL_POSITION DELETE_RULE FK_NAME UK_NAME DEFERABILITY
+        UNIQUE_OR_PRIMARY
+    );
+
+    my $sql = <<'EOF';
+SELECT NULL AS PKTABLE_CAT,
+       A.REFERENCED_TABLE_SCHEMA AS PKTABLE_SCHEM,
+       A.REFERENCED_TABLE_NAME AS PKTABLE_NAME,
+       A.REFERENCED_COLUMN_NAME AS PKCOLUMN_NAME,
+       A.TABLE_CATALOG AS FKTABLE_CAT,
+       A.TABLE_SCHEMA AS FKTABLE_SCHEM,
+       A.TABLE_NAME AS FKTABLE_NAME,
+       A.COLUMN_NAME AS FKCOLUMN_NAME,
+       A.ORDINAL_POSITION AS KEY_SEQ,
+       NULL AS UPDATE_RULE,
+       NULL AS DELETE_RULE,
+       A.CONSTRAINT_NAME AS FK_NAME,
+       NULL AS PK_NAME,
+       NULL AS DEFERABILITY,
+       NULL AS UNIQUE_OR_PRIMARY
+  FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE A,
+       INFORMATION_SCHEMA.TABLE_CONSTRAINTS B
+ WHERE A.TABLE_SCHEMA = B.TABLE_SCHEMA AND A.TABLE_NAME = B.TABLE_NAME
+   AND A.CONSTRAINT_NAME = B.CONSTRAINT_NAME AND B.CONSTRAINT_TYPE IS NOT NULL
+EOF
+
+    my @where;
+    my @bind;
+
+    # catalogs are not yet supported by MySQL
+
+#    if (defined $pk_catalog) {
+#        push @where, 'A.REFERENCED_TABLE_CATALOG = ?';
+#        push @bind, $pk_catalog;
+#    }
+
+    if (defined $pk_schema) {
+        push @where, 'A.REFERENCED_TABLE_SCHEMA = ?';
+        push @bind, $pk_schema;
+    }
+
+    if (defined $pk_table) {
+        push @where, 'A.REFERENCED_TABLE_NAME = ?';
+        push @bind, $pk_table;
+    }
+
+#    if (defined $fk_catalog) {
+#        push @where, 'A.TABLE_CATALOG = ?';
+#        push @bind,  $fk_schema;
+#    }
+
+    if (defined $fk_schema) {
+        push @where, 'A.TABLE_SCHEMA = ?';
+        push @bind,  $fk_schema;
+    }
+
+    if (defined $fk_table) {
+        push @where, 'A.TABLE_NAME = ?';
+        push @bind,  $fk_table;
+    }
+
+    if (@where) {
+        $sql .= ' AND ';
+        $sql .= join ' AND ', @where;
+    }
+    $sql .= " ORDER BY A.TABLE_SCHEMA, A.TABLE_NAME, A.ORDINAL_POSITION";
+
+    local $dbh->{FetchHashKeyName} = 'NAME_uc';
+    my $sth = $dbh->prepare($sql);
+    $sth->execute(@bind);
+
+    return $sth;
+}
+
+
+sub _version {
+    my $dbh = shift;
+
+    return
+        $dbh->get_info($DBI::Const::GetInfoType::GetInfoType{SQL_DBMS_VER})
+            =~ /(\d+)\.(\d+)\.(\d+)/;
 }
 
 

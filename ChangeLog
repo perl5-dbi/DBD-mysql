@@ -1,4 +1,8 @@
-<unreleased> Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg@grazr.com> (4.001)
+<unreleased> Jim Winstead <jimw@mysql.com> (4.002)
+* Add implementation of foreign_key_info() (Bug #26604, original patch from
+  Dave Rolsky, and final implementation based on Connector/J code)
+
+2007-1-8 Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg@grazr.com> (4.001)
 * Fix handling of unsigned integer values in result sets when using
   server-side prepared statements (they were not retrieved at all).
 * Fix handling of signed integer values when using server-side prepared
