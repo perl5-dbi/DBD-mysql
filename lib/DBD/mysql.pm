@@ -259,14 +259,16 @@ sub _SelectDB ($$) {
 
     sub table_info ($) {
 	my $dbh = shift;
-	my $sth = $dbh->prepare("SHOW TABLES");
+	my $sth = $dbh->prepare("SHOW /*!50002 FULL*/ TABLES");
 	return undef unless $sth;
 	if (!$sth->execute()) {
 	  return DBI::set_err($dbh, $sth->err(), $sth->errstr());
         }
 	my @tables;
 	while (my $ref = $sth->fetchrow_arrayref()) {
-	  push(@tables, [ undef, undef, $ref->[0], 'TABLE', undef ]);
+	  my $type = (defined $ref->[1] &&
+	              $ref->[1] =~ /view/i) ? 'VIEW' : 'TABLE';
+	  push(@tables, [ undef, undef, $ref->[0], $type, undef ]);
         }
 	my $dbh2;
 	if (!($dbh2 = $dbh->{'~dbd_driver~_sponge_dbh'})) {

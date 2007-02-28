@@ -21,7 +21,7 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
-plan tests => 17;
+plan tests => 24;
 
 ok(defined $dbh, "connecting");
 
@@ -79,5 +79,33 @@ SKIP: {
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS child, parent}), "cleaning up");
 };
+
+#
+# Bug #26603: support views in table_info(), add primary_key_info(),
+# add mysql_is_autoincrement
+#
+SKIP: {
+  skip "Server is too old to support views", 16
+    if substr($version, 0, 1) < 5;
+
+  ok($dbh->do(qq{DROP VIEW IF EXISTS v1}) and
+     $dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+
+  ok($dbh->do(qq{CREATE TABLE t1 (a INT)}) and
+     $dbh->do(qq{CREATE VIEW v1 AS SELECT * FROM t1}), "creating resources");
+
+  $sth= $dbh->table_info(undef, undef, undef);
+  my ($info)= $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_NAME}, "t1");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is($info->[1]->{TABLE_NAME}, "v1");
+  is($info->[1]->{TABLE_TYPE}, "VIEW");
+
+  ok($dbh->do(qq{DROP VIEW IF EXISTS v1}) and
+     $dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+
+};
+
 
 $dbh->disconnect();
