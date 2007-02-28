@@ -484,13 +484,6 @@ sub foreign_key_info {
     my ($maj, $min, $point) = _version($dbh);
     return if $maj < 5 || ($maj == 5 && $point < 6);
 
-    my @names = qw(
-        UK_TABLE_CAT UK_TABLE_SCHEM UK_TABLE_NAME UK_COLUMN_NAME
-        FK_TABLE_CAT FK_TABLE_SCHEM FK_TABLE_NAME FK_COLUMN_NAME
-        ORDINAL_POSITION DELETE_RULE FK_NAME UK_NAME DEFERABILITY
-        UNIQUE_OR_PRIMARY
-    );
-
     my $sql = <<'EOF';
 SELECT NULL AS PKTABLE_CAT,
        A.REFERENCED_TABLE_SCHEMA AS PKTABLE_SCHEM,
