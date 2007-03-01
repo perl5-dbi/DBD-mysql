@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = 4.002;
+$VERSION = '4.002';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -303,6 +303,8 @@ sub column_info {
     # ODBC allows a NULL to mean all columns, so we'll accept undef
     $column = '%' unless defined $column;
 
+    my $ER_NO_SUCH_TABLE= 1146;
+
     my $table_id = $dbh->quote_identifier($catalog, $schema, $table);
 
     my @names = qw(
@@ -321,10 +323,22 @@ sub column_info {
     my %col_info;
 
     local $dbh->{FetchHashKeyName} = 'NAME_lc';
+    # only ignore ER_NO_SUCH_TABLE in internal_execute if issued from here
     my $desc_sth = $dbh->prepare("DESCRIBE $table_id " . $dbh->quote($column));
     my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
 
-    return $desc_sth if $desc_sth->err();
+    #return $desc_sth if $desc_sth->err();
+    if (my $err = $desc_sth->err())
+    {
+        # return the error, unless it is due to the table not 
+        # existing per DBI spec
+        if ($err != $ER_NO_SUCH_TABLE)
+        {
+          return undef;
+        }
+        $dbh->set_err(undef,undef);
+        $desc = [];
+    }
 
     my $ordinal_pos = 0;
     foreach my $row (@$desc) {

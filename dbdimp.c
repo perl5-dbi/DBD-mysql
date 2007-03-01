@@ -438,11 +438,10 @@ static char *parse_params(
                           bool bind_type_guessing)
 {
 
-  int rc;
   char *salloc, *statement_ptr;
-  char *statement_ptr_end, testchar, *ptr, *valbuf;
+  char *statement_ptr_end, *ptr, *valbuf;
   char *cp, *end;
-  int alen, i, j;
+  int alen, i;
   int slen= *slen_ptr;
   int limit_flag= 0;
   STRLEN vallen;
@@ -576,7 +575,6 @@ static char *parse_params(
         else
         {
           int is_num = FALSE;
-          int c;
 
           valbuf= SvPV(ph->value, vallen);
           if (valbuf)
@@ -1267,11 +1265,7 @@ void dbd_init(dbistate_t* dbistate)
  *
  **************************************************************************/
 
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
 void do_error(SV* h, int rc, const char* what, const char* sqlstate)
-#else
-void do_error(SV* h, int rc, const char* what)
-#endif
 {
   D_imp_xxh(h);
   STRLEN lna;
@@ -1826,12 +1820,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
   if (!my_login(dbh, imp_dbh))
   {
     do_error(dbh, mysql_errno(&imp_dbh->mysql),
-            mysql_error(&imp_dbh->mysql)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-            ,mysql_sqlstate(&imp_dbh->mysql));
-#else
-            );
-#endif
+            mysql_error(&imp_dbh->mysql) ,mysql_sqlstate(&imp_dbh->mysql));
     return FALSE;
   }
 
@@ -1877,10 +1866,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 #endif
     {
       do_error(dbh, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-               ,mysql_sqlstate(&imp_dbh->mysql)
-#endif
-              );
+               ,mysql_sqlstate(&imp_dbh->mysql));
       return FALSE;
     }
   }
@@ -1908,22 +1894,13 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 #endif
       {
         do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-                ,mysql_sqlstate(&imp_dbh->mysql));
-#else
-                );
-#endif
+                 mysql_error(&imp_dbh->mysql) ,mysql_sqlstate(&imp_dbh->mysql));
         return FALSE;
       }
   }
   else
     do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-             "Rollback ineffective because transactions are not available"
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-             ,NULL
-#endif
-            );
+             "Rollback ineffective because transactions are not available" ,NULL);
   return TRUE;
 }
 
@@ -2048,12 +2025,7 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
 #else
         if (mysql_rollback(&imp_dbh->mysql))
 #endif
-            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed"
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-                     ,NULL);
-#else
-                    );
-#endif
+            do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed" ,NULL);
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
@@ -2118,7 +2090,7 @@ dbd_db_STORE_attrib(
         /* Setting autocommit will do a commit of any pending statement */
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=1", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed");
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed", NULL);
           return FALSE;
         }
       }
@@ -2126,7 +2098,7 @@ dbd_db_STORE_attrib(
       {
         if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=0", 16))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed");
+          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed", NULL);
           return FALSE;
         }
       }
@@ -2142,12 +2114,7 @@ dbd_db_STORE_attrib(
       if (!SvTRUE(valuesv))
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
-                 "Transactions not supported by database"
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-                 ,NULL);
-#else
-                );
-#endif
+                 "Transactions not supported by database" ,NULL);
         croak("Transactions not supported by database");
       }
     }
@@ -2806,8 +2773,32 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
                       mysql_affected_rows(svsock));
       }
 
-      /* Store the result in the current statement handle */
-      DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
+      /* delete cached handle attributes */
+      /* XXX should be driven by a list to ease maintenance */
+      hv_delete((HV*)SvRV(sth), "NAME", 4, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "NULLABLE", 8, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "PRECISION", 9, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "SCALE", 5, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "TYPE", 4, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_insertid", 14, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_is_auto_increment", 23, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_is_blob", 13, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_is_key", 12, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_is_num", 12, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_is_pri_key", 16, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_length", 12, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_max_length", 16, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_table", 11, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_type", 10, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_type_name", 15, G_DISCARD);
+
+      /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
+      DBIc_NUM_FIELDS(imp_sth)= 0; /* for DBI <= 1.53 */
+      DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+          sv_2mortal(newSViv(mysql_num_fields(imp_sth->result)))
+      );
+
       DBIc_ACTIVE_on(imp_sth);
 
       if (dbis->debug >= 5)
@@ -2857,6 +2848,7 @@ my_ulonglong mysql_st_internal_execute(
   char *table;
   char *salloc;
   int htype;
+  int errno;
   my_ulonglong rows= 0;
 
   /* thank you DBI.c for this info! */
@@ -2922,22 +2914,12 @@ my_ulonglong mysql_st_internal_execute(
 
     if (!slen)
     {
-      do_error(h, JW_ERR_QUERY, "Missing table name"
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-               ,NULL);
-#else
-              );
-#endif
+      do_error(h, JW_ERR_QUERY, "Missing table name" ,NULL);
       return -2;
     }
     if (!(table= malloc(slen+1)))
     {
-      do_error(h, JW_ERR_MEM, "Out of memory"
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-               ,NULL);
-#else
-              );
-#endif
+      do_error(h, JW_ERR_MEM, "Out of memory" ,NULL);
       return -2;
     }
 
@@ -2952,16 +2934,13 @@ my_ulonglong mysql_st_internal_execute(
     *sbuf++= '\0';
 
     *result= mysql_list_fields(svsock, table, NULL);
+
     free(table);
 
     if (!(*result))
     {
       do_error(h, mysql_errno(svsock), mysql_error(svsock)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
                ,mysql_sqlstate(svsock));
-#else
-              );
-#endif
       return -2;
     }
 
@@ -2973,12 +2952,10 @@ my_ulonglong mysql_st_internal_execute(
        (mysql_real_query(svsock, sbuf, slen))))
   {
     Safefree(salloc);
-    do_error(h, mysql_errno(svsock), mysql_error(svsock)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
-             ,mysql_sqlstate(svsock));
-#else
-            );
-#endif
+    do_error(h, mysql_errno(svsock), mysql_error(svsock), 
+             mysql_sqlstate(svsock));
+    if (dbis->debug >= 2)
+      PerlIO_printf(DBILOGFP, "IGNORING ERROR errno %d\n", errno);
     return -2;
   }
   Safefree(salloc);
@@ -2989,11 +2966,7 @@ my_ulonglong mysql_st_internal_execute(
 
   if (mysql_errno(svsock))
     do_error(h, mysql_errno(svsock), mysql_error(svsock)
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
              ,mysql_sqlstate(svsock));
-#else
-            );
-#endif
 
   if (!*result)
     rows= mysql_affected_rows(svsock);
@@ -4106,7 +4079,6 @@ dbd_st_FETCH_internal(
         if (DBIc_NUM_PARAMS(imp_sth))
         {
             unsigned int n;
-            SV *sv;
             char key[100];
             I32 keylen;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)

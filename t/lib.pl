@@ -11,6 +11,7 @@ require 5.003;
 use strict;
 use vars qw($mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
 
+$| = 1; # flush stdout asap to keep in sync with stderr
 
 #
 #   Driver names; EDIT THIS!
@@ -166,7 +167,8 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 		print "ok $::numTests\n";
 		return 1;
 	    } else {
-		printf("not ok $::numTests%s\n",
+		my ($pack, $file, $line) = caller();
+		printf("not ok $::numTests%s at line $line\n",
 			(defined($error) ? " $error" : ""));
 		return 0;
 	    }

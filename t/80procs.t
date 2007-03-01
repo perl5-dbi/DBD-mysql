@@ -113,12 +113,16 @@ EOPROC
     Test($state or $sth->execute()) or 
       DbiError($dbh->err, $dbh->errstr);
 
+    $sth->finish;
+
     my $proc_select = 'SELECT @a';
     Test($state or $sth = $dbh->prepare($proc_select)) or
     DbiError($dbh->err, $dbh->errstr);
 
     Test($state or $sth->execute()) or 
       DbiError($dbh->err, $dbh->errstr);
+
+    $sth->finish;
 
   Test($state or ($sth=$dbh->prepare("DROP PROCEDURE testproc"))) or
     DbiError($dbh->err, $dbh->errstr);
@@ -148,6 +152,9 @@ EOPROC
 
   my $dataset;
 
+  Test($state or ($sth->{NUM_OF_FIELDS} == 1)) or
+    DbiError($dbh->err, $dbh->errstr);
+
   Test($state or $dataset = $sth->fetchrow_arrayref()) or 
     DbiError($dbh->err, $dbh->errstr);
   
@@ -159,6 +166,9 @@ EOPROC
   Test($state or $more_results =  $sth->more_results()) or
     DbiError($dbh->err, $dbh->errstr);
 
+  Test($state or ($sth->{NUM_OF_FIELDS} == 2)) or
+    DbiError($dbh->err, $dbh->errstr);
+
   Test($state or $dataset = $sth->fetchrow_arrayref()) or
     DbiError($dbh->err, $dbh->errstr);
 
@@ -166,6 +176,9 @@ EOPROC
     DbiError($dbh->err, $dbh->errstr);
 
   Test($state or $more_results =  $sth->more_results()) or
+    DbiError($dbh->err, $dbh->errstr);
+
+  Test($state or ($sth->{NUM_OF_FIELDS} == 3)) or
     DbiError($dbh->err, $dbh->errstr);
 
   Test($state or $dataset = $sth->fetchrow_arrayref()) or
@@ -177,7 +190,7 @@ EOPROC
   Test($state or !($more_results =  $sth->more_results())) or
     DbiError($dbh->err, $dbh->errstr);
 
-  $SIG{__WARN__} = sub { die @_ };
+  local $SIG{__WARN__} = sub { die @_ };
 
   Test($state or $dbh->disconnect()) or 
     DbiError($dbh->err, $dbh->errstr);

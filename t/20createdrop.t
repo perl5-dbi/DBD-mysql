@@ -73,6 +73,12 @@ while (Testing()) {
 	   or DbiError($dbh->err, $dbh->errstr);
 
     #
+    #   ... check do() sets $dbh->{Statement}
+    #
+    Test($state or $dbh->{Statement} eq "DROP TABLE $table")
+	   or DbiError(1, "do() didn't set Statement attribute");
+
+    #
     #   Finally disconnect.
     #
     Test($state or $dbh->disconnect())

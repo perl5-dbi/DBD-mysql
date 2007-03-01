@@ -36,6 +36,12 @@
 #define NEW_DATATYPE_VERSION 50003
 #define SSL_VERIFY_VERSION 50023
 #define MYSQL_VERSION_5_0 50001
+/* This is to avoid the ugly #ifdef mess in dbdimp.c */
+#if MYSQL_VERSION_ID < SQL_STATE_VERSION
+#define mysql_sqlstate(svsock) (NULL)
+#endif
+
+
 
 /*
  *  The following are return codes passed in $h->err in case of
