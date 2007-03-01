@@ -253,40 +253,113 @@ sub _SelectDB ($$) {
     die "_SelectDB is removed from this module; use DBI->connect instead.";
 }
 
-{
-    my $names = ['TABLE_CAT', 'TABLE_SCHEM', 'TABLE_NAME',
-		 'TABLE_TYPE', 'REMARKS'];
+sub table_info ($) {
+    my ($dbh, $catalog, $schema, $table, $type, $attr) = @_;
+    my @names = qw(TABLE_CAT TABLE_SCHEM TABLE_NAME TABLE_TYPE REMARKS);
+    my @rows;
 
-    sub table_info ($) {
-	my $dbh = shift;
-	my $sth = $dbh->prepare("SHOW /*!50002 FULL*/ TABLES");
-	return undef unless $sth;
-	if (!$sth->execute()) {
-	  return DBI::set_err($dbh, $sth->err(), $sth->errstr());
-        }
-	my @tables;
+    my $sponge = DBI->connect("DBI:Sponge:", '','')
+	or return $dbh->DBI::set_err($DBI::err, "DBI::Sponge: $DBI::errstr");
+
+    # Return the list of catalogs
+    if (defined $catalog && $catalog eq "%" &&
+        (!defined($schema) || $schema eq "") &&
+        (!defined($table) || $table eq ""))
+    {
+	@rows = (); # Empty, because MySQL doesn't support catalogs (yet)
+    }
+
+    # Return the list of schemas
+    elsif (defined $schema && $schema eq "%" &&
+           (!defined($catalog) || $catalog eq "") &&
+           (!defined($table) || $table eq ""))
+    {
+	my $sth = $dbh->prepare("SHOW DATABASES")
+	    or return undef;
+
+	$sth->execute()
+	    or return DBI::set_err($dbh, $sth->err(), $sth->errstr());
+
 	while (my $ref = $sth->fetchrow_arrayref()) {
-	  my $type = (defined $ref->[1] &&
-	              $ref->[1] =~ /view/i) ? 'VIEW' : 'TABLE';
-	  push(@tables, [ undef, undef, $ref->[0], $type, undef ]);
-        }
-	my $dbh2;
-	if (!($dbh2 = $dbh->{'~dbd_driver~_sponge_dbh'})) {
-	    $dbh2 = $dbh->{'~dbd_driver~_sponge_dbh'} =
-		DBI->connect("DBI:Sponge:");
-	    if (!$dbh2) {
-	        DBI::set_err($dbh, 1, $DBI::errstr);
-		return undef;
+	    push(@rows, [ undef, $ref->[0], undef, undef, undef ]);
+	}
+    }
+
+    # Return the list of table types
+    elsif (defined $type && $type eq "%" &&
+           (!defined($catalog) || $catalog eq "") &&
+           (!defined($schema) || $schema eq "") &&
+           (!defined($table) || $table eq ""))
+    {
+	@rows = (
+		 [ undef, undef, undef, "TABLE", undef ],
+		 [ undef, undef, undef, "VIEW",  undef ],
+		);
+    }
+
+    # Special case: a catalog other than undef, "", or "%"
+    elsif (defined $catalog && $catalog ne "" && $catalog ne "%") {
+	@rows = (); # Nothing, because MySQL doesn't support catalogs yet.
+    }
+
+    # Uh oh, we actually have a meaty table_info call. Work is required!
+    else {
+	my @schemas;
+
+	# If no table was specified, we want them all
+	$table ||= "%";
+
+	# If something was given for the schema, we need to expand it to
+	# a list of schemas, since it may be a wildcard.
+	if (defined $schema && $schema ne "") {
+	    my $sth = $dbh->prepare("SHOW DATABASES LIKE " .
+				    $dbh->quote($schema))
+		or return undef;
+	    $sth->execute()
+		or return DBI::set_err($dbh, $sth->err(), $sth->errstr());
+
+	    while (my $ref = $sth->fetchrow_arrayref()) {
+		push @schemas, $ref->[0];
+	    }
+	# Otherwise we want the current database
+	} else {
+	    push @schemas, $dbh->selectrow_array("SELECT DATABASE()");
+	}
+
+	# Figure out which table types are desired
+	my ($want_tables, $want_views);
+	if (defined $type && $type ne "") {
+	    $want_tables = ($type =~ m/table/i);
+	    $want_views  = ($type =~ m/view/i);
+	} else {
+	    $want_tables = $want_views = 1;
+	}
+
+	foreach my $database (@schemas) {
+	    my $sth = $dbh->prepare("SHOW /*!50002 FULL*/ TABLES FROM " .
+				    $dbh->quote_identifier($database) .
+				    " LIKE " .  $dbh->quote($table))
+		or return undef;
+	    $sth->execute() or
+		return DBI::set_err($dbh, $sth->err(), $sth->errstr());
+
+	    while (my $ref = $sth->fetchrow_arrayref()) {
+		my $type = (defined $ref->[1] &&
+		            $ref->[1] =~ /view/i) ? 'VIEW' : 'TABLE';
+		next if $type eq 'TABLE' && not $want_tables;
+		next if $type eq 'VIEW'  && not $want_views;
+		push @rows, [ undef, $database, $ref->[0], $type, undef ];
 	    }
 	}
-	my $sth2 = $dbh2->prepare("SHOW TABLES", { 'rows' => \@tables,
-						   'NAME' => $names,
-						   'NUM_OF_FIELDS' => 5 });
-	if (!$sth2) {
-	    DBI::set_err($sth2, $dbh2->err(), $dbh2->errstr());
-	}
-	$sth2;
     }
+
+    my $sth = $sponge->prepare("table_info", {
+	rows => \@rows,
+	NUM_OF_FIELDS => scalar @names,
+	NAME => \@names,
+    }) or return $dbh->DBI::set_err($sponge->err(), $sponge->errstr());
+
+    return $sth;
 }
 
 sub _ListTables {

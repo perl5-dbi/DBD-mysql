@@ -1,15 +1,21 @@
 2007-02-24 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.002)
-* Fixed version to be a string, which was previously a float, which caused problems 
-  for certain locales
-* Fixed bug #23974. $dbh->column_info now returns empty arrayref upon table not existing.
-  Much thanks to Tim Bunce for help fixing the probelem in mysql.pm vs. dbdimp.c
-* Removed #ifdefs for do error (sqlstate being passed as last arg depending on version)
+* Rewrote table_info method to support all arguments (previously it would
+  only ever return all of the tables in the current database, no matter what
+  was specified)
+* Fixed version to be a string, which was previously a float, which caused
+  problems for certain locales
+* Fixed bug #23974. $dbh->column_info now returns empty arrayref upon table not
+  existing.  Much thanks to Tim Bunce for help fixing the problem in mysql.pm
+  vs. dbdimp.c
+* Removed #ifdefs for do error (sqlstate being passed as last arg depending on
+  version)
 * Fixed insertid test to work with auto_increment_increment replication setup.
 * Patch from Tim Bunce fixing do() not set $dbh->{Statement} attribute,
-  which prevented DBD::Profile from giving correct results for calls to do() and 
-  causing ShowErrorStatement to possibly report the wrong statement in the error message 
-* Patch from Tim Bunce clearing out the sth attribute cache when switching between result,
-  sets which prevented the adjustedment of NUM_OF_FIELDS
+  which prevented DBD::Profile from giving correct results for calls to do()
+  and causing ShowErrorStatement to possibly report the wrong statement in the
+  error message 
+* Patch from Tim Bunce clearing out the sth attribute cache when switching
+  between result, sets which prevented the adjustedment of NUM_OF_FIELDS
 * Cleanup of several unused variables
 * Added support for wildcards in last argument of column_info().
 * Add mysql_is_auto_increment to results of column_info(). (Bug #26603,

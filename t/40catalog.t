@@ -21,7 +21,7 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
-plan tests => 32;
+plan tests => 77;
 
 ok(defined $dbh, "connecting");
 
@@ -82,12 +82,118 @@ SKIP: {
 };
 
 #
-# Bug #26603: (one part) support views in table_info()
+# table_info() tests
+#
+# These tests assume that no other tables name like 't_dbd_mysql_%' exist on
+# the server we are using for testing.
 #
 SKIP: {
-  skip "Server is too old to support views", 16
+  my $sth = $dbh->table_info("%", undef, undef, undef);
+  is(scalar @{$sth->fetchall_arrayref()}, 0, "No catalogs expected");
+
+  $sth = $dbh->table_info(undef, "%", undef, undef);
+  ok(scalar @{$sth->fetchall_arrayref()} > 0, "Some schemas expected");
+
+  $sth = $dbh->table_info(undef, undef, undef, "%");
+  ok(scalar @{$sth->fetchall_arrayref()} > 0, "Some table types expected");
+
+  ok($dbh->do(qq{DROP TABLE IF EXISTS t_dbd_mysql_t1, t_dbd_mysql_t11,
+                                      t_dbd_mysql_t2, t_dbd_mysqlat2,
+                                      `t_dbd_mysql_a'b`,
+                                      `t_dbd_mysql_a``b`}),
+              "cleaning up");
+  ok($dbh->do(qq{CREATE TABLE t_dbd_mysql_t1 (a INT)}) and
+     $dbh->do(qq{CREATE TABLE t_dbd_mysql_t11 (a INT)}) and
+     $dbh->do(qq{CREATE TABLE t_dbd_mysql_t2 (a INT)}) and
+     $dbh->do(qq{CREATE TABLE t_dbd_mysqlat2 (a INT)}) and
+     $dbh->do(qq{CREATE TABLE `t_dbd_mysql_a'b` (a INT)}) and
+     $dbh->do(qq{CREATE TABLE `t_dbd_mysql_a``b` (a INT)}),
+     "creating test tables");
+
+  # $base is our base table name, with the _ escaped to avoid extra matches
+  my $esc = $dbh->get_info(14); # SQL_SEARCH_PATTERN_ESCAPE
+  (my $base = "t_dbd_mysql_") =~ s/([_%])/$esc$1/g;
+
+  # Test fetching info on a single table
+  $sth = $dbh->table_info(undef, undef, $base . "t1", undef);
+  my $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_CAT}, undef);
+  is($info->[0]->{TABLE_NAME}, "t_dbd_mysql_t1");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 1, "one row expected");
+
+  # Test fetching info on a wildcard
+  $sth = $dbh->table_info(undef, undef, $base . "t1%", undef);
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_CAT}, undef);
+  is($info->[0]->{TABLE_NAME}, "t_dbd_mysql_t1");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is($info->[1]->{TABLE_CAT}, undef);
+  is($info->[1]->{TABLE_NAME}, "t_dbd_mysql_t11");
+  is($info->[1]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 2, "two rows expected");
+
+  # Test fetching info on a single table with escaped wildcards
+  $sth = $dbh->table_info(undef, undef, $base . "t2", undef);
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_CAT}, undef);
+  is($info->[0]->{TABLE_NAME}, "t_dbd_mysql_t2");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 1, "only one table expected");
+
+  # Test fetching info on a single table with ` in name
+  $sth = $dbh->table_info(undef, undef, $base . "a`b", undef);
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_CAT}, undef);
+  is($info->[0]->{TABLE_NAME}, "t_dbd_mysql_a`b");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 1, "only one table expected");
+
+  # Test fetching info on a single table with ' in name
+  $sth = $dbh->table_info(undef, undef, $base . "a'b", undef);
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_CAT}, undef);
+  is($info->[0]->{TABLE_NAME}, "t_dbd_mysql_a'b");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 1, "only one table expected");
+
+  # Test fetching our tables with a wildcard schema
+  # NOTE: the performance of this could be bad if the mysql user we
+  # are connecting as can see lots of databases.
+  $sth = $dbh->table_info(undef, "%", $base . "%", undef);
+  $info = $sth->fetchall_arrayref({});
+
+  is(scalar @$info, 5, "five tables expected");
+  
+  # Check that tables() finds and escapes the tables named with quotes
+  $info = [ $dbh->tables(undef, undef, $base . 'a%') ];
+  like($info->[0], qr/\.`t_dbd_mysql_a'b`$/, "table with single quote");
+  like($info->[1], qr/\.`t_dbd_mysql_a``b`$/,  "table with back quote");
+  is(scalar @$info, 2, "two tables expected");
+
+  # Clean up
+  ok($dbh->do(qq{DROP TABLE IF EXISTS t_dbd_mysql_t1, t_dbd_mysql_t11,
+                                      t_dbd_mysql_t2, t_dbd_mysqlat2,
+                                      `t_dbd_mysql_a'b`,
+                                      `t_dbd_mysql_a``b`}),
+              "cleaning up");
+};
+
+#
+# view-related table_info tests
+#
+SKIP: {
+  skip "Server is too old to support views", 19
     if substr($version, 0, 1) < 5;
 
+  #
+  # Bug #26603: (one part) support views in table_info()
+  #
   ok($dbh->do(qq{DROP VIEW IF EXISTS bug26603_v1}) and
      $dbh->do(qq{DROP TABLE IF EXISTS bug26603_t1}), "cleaning up");
 
@@ -95,13 +201,41 @@ SKIP: {
      $dbh->do(qq{CREATE VIEW bug26603_v1 AS SELECT * FROM bug26603_t1}),
      "creating resources");
 
-  $sth= $dbh->table_info(undef, undef, "bug26603%");
-  my ($info)= $sth->fetchall_arrayref({});
+  # Try without any table type specified
+  $sth = $dbh->table_info(undef, undef, "bug26603%");
+  my $info = $sth->fetchall_arrayref({});
 
   is($info->[0]->{TABLE_NAME}, "bug26603_t1");
   is($info->[0]->{TABLE_TYPE}, "TABLE");
   is($info->[1]->{TABLE_NAME}, "bug26603_v1");
   is($info->[1]->{TABLE_TYPE}, "VIEW");
+  is(scalar @$info, 2, "two rows expected");
+
+  # Just get the view
+  $sth = $dbh->table_info(undef, undef, "bug26603%", "VIEW");
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_NAME}, "bug26603_v1");
+  is($info->[0]->{TABLE_TYPE}, "VIEW");
+  is(scalar @$info, 1, "one row expected");
+
+  # Just get the table
+  $sth = $dbh->table_info(undef, undef, "bug26603%", "TABLE");
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_NAME}, "bug26603_t1");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is(scalar @$info, 1, "one row expected");
+
+  # Get both tables and views
+  $sth = $dbh->table_info(undef, undef, "bug26603%", "'TABLE','VIEW'");
+  $info = $sth->fetchall_arrayref({});
+
+  is($info->[0]->{TABLE_NAME}, "bug26603_t1");
+  is($info->[0]->{TABLE_TYPE}, "TABLE");
+  is($info->[1]->{TABLE_NAME}, "bug26603_v1");
+  is($info->[1]->{TABLE_TYPE}, "VIEW");
+  is(scalar @$info, 2, "two rows expected");
 
   ok($dbh->do(qq{DROP VIEW IF EXISTS bug26603_v1}) and
      $dbh->do(qq{DROP TABLE IF EXISTS bug26603_t1}), "cleaning up");
