@@ -39,10 +39,11 @@ SKIP: {
   skip "Server is too old to support INFORMATION_SCHEMA for foreign keys", 16
     if substr($version, 0, 1) < 5;
 
-  my ($have_innodb)= $dbh->selectrow_array("SELECT \@\@have_innodb = 'YES'")
+  my ($dummy,$have_innodb)=
+    $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
     or DbiError($dbh->err, $dbh->errstr);
   skip "Server doesn't support InnoDB, needed for testing foreign keys", 16
-    if not $have_innodb;
+    unless defined $have_innodb && $have_innodb eq "YES";
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS child, parent}), "cleaning up");
 
@@ -87,22 +88,23 @@ SKIP: {
   skip "Server is too old to support views", 16
     if substr($version, 0, 1) < 5;
 
-  ok($dbh->do(qq{DROP VIEW IF EXISTS v1}) and
-     $dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+  ok($dbh->do(qq{DROP VIEW IF EXISTS bug26603_v1}) and
+     $dbh->do(qq{DROP TABLE IF EXISTS bug26603_t1}), "cleaning up");
 
-  ok($dbh->do(qq{CREATE TABLE t1 (a INT)}) and
-     $dbh->do(qq{CREATE VIEW v1 AS SELECT * FROM t1}), "creating resources");
+  ok($dbh->do(qq{CREATE TABLE bug26603_t1 (a INT)}) and
+     $dbh->do(qq{CREATE VIEW bug26603_v1 AS SELECT * FROM bug26603_t1}),
+     "creating resources");
 
-  $sth= $dbh->table_info(undef, undef, undef);
+  $sth= $dbh->table_info(undef, undef, "bug26603%");
   my ($info)= $sth->fetchall_arrayref({});
 
-  is($info->[0]->{TABLE_NAME}, "t1");
+  is($info->[0]->{TABLE_NAME}, "bug26603_t1");
   is($info->[0]->{TABLE_TYPE}, "TABLE");
-  is($info->[1]->{TABLE_NAME}, "v1");
+  is($info->[1]->{TABLE_NAME}, "bug26603_v1");
   is($info->[1]->{TABLE_TYPE}, "VIEW");
 
-  ok($dbh->do(qq{DROP VIEW IF EXISTS v1}) and
-     $dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+  ok($dbh->do(qq{DROP VIEW IF EXISTS bug26603_v1}) and
+     $dbh->do(qq{DROP TABLE IF EXISTS bug26603_t1}), "cleaning up");
 
 };
 
