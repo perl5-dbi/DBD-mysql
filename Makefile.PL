@@ -10,7 +10,7 @@ BEGIN {
 	"LANG='C' before running 'perl Makefile.PL or by upgrading your Perl'\n\n\n";
 
 	sleep(5);
-        exec ("$Config{perlpath} $0", @ARGV )|| die $!;
+        exec ($Config{perlpath}, $0, @ARGV )|| die $!;
     }
 }
 use strict;
