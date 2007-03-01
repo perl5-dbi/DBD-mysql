@@ -91,10 +91,6 @@
 * Added multiple fixes to dbd_st_prepare which fixed variable overwrite
   and unset increment counter. Also improved loop which checks statements
   for presence of "LIMIT" by using a pointer as opposed to char array
-* Added patch for SSL Verify Certificate (Thanks Eric Chen!)
-* Added multiple fixes to dbd_st_prepare which fixed variable overwrite
-  and unset increment counter. Also improved loop which checks statements
-  for presence of "LIMIT" by using a pointer as opposed to char array
   increment variable. These errors were showing up in OpenBSD and other
   Unixen (which I think all BSD-based) (Thanks to Kyle George!)
 * Added fix to Makefile.PL to obtain correct build flags on VMS 
