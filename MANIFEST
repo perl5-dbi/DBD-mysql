@@ -8,6 +8,7 @@ t/40bindparam.t
 t/40bindparam2.t
 t/41bindparam.t
 t/42bindparam.t
+t/40catalog.t
 t/40blobs.t
 t/40listfields.t
 t/40nulls.t
