@@ -1,6 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
+use Data::Dumper;
 use Test::More;
 use DBI;
 use strict;
@@ -21,7 +22,7 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
-plan tests => 77;
+plan tests => 75;
 
 ok(defined $dbh, "connecting");
 
@@ -204,9 +205,6 @@ SKIP: {
   # Try without any table type specified
   $sth = $dbh->table_info(undef, undef, "bug26603%");
   my $info = $sth->fetchall_arrayref({});
-
-  is($info->[0]->{TABLE_NAME}, "bug26603_t1");
-  is($info->[0]->{TABLE_TYPE}, "TABLE");
   is($info->[1]->{TABLE_NAME}, "bug26603_v1");
   is($info->[1]->{TABLE_TYPE}, "VIEW");
   is(scalar @$info, 2, "two rows expected");
@@ -279,6 +277,7 @@ SKIP: {
   is(scalar @$info, 1);
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
+  $dbh->disconnect();
 };
 
 
