@@ -24,7 +24,9 @@ ok(defined $dbh, "Connected to database for key info tests");
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}),
    "Dropped table");
 
-ok($dbh->do(qq{CREATE TABLE t1 (a int, b varchar(20), primary key (a,b(10)))}),
+# Non-primary key is there as a regression test for Bug #26786.
+ok($dbh->do(qq{CREATE TABLE t1 (a int, b varchar(20), c int,
+                                primary key (a,b(10)), key (c))}),
    "Created table");
 
 my $sth= $dbh->primary_key_info(undef, undef, 't1');

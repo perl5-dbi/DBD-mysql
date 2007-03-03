@@ -545,7 +545,7 @@ sub primary_key_info {
     my $desc_sth = $dbh->prepare("SHOW KEYS FROM $table_id");
     my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
     my $ordinal_pos = 0;
-    foreach my $row (@$desc) {
+    foreach my $row (grep { $_->{key_name} eq 'PRIMARY'} @$desc) {
 	$col_info{ $row->{column_name} } = {
 	    TABLE_CAT   => $catalog,
 	    TABLE_SCHEM => $schema,

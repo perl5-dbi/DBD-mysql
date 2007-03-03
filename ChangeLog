@@ -1,3 +1,7 @@
+<unreleased> Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.002)
+* Fix inclusion of non-primary keys in primary_key_info. (Bug #26786,
+  reported and patch by Dave Rolsky)
+
 2007-3-1 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.002)
 * Fix re-exec of Makefile.PL when forcing $ENV{LANG} to 'C'. (RT #25233,
   reported by Slaven Rezic)
