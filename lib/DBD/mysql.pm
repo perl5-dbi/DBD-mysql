@@ -968,7 +968,7 @@ disallow LOCAL.)
 
 =item mysql_multi_statements
 
-As of MySQL 5.0, support for multiple statements seperated by a semicolon
+As of MySQL 4.1, support for multiple statements seperated by a semicolon
 (;) may be enabled by using this option. Enabling this option may cause
 problems if server-side prepared statements are also enabled.
 

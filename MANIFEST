@@ -22,6 +22,7 @@ t/75supported_sql.t
 t/80procs.t
 t/lib.pl
 t/insertid.t
+t/multi_statement.t
 t/mysql.dbtest
 t/texecute.t
 t/prepare_noerror.t
