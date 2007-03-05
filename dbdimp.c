@@ -1558,6 +1558,16 @@ MYSQL *mysql_dr_connect(SV* dbh, MYSQL* sock, char* mysql_socket, char* host,
                           imp_dbh->use_mysql_use_result);
         }
 
+#if defined(CLIENT_MULTI_STATEMENTS)
+	if ((svp = hv_fetch(hv, "mysql_multi_statements", 22, FALSE)) && *svp)
+        {
+	  if (SvTRUE(*svp))
+	    client_flag |= CLIENT_MULTI_STATEMENTS;
+          else
+            client_flag &= ~CLIENT_MULTI_STATEMENTS;
+	}
+#endif
+
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
 	/* took out  client_flag |= CLIENT_PROTOCOL_41; */
 	/* because libmysql.c already sets this no matter what */

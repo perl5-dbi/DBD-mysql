@@ -1,4 +1,8 @@
-<unreleased> Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.003)
+<unreleased> Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
+* Add support for mysql_multi_statements connection option. (RT #12322, based
+  on patch from Doug Morris)
+
+2007-3-5 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.003)
 * Fix inclusion of non-primary keys in primary_key_info. (Bug #26786,
   reported and patch by Dave Rolsky)
 

@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.002';
+$VERSION = '4.004';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -965,6 +965,12 @@ in the MySQL client library by default. If your DSN contains the option
 "mysql_local_infile=1", LOAD DATA LOCAL will be enabled.  (However,
 this option is *ineffective* if the server has also been configured to
 disallow LOCAL.)
+
+=item mysql_multi_statements
+
+As of MySQL 5.0, support for multiple statements seperated by a semicolon
+(;) may be enabled by using this option. Enabling this option may cause
+problems if server-side prepared statements are also enabled.
 
 =item Prepared statement support (server side prepare)
 
