@@ -48,7 +48,7 @@ while(Testing())
     DbiError($dbh->err, $dbh->errstr); 
 
   Test($state or 
-    $dbh->do("create table $table (a int, primary key (a))")) or
+    $dbh->do("create table $table (a int not null, primary key (a))")) or
     DbiError($dbh->err, $dbh->errstr); 
 
   Test($state or 

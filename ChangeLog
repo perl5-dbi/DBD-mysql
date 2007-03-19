@@ -1,4 +1,6 @@
 <unreleased> Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
+* Work around a bug in old 3.23 servers by specifying NOT NULL for fields used
+  as a primary key in tests. (Bug #20325, reported by Julian Ladisch)
 * Add support for mysql_warning_count statement handle attribute. (Bug #25457,
   patch from Philip Stoev)
 * Add support for mysql_multi_statements connection option. (RT #12322, based
