@@ -2893,19 +2893,16 @@ my_ulonglong mysql_st_internal_execute(
       bind_type_guessing=0;
   }
 
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, "mysql_st_internal_execute MYSQL_VERSION_ID %d\n",
+                  MYSQL_VERSION_ID );
+
   salloc= parse_params(svsock,
                               sbuf,
                               &slen,
                               params,
                               num_params,
                               bind_type_guessing);
-
-  if (dbis->debug >= 2)
-    PerlIO_printf(DBILOGFP, "mysql_st_internal_execute\n");
-
-  if (dbis->debug >= 2)
-    PerlIO_printf(DBILOGFP, "mysql_st_internal_execute MYSQL_VERSION_ID %d\n",
-                  MYSQL_VERSION_ID );
 
   if (salloc)
   {
