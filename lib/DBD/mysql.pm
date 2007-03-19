@@ -1353,8 +1353,11 @@ DBI::SQL_SMALLINT() or DBI::SQL_VARCHAR().
 Similar to mysql, but type names and not numbers are returned.
 Whenever possible, the ANSI SQL name is preferred.
 
-=back
+=item mysql_warning_count
 
+The number of warnings generated during execution of the SQL statement.
+
+=back
 
 =head1 TRANSACTION SUPPORT
 

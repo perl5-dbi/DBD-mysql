@@ -237,6 +237,7 @@ struct imp_sth_st {
     long  long_buflen;    /* length for long/longraw (if >0)	    */
     bool  long_trunc_ok;  /* is truncating a long an error	    */
     my_ulonglong insertid; /* ID of auto insert                      */
+    int   warning_count;  /* Number of warnings after execute()     */
     imp_sth_ph_t* params; /* Pointer to parameter array             */
     AV* av_attr[AV_ATTRIB_LAST];/*  For caching array attributes        */
     int   use_mysql_use_result;  /*  TRUE if execute should use     */

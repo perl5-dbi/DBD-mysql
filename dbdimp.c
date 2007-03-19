@@ -2802,6 +2802,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
       hv_delete((HV*)SvRV(sth), "mysql_table", 11, G_DISCARD);
       hv_delete((HV*)SvRV(sth), "mysql_type", 10, G_DISCARD);
       hv_delete((HV*)SvRV(sth), "mysql_type_name", 15, G_DISCARD);
+      hv_delete((HV*)SvRV(sth), "mysql_warning_count", 20, G_DISCARD);
 
       /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
       DBIc_NUM_FIELDS(imp_sth)= 0; /* for DBI <= 1.53 */
@@ -3210,6 +3211,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       imp_sth->fetch_done= 0;
     }
   }
+
+  imp_sth->warning_count = mysql_warning_count(&imp_dbh->mysql);
 
   if (dbis->debug >= 2)
   {
@@ -4151,6 +4154,10 @@ dbd_st_FETCH_internal(
         retsv= ST_FETCH_AV(AV_ATTRIB_MAX_LENGTH);
       else if (strEQ(key, "mysql_use_result"))
         retsv= boolSV(imp_sth->use_mysql_use_result);
+      break;
+    case 19:
+      if (strEQ(key, "mysql_warning_count"))
+        retsv= sv_2mortal(newSViv((IV) imp_sth->warning_count));
       break;
     case 20:
       if (strEQ(key, "mysql_server_prepare"))
