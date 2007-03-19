@@ -1,49 +1,36 @@
-#!/usr/bin/perl
+#!perl -w
+# vim: ft=perl
 
+use Test::More tests => 4;
+use DBI;
+use DBI::Const::GetInfoType;
 use strict;
-use vars qw($test_dsn $test_user $test_password $mdriver $state);
-use DBI;
-use Carp qw(croak);
-use Data::Dumper;
+$|= 1;
 
-$^W =1;
-
-
-use DBI;
-$mdriver = "";
-my ($row, $sth, $dbh);
-foreach my $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
-  do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
+my $mdriver= "";
+our ($test_dsn, $test_user, $test_password);
+foreach my $file ("lib.pl", "t/lib.pl") {
+  do $file;
+  if ($@) {
+    print STDERR "Error while executing $file: $@\n";
     exit 10;
   }
-  if ($mdriver ne '') {
-    last;
-  }
+  last if $mdriver ne '';
 }
 
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-       "\tEither your server is not up and running or you have no\n",
-       "\tpermissions for acessing the DSN $test_dsn.\n",
-       "\tThis test requires a running server and write permissions.\n",
-       "\tPlease make sure your server is running and you have\n",
-       "\tpermissions, then retry.\n");
-    exit 10;
-}
+my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0});
+ok(defined $dbh, "Connected to database");
 
-while(Testing())
-{
-  my ($sth);
-  Test($state or $dbh =
-    DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
+SKIP: {
+  skip "Server doesn't report warnings", 3
+    if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
 
-  Test($state or $sth = $dbh->prepare("drop table if exists no_such_table")) or
-    DbiError($dbh->err, $dbh->errstr);
+  my $sth;
+  ok($sth= $dbh->prepare("DROP TABLE IF EXISTS no_such_table"));
+  ok($sth->execute());
 
-  Test($state or $sth->execute()) or
-    DbiError($dbh->err, $dbh->errstr);
+  is($sth->{mysql_warning_count}, 1);
+};
 
-  Test($state or $sth->{mysql_warning_count} == 1) or
-    DbiError($dbh->err, $dbh->errstr);
-}
+$dbh->disconnect;

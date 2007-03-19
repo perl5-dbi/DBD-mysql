@@ -4,6 +4,7 @@
 use Data::Dumper;
 use Test::More;
 use DBI;
+use DBI::Const::GetInfoType;
 use strict;
 $|= 1;
 
@@ -89,6 +90,9 @@ SKIP: {
 # the server we are using for testing.
 #
 SKIP: {
+  skip "Server can't handle tricky table names", 33
+    if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
+
   my $sth = $dbh->table_info("%", undef, undef, undef);
   is(scalar @{$sth->fetchall_arrayref()}, 0, "No catalogs expected");
 

@@ -3,6 +3,7 @@
 
 use Test::More tests => 7;
 use DBI;
+use DBI::Const::GetInfoType;
 use strict;
 $|= 1;
 
@@ -22,20 +23,25 @@ my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                         mysql_multi_statements => 1 });
 ok(defined $dbh, "Connected to database with multi statement support");
 
-ok($dbh->do("DROP TABLE IF EXISTS t1"), "clean up");
-ok($dbh->do("CREATE TABLE t1 (a INT)"), "create table");
+SKIP: {
+  skip "Server doesn't support multi statements", 6 
+    if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
 
-ok($dbh->do("INSERT INTO t1 VALUES (1); INSERT INTO t1 VALUES (2);"));
+  ok($dbh->do("DROP TABLE IF EXISTS t1"), "clean up");
+  ok($dbh->do("CREATE TABLE t1 (a INT)"), "create table");
 
-$dbh->disconnect();
+  ok($dbh->do("INSERT INTO t1 VALUES (1); INSERT INTO t1 VALUES (2);"));
 
-$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                   { RaiseError => 0, PrintError => 0, AutoCommit => 0,
-                     mysql_multi_statements => 0 });
-ok(defined $dbh, "Connected to database without multi statement support");
+  $dbh->disconnect();
 
-ok(not $dbh->do("INSERT INTO t1 VALUES (1); INSERT INTO t1 VALUES (2);"));
+  $dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                     { RaiseError => 0, PrintError => 0, AutoCommit => 0,
+                       mysql_multi_statements => 0 });
+  ok(defined $dbh, "Connected to database without multi statement support");
 
-ok($dbh->do("DROP TABLE IF EXISTS t1"), "clean up");
+  ok(not $dbh->do("INSERT INTO t1 VALUES (1); INSERT INTO t1 VALUES (2);"));
+
+  ok($dbh->do("DROP TABLE IF EXISTS t1"), "clean up");
+};
 
 $dbh->disconnect();
