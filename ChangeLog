@@ -10,6 +10,7 @@
   re-upload it if it's the same name. Mea Culpa.
 * UTF8-Flag not set with flag mysql_enable_utf8 and column collation utf8_bin patch,
   Joost Diepenmaat, (RT #24738)
+* Fixed do_error definition (Scott Hildreth, Tim Bunce)
 * Conversion of test suite to Test::More
 
 2007-3-5 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.003)
