@@ -1,86 +1,32 @@
-#!/usr/local/bin/perl
-#
-#   $Id$
-#
-#   This is a skeleton test. For writing new tests, take this file
-#   and modify/extend it.
-#
+#!perl -w
+# vim: ft=perl
 
+use Test::More tests => 4;
+use DBI;
+use DBI::Const::GetInfoType;
 use strict;
-use vars qw($test_dsn $test_user $test_password $mdriver $dbdriver);
-use DBI ();
+$|= 1;
 
-#
-#   Include lib.pl
-#
-$mdriver = "";
-my $file;
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
-}
-
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
+my $mdriver= "";
+our ($test_dsn, $test_user, $test_password);
+foreach my $file ("lib.pl", "t/lib.pl") {
+  do $file;
+  if ($@) {
+    print STDERR "Error while executing $file: $@\n";
     exit 10;
+  }
+  last if $mdriver ne '';
 }
 
-#
-#   Main loop; leave this untouched, put tests into the loop
-#
-use vars qw($state);
-while (Testing()) {
-    #
-    #   Connect to the database
-    my $dbh;
-    Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-	or ServerError();
+my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+ok(defined $dbh, "Connected to database");
 
-    #
-    #   Find a possible new table name
-    #
-    my $table;
-    Test($state or $table = FindNewTable($dbh))
-	   or DbiError($dbh->err, $dbh->errstr);
+ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 
-    #
-    #   Create a new table
-    #
-    my $def;
-    if (!$state) {
-	($def = TableDefinition($table,
-				["id",   "INTEGER",  4, 0],
-				["name", "CHAR",    64, 0]));
-	print "Creating table:\n$def\n";
-    }
-    Test($state or $dbh->do($def))
-	or DbiError($dbh->err, $dbh->errstr);
+ok($dbh->do(qq{CREATE TABLE t1 (id INT(4), name VARCHAR(64))}), "creating table");
 
+ok($dbh->do(qq{DROP TABLE t1}), "dropping created table");
 
-    #
-    #   ... and drop it.
-    #
-    Test($state or $dbh->do("DROP TABLE $table"))
-	   or DbiError($dbh->err, $dbh->errstr);
+$dbh->disconnect();
 
-    #
-    #   ... check do() sets $dbh->{Statement}
-    #
-    Test($state or $dbh->{Statement} eq "DROP TABLE $table")
-	   or DbiError(1, "do() didn't set Statement attribute");
-
-    #
-    #   Finally disconnect.
-    #
-    Test($state or $dbh->disconnect())
-	   or DbiError($dbh->err, $dbh->errstr);
-}
