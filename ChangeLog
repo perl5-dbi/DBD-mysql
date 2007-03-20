@@ -5,6 +5,11 @@
   patch from Philip Stoev)
 * Add support for mysql_multi_statements connection option. (RT #12322, based
   on patch from Doug Morris)
+* Had to bump to 4.003 do to print statement in mysql.pm that made it 
+  into the dist. Even though you can delete a file on CPAN, you cannot 
+  re-upload it if it's the same name. Mea Culpa.
+* UTF8-Flag not set with flag mysql_enable_utf8 and column collation utf8_bin patch,
+  Joost Diepenmaat, (RT #24738)
 
 2007-3-5 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.003)
 * Fix inclusion of non-primary keys in primary_key_info. (Bug #26786,
@@ -18,9 +23,9 @@
   was specified)
 * Fixed $DBD::mysql::VERSION to be a string instead of a float, which caused
   problems for certain locales
-* Fixed bug #23974. $dbh->column_info now returns empty arrayref upon table not
-  existing.  Much thanks to Tim Bunce for help fixing the problem in mysql.pm
-  vs. dbdimp.c
+* Fixed bug #23974. $dbh->column_info now returns handle with no rows upon 
+  table not existing.  Much thanks to Tim Bunce for help fixing the problem
+  in mysql.pm vs. dbdimp.c
 * Removed #ifdefs for do error (sqlstate being passed as last arg depending on
   version)
 * Fixed insertid test to work with auto_increment_increment replication setup.

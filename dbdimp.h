@@ -29,6 +29,7 @@
  * statements as opposed to emulation in the driver
 */
 #define SQL_STATE_VERSION 40101
+#define FIELD_CHARSETNR_VERSION 40101 /* should equivalent to 4.1.0  */
 #define MULTIPLE_RESULT_SET_VERSION 40102
 #define SERVER_PREPARE_VERSION 40103
 #define LIMIT_PLACEHOLDER_VERSION 50100

@@ -102,7 +102,7 @@ while (Testing()) {
     #   Create a new table; In an ideal world, it'd be more sensible to
     #   make the whole database UTF8...
     #
-    $query = "CREATE TABLE $table (name VARCHAR(64) CHARACTER SET utf8, bincol BLOB, shape GEOMETRY)";
+    $query = "CREATE TABLE $table (name VARCHAR(64) CHARACTER SET utf8, bincol BLOB, shape GEOMETRY, binutf VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin)";
     Test($state or $dbh->do($query))
     	or ErrMsgF("Cannot create table: Error %s.\n", $dbh->errstr);
 
@@ -126,11 +126,11 @@ while (Testing()) {
     Test( $state or ( $dbh->{ mysql_enable_utf8 } ) )
       or ErrMsg( "mysql_enable_utf8 didn't survive connect()\n" );
 
-    $query = qq{INSERT INTO $table (name, bincol, shape) VALUES (?,?, GeomFromText('Point(132865 501937)'))};
-    Test( $state or $dbh->do( $query, {}, $utf8_str,$blob ) )
+    $query = qq{INSERT INTO $table (name, bincol, shape, binutf) VALUES (?,?, GeomFromText('Point(132865 501937)'), ?)};
+    Test( $state or $dbh->do( $query, {}, $utf8_str,$blob, $utf8_str ) )
       or ErrMsgF( "INSERT failed: query $query, error %s.\n", $dbh->errstr );
 
-    $query = "SELECT name,bincol,asbinary(shape) FROM $table LIMIT 1";
+    $query = "SELECT name,bincol,asbinary(shape), binutf FROM $table LIMIT 1";
     Test( $state or ($sth = $dbh->prepare( $query ) ) )
       or ErrMsgF( "prepare failed: query $query, error %s.\n", $dbh->errstr );
 
@@ -143,7 +143,14 @@ while (Testing()) {
 
     # Finally, check that we got back UTF-8 correctly.
     Test( $state or ($ref->[0] eq $utf8_str) )
-      or ErrMsgF( "got back '$ref->[0]' instead of '$utf8_str'.\n" );
+      or ErrMsgF( "got back '$ref->[0]' instead of '$utf8_str' (normal utf8 collation).\n" );
+
+    # same as above for utf8_bin column
+    Test( $state or ($ref->[3] eq $utf8_str) )
+      or ErrMsgF( "got back '$ref->[3]' instead of '$utf8_str' (binary utf8 collation).\n" );
+
+
+ 
 
     if (eval "use Encode;") {
       # Check for utf8 flag
