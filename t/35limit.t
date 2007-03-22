@@ -1,7 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 212;
+use Test::More tests => 111;
 use DBI;
 use DBI::Const::GetInfoType;
 use strict;
@@ -41,13 +41,13 @@ for (my $i = 0 ; $i < 100; $i++) {
 }
 print "PERL rows : " . $rows . "\n"; 
 
-print "PERL testing prepare of select statement with INT and VARCHAR placeholders:\n";
-ok(($sth = $dbh->prepare("SELECT * FROM t1 WHERE id = ? AND name = ?")));
+#print "PERL testing prepare of select statement with INT and VARCHAR placeholders:\n";
+#ok(($sth = $dbh->prepare("SELECT * FROM t1 WHERE id = ? AND name = ?")));
 
-for my $id (keys %$testInsertVals) {
-  print "id $id value $testInsertVals->{$id}\n";
-  $sth->execute($id, $testInsertVals->{$id});
-}
+#for my $id (keys %$testInsertVals) {
+#  print "id $id value $testInsertVals->{$id}\n";
+#  $sth->execute($id, $testInsertVals->{$id});
+#}
      
 print "PERL testing prepare of select statement with LIMIT placeholders:\n";
 ok($sth = $dbh->prepare("SELECT * FROM t1 LIMIT ?, ?"));
