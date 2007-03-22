@@ -1,4 +1,4 @@
-<unreleased> Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
+2007-3-22 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
 * Work around a bug in old 3.23 servers by specifying NOT NULL for fields used
   as a primary key in tests. (Bug #20325, reported by Julian Ladisch)
 * Add support for mysql_warning_count statement handle attribute. (Bug #25457,

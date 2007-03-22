@@ -45,7 +45,8 @@ print "PERL testing prepare of select statement with INT and VARCHAR placeholder
 ok(($sth = $dbh->prepare("SELECT * FROM t1 WHERE id = ? AND name = ?")));
 
 for my $id (keys %$testInsertVals) {
-  ok($sth->execute($id, $testInsertVals->{$id}));
+  print "id $id value $testInsertVals->{$id}\n";
+  $sth->execute($id, $testInsertVals->{$id});
 }
      
 print "PERL testing prepare of select statement with LIMIT placeholders:\n";

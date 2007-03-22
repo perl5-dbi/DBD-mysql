@@ -1,5 +1,5 @@
 t/00base.t
-t/10dsnlist.t
+t/10connect.t
 t/20createdrop.t
 t/30insertfetch.t
 t/35limit.t

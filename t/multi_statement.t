@@ -23,6 +23,8 @@ my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                         mysql_multi_statements => 1 });
 ok(defined $dbh, "Connected to database with multi statement support");
 
+$dbh->{mysql_server_prepare}= 0;
+
 SKIP: {
   skip "Server doesn't support multi statements", 6 
     if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
