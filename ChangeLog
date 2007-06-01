@@ -1,3 +1,11 @@
+2007-3-22 Patrick Galbraith <patg@grazr.com> (4.005)
+
+* Fixed mysql_warning issue < 4.1 (reminers, patches, help from ROAM, (issue 25713)
+* makerealclean patch from ROAM (issue #25714)
+* sqlstate cleanup patch from ROAM
+
+
+
 2007-3-22 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
 * Work around a bug in old 3.23 servers by specifying NOT NULL for fields used
   as a primary key in tests. (Bug #20325, reported by Julian Ladisch)

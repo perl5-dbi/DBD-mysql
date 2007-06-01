@@ -19,6 +19,10 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+
+$dbh->{mysql_server_prepare}= 0;
+
+
 ok(defined $dbh, "Connected to database for key info tests");
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}),

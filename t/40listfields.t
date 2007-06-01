@@ -57,6 +57,8 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
+    $dbh->{mysql_server_prepare}= 0;
+
     #
     # We use a hardcoded special table name to test for a regression of
     # http://bugs.mysql.com/22005

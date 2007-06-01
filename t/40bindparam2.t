@@ -64,27 +64,23 @@ while (Testing()) {
     Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
 	or ServerError();
 
-    Test($state or $table = FindNewTable($dbh))
-	   or DbiError($dbh->err, $dbh->errstr);
-
-    #
-    #   Create a new table; EDIT THIS!
-    #
   Test($state or 
-    ($dbh->do("CREATE TABLE $table (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, num INT)")))
+    ($dbh->do("CREATE TABLE t1 (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, num INT)")))
       or DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or ($dbh->do("INSERT INTO $table VALUES(NULL, 1)")))
+  Test($state or ($dbh->do("INSERT INTO t1 VALUES(NULL, 1)")))
     or DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or ($rows= $dbh->selectall_arrayref("SELECT * FROM $table")))
+  #Test($state or !($dbh->trace("3", "/tmp/bindparam2.log")));
+
+  Test($state or ($rows= $dbh->selectall_arrayref("SELECT * FROM t1")))
     or DbiError($dbh->err, $dbh->errstr);
 
   Test($state or ($rows->[0][1] == 1)) 
     or DbiError($dbh->err, $dbh->errstr);
 
   Test($state or
-    ($sth = $dbh->prepare("UPDATE $table SET num = ? WHERE id = ?")))
+    ($sth = $dbh->prepare("UPDATE t1 SET num = ? WHERE id = ?")))
     or DbiError($dbh->err, $dbh->errstr);
 
   Test($state or ($sth->bind_param(2, 1, SQL_INTEGER())))
@@ -93,8 +89,11 @@ while (Testing()) {
   Test($state or ($sth->execute()))
     or DbiError($dbh->err, $dbh->errstr);
 
+  Test($state or ($sth->finish()))
+    or DbiError($dbh->err, $dbh->errstr);
+
   Test($state or
-    ($rows = $dbh->selectall_arrayref("SELECT * FROM $table")))
+    ($rows = $dbh->selectall_arrayref("SELECT * FROM t1")))
     or DbiError($dbh->err, $dbh->errstr);
 
   #
@@ -106,7 +105,7 @@ while (Testing()) {
   #
   #   Finally drop the test table.
   #
-  Test($state or $dbh->do("DROP TABLE $table"))
+  Test($state or $dbh->do("DROP TABLE t1"))
     or DbiError($dbh->err, $dbh->errstr);
 
   # 

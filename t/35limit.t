@@ -69,5 +69,3 @@ ok($sth->finish);
 ok($dbh->do("DROP TABLE t1"));
 
 ok($dbh->disconnect);
-
-
