@@ -2484,11 +2484,6 @@ dbd_st_prepare(
           PerlIO_printf(DBILOGFP,
                     "\t\tSETTING imp_sth->use_server_side_prepare to 0\n");
         imp_sth->use_server_side_prepare= 0;
-        /*
-          Removed 5/28 Patrick Galbraith. This is unecessary, because the statement
-          failed in the first place
-        */
-        /* mysql_stmt_close(imp_sth->stmt); */
       }
       else
       {
@@ -3717,12 +3712,12 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
   imp_sth_fbh_t *fbh;
   int n;
 
-  n = DBIc_NUM_PARAMS(imp_sth);
+  n= DBIc_NUM_PARAMS(imp_sth);
   if (n)
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBILOGFP, "\tFreeing %d parameters, bind %p fbind %p\n",
-       n, imp_sth->bind, imp_sth->fbind);
+          n, imp_sth->bind, imp_sth->fbind);
 
     free_bind(imp_sth->bind);
     free_fbind(imp_sth->fbind);
@@ -3746,11 +3741,11 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 
   if (imp_sth->stmt)
   {
-    if (!mysql_stmt_close(imp_sth->stmt))
+    if (mysql_stmt_close(imp_sth->stmt))
     {
-        do_error(DBIc_PARENT_H(imp_sth), mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt),
-                 mysql_stmt_sqlstate(imp_sth->stmt));
+      do_error(DBIc_PARENT_H(imp_sth), mysql_stmt_errno(imp_sth->stmt),
+          mysql_stmt_error(imp_sth->stmt),
+          mysql_stmt_sqlstate(imp_sth->stmt));
     }
   }
 #endif

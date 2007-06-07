@@ -3,6 +3,12 @@
 * Fixed mysql_warning issue < 4.1 (reminers, patches, help from ROAM, (issue 25713)
 * makerealclean patch from ROAM (issue #25714)
 * sqlstate cleanup patch from ROAM
+* Replaced all references to dbis to use imp_xxh per DBI best practices
+* Fix to dbd_st_destroy - added back previously removed 'free everything' code which 
+  had been moved to dbd_st_finish, causing a crash upon freeing of bind values 
+  after all rows resulting from one execution of a query have been fetched. This meant
+  that next attempt to execute the prepared statement would segfault. This
+  work thanks to Rainer Weikusat!
 
 
 
