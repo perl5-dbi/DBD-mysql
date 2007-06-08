@@ -9,6 +9,10 @@
   after all rows resulting from one execution of a query have been fetched. This meant
   that next attempt to execute the prepared statement would segfault. This
   work thanks to Rainer Weikusat!
+* Removed all 'FindNewTable' calls in all tests. Just use 't1' for all tests to 
+  simplify things. Plus, this is how MySQL internall tests.
+* Better 'skip test' logic in some tests that were still running when they shouldn't 
+  have been.
 
 
 
