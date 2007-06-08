@@ -148,9 +148,9 @@ sub read_write_test {
 
     #   Find a possible new table name
     #
-    my $table;
-    Test($state or $table = FindNewTable($dbh))
-	   or DbiError($dbh->err, $dbh->errstr);
+    my $table= 't1';
+    Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
+	or DbiError($dbh->err, $dbh->errstr);
 
     #
     #   Create a new table

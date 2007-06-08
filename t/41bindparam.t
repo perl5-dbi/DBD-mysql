@@ -38,12 +38,10 @@ while(Testing())
     DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
 
-  #Test($state or (!$dbh->trace("3", "/tmp/trace.log"))) or
-  # DbiError($dbh->err, $dbh->errstr);
+  Test($state or (!$dbh->trace("3", "/tmp/trace.log"))) or
+   DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or $table = FindNewTable($dbh)) or
-    DbiError($dbh->err, $dbh->errstr); 
-    
+  $table= 't1'; 
   Test($state or $dbh->do("drop table if exists $table")) or
     DbiError($dbh->err, $dbh->errstr); 
 

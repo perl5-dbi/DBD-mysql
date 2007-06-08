@@ -3,6 +3,7 @@
 
 use Test::More;
 use DBI;
+use DBI::Const::GetInfoType;
 use strict;
 $|= 1;
 
@@ -19,17 +20,17 @@ foreach my $file ("lib.pl", "t/lib.pl") {
 }
 
 my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
-
-my ($version)= $dbh->selectrow_array("SELECT version()")
-  or DbiError($dbh->err, $dbh->errstr);
-
-plan skip_all => "New data types not supported by server ($version)"
-  if (substr($version, 0, 1) < 5);
-
+                      { RaiseError            => 1,
+                        PrintError            => 1,
+                        AutoCommit            => 0,
+                        mysql_server_prepare  => 0 });
 plan tests => 20;
 
 ok(defined $dbh, "connecting");
+
+SKIP: {
+skip "New Data types not supported by server", 19 
+  if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0";
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 
@@ -72,5 +73,7 @@ is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"),
           [ ['0'],  ['4294967295'] ]);
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
+};
 
 $dbh->disconnect();
+

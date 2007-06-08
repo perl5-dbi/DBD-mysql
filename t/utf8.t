@@ -93,9 +93,9 @@ while (Testing()) {
     #
     #   Find a possible new table name
     #
-    my $table = '';
-    Test($state or $table = FindNewTable($dbh))
-	   or ErrMsgF("Cannot determine a legal table name: Error %s.\n",
+    my $table = 't1';
+    Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
+	   or ErrMsgF("Cannot DROP test table $table: %s.\n",
 		      $dbh->errstr);
 
     #

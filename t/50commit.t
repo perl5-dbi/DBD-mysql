@@ -73,12 +73,10 @@ while (Testing()) {
 
     my $have_transactions = HaveTransactions($dbh);
 
-    #
-    #   Find a possible new table name
-    #
-    Test($state or $table = FindNewTable($dbh))
-	or ErrMsgF("Cannot determine a legal table name: Error %s.\n",
-		   $dbh->errstr);
+    $table= 't1';
+	  Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
+	    or ErrMsgF("Failed to drop table $table.\n",
+		       $dbh->err, $dbh->errstr);
 
     #
     #   Create a new table

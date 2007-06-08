@@ -41,9 +41,12 @@ while(Testing())
   #Test($state or (!$dbh->trace("3", "/tmp/trace.log"))) or
   # DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or $table = FindNewTable($dbh)) or
+  $table= 't1'; 
+
+  Test($state or 
+    $dbh->do("drop table if exists $table")) or
     DbiError($dbh->err, $dbh->errstr); 
-    
+
   Test($state or 
     $dbh->do("create table $table (a int not null, b double, primary key (a))")) or
     DbiError($dbh->err, $dbh->errstr); 

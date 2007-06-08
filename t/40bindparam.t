@@ -80,17 +80,16 @@ if ($row->[0] =~ /^4\.0/ || $row->[0] =~ /^3/)
 #   the new table.
 #
 while (Testing()) {
+    $table = "t1";
     #
     #   Connect to the database
     Test($state or ($dbh = DBI->connect($test_dsn, $test_user,
 					$test_password, {mysql_enable_utf8 => 1})))
 	   or ServerError();
 
-    #
-    #   Find a possible new table name
-    #
-    Test($state or $table = FindNewTable($dbh))
+    Test($state or $sth = $dbh->do("DROP TABLE IF EXISTS $table"))
 	   or DbiError($dbh->err, $dbh->errstr);
+
 
     #
     #   Create a new table; EDIT THIS!
@@ -201,6 +200,7 @@ while (Testing()) {
 		    $name eq 'Andreas Koenig'))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",
 		  $id, $name, $ref, scalar(@$ref));
+
     Test($state or (($ref = $sth->fetch)  &&  $id == 5  &&
 		    !defined($name)))
 	or printf("Query returned id = %s, name = %s, ref = %s, %d\n",

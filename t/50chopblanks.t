@@ -58,13 +58,11 @@ while (Testing()) {
 					$test_password)))
 	   or ServerError();
 
-    #
-    #   Find a possible new table name
-    #
-    my $table = '';
-    Test($state or $table = FindNewTable($dbh))
-	   or ErrMsgF("Cannot determine a legal table name: Error %s.\n",
-		      $dbh->errstr);
+    my $table = 't1';
+	Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
+	    or ErrMsgF("Drop table $table failed", $dbh->errstr);
+
+
 
     #
     #   Create a new table; EDIT THIS!

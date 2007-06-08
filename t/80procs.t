@@ -68,9 +68,7 @@ while(Testing())
   Test($state or (1 || $dbh->trace("3", "/tmp/trace.log"))) or
   DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or $table = FindNewTable($dbh))
-    or DbiError($dbh->err, $dbh->errstr);
-
+  $table= 't1';
   Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
     or DbiError($dbh->err, $dbh->errstr);
 

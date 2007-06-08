@@ -20,9 +20,10 @@ while (Testing()) {
   #
   # Find a possible new table name
   #
-  my $table = "";
-  Test($state or
-       ($table = FindNewTable($dbh)));
+  my $table = 't1';
+  # Drop the table
+  Test($state or $dbh->do("DROP TABLE IF EXISTS $table"));
+
   #
   # Create a new table
   #

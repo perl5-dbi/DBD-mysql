@@ -35,11 +35,7 @@ while(Testing())
   Test($state or my $dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
 
-  #
-  #   Create a new table; EDIT THIS!
-  #
-  Test($state or $table = FindNewTable($dbh)) or
-    DbiError($dbh->err, $dbh->errstr); 
+  $table="t1";
 
   Test($state or $dbh->do("DROP TABLE IF EXISTS $table")) or
     DbiError($dbh->err, $dbh->errstr);
