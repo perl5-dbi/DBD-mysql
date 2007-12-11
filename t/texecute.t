@@ -18,8 +18,6 @@ while (Testing()) {
        ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
                            {RaiseError => 0})));
 
-  #Test($state or ($dbh->trace("3", "/tmp/trace.log")));
-  #
   # Find a possible new table name
   #
   my $table = 't1';

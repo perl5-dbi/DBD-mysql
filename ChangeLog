@@ -1,3 +1,8 @@
+2007-12-10 Patrick Galbraith <patg@grazr.com> (4.006)
+
+* Cleanups on OS X compile
+* Removed test code that was leaving trace files around
+
 2007-3-22 Patrick Galbraith <patg@grazr.com> (4.005)
 
 * Fixed mysql_warning issue < 4.1 (reminers, patches, help from ROAM, (issue 25713)

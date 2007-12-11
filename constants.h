@@ -5,6 +5,7 @@
 
 static double mysql_constant(char* name, char* arg) {
   errno = 0;
+  arg= arg;
   switch (*name) {
   case 'B':
     if (strEQ(name, "BLOB_FLAG"))

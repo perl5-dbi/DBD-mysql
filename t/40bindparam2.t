@@ -71,8 +71,6 @@ while (Testing()) {
   Test($state or ($dbh->do("INSERT INTO t1 VALUES(NULL, 1)")))
     or DbiError($dbh->err, $dbh->errstr);
 
-  #Test($state or !($dbh->trace("3", "/tmp/bindparam2.log")));
-
   Test($state or ($rows= $dbh->selectall_arrayref("SELECT * FROM t1")))
     or DbiError($dbh->err, $dbh->errstr);
 

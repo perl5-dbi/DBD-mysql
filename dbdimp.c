@@ -65,6 +65,8 @@ count_params(char *statement)
   char* ptr = statement;
   int num_params = 0;
   char c;
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, ">count_params statement %s\n", statement);
 
   while ( (c = *ptr++) )
   {
@@ -107,7 +109,7 @@ static imp_sth_ph_t *alloc_param(int num_params)
   imp_sth_ph_t *params;
 
   if (num_params)
-    Newz(908, params, num_params, imp_sth_ph_t);
+    Newz(908, params, (unsigned int) num_params, imp_sth_ph_t);
   else
     params= NULL;
 
@@ -125,7 +127,7 @@ static MYSQL_BIND *alloc_bind(int num_params)
   MYSQL_BIND *bind;
 
   if (num_params)
-    Newz(908, bind, num_params, MYSQL_BIND);
+    Newz(908, bind, (unsigned int) num_params, MYSQL_BIND);
   else
     bind= NULL;
 
@@ -141,7 +143,7 @@ static imp_sth_phb_t *alloc_fbind(int num_params)
   imp_sth_phb_t *fbind;
 
   if (num_params)
-    Newz(908, fbind, num_params, imp_sth_phb_t);
+    Newz(908, fbind, (unsigned int) num_params, imp_sth_phb_t);
   else
     fbind= NULL;
 
@@ -156,7 +158,7 @@ static imp_sth_fbh_t *alloc_fbuffer(int num_fields)
   imp_sth_fbh_t *fbh;
 
   if (num_fields)
-    Newz(908, fbh, num_fields, imp_sth_fbh_t);
+    Newz(908, fbh, (unsigned int) num_fields, imp_sth_fbh_t);
   else
     fbh= NULL;
 
@@ -418,6 +420,9 @@ static char *parse_params(
   int limit_flag= 0;
   STRLEN vallen;
   imp_sth_ph_t *ph;
+
+  if (dbis->debug >= 2)
+    PerlIO_printf(DBILOGFP, ">parse_params statement %s\n", statement);
 
   if (num_params == 0)
     return NULL;
@@ -1245,7 +1250,7 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
   }
 #endif
 
-  DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr);
+  /* NO EFFECT DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr); */
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP, "%s error %d recorded: %s\n",
     what, rc, SvPV(errstr,lna));
@@ -1264,7 +1269,7 @@ void do_warn(SV* h, int rc, char* what)
   SV *errstr = DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
   sv_setpv(errstr, what);
-  DBIh_EVENT2(h, WARN_event, DBIc_ERR(imp_xxh), errstr);
+  /* NO EFFECT DBIh_EVENT2(h, WARN_event, DBIc_ERR(imp_xxh), errstr);*/
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP, "%s warning %d recorded: %s\n",
     what, rc, SvPV(errstr,lna));
@@ -1970,8 +1975,8 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
     sv_setiv(DBIc_ERR(imp_drh), (IV)1);
     sv_setpv(DBIc_ERRSTR(imp_drh),
              (char*)"disconnect_all not implemented");
-    DBIh_EVENT2(drh, ERROR_event,
-                DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh));
+    /* NO EFFECT DBIh_EVENT2(drh, ERROR_event,
+      DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh)); */
     return FALSE;
   }
   perl_destruct_level = 0;
@@ -2155,17 +2160,13 @@ my_ulonglong2str(my_ulonglong val)
   return newSVpv(ptr, (buf+ sizeof(buf) - 1) - ptr);
 }
 
-SV*
-dbd_db_FETCH_attrib(
-                    SV* dbh,
-                    imp_dbh_t* imp_dbh,
-                    SV* keysv
-                   )
+SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
 {
   STRLEN kl;
   char *key = SvPV(keysv, kl);
   char* fine_key = NULL;
   SV* result = NULL;
+  dbh= dbh;
 
   switch (*key) {
     case 'A':
@@ -2335,8 +2336,8 @@ dbd_st_prepare(
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP,
-                 "\t-> dbd_st_prepare MYSQL_VERSION_ID %d\n",
-                  MYSQL_VERSION_ID);
+                 "\t-> dbd_st_prepare MYSQL_VERSION_ID %d, SQL statement: %s\n",
+                  MYSQL_VERSION_ID, statement);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
  /* Set default value of 'mysql_server_prepare' attribute for sth from dbh */
@@ -2588,7 +2589,7 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
     {
       if (!(imp_sth->result = mysql_use_result(&imp_dbh->mysql)))
       {
-        //Check for possible error
+        /* Check for possible error */
         if (mysql_field_count(&imp_dbh->mysql))
         {
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -2801,9 +2802,10 @@ my_ulonglong mysql_st_internal_execute(
   int htype;
   int errno;
   my_ulonglong rows= 0;
-
   /* thank you DBI.c for this info! */
   D_imp_xxh(h);
+  attribs= attribs;
+
   htype= DBIc_TYPE(imp_xxh);
   /*
     It is important to import imp_dbh properly according to the htype
@@ -4029,7 +4031,7 @@ dbd_st_FETCH_internal(
         HV *pvhv= newHV();
         if (DBIc_NUM_PARAMS(imp_sth))
         {
-            unsigned int n;
+            int n;
             char key[100];
             I32 keylen;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
@@ -4149,6 +4151,14 @@ int dbd_st_blob_read (
   SV *destrv,
   long destoffset)
 {
+    /* quell warnings */
+    sth= sth;
+    imp_sth=imp_sth;
+    field= field;
+    offset= offset;
+    len= len;
+    destrv= destrv;
+    destoffset= destoffset;
     return FALSE;
 }
 
@@ -4184,11 +4194,13 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
-  char *buffer;
+  char *buffer= NULL;
   int buffer_is_null= 0;
   int buffer_length= slen;
-  int buffer_type= 0;
+  unsigned int buffer_type= 0;
 #endif
+  attribs= attribs;
+  maxlen= maxlen;
 
   if (param_num <= 0  ||  param_num > DBIc_NUM_PARAMS(imp_sth))
   {
@@ -4444,6 +4456,9 @@ AV *dbd_db_type_info_all(SV *dbh, imp_dbh_t *imp_dbh)
     "mysql_is_num"
   };
 
+  dbh= dbh;
+  imp_dbh= imp_dbh;
+ 
   hv= newHV();
   av_push(av, newRV_noinc((SV*) hv));
   for (i= 0;  i < (int)(sizeof(cols) / sizeof(const char*));  i++)
@@ -4556,6 +4571,14 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
         SV *catalog, SV *schema, SV *table, SV *field, SV *attr)
 {
+  /* all these non-op settings are to stifle OS X compile warnings */
+  imp_dbh= imp_dbh;
+  dbh= dbh;
+  catalog= catalog;
+  schema= schema;
+  table= table;
+  field= field;
+  attr= attr;
   return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
 }
 #endif
@@ -4613,7 +4636,7 @@ int parse_number(char *string, STRLEN len, char **end)
 
     *end= cp;
 
-    if (cp - string < len) {
+    if (cp - string < (int) len) {
         return -1;
     }
 
