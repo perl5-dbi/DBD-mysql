@@ -1,6 +1,7 @@
 2007-12-10 Patrick Galbraith <patg@grazr.com> (4.006)
 
 * Cleanups on OS X compile
+* Fixes to syntax errors on AIX
 * Removed test code that was leaving trace files around
 
 2007-3-22 Patrick Galbraith <patg@grazr.com> (4.005)
