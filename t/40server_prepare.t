@@ -23,7 +23,6 @@ my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 ok(defined $dbh, "connecting");
 
-$dbh->trace(4,"/tmp/trace.txt");
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 
 #

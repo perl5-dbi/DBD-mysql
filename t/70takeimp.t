@@ -47,7 +47,6 @@ sub ServerError() {
     exit 10;
 }
 
-#DBI->trace(1);
 
 #
 #   Main loop; leave this untouched, put tests into the loop
