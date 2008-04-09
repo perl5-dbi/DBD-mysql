@@ -1452,8 +1452,6 @@ MYSQL *mysql_dr_connect(
         }
       }
     }
-#else
-    mysql_server_init(-1, NULL, NULL);
 #endif
 
 #ifdef MYSQL_NO_CLIENT_FOUND_ROWS
