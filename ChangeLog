@@ -1,3 +1,7 @@
+2008-4-07 Patrick Galbraith <patg@grazr.com> (4.007)
+
+* Took out mysql_server_init call where not needed
+
 2007-12-26 Patrick Galbraith <patg@grazr.com> (4.006)
 
 * Cleanups on OS X compile
