@@ -255,6 +255,16 @@ sub DbiError ($$) {
     }
 }
 
+sub connection_id {
+    my $dbh = shift;
+    return 0 unless $dbh;
+
+    # Paul DuBois says the following is more reliable than
+    # $dbh->{'mysql_thread_id'};
+    my @row = $dbh->selectrow_array("SELECT CONNECTION_ID()");
+
+    return $row[0];
+}
 
 sub ErrMsg (@) { print (@_); }
 sub ErrMsgF (@) { printf (@_); }

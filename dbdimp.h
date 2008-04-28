@@ -141,7 +141,7 @@ struct imp_drh_st {
 struct imp_dbh_st {
     dbih_dbc_t com;         /*  MUST be first element in structure   */
 
-    MYSQL mysql;
+    MYSQL *pmysql;
     int has_transactions;   /*  boolean indicating support for
 			     *  transactions, currently always
 			     *  TRUE for MySQL and always FALSE

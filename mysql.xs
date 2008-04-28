@@ -91,7 +91,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
  */
   if (SvOK(dbh)) {
     D_imp_dbh(dbh);
-    sock = &imp_dbh->mysql;
+    sock = imp_dbh->pmysql;
   }
   else
   {
@@ -201,14 +201,14 @@ _ListDBs(dbh)
   SV*	dbh
   PPCODE:
   D_imp_dbh(dbh);
-  MYSQL_RES* res = mysql_list_dbs(&imp_dbh->mysql, NULL);
+  MYSQL_RES* res = mysql_list_dbs(imp_dbh->pmysql, NULL);
   MYSQL_ROW cur;
   if (!res  &&
       (!mysql_db_reconnect(dbh)  ||
-       !(res = mysql_list_dbs(&imp_dbh->mysql, NULL))))
+       !(res = mysql_list_dbs(imp_dbh->pmysql, NULL))))
 {
-  do_error(dbh, mysql_errno(&imp_dbh->mysql),
-           mysql_error(&imp_dbh->mysql), mysql_sqlstate(&imp_dbh->mysql));
+  do_error(dbh, mysql_errno(imp_dbh->pmysql),
+           mysql_error(imp_dbh->pmysql), mysql_sqlstate(imp_dbh->pmysql));
 }
 else
 {
@@ -277,7 +277,7 @@ do(dbh, statement, attr=Nullsv, ...)
   {
     str_ptr= SvPV(statement, slen);
 
-    stmt= mysql_stmt_init(&imp_dbh->mysql);
+    stmt= mysql_stmt_init(imp_dbh->pmysql);
 
     if (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))
     {
@@ -480,7 +480,7 @@ do(dbh, statement, attr=Nullsv, ...)
       }
     }
     retval = mysql_st_internal_execute(dbh, statement, attr, num_params,
-                                       params, &result, &imp_dbh->mysql, 0);
+                                       params, &result, imp_dbh->pmysql, 0);
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   }
 #endif
@@ -510,10 +510,10 @@ ping(dbh)
     {
       int retval;
       D_imp_dbh(dbh);
-      retval = (mysql_ping(&imp_dbh->mysql) == 0);
+      retval = (mysql_ping(imp_dbh->pmysql) == 0);
       if (!retval) {
 	if (mysql_db_reconnect(dbh)) {
-	  retval = (mysql_ping(&imp_dbh->mysql) == 0);
+	  retval = (mysql_ping(imp_dbh->pmysql) == 0);
 	}
       }
       RETVAL = boolSV(retval);
@@ -676,14 +676,14 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    break;
 	case SQL_DBMS_VER:
 	    retsv = newSVpv(
-	        imp_dbh->mysql.server_version,
-		strlen(imp_dbh->mysql.server_version)
+	        imp_dbh->pmysql->server_version,
+		strlen(imp_dbh->pmysql->server_version)
 	    );
 	    break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
 	    /*XXX What about a DB started in ANSI mode? */
 	    /* Swiped from MyODBC's get_info.c */
-	    using_322=is_prefix(mysql_get_server_info(&imp_dbh->mysql),"3.22");
+	    using_322=is_prefix(mysql_get_server_info(imp_dbh->pmysql),"3.22");
 	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
@@ -697,7 +697,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv= newSViv(NAME_LEN);
 	    break;
 	case SQL_SERVER_NAME:
-	    retsv= newSVpv(imp_dbh->mysql.host_info,strlen(imp_dbh->mysql.host_info));
+	    retsv= newSVpv(imp_dbh->pmysql->host_info,strlen(imp_dbh->pmysql->host_info));
 	    break;
     	default:
  		croak("Unknown SQL Info type: %i",dbh);

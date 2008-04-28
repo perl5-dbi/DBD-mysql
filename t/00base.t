@@ -10,16 +10,10 @@
 #
 #   Include lib.pl
 #
-$mdriver = "";
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
-}
-if ($verbose) { print "Driver is $mdriver\n"; }
+our $mdriver = "";
+use lib 't', '.';
+require 'lib.pl';
+print "Driver is $mdriver\n"; 
 
 # Base DBD Driver Test
 
@@ -41,9 +35,7 @@ $drh = DBI->install_driver($mdriver);
 
 if ($drh->{Version}) {
     print "ok 5\n";
-    if ($verbose) {
-	print "Driver version is ", $drh->{Version}, "\n";
-    }
+    print "Driver version is ", $drh->{Version}, "\n";
 }
 
 BEGIN { $tests = 5 }

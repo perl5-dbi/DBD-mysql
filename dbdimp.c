@@ -1709,6 +1709,7 @@ static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
   char* mysql_socket;
   D_imp_xxh(dbh);
 
+#define TAKE_IMP_DATA_VERSION 1
 #if TAKE_IMP_DATA_VERSION
   if (DBIc_has(imp_dbh, DBIcf_IMPSET))
   { /* eg from take_imp_data() */
@@ -1752,7 +1753,10 @@ static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
 		  host ? host : "NULL",
 		  port ? port : "NULL");
 
-  return mysql_dr_connect(dbh, &imp_dbh->mysql, mysql_socket, host, port, user,
+  if (!imp_dbh->pmysql) {
+     Newz(908, imp_dbh->pmysql, 1, MYSQL);
+  }
+  return mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
 }
 
@@ -1802,8 +1806,8 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
   if (!my_login(dbh, imp_dbh))
   {
-    do_error(dbh, mysql_errno(&imp_dbh->mysql),
-            mysql_error(&imp_dbh->mysql) ,mysql_sqlstate(&imp_dbh->mysql));
+    do_error(dbh, mysql_errno(imp_dbh->pmysql),
+            mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
     return FALSE;
   }
 
@@ -1843,13 +1847,13 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
   if (imp_dbh->has_transactions)
   {
 #if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-    if (mysql_real_query(&imp_dbh->mysql, "COMMIT", 6))
+    if (mysql_real_query(imp_dbh->pmysql, "COMMIT", 6))
 #else
-    if (mysql_commit(&imp_dbh->mysql))
+    if (mysql_commit(imp_dbh->pmysql))
 #endif
     {
-      do_error(dbh, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql)
-               ,mysql_sqlstate(&imp_dbh->mysql));
+      do_error(dbh, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql)
+               ,mysql_sqlstate(imp_dbh->pmysql));
       return FALSE;
     }
   }
@@ -1871,13 +1875,13 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
   if (imp_dbh->has_transactions)
   {
 #if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-    if (mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8))
+    if (mysql_real_query(imp_dbh->pmysql, "ROLLBACK", 8))
 #else
-      if (mysql_rollback(&imp_dbh->mysql))
+      if (mysql_rollback(imp_dbh->pmysql))
 #endif
       {
-        do_error(dbh, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql) ,mysql_sqlstate(&imp_dbh->mysql));
+        do_error(dbh, mysql_errno(imp_dbh->pmysql),
+                 mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
         return FALSE;
       }
   }
@@ -1913,9 +1917,9 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
     /* since most errors imply already disconnected.    */
     DBIc_ACTIVE_off(imp_dbh);
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-        PerlIO_printf(DBILOGFP, "&imp_dbh->mysql: %lx\n",
-		      (long) &imp_dbh->mysql);
-    mysql_close(&imp_dbh->mysql );
+        PerlIO_printf(DBILOGFP, "imp_dbh->pmysql: %lx\n",
+		      (long) imp_dbh->pmysql);
+    mysql_close(imp_dbh->pmysql );
 
     /* We don't free imp_dbh since a reference still exists    */
     /* The DESTROY method is the only one to 'free' memory.    */
@@ -2006,14 +2010,15 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
     {
       if (!DBIc_has(imp_dbh, DBIcf_AutoCommit))
 #if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-        if ( mysql_real_query(&imp_dbh->mysql, "ROLLBACK", 8))
+        if ( mysql_real_query(imp_dbh->pmysql, "ROLLBACK", 8))
 #else
-        if (mysql_rollback(&imp_dbh->mysql))
+        if (mysql_rollback(imp_dbh->pmysql))
 #endif
             do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed" ,NULL);
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
+  Safefree(imp_dbh->pmysql);
 
   /* Tell DBI, that dbh->destroy must no longer be called */
   DBIc_off(imp_dbh, DBIcf_IMPSET);
@@ -2059,7 +2064,7 @@ dbd_db_STORE_attrib(
         return TRUE;
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-      if (mysql_autocommit(&imp_dbh->mysql, bool_value))
+      if (mysql_autocommit(imp_dbh->pmysql, bool_value))
       {
         do_error(dbh, TX_ERR_AUTOCOMMIT,
                  bool_value ?
@@ -2073,7 +2078,7 @@ dbd_db_STORE_attrib(
       if (bool_value)
       {
         /* Setting autocommit will do a commit of any pending statement */
-        if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=1", 16))
+        if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=1", 16))
         {
           do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed", NULL);
           return FALSE;
@@ -2081,7 +2086,7 @@ dbd_db_STORE_attrib(
       }
       else
       {
-        if (mysql_real_query(&imp_dbh->mysql, "SET AUTOCOMMIT=0", 16))
+        if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=0", 16))
         {
           do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed", NULL);
           return FALSE;
@@ -2196,11 +2201,11 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     break;
   case 'e':
     if (strEQ(key, "errno"))
-      result= sv_2mortal(newSViv((IV)mysql_errno(&imp_dbh->mysql)));
+      result= sv_2mortal(newSViv((IV)mysql_errno(imp_dbh->pmysql)));
     else if ( strEQ(key, "error") || strEQ(key, "errmsg"))
     {
     /* Note that errmsg is obsolete, as of 2.09! */
-      const char* msg = mysql_error(&imp_dbh->mysql);
+      const char* msg = mysql_error(imp_dbh->pmysql);
       result= sv_2mortal(newSVpv(msg, strlen(msg)));
     }
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
@@ -2234,7 +2239,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   case 'h':
     if (strEQ(key, "hostinfo"))
     {
-      const char* hostinfo = mysql_get_host_info(&imp_dbh->mysql);
+      const char* hostinfo = mysql_get_host_info(imp_dbh->pmysql);
       result= hostinfo ?
         sv_2mortal(newSVpv(hostinfo, strlen(hostinfo))) : &sv_undef;
     }
@@ -2243,40 +2248,40 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   case 'i':
     if (strEQ(key, "info"))
     {
-      const char* info = mysql_info(&imp_dbh->mysql);
+      const char* info = mysql_info(imp_dbh->pmysql);
       result= info ? sv_2mortal(newSVpv(info, strlen(info))) : &sv_undef;
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
-      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(&imp_dbh->mysql)));
+      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(imp_dbh->pmysql)));
     break;
 
   case 'p':
     if (kl == 9  &&  strEQ(key, "protoinfo"))
-      result= sv_2mortal(newSViv(mysql_get_proto_info(&imp_dbh->mysql)));
+      result= sv_2mortal(newSViv(mysql_get_proto_info(imp_dbh->pmysql)));
     break;
 
   case 's':
     if (kl == 10  &&  strEQ(key, "serverinfo"))
     {
-      const char* serverinfo = mysql_get_server_info(&imp_dbh->mysql);
+      const char* serverinfo = mysql_get_server_info(imp_dbh->pmysql);
       result= serverinfo ?
         sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &sv_undef;
     }
     else if (strEQ(key, "sock"))
-      result= sv_2mortal(newSViv((IV) &imp_dbh->mysql));
+      result= sv_2mortal(newSViv((IV) imp_dbh->pmysql));
     else if (strEQ(key, "sockfd"))
-      result= sv_2mortal(newSViv((IV) imp_dbh->mysql.net.fd));
+      result= sv_2mortal(newSViv((IV) imp_dbh->pmysql->net.fd));
     else if (strEQ(key, "stat"))
     {
-      const char* stats = mysql_stat(&imp_dbh->mysql);
+      const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
     else if (strEQ(key, "stats"))
     {
       /* Obsolete, as of 2.09 */
-      const char* stats = mysql_stat(&imp_dbh->mysql);
+      const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
         sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
     }
@@ -2286,7 +2291,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
 
   case 't':
     if (kl == 9  &&  strEQ(key, "thread_id"))
-      result= sv_2mortal(newSViv(mysql_thread_id(&imp_dbh->mysql)));
+      result= sv_2mortal(newSViv(mysql_thread_id(imp_dbh->pmysql)));
     break;
   }
 
@@ -2447,7 +2452,7 @@ dbd_st_prepare(
               "ERROR: Trying to prepare new stmt while we have \
               already not closed one \n");
 
-    imp_sth->stmt= mysql_stmt_init(&imp_dbh->mysql);
+    imp_sth->stmt= mysql_stmt_init(imp_dbh->pmysql);
 
     if (! imp_sth->stmt)
     {
@@ -2455,8 +2460,8 @@ dbd_st_prepare(
         PerlIO_printf(DBILOGFP,
                       "\t\tERROR: Unable to return MYSQL_STMT structure \
                       from mysql_stmt_init(): ERROR NO: %d ERROR MSG:%s\n",
-                      mysql_errno(&imp_dbh->mysql),
-                      mysql_error(&imp_dbh->mysql));
+                      mysql_errno(imp_dbh->pmysql),
+                      mysql_error(imp_dbh->pmysql));
     }
 
     prepare_retval= mysql_stmt_prepare(imp_sth->stmt,
@@ -2488,7 +2493,7 @@ dbd_st_prepare(
       {
         do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                  mysql_stmt_error(imp_sth->stmt),
-                mysql_sqlstate(&imp_dbh->mysql));
+                mysql_sqlstate(imp_dbh->pmysql));
         mysql_stmt_close(imp_sth->stmt);
         imp_sth->stmt= NULL;
         return FALSE;
@@ -2585,17 +2590,17 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
 
     if (next_result_rc == 0)
     {
-      if (!(imp_sth->result = mysql_use_result(&imp_dbh->mysql)))
+      if (!(imp_sth->result = mysql_use_result(imp_dbh->pmysql)))
       {
         /* Check for possible error */
-        if (mysql_field_count(&imp_dbh->mysql))
+        if (mysql_field_count(imp_dbh->pmysql))
         {
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_result_sets ERROR: %s\n",
-                                  mysql_error(&imp_dbh->mysql));
+                                  mysql_error(imp_dbh->pmysql));
 
-          do_error(sth, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
-                   mysql_sqlstate(&imp_dbh->mysql));
+          do_error(sth, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
+                   mysql_sqlstate(imp_dbh->pmysql));
           return 0;
         }
       }
@@ -2605,16 +2610,16 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
       mysql_free_result(imp_sth->result);
       imp_sth->result=NULL;
     }
-  } while ((next_result_rc=mysql_next_result(&imp_dbh->mysql))==0);
+  } while ((next_result_rc=mysql_next_result(imp_dbh->pmysql))==0);
 
   if (next_result_rc > 0)
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBILOGFP, "\t<- dbd_st_free_result_sets: Error while processing multi-result set: %s\n",
-                    mysql_error(&imp_dbh->mysql));
+                    mysql_error(imp_dbh->pmysql));
 
-    do_error(sth, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
-             mysql_sqlstate(&imp_dbh->mysql));
+    do_error(sth, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
+             mysql_sqlstate(imp_dbh->pmysql));
   }
 
 #else
@@ -2653,7 +2658,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
   int use_mysql_use_result=imp_sth->use_mysql_use_result;
   int next_result_return_code, i;
-  MYSQL* svsock= &imp_dbh->mysql;
+  MYSQL* svsock= imp_dbh->pmysql;
 
   if (!SvROK(sth) || SvTYPE(SvRV(sth)) != SVt_PVHV)
     croak("Expected hash array");
@@ -2758,7 +2763,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
       imp_sth->done_desc = 0;
     }
-    (imp_dbh->mysql).net.last_errno= 0;
+    imp_dbh->pmysql->net.last_errno= 0;
     return 1;
   }
 }
@@ -3125,14 +3130,14 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
                                                 DBIc_NUM_PARAMS(imp_sth),
                                                 imp_sth->params,
                                                 &imp_sth->result,
-                                                &imp_dbh->mysql,
+                                                imp_dbh->pmysql,
                                                 imp_sth->use_mysql_use_result
                                                );
 
   if (imp_sth->row_num+1 != (my_ulonglong)-1)
   {
     if (!imp_sth->result)
-      imp_sth->insertid= mysql_insert_id(&imp_dbh->mysql);
+      imp_sth->insertid= mysql_insert_id(imp_dbh->pmysql);
     else
     {
       /** Store the result in the current statement handle */
@@ -3143,7 +3148,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
     }
   }
 
-  imp_sth->warning_count = mysql_warning_count(&imp_dbh->mysql);
+  imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
   {
@@ -3309,7 +3314,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   int av_length, av_readonly;
   MYSQL_ROW cols;
   D_imp_dbh_from_sth;
-  MYSQL* svsock= &imp_dbh->mysql;
+  MYSQL* svsock= imp_dbh->pmysql;
   imp_sth_fbh_t *fbh;
   D_imp_xxh(sth);
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
@@ -3360,7 +3365,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   }
 
   /* fix from 2.9008 */
-  (imp_dbh->mysql).net.last_errno = 0;
+  imp_dbh->pmysql->net.last_errno = 0;
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
@@ -3501,7 +3506,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       PerlIO_printf(DBILOGFP, "\tmysql_num_rows=%llu\n",
                     mysql_num_rows(imp_sth->result));
       PerlIO_printf(DBILOGFP, "\tmysql_affected_rows=%llu\n",
-                    mysql_affected_rows(&imp_dbh->mysql));
+                    mysql_affected_rows(imp_dbh->pmysql));
       PerlIO_printf(DBILOGFP, "\tdbd_st_fetch for %08lx, currow= %d\n",
                     (u_long) sth,imp_sth->currow);
     }
@@ -3512,10 +3517,10 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       {
         PerlIO_printf(DBILOGFP, "\tdbd_st_fetch, no more rows to fetch");
       }
-      if (mysql_errno(&imp_dbh->mysql))
-        do_error(sth, mysql_errno(&imp_dbh->mysql),
-                 mysql_error(&imp_dbh->mysql),
-                 mysql_sqlstate(&imp_dbh->mysql));
+      if (mysql_errno(imp_dbh->pmysql))
+        do_error(sth, mysql_errno(imp_dbh->pmysql),
+                 mysql_error(imp_dbh->pmysql),
+                 mysql_sqlstate(imp_dbh->pmysql));
 
 
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
@@ -4364,7 +4369,7 @@ int mysql_db_reconnect(SV* h)
   else
     imp_dbh= (imp_dbh_t*) imp_xxh;
 
-  if (mysql_errno(&imp_dbh->mysql) != CR_SERVER_GONE_ERROR)
+  if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR)
     /* Other error */
     return FALSE;
 
@@ -4382,15 +4387,15 @@ int mysql_db_reconnect(SV* h)
    * fail.  Think server is down & reconnect fails but the application eval{}s
    * the execute, so next time $dbh->quote() gets called, instant SIGSEGV!
    */
-  save_socket= imp_dbh->mysql;
-  memcpy (&save_socket, &imp_dbh->mysql,sizeof(save_socket));
-  memset (&imp_dbh->mysql,0,sizeof(imp_dbh->mysql));
+  save_socket= *(imp_dbh->pmysql);
+  memcpy (&save_socket, imp_dbh->pmysql,sizeof(save_socket));
+  memset (imp_dbh->pmysql,0,sizeof(*(imp_dbh->pmysql)));
 
   if (!my_login(h, imp_dbh))
   {
-    do_error(h, mysql_errno(&imp_dbh->mysql), mysql_error(&imp_dbh->mysql),
-             mysql_sqlstate(&imp_dbh->mysql));
-    memcpy (&imp_dbh->mysql, &save_socket, sizeof(save_socket));
+    do_error(h, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
+             mysql_sqlstate(imp_dbh->pmysql));
+    memcpy (imp_dbh->pmysql, &save_socket, sizeof(save_socket));
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
   }
@@ -4554,7 +4559,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
     sptr= SvPVX(result);
 
     *sptr++ = '\'';
-    sptr+= mysql_real_escape_string(&imp_dbh->mysql, sptr,
+    sptr+= mysql_real_escape_string(imp_dbh->pmysql, sptr,
                                      ptr, len);
     *sptr++= '\'';
     SvPOK_on(result);
@@ -4577,7 +4582,7 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
   table= table;
   field= field;
   attr= attr;
-  return sv_2mortal(my_ulonglong2str(mysql_insert_id(&((imp_dbh_t*)imp_dbh)->mysql)));
+  return sv_2mortal(my_ulonglong2str(mysql_insert_id(imp_dbh->pmysql)));
 }
 #endif
 
