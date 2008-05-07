@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!perl -w
 #
 #   $Id$
 #
@@ -7,138 +7,76 @@
 #
 
 
-#
-#   Make -w happy
-#
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
-
-
-#
-#   Include lib.pl
-#
-require DBI;
-$mdriver = "";
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
-}
-
-sub ServerError() {
-    my $err = $DBI::errstr; # Hate -w ...
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
-
+use DBI ();
+use Test::More;
+use vars qw($table $test_dsn $test_user $test_password);
+use lib '.', 't';
+require 'lib.pl';
 
 sub ShowBlob($) {
     my ($blob) = @_;
-    for($i = 0;  $i < 8;  $i++) {
-	if (defined($blob)  &&  length($blob) > $i) {
-	    $b = substr($blob, $i*32);
-	} else {
-	    $b = "";
-	}
-	printf("%08lx %s\n", $i*32, unpack("H64", $b));
+    for ($i = 0;  $i < 8;  $i++) {
+        if (defined($blob)  &&  length($blob) > $i) {
+            $b = substr($blob, $i*32);
+        }
+        else {
+            $b = "";
+        }
+        printf("%08lx %s\n", $i*32, unpack("H64", $b));
     }
 }
 
+my $dbh;
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;};
 
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-    #
-    #   Connect to the database
-    Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-	or ServerError();
-
-    my($def);
-    my $table='t1';
-    foreach $size (128) {
-  
-	Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
-	    or DbiError($dbh->err, $dbh->errstr);
-	#
-	#   Create a new table
-	#
-	if (!$state) {
-	    $def = TableDefinition($table,
-				   ["id",   "INTEGER",      4, 0],
-				   ["name", "BLOB",     $size, 0]);
-	    print "Creating table:\n$def\n";
-	}
-	Test($state or $dbh->do($def))
-	    or DbiError($dbh->err, $dbh->errstr);
-
-
-	#
-	#  Create a blob
-	#
-	my ($blob, $qblob) = "";
-	if (!$state) {
-	    my $b = "";
-	    for ($j = 0;  $j < 256;  $j++) {
-		$b .= chr($j);
-	    }
-	    for ($i = 0;  $i < $size;  $i++) {
-		$blob .= $b;
-	    }
-            $qblob = $dbh->quote($blob);
-	}
-
-	#
-	#   Insert a row into the test table.......
-	#
-	my($query);
-	if (!$state) {
-	    $query = "INSERT INTO $table VALUES(1, $qblob)";
-	    if ($ENV{'SHOW_BLOBS'}  &&  open(OUT, ">" . $ENV{'SHOW_BLOBS'})) {
-		print OUT $query;
-		close(OUT);
-	    }
-	}
-        Test($state or $dbh->do($query))
-	    or DbiError($dbh->err, $dbh->errstr);
-
-	#
-	#   Now, try SELECT'ing the row out.
-	#
-	Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
-					       . " WHERE id = 1"))
-	       or DbiError($dbh->err, $dbh->errstr);
-
-	Test($state or $sth->execute)
-	       or DbiError($dbh->err, $dbh->errstr);
-
-	Test($state or (defined($row = $sth->fetchrow_arrayref)))
-	    or DbiError($sth->err, $sth->errstr);
-
-	Test($state or (@$row == 2  &&  $$row[0] == 1  &&  $$row[1] eq $blob))
-	    or (ShowBlob($blob),
-		ShowBlob(defined($$row[1]) ? $$row[1] : ""));
-
-	Test($state or $sth->finish)
-	    or DbiError($sth->err, $sth->errstr);
-
-	Test($state or undef $sth || 1)
-	    or DbiError($sth->err, $sth->errstr);
-
-	#
-	#   Finally drop the test table.
-	#
-	Test($state or $dbh->do("DROP TABLE $table"))
-	    or DbiError($dbh->err, $dbh->errstr);
-    }
+if ($@) {
+    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 12;
+
+my $size= 128;
+ok $dbh->do("DROP TABLE IF EXISTS $table"), "Drop table if exists $table";
+my $create = <<EOT;
+CREATE TABLE $table (
+    id INT(3) NOT NULL DEFAULT 0,
+    name BLOB ) DEFAULT CHARSET=utf8
+EOT
+
+ok ($dbh->do($create));
+
+my ($blob, $qblob) = "";
+my $b = "";
+for ($j = 0;  $j < 256;  $j++) {
+    $b .= chr($j);
+}
+for ($i = 0;  $i < $size;  $i++) {
+    $blob .= $b;
+}
+$qblob = $dbh->quote($blob);
+ok $qblob, 'Blob properly quoted';
+
+#   Insert a row into the test table.......
+my ($query);
+$query = "INSERT INTO $table VALUES(1, $qblob)";
+ok ($dbh->do($query));
+
+#   Now, try SELECT'ing the row out.
+$sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1")
+        or die "unable to query $table " . $dbh->errstr;
+
+ok $sth, "prepare of query of $table succeeded";
+ok ($sth->execute);
+
+$row = $sth->fetchrow_arrayref or die "Unable to select row from query";
+ok defined($row), "row returned defined";
+
+cmp_ok @$row, '==', 2, "records from $table returned 2";
+cmp_ok $$row[0], '==', 1, 'id set to 1';
+cmp_ok byte_string($$row[1]), 'eq', byte_string($blob), 'blob set equal to blob returned';
+
+ShowBlob($blob), ShowBlob(defined($$row[1]) ? $$row[1] : "");
+
+ok ($sth->finish);
+
+ok $dbh->do("DROP TABLE $table"), "Drop table $table";

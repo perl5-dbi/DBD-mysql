@@ -1,99 +1,51 @@
-#!/usr/local/bin/perl
+#!perl -w
 #
 #   $Id$
 #
 #   This is a test for correctly handling NULL values.
 #
-
-
-#
-#   Make -w happy
-#
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
-
-
-#
-#   Include lib.pl
-#
+use strict;
 use DBI;
-use vars qw($COL_NULLABLE);
+use Test::More;
+use Carp qw(croak);
+use Data::Dumper;
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require 'lib.pl';
 
-$mdriver = "";
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
+my ($dbh, $sth);
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 8; 
 
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
+ok $dbh->do("DROP TABLE IF EXISTS $table"), "DROP TABLE IF EXISTS $table";
 
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-    #
-    #   Connect to the database
-    Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-	or ServerError();
+my $create= <<EOT;
+CREATE TABLE $table (
+  id INT(4),
+  name VARCHAR(64)
+  )
+EOT
+ok $dbh->do($create), "create table $create";
 
-    $table= t1;
+ok $dbh->do("INSERT INTO $table VALUES ( NULL, 'NULL-valued id' )"), "inserting nulls";
 
-    Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
-           or DbiError($dbh->err, $dbh->errstr);
-    #
-    #   Create a new table; EDIT THIS!
-    #
-    Test($state or ($def = TableDefinition($table,
-				   ["id",   "INTEGER",  4, $COL_NULLABLE],
-				   ["name", "CHAR",    64, 0]),
-		    $dbh->do($def)))
-	   or DbiError($dbh->err, $dbh->errstr);
+$sth = $dbh->prepare("SELECT * FROM $table WHERE id IS NULL") or die "$DBI::errstr";
 
+do $sth->execute;
 
-    #
-    #   Test whether or not a field containing a NULL is returned correctly
-    #   as undef, or something much more bizarre
-    #
-    Test($state or $dbh->do("INSERT INTO $table VALUES"
-	                    . " ( NULL, 'NULL-valued id' )"))
-           or DbiError($dbh->err, $dbh->errstr);
+my $aref = $sth->fetchrow_arrayref or die "$DBI::errstr";
 
-    Test($state or $sth = $dbh->prepare("SELECT * FROM $table"
-	                                   . " WHERE " . IsNull("id")))
-           or DbiError($dbh->err, $dbh->errstr);
+ok !defined($$aref[0]);
 
-    Test($state or $sth->execute)
-           or DbiError($dbh->err, $dbh->errstr);
+ok defined($$aref[1]);
 
-    Test($state or ($rv = $sth->fetchrow_arrayref) or $dbdriver eq 'CSV')
-           or DbiError($dbh->err, $dbh->errstr);
+ok $sth->finish;
 
-    Test($state or (!defined($$rv[0])  and  defined($$rv[1])) or
-	 $dbdriver eq 'CSV')
-           or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("DROP TABLE $table");
 
-    Test($state or $sth->finish)
-           or DbiError($dbh->err, $dbh->errstr);
-
-    #
-    #   Finally drop the test table.
-    #
-    Test($state or $dbh->do("DROP TABLE $table"))
-	   or DbiError($dbh->err, $dbh->errstr);
-
-    Test($state or undef $sth  ||  1);
-}
+ok $dbh->disconnect;

@@ -1,6 +1,6 @@
-#!/usr/local/bin/perl
+#!perl
 #
-#   $Id: 40blobs.t 1103 2003-03-18 02:53:28Z rlippan $
+#   $Id: 40blobs.t 1103 2008-04-29 02:53:28Z capttofu $
 #
 #   This is a test for correct handling of BLOBS; namely $dbh->quote
 #   is expected to work correctly.
@@ -11,157 +11,96 @@
 # which he kindly sent code that this test uses!
 #
 
-#
-#   Make -w happy
-#
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
+use strict;
+use DBI;
+use Test::More;
 
-
-#
-#   Include lib.pl
-#
-require DBI;
-$mdriver = "";
 my $update_blob;
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require 'lib.pl';
+
+my ($dbh, $row);
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 19; 
 
 my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
 my $blob1= join '', map { $chars[rand @chars] } 0 .. 10000;
-$blob2 = '"' x 10000;
-
-sub ServerError() {
-    my $err = $DBI::errstr; # Hate -w ...
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
+my $blob2 = '"' x 10000;
 
 sub ShowBlob($) {
-    my ($blob) = @_;
-    for($i = 0;  $i < 8;  $i++) {
-	if (defined($blob)  &&  length($blob) > $i) {
-	    $b = substr($blob, $i*32);
-	} else {
-	    $b = "";
-	}
-	printf("%08lx %s\n", $i*32, unpack("H64", $b));
+  my ($blob) = @_;
+  my $b;
+  for(my $i = 0;  $i < 8;  $i++) {
+    if (defined($blob)  &&  length($blob) > $i) {
+      $b = substr($blob, $i*32);
     }
-}
-
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-#
-#   Connect to the database
-  Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-    or ServerError();
-
-    $table= 't1';
-  Test($state or
-      $dbh->do("DROP TABLE IF EXISTS $table"))
-    or DbiError($dbh->err, $dbh->errstr);
-# 
-# create a new table
-#
-  Test($state or
-      $dbh->do("CREATE TABLE $table (id int(4), name text)"))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  my($def);
-
-#
-#   Insert a row into the test table.......
-#
-  my($query, $sth);
-  if (!$state) {
-    $query = "INSERT INTO $table VALUES(?, ?)";
+    else {
+      $b = "";
+    }
+    printf("%08lx %s\n", $i*32, unpack("H64", $b));
   }
-  Test($state or $sth= $dbh->prepare($query))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->execute(1, $blob1))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->finish)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or undef $sth || 1)
-    or DbiError($sth->err, $sth->errstr);
-
-#
-#   Now, try SELECTing the row out.
-#
-  Test($state or $sth=
-      $dbh->prepare("SELECT * FROM $table WHERE id = 1"))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->execute)
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or (defined($row = $sth->fetchrow_arrayref)))
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or (@$row == 2 && $$row[0] == 1 && $$row[1] eq $blob1))
-    or (ShowBlob($blob1),
-        ShowBlob(defined($$row[1]) ? $$row[1] : ""));
-
-  Test($state or $sth->finish)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or undef $sth || 1)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or $sth=
-      $dbh->prepare("UPDATE $table SET name = ? WHERE id = 1"))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->execute($blob2))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->finish)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or undef $sth || 1)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or $sth=
-      $dbh->prepare("SELECT * FROM $table WHERE id = 1"))
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->execute)
-    or DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or (defined($row = $sth->fetchrow_arrayref)))
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or (@$row == 2  &&  $$row[0] == 1  &&  $$row[1] eq $blob2))
-    or (ShowBlob($blob2),
-        ShowBlob(defined($$row[1]) ? $$row[1] : ""));
-
-  Test($state or $sth->finish)
-    or DbiError($sth->err, $sth->errstr);
-
-  Test($state or undef $sth || 1)
-    or DbiError($sth->err, $sth->errstr);
-
-#
-#   Finally drop the test table.
-#
-  Test($state or $dbh->do("DROP TABLE $table"))
-    or DbiError($dbh->err, $dbh->errstr);
 }
+
+my $create = <<EOT;
+CREATE TABLE $table (
+  id int(4),
+  name text)
+EOT
+
+ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
+
+ok $dbh->do($create), "create table $table";
+
+my $query = "INSERT INTO $table VALUES(?, ?)";
+
+my $sth= $dbh->prepare($query) or die "$DBI::errstr";
+
+ok defined($sth);
+
+ok $sth->execute(1, $blob1), "inserting \$blob1";
+
+ok $sth->finish;
+
+$sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") or 
+  die "$DBI::errstr";
+
+ok $sth->execute, "select from $table";
+
+$row = $sth->fetchrow_arrayref or die "$DBI::errstr";
+
+cmp_ok @$row, '==', 2, "two rows fetched";
+
+cmp_ok $$row[0], '==', 1, "first row id == 1";
+
+cmp_ok $$row[1], 'eq', $blob1, ShowBlob($blob1);
+
+ok $sth->finish;
+
+$sth= $dbh->prepare("UPDATE $table SET name = ? WHERE id = 1") or die "$DBI::errstr";
+
+ok $sth->execute($blob2), 'inserting $blob2';
+
+ok ($sth->finish);
+
+$sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") or die "$DBI::errstr";
+
+ok ($sth->execute);
+
+$row = $sth->fetchrow_arrayref or die "$DBI::errstr";
+
+cmp_ok scalar @$row, '==', 2, 'two rows';
+
+cmp_ok $$row[0], '==', 1, 'row id == 1';
+
+cmp_ok $$row[1], 'eq', $blob2, ShowBlob($blob2);
+
+ok ($sth->finish);
+
+ok $dbh->do("DROP TABLE $table"), "drop $table";
+
+ok $dbh->disconnect;

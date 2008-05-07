@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!perl -w
 #
 #   $Id: 40bindparam.t 6304 2006-05-17 21:23:10Z capttofu $ 
 #
@@ -6,110 +6,51 @@
 #   and modify/extend it.
 #
 
-$^W = 1;
 
-
-#
-#   Make -w happy
-#
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
-
-
-#
-#   Include lib.pl
-#
+use Test::More;
 use DBI ();
-use vars qw($COL_NULLABLE $rows);
-$mdriver = "";
-foreach $file ("lib.pl", "t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
-}
-if ($mdriver eq 'pNET') {
-    print "1..0\n";
-    exit 0;
-}
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require 'lib.pl';
 
-sub ServerError() {
-    my $err = $DBI::errstr;  # Hate -w ...
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
+my $dbh;
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or ServerError();};
 
-if (!defined(&SQL_VARCHAR)) {
-    eval "sub SQL_VARCHAR { 12 }";
-}
-if (!defined(&SQL_INTEGER)) {
-    eval "sub SQL_INTEGER { 4 }";
-}
+if ($@) {
+    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
+} 
+plan tests => 10;
 
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-    #
-    #   Connect to the database
-    Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password))
-	or ServerError();
+ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table $table";
 
-  Test($state or 
-    ($dbh->do("CREATE TABLE t1 (id INT NOT NULL AUTO_INCREMENT PRIMARY KEY, num INT)")))
-      or DbiError($dbh->err, $dbh->errstr);
+my $create= <<EOT; 
+CREATE TABLE $table (
+    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    num INT(3))
+EOT
 
-  Test($state or ($dbh->do("INSERT INTO t1 VALUES(NULL, 1)")))
-    or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do($create), "create table $table";
 
-  Test($state or ($rows= $dbh->selectall_arrayref("SELECT * FROM t1")))
-    or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("INSERT INTO $table VALUES(NULL, 1)"), "insert into $table (null, 1)";
 
-  Test($state or ($rows->[0][1] == 1)) 
-    or DbiError($dbh->err, $dbh->errstr);
+my $rows;
+$rows= $dbh->selectall_arrayref("SELECT * FROM $table") or die "select * from $table failed " . $dbh->errstr;
 
-  Test($state or
-    ($sth = $dbh->prepare("UPDATE t1 SET num = ? WHERE id = ?")))
-    or DbiError($dbh->err, $dbh->errstr);
+cmp_ok $rows->[0][1], '==', 1, "\$rows->[0][1] == 1";
 
-  Test($state or ($sth->bind_param(2, 1, SQL_INTEGER())))
-    or DbiError($dbh->err, $dbh->errstr);
+$sth = $dbh->prepare("UPDATE $table SET num = ? WHERE id = ?") or die "Unable to update $table " . $dbh->errstr;
+
+ok ($sth->bind_param(2, 1, SQL_INTEGER()));
   
-  Test($state or ($sth->execute()))
-    or DbiError($dbh->err, $dbh->errstr);
+ok ($sth->execute());
 
-  Test($state or ($sth->finish()))
-    or DbiError($dbh->err, $dbh->errstr);
+ok ($sth->finish());
 
-  Test($state or
-    ($rows = $dbh->selectall_arrayref("SELECT * FROM t1")))
-    or DbiError($dbh->err, $dbh->errstr);
+$rows = $dbh->selectall_arrayref("SELECT * FROM $table") or die "select failed " . $dbh->errstr;
 
-  #
-  # in this case, it should be NULL
-  #
-  Test($state or (! defined $rows->[0][1]))
-    or DbiError($dbh->err, $dbh->errstr);
+ok !defined($rows->[0][1]);
 
-  #
-  #   Finally drop the test table.
-  #
-  Test($state or $dbh->do("DROP TABLE t1"))
-    or DbiError($dbh->err, $dbh->errstr);
+ok ($dbh->do("DROP TABLE $table"));
 
-  # 
-  # disconnect
-  #
-  Test($state or ($dbh->disconnect()))
-    or DbiError($dbh->err, $dbh->errstr);
-
-}
+ok ($dbh->disconnect());

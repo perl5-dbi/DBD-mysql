@@ -1,36 +1,37 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 9;
+use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
+use lib 't', '.';
+require 'lib.pl';
 use strict;
 $|= 1;
 
-my $mdriver= "";
-our ($test_dsn, $test_user, $test_password);
-foreach my $file ("lib.pl", "t/lib.pl") {
-  do $file;
-  if ($@) {
-    print STDERR "Error while executing $file: $@\n";
-    exit 10;
-  }
-  last if $mdriver ne '';
-}
+use vars qw($table $test_dsn $test_user $test_password);
 
-my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
+}
+plan tests => 9;
+
 ok(defined $dbh, "Connected to database");
 
-ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
+ok($dbh->do("DROP TABLE IF EXISTS $table"), "making slate clean");
 
-ok($dbh->do(qq{CREATE TABLE t1 (id INT(4), name VARCHAR(64))}), "creating table");
+ok($dbh->do("CREATE TABLE $table (id INT(4), name VARCHAR(64))"), "creating table");
 
-ok($dbh->do("INSERT INTO t1 VALUES(1, 'Alligator Descartes')"), "loading data");
+ok($dbh->do("INSERT INTO $table VALUES(1, 'Alligator Descartes')"), "loading data");
 
-ok($dbh->do("DELETE FROM t1 WHERE id = 1"), "deleting from table t1");
+ok($dbh->do("DELETE FROM $table WHERE id = 1"), "deleting from table $table");
 
-my $sth= $dbh->prepare("SELECT * FROM t1 WHERE id = 1");
+my $sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") 
+    or die "unable to perform query " . $dbh->errstr;
 
 ok($sth->execute());
 
@@ -38,8 +39,6 @@ ok(not $sth->fetchrow_arrayref());
 
 ok($sth->finish());
 
-ok($dbh->do("DROP TABLE t1"),"Dropping table");
+ok($dbh->do("DROP TABLE $table"),"Dropping table");
 
 $dbh->disconnect();
-
-

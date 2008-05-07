@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl
+#!perl -w
 #
 #   $Id$
 #
@@ -6,38 +6,30 @@
 #   executed as the very first test.
 #
 
+use Test::More tests => 5;
 
 #
 #   Include lib.pl
 #
-our $mdriver = "";
+use vars qw($mdriver $table);
 use lib 't', '.';
 require 'lib.pl';
-print "Driver is $mdriver\n"; 
 
 # Base DBD Driver Test
-
-print "1..$tests\n";
-
-require DBI;
-print "ok 1\n";
-
-import DBI;
-print "ok 2\n";
-
-$switch = DBI->internal;
-(ref $switch eq 'DBI::dr') ? print "ok 3\n" : print "not ok 3\n";
-
-# This is a special case. install_driver should not normally be used.
-$drh = DBI->install_driver($mdriver);
-
-(ref $drh eq 'DBI::dr') ? print "ok 4\n" : print "not ok 4\n";
-
-if ($drh->{Version}) {
-    print "ok 5\n";
-    print "Driver version is ", $drh->{Version}, "\n";
+BEGIN {
+    use_ok( 'DBI' );
 }
 
-BEGIN { $tests = 5 }
-exit 0;
-# end.
+$switch = DBI->internal;
+cmp_ok ref $switch, 'eq', 'DBI::dr', 'Internal set';
+
+# This is a special case. install_driver should not normally be used.
+$drh= DBI->install_driver($mdriver);
+
+ok $drh, 'Install driver';
+
+cmp_ok ref $drh, 'eq', 'DBI::dr', 'DBI::dr set';
+
+ok $drh->{Version}, "Version $drh->{Version}"; 
+print "Driver version is ", $drh->{Version}, "\n";
+

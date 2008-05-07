@@ -1,76 +1,42 @@
-#!/usr/bin/perl
+#!perl -w
 
 use strict;
-use vars qw($test_dsn $test_user $test_password $mdriver $state);
 use DBI;
+use Test::More;
 use Carp qw(croak);
 use Data::Dumper;
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require 'lib.pl';
 
-$^W =1;
-
-
-use DBI;
-$mdriver = "";
-my ($row, $sth, $dbh);
-foreach my $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
-  do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-    exit 10;
-  }
-  if ($mdriver ne '') {
-    last;
-  }
+my ($dbh, $sth);
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 9; 
 
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
+my ($rows, $errstr, $ret_ref);
+ok $dbh->do("drop table if exists $table"), "drop table $table";
 
-while(Testing())
-{
-  my ($table, $def, $rows, $errstr, $ret_ref);
-  Test($state or $dbh =
-    DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
+ok $dbh->do("create table $table (a int not null, primary key (a))"), "create table $table";
 
-  $table= 't1'; 
-  Test($state or $dbh->do("drop table if exists $table")) or
-    DbiError($dbh->err, $dbh->errstr); 
+$sth= $dbh->prepare("insert into $table values (?)") or die "$DBI::errstr";
 
-  Test($state or 
-    $dbh->do("create table $table (a int not null, primary key (a))")) or
-    DbiError($dbh->err, $dbh->errstr); 
+ok $sth->bind_param(1,10000,DBI::SQL_INTEGER), "bind param 10000 col1";
 
-  Test($state or 
-    $sth= $dbh->prepare("insert into $table values (?)")) or
-    DbiError($dbh->err, $dbh->errstr); 
+ok $sth->execute(), 'execute';
 
-  Test($state or
-    $sth->bind_param(1,10000,DBI::SQL_INTEGER)) or
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or
-    $sth->execute()) or
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or
-    $sth->bind_param(1,10001,DBI::SQL_INTEGER)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->bind_param(1,10001,DBI::SQL_INTEGER), "bind param 10001 col1";
   
-  Test ($state or
-    $sth->execute()) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->execute(), 'execute';
 
-  Test($state or $sth=
-    $dbh->prepare("DROP TABLE $table")) or
-    DbiError($dbh->err, $dbh->errstr);
+$sth= $dbh->prepare("DROP TABLE $table") or die "DBI::errstr";
 
-  Test($state or $sth->execute()) or 
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->execute();
 
-}
+ok $sth->finish;
+
+ok $dbh->disconnect; 

@@ -5,27 +5,23 @@ use Data::Dumper;
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
+use lib '.', 't';
+require 'lib.pl';
 use strict;
 $|= 1;
 
-my $mdriver= "";
+use vars qw($table $test_dsn $test_user $test_password);
 
-our ($test_dsn, $test_user, $test_password);
-foreach my $file ("lib.pl", "t/lib.pl") {
-  do $file;
-  if ($@) {
-    print STDERR "Error while executing $file: $@\n";
-    exit 10;
-  }
-  last if $mdriver ne '';
-}
-
-my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError            => 1,
                         PrintError            => 1,
                         AutoCommit            => 0,
-                        mysql_server_prepare  => 0 });
+                        mysql_server_prepare  => 0 });};
 
+if ($@) {
+    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
+}
 plan tests => 77;
 
 ok(defined $dbh, "connecting");

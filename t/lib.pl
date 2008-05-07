@@ -6,10 +6,11 @@
 #   whereever possible. For example, you define certain constants
 #   here and the like.
 #
-
-require 5.003;
+# All this code is subject to being GUTTED soon
+#
 use strict;
-use vars qw($mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
+use vars qw($table $mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
+$table= 't1';
 
 $| = 1; # flush stdout asap to keep in sync with stderr
 
@@ -204,6 +205,7 @@ if (-f ($file = "t/$mdriver.mtest")  ||
 #
 #   Print a DBI error message
 #
+# TODO - This is on the chopping block
 sub DbiError ($$) {
     my ($rc, $err) = @_;
     $rc ||= 0;
@@ -265,6 +267,15 @@ sub connection_id {
 
     return $row[0];
 }
+
+# nice function I saw in DBD::Pg test code
+sub byte_string {
+    my $ret = join( "|" ,unpack( "C*" ,$_[0] ) );
+    return $ret;
+}
+
+sub SQL_VARCHAR { 12 };
+sub SQL_INTEGER { 4 };
 
 sub ErrMsg (@) { print (@_); }
 sub ErrMsgF (@) { printf (@_); }

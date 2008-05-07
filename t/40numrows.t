@@ -1,156 +1,90 @@
-#!/usr/local/bin/perl
+#!perl -w
 #
 #   $Id$
 #
 #   This tests, whether the number of rows can be retrieved.
 #
-
-
-#
-#   Make -w happy
-#
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
-
-
-#
-#   Include lib.pl
-#
+use strict;
 use DBI;
-$mdriver = "";
-foreach $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
-    do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			   exit 10;
-		      }
-    if ($mdriver ne '') {
-	last;
-    }
+use Test::More;
+use Carp qw(croak);
+use Data::Dumper;
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require 'lib.pl';
+
+my ($dbh, $sth, $aref);
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 22; 
 
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
+ok $dbh->do("DROP TABLE IF EXISTS $table");
 
+my $create= <<EOT;
+CREATE TABLE $table (
+  id INT(4) NOT NULL DEFAULT 0,
+  name varchar(64) NOT NULL DEFAULT ''
+) 
+EOT
 
-sub TrueRows($) {
-    my ($sth) = @_;
-    my $count = 0;
-    while ($sth->fetchrow_arrayref) {
-	++$count;
-    }
-    $count;
-}
+ok $dbh->do($create), "CREATE TABLE $table";
 
+ok $dbh->do("INSERT INTO $table VALUES( 1, 'Alligator Descartes' )"), 'inserting first row';
 
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-    #
-    #   Connect to the database
-    Test($state or ($dbh = DBI->connect($test_dsn, $test_user,
-					$test_password)))
-	or ServerError();
+$sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1") or die "$DBI::errstr";
 
-    $table= 't1';
+ok $sth->execute;
 
-    Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
-	   or DbiError($dbh->err, $dbh->errstr);
-    #
-    #   Create a new table; EDIT THIS!
-    #
-    Test($state or ($def = TableDefinition($table,
-					   ["id",   "INTEGER",  4, 0],
-					   ["name", "CHAR",    64, 0]),
-		    $dbh->do($def)))
-	   or DbiError($dbh->err, $dbh->errstr);
+cmp_ok $sth->rows, '==', 1, '\$sth->rows should be 1';
 
+$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
 
-    #
-    #   This section should exercise the sth->rows
-    #   method by preparing a statement, then finding the
-    #   number of rows within it.
-    #   Prior to execution, this should fail. After execution, the
-    #   number of rows affected by the statement will be returned.
-    #
-    Test($state or $dbh->do("INSERT INTO $table"
-			    . " VALUES( 1, 'Alligator Descartes' )"))
-	   or DbiError($dbh->err, $dbh->errstr);
+cmp_ok scalar @$aref, '==', 1, 'Verified rows should be 1';
 
-    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
-					   . " WHERE id = 1")))
-	   or DbiError($dbh->err, $dbh->errstr);
+ok $sth->finish;
 
-    Test($state or $sth->execute)
-           or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("INSERT INTO $table VALUES( 2, 'Jochen Wiedmann' )"), 'inserting second row';
 
-    Test($state or ($numrows = $sth->rows) == 1  or  ($numrows == -1))
-	or ErrMsgF("Expected 1 rows, got %s.\n", $numrows);
+$sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 1") or die "$DBI::errstr";
 
-    Test($state or ($numrows = TrueRows($sth)) == 1)
-	or ErrMsgF("Expected to fetch 1 rows, got %s.\n", $numrows);
+ok $sth->execute;
 
-    Test($state or $sth->finish)
-           or DbiError($dbh->err, $dbh->errstr);
+cmp_ok $sth->rows, '==', 2, '\$sth->rows should be 2';
 
-    Test($state or undef $sth or 1);
+$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
 
-    Test($state or $dbh->do("INSERT INTO $table"
-			    . " VALUES( 2, 'Jochen Wiedmann' )"))
-	   or DbiError($dbh->err, $dbh->errstr);
+cmp_ok scalar @$aref, '==', 2, 'Verified rows should be 2';
 
-    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
-					    . " WHERE id >= 1")))
-	   or DbiError($dbh->err, $dbh->errstr);
+ok $sth->finish;
 
-    Test($state or $sth->execute)
-	   or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("INSERT INTO $table VALUES(3, 'Tim Bunce')"), "inserting third row";
 
-    Test($state or ($numrows = $sth->rows) == 2  or  ($numrows == -1))
-	or ErrMsgF("Expected 2 rows, got %s.\n", $numrows);
+$sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 2") or die "$DBI::errstr";
 
-    Test($state or ($numrows = TrueRows($sth)) == 2)
-	or ErrMsgF("Expected to fetch 2 rows, got %s.\n", $numrows);
+ok $sth->execute;
 
-    Test($state or $sth->finish)
-	   or DbiError($dbh->err, $dbh->errstr);
+cmp_ok $sth->rows, '==', 2, 'rows should be 2'; 
 
-    Test($state or undef $sth or 1);
+$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
 
-    Test($state or $dbh->do("INSERT INTO $table"
-			    . " VALUES(3, 'Tim Bunce')"))
-	   or DbiError($dbh->err, $dbh->errstr);
+cmp_ok scalar @$aref, '==', 2, 'Verified rows should be 2';
 
-    Test($state or ($sth = $dbh->prepare("SELECT * FROM $table"
-					    . " WHERE id >= 2")))
-	   or DbiError($dbh->err, $dbh->errstr);
+ok $sth->finish;
 
-    Test($state or $sth->execute)
-	   or DbiError($dbh->err, $dbh->errstr);
+$sth = $dbh->prepare("SELECT * FROM $table") or die "$DBI::errstr";
 
-    Test($state or ($numrows = $sth->rows) == 2  or  ($numrows == -1))
-	or ErrMsgF("Expected 2 rows, got %s.\n", $numrows);
+ok $sth->execute;
 
-    Test($state or ($numrows = TrueRows($sth)) == 2)
-	or ErrMsgF("Expected to fetch 2 rows, got %s.\n", $numrows);
+cmp_ok $sth->rows, '==', 3, 'rows should be 3'; 
 
-    Test($state or $sth->finish)
-	   or DbiError($dbh->err, $dbh->errstr);
+$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
 
-    Test($state or undef $sth or 1);
+cmp_ok scalar @$aref, '==', 3, 'Verified rows should be 3';
 
-    #
-    #   Finally drop the test table.
-    #
-    Test($state or $dbh->do("DROP TABLE $table"))
-	   or DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("DROP TABLE $table"), "drop table $table";
 
-}
+ok $dbh->disconnect;

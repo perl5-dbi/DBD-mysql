@@ -1,29 +1,25 @@
-#!/usr/bin/perl
+#!perl -w
 
 use strict;
-use Test::More tests => 49;
+use Test::More;
 use DBI;
 use Carp qw(croak);
 use Data::Dumper;
-
-$^W =1;
+use lib 't', '.';
+require 'lib.pl';
 
 my ($row, $sth, $dbh);
 my ($table, $def, $rows, $errstr, $ret_ref);
-our($test_dsn, $test_user, $test_password, $mdriver);
+use vars qw($table $test_dsn $test_user $test_password);
 
-$mdriver='';
-foreach my $file ("lib.pl", "t/lib.pl") {
-  do $file;
-  if ($@) {
-    print STDERR "Error while executing $file: $@\n";
-    exit 10;
-  }
-  last if $mdriver ne '';
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+    { RaiseError => 1, AutoCommit => 1});};
+
+if ($@) {
+    plan skip_all => 
+        "Can't connect to database ERROR: $DBI::errstr. Can't continue test";
 }
-
-$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-    { RaiseError => 1, AutoCommit => 1});
+plan tests => 49; 
 
 ok(defined $dbh, "Connected to database");
 
