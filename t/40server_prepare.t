@@ -1,26 +1,26 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 9;
-use DBI;
 use strict;
-$|= 1;
+use Test::More;
+use DBI;
+use lib 't', '.';
+require 'lib.pl';
+use vars qw($table $test_dsn $test_user $test_password);
 
-my $mdriver= "";
-our ($test_dsn, $test_user, $test_password);
-foreach my $file ("lib.pl", "t/lib.pl") {
-  do $file;
-  if ($@) {
-    print STDERR "Error while executing $file: $@\n";
-    exit 10;
-  }
-  last if $mdriver ne '';
-}
+$|= 1;
 
 $test_dsn.= ";mysql_server_prepare=1";
 
-my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+
+if ($@) {
+    plan skip_all => "ERROR: $@. Can't continue test";
+}
+plan tests => 9; 
+
 ok(defined $dbh, "connecting");
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
