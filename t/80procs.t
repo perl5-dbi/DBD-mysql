@@ -1,86 +1,48 @@
-#!/usr/bin/perl
+#!perl -w
 
 use strict;
-use vars qw($test_dsn $test_user $test_password $mdriver $state);
+use lib 't', '.';
+require 'lib.pl';
 use DBI;
+use DBI::Const::GetInfoType;
+use Test::More;
 use Carp qw(croak);
-use Data::Dumper;
-$^W =1;
+use vars qw($table $test_dsn $test_user $test_password);
 
-use DBI;
-$mdriver = "";
 my ($row, $vers, $test_procs, $dbh, $sth);
-foreach my $file ("lib.pl", "t/lib.pl", "DBD-mysql/t/lib.pl") {
-  do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-    exit 10;
-  }
-  if ($mdriver ne '') {
-    last;
-  }
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
+
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
 }
-
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
-
-$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;
-
-$sth= $dbh->prepare("select version()") or
-  DbiError($dbh->err, $dbh->errstr);
-
-$sth->execute() or 
-  DbiError($dbh->err, $dbh->errstr);
-
-$row= $sth->fetchrow_arrayref() or
-  DbiError($dbh->err, $dbh->errstr);
 
 # 
 # DROP/CREATE PROCEDURE will give syntax error 
-# for these versions
+# for versions < 5.0
 #
-if ($row->[0] =~ /^5/)
-{
-  $test_procs= 1;
+if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
+    plan skip_all => 
+        "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
-$sth->finish();
+plan tests => 24;
+
 $dbh->disconnect();
 
-if (! $test_procs)
-{
-  print "1..0 # Skip MySQL Server version $row->[0] doesn't support stored procedures\n";
-  exit(0);
-}
+$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or die "$DBI::errstr";
 
-while(Testing())
-{
-  my ($table, $rows);
-  Test($state or $dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})) or ServerError() ;
+ok defined($dbh);
 
-  # don't want this during make test!
+ok $dbh->do("DROP TABLE IF EXISTS $table");
 
-  $table= 't1';
-  Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
-    or DbiError($dbh->err, $dbh->errstr);
+my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
 
-  my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
-  Test($state or ($sth = $dbh->prepare($drop_proc))) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do($drop_proc);
 
-  Test($state or ($sth->execute())) or 
-    DbiError($dbh->err, $dbh->errstr);
 
-  Test($state or ($sth= $dbh->do($drop_proc))) or 
-    DbiError($dbh->err, $dbh->errstr);
-
-  my $proc_create = <<EOPROC;
+my $proc_create = <<EOPROC;
 create procedure testproc() deterministic
   begin
     declare a,b,c,d int;
@@ -95,100 +57,73 @@ create procedure testproc() deterministic
   end
 EOPROC
 
-  Test($state or $sth = $dbh->prepare($proc_create)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do($proc_create);
 
-  Test($state or $sth->execute()) or 
-    DbiError($dbh->err, $dbh->errstr);
+my $proc_call = 'CALL testproc()';
 
+ok $dbh->do($proc_call);
 
-    my $proc_call = 'CALL testproc()';
-    Test($state or $sth = $dbh->prepare($proc_call)) or
-    DbiError($dbh->err, $dbh->errstr);
+my $proc_select = 'SELECT @a';
+$sth = $dbh->prepare($proc_select) or die "$DBI::errstr";
 
-    Test($state or $sth->execute()) or 
-      DbiError($dbh->err, $dbh->errstr);
+ok $sth->execute();
 
-    $sth->finish;
+ok $sth->finish;
 
-    my $proc_select = 'SELECT @a';
-    Test($state or $sth = $dbh->prepare($proc_select)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("DROP PROCEDURE testproc");
 
-    Test($state or $sth->execute()) or 
-      DbiError($dbh->err, $dbh->errstr);
+ok $dbh->do("drop procedure if exists test_multi_sets");
 
-    $sth->finish;
-
-  Test($state or ($sth=$dbh->prepare("DROP PROCEDURE testproc"))) or
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $sth->execute()) or 
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $dbh->do("drop procedure if exists test_multi_sets")) or
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $dbh->do("
+$proc_create = <<EOT;
         create procedure test_multi_sets ()
         deterministic
         begin
         select user() as first_col;
         select user() as first_col, now() as second_col;
         select user() as first_col, now() as second_col, now() as third_col;
-        end")) or
-    DbiError($dbh->err, $dbh->errstr);
+        end
+EOT
 
+ok $dbh->do($proc_create);
 
-  Test($state or $sth = $dbh->prepare("call test_multi_sets()")) or
-    DbiError($dbh->err, $dbh->errstr);
+$sth = $dbh->prepare("call test_multi_sets()") or die "$DBI::errstr";
 
-  Test($state or $rows = $sth->execute()) or 
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->execute();
 
-  my $dataset;
+cmp_ok $sth->{NUM_OF_FIELDS}, '==', 1, "num_of_fields == 1";
 
-  Test($state or ($sth->{NUM_OF_FIELDS} == 1)) or
-    DbiError($dbh->err, $dbh->errstr);
-
-  Test($state or $dataset = $sth->fetchrow_arrayref()) or 
-    DbiError($dbh->err, $dbh->errstr);
+my $resultset = $sth->fetchrow_arrayref() or die "$DBI::errstr";
   
-  Test($state or ($dataset && @$dataset == 1)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok defined $resultset;
 
-  my $more_results;
+cmp_ok @$resultset, '==', 1, "1 row in resultset";
 
-  Test($state or $more_results =  $sth->more_results()) or
-    DbiError($dbh->err, $dbh->errstr);
+undef $resultset;
 
-  Test($state or ($sth->{NUM_OF_FIELDS} == 2)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->more_results();
 
-  Test($state or $dataset = $sth->fetchrow_arrayref()) or
-    DbiError($dbh->err, $dbh->errstr);
+cmp_ok $sth->{NUM_OF_FIELDS}, '==', 2, "NUM_OF_FIELDS == 2";
 
-  Test($state or ($dataset && @$dataset == 2)) or
-    DbiError($dbh->err, $dbh->errstr);
+$resultset= $sth->fetchrow_arrayref() or die "$DBI::errstr";
 
-  Test($state or $more_results =  $sth->more_results()) or
-    DbiError($dbh->err, $dbh->errstr);
+ok defined $resultset;
 
-  Test($state or ($sth->{NUM_OF_FIELDS} == 3)) or
-    DbiError($dbh->err, $dbh->errstr);
+cmp_ok @$resultset, '==', 2, "2 rows in resultset";
 
-  Test($state or $dataset = $sth->fetchrow_arrayref()) or
-    DbiError($dbh->err, $dbh->errstr);
+undef $resultset;
 
-  Test($state or ($dataset && @$dataset == 3)) or
-    DbiError($dbh->err, $dbh->errstr);
+ok $sth->more_results();
 
-  Test($state or !($more_results =  $sth->more_results())) or
-    DbiError($dbh->err, $dbh->errstr);
+cmp_ok $sth->{NUM_OF_FIELDS}, '==', 3, "NUM_OF_FIELDS == 3";
 
-  local $SIG{__WARN__} = sub { die @_ };
+$resultset= $sth->fetchrow_arrayref() or die "$DBI::errstr";
 
-  Test($state or $dbh->disconnect()) or 
-    DbiError($dbh->err, $dbh->errstr);
+ok defined $resultset;
 
-}
+cmp_ok @$resultset, '==', 3, "3 Rows in resultset";
+
+local $SIG{__WARN__} = sub { die @_ };
+
+ok $sth->finish;
+
+ok $dbh->disconnect();

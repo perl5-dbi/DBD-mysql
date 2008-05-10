@@ -5,46 +5,39 @@
 
 use strict;
 use DBI ();
+use Test::More;
 
-use vars qw($test_dsn $test_user $test_password $state);
-require "t/lib.pl";
+use vars qw($table $test_dsn $test_user $test_password);
+use lib '.','t';
+require 'lib.pl';
 
-while (Testing()) {
-  my ($dbh, $sth);
-  #
-  # Connect to the database
-  Test($state or
-       ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
-                           {RaiseError => 0})));
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "ERROR: $@. Can't continue test";
+}
+plan tests => 7; 
 
-  #
-  # Find a possible new table name
-  #
-  my $table = 't1';
-  # Drop the table
-  Test($state or $dbh->do("DROP TABLE IF EXISTS $table"));
+ok $dbh->do("DROP TABLE IF EXISTS $table");
 
-  #
-  # Create a new table
-  #
-  my $q = <<"QUERY";
+my $create = <<EOT;
 CREATE TABLE $table (id INTEGER,
                      name VARCHAR(64))
-QUERY
-  Test($state or $dbh->do($q));
+EOT
 
-  #
-  # Insert a row
-  #
-  $q = "INSERT INTO $table (id, name) VALUES (?,?)";
-  Test($state or ($sth = $dbh->prepare($q)));
-  Test($state or ($sth->execute(1, 'two')));
-  Test($state or ($sth->{ParamValues}));
-  #
-  # Drop the table
-  Test($state or $dbh->do("DROP TABLE $table"));
+ok $dbh->do($create), "create $table";
 
-  #
-  # Close the database connection
-  Test($state or ($dbh->disconnect() or 1));
-}
+my $query = "INSERT INTO $table (id, name) VALUES (?,?)";
+
+my $sth = $dbh->prepare($query) or die "$DBI::errstr";
+
+ok $sth->execute(1, 'two');
+
+ok $sth->{ParamValues};
+
+ok $dbh->do("DROP TABLE $table");
+
+ok $sth->finish;
+
+ok $dbh->disconnect();

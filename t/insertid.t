@@ -2,66 +2,65 @@
 
 use strict;
 use DBI ();
+use Test::More;
+use Data::Dumper;
 
-use vars qw($test_dsn $test_user $test_password $state);
-require "t/lib.pl";
+use vars qw($table $test_dsn $test_user $test_password);
+use lib 't', '.';
+require "lib.pl";
 
-while (Testing()) {
-  my ($dbh, $sth, $sth2);
-  my $max_id;
-  #
-  # Connect to the database
-  Test($state or
-       ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
-			    {RaiseError => 1})));
+my $dbh;
 
-  #
-  # Find a possible new table name
-  #
-  my $table = "t1";
-  # Drop the table
-  Test($state or $dbh->do("DROP TABLE IF EXISTS $table"));
+eval{$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+			    {RaiseError => 1});};
 
-  #
-  # Create a new table
-  #
-  my $q = <<"QUERY";
-CREATE TABLE $table (id INTEGER PRIMARY KEY AUTO_INCREMENT NOT NULL,
-                     name VARCHAR(64))
-QUERY
-  Test($state or $dbh->do($q));
-
-  #
-  # Insert a row
-  #
-  $q = "INSERT INTO $table (name) VALUES (?)";
-  Test($state or $dbh->do($q, undef, "Jochen"));
-
-  #
-  # Verify $dbh->insertid
-  Test($state or ($dbh->{'mysql_insertid'} eq "1"));
-
-  #
-  # Insert another row
-  #
-  Test($state or ($sth = $dbh->prepare($q)));
-  Test($state or $sth->execute());
-  Test($state or ($sth2= $dbh->prepare("SELECT max(id) FROM $table"))); 
-  Test($state or $sth2->execute());
-  Test($state or ($max_id= $sth2->fetch()));
-  # IMPORTANT: this will fail if you are using replication with
-  # an offset and auto_increment_increment, where your 
-  # auto_increment values are stepped (ex: 1, 11, 21, ...)
-  Test($state or $sth->{'mysql_insertid'} == $max_id->[0]);
-  Test($state or $dbh->{'mysql_insertid'} == $max_id->[0]);
-  Test($state or $sth->finish());
-  Test($state or $sth2->finish());
-
-  #
-  # Drop the table
-  Test($state or $dbh->do("DROP TABLE $table"));
-
-  #
-  # Close the database connection
-  Test($state or ($dbh->disconnect() or 1));
+if ($@) {
+    plan skip_all => 
+        "ERROR: $DBI::errstr. Can't continue test";
 }
+plan tests => 15; 
+
+ok $dbh->do("DROP TABLE IF EXISTS $table");
+
+my $create = <<EOT;
+CREATE TABLE $table (
+  id INT(3) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+  name VARCHAR(64))
+EOT
+
+ok $dbh->do($create), "create $table";
+
+my $query= "INSERT INTO $table (name) VALUES (?)";
+
+my $sth= $dbh->prepare($query) or die "$DBI::errstr";
+
+ok defined $sth;
+
+ok $sth->execute("Jochen");
+
+cmp_ok $dbh->{'mysql_insertid'}, '==', 1, "insert id == $dbh->{mysql_insertid}";
+
+ok $sth->execute("Patrick");
+
+my $sth2= $dbh->prepare("SELECT max(id) FROM $table") or die "$DBI::errstr";
+
+ok defined $sth2;
+
+ok $sth2->execute();
+
+my $max_id= $sth2->fetch() or die "$DBI::errstr";
+
+ok defined $max_id;
+
+cmp_ok $sth->{'mysql_insertid'}, '==', $max_id->[0], "sth insert id $sth->{'mysql_insertid'} == max(id) $max_id->[0]  in $table";
+
+cmp_ok $dbh->{'mysql_insertid'}, '==', $max_id->[0], "dbh insert id $dbh->{'mysql_insertid'} == max(id) $max_id->[0] in $table";
+
+
+ok $sth->finish();
+
+ok $sth2->finish();
+
+ok $dbh->do("DROP TABLE $table");
+
+ok $dbh->disconnect();

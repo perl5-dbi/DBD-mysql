@@ -8,14 +8,15 @@ require 'lib.pl';
 
 use Test::More;
 
-our ($mdriver, $test_dsn, $test_user, $test_password);
+use vars qw($test_dsn $test_user $test_password);
 
-my $dbh    = DBI->connect( $test_dsn, $test_user, $test_password);
+my $dbh;
+eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password);};
+if ($@) {
+    plan skip_all => "$@. Can't continue test";
+}
 
 my $drh    = $dbh->{Driver};
-if (! defined $dbh) {
-    plan skip_all => "Can't connect to database. Can't continue test";
-}
 if (! defined $drh) {
     plan skip_all => "Can't obtain driver handle. Can't continue test";
 }
@@ -23,7 +24,10 @@ if (! defined $drh) {
 unless ($dbh->can('take_imp_data')) {
     plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
 }
-plan tests => 8;
+plan tests => 10;
+
+pass("Connected to database");
+pass("Obtained driver handle");
 
 my $connection_id1 = connection_id($dbh);
 
