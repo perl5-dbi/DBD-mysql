@@ -1,4 +1,5 @@
 #!perl -w
+# vim: ft=perl
 
 use strict;
 use lib 't', '.';

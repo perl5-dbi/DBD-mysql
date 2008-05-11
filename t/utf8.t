@@ -1,182 +1,94 @@
-#!/usr/local/bin/perl
-#
-#   $Id$
+#!perl -w
+# vim: ft=perl
 #
 #   This checks for UTF-8 support.
 #
 
-
-#
-#   Make -w happy
-#
-use vars qw($test_dsn $test_utf8 $test_user $test_password $mdriver $verbose $state
-	    $dbdriver $row $dbh $sth);
-use vars qw($COL_NULLABLE $COL_KEY);
-$test_utf8 = 1;
-$test_dsn = '';
-$test_user = '';
-$test_password = '';
-
-
-#
-#   Include lib.pl
-#
-use DBI;
 use strict;
-$mdriver = "";
-{
-    my $file;
-    foreach $file ("lib.pl", "t/lib.pl") {
-	do $file; if ($@) { print STDERR "Error while executing lib.pl: $@\n";
-			    exit 10;
-			}
-	if ($mdriver ne '') {
-	    last;
-	}
-    }
+use DBI;
+use DBI::Const::GetInfoType;
+use Carp qw(croak);
+use Test::More;
+use vars qw($table $test_dsn $test_user $test_password); 
+use vars qw($COL_NULLABLE $COL_KEY);
+use lib 't', '.';
+require 'lib.pl';
+
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "ERROR: $@. Can't continue test";
 }
-
-sub ServerError() {
-    print STDERR ("Cannot connect: ", $DBI::errstr, "\n",
-	"\tEither your server is not up and running or you have no\n",
-	"\tpermissions for acessing the DSN $test_dsn.\n",
-	"\tThis test requires a running server and write permissions.\n",
-	"\tPlease make sure your server is running and you have\n",
-	"\tpermissions, then retry.\n");
-    exit 10;
-}
-
-$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;
-
-$sth= $dbh->prepare("select version()") or
-  DbiError($dbh->err, $dbh->errstr);
-
-$sth->execute() or 
-  DbiError($dbh->err, $dbh->errstr);
-
-$row= $sth->fetchrow_arrayref() or
-  DbiError($dbh->err, $dbh->errstr);
 
 # 
-# DROP/CREATE PROCEDURE will give syntax error 
-# for these versions
+# DROP/CREATE PROCEDURE will give syntax error for these versions
 #
-if ($row->[0] =~ /^4\.0/ || $row->[0] =~ /^3/)
-{
-  $test_utf8= 0;
+if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
+    plan skip_all => 
+        "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
-$sth->finish();
-$dbh->disconnect();
+plan tests => 15;
 
-if (! $test_utf8)
-{
-  print "1..0 # Skip MySQL Server version $row->[0] doesn't support this particular utf8 test\n";
-  exit(0);
-}
-#
-#   Main loop; leave this untouched, put tests after creating
-#   the new table.
-#
-while (Testing()) {
-    my ($dbh, $sth, $query);
+ok $dbh->do("DROP TABLE IF EXISTS $table");
 
-    #
-    #   Connect to the database
-    Test($state or ($dbh = DBI->connect($test_dsn, $test_user,
-					$test_password, {mysql_enable_utf8 => 1})))
-	   or ServerError();
+my $create =<<EOT;
+CREATE TABLE $table (
+    name VARCHAR(64) CHARACTER SET utf8,
+    bincol BLOB,
+    shape GEOMETRY,
+    binutf VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin
+)
+EOT
 
-    # Test($state or ($dbh->do("SET NAMES utf8")))
-    #    or ErrMsg( "Couldn't set connection to UTF-8 mode\n" );
+ok $dbh->do($create);
 
-    #
-    #   Find a possible new table name
-    #
-    my $table = 't1';
-    Test($state or $dbh->do("DROP TABLE IF EXISTS $table"))
-	   or ErrMsgF("Cannot DROP test table $table: %s.\n",
-		      $dbh->errstr);
+my $utf8_str        = "\x{0100}dam";     # "Adam" with a macron.
+my $quoted_utf8_str = "'\x{0100}dam'";
 
-    #
-    #   Create a new table; In an ideal world, it'd be more sensible to
-    #   make the whole database UTF8...
-    #
-    $query = "CREATE TABLE $table (name VARCHAR(64) CHARACTER SET utf8, bincol BLOB, shape GEOMETRY, binutf VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin)";
-    Test($state or $dbh->do($query))
-    	or ErrMsgF("Cannot create table: Error %s.\n", $dbh->errstr);
+my $blob = "\x{c4}\x{80}dam"; # same as utf8_str but not utf8 encoded
+my $quoted_blob = "'\x{c4}\x{80}dam'";
 
+cmp_ok $dbh->quote($utf8_str), 'eq', $quoted_utf8_str, 'testing quoting of utf 8 string';
 
-    #
-    #   and here's the right place for inserting new tests:
-    #
+cmp_ok $dbh->quote($blob), 'eq', $quoted_blob, 'testing quoting of blob';
 
-    my $utf8_str        = "\x{0100}dam";     # "Adam" with a macron.
-    my $quoted_utf8_str = "'\x{0100}dam'";
+#ok $dbh->{mysql_enable_utf8}, "mysql_enable_utf8 survive connect()";
+$dbh->{mysql_enable_utf8}=1;
 
-    my $blob = "\x{c4}\x{80}dam"; # same as utf8_str but not utf8 encoded
-    my $quoted_blob = "'\x{c4}\x{80}dam'";
+my $query = <<EOI;
+INSERT INTO $table (name, bincol, shape, binutf) 
+    VALUES (?,?, GeomFromText('Point(132865 501937)'), ?)
+EOI
 
-    Test( $state or ( $dbh->quote( $utf8_str ) eq $quoted_utf8_str ) )
-      or ErrMsg( "Failed to retain UTF-8 flag when quoting.\n" );
+ok $dbh->do($query, {}, $utf8_str,$blob, $utf8_str), "INSERT query $query\n";
 
-    Test( $state or ( $dbh->quote( $blob ) eq $quoted_blob ) )
-      or ErrMsg( "UTF-8 flag was set when quoting.\n" );
+$query = "SELECT name,bincol,asbinary(shape), binutf FROM $table LIMIT 1";
+my $sth = $dbh->prepare($query) or die "$DBI::errstr";
 
-    Test( $state or ( $dbh->{ mysql_enable_utf8 } ) )
-      or ErrMsg( "mysql_enable_utf8 didn't survive connect()\n" );
+ok $sth->execute;
 
-    $query = qq{INSERT INTO $table (name, bincol, shape, binutf) VALUES (?,?, GeomFromText('Point(132865 501937)'), ?)};
-    Test( $state or $dbh->do( $query, {}, $utf8_str,$blob, $utf8_str ) )
-      or ErrMsgF( "INSERT failed: query $query, error %s.\n", $dbh->errstr );
+my $ref;
+$ref = $sth->fetchrow_arrayref ;
 
-    $query = "SELECT name,bincol,asbinary(shape), binutf FROM $table LIMIT 1";
-    Test( $state or ($sth = $dbh->prepare( $query ) ) )
-      or ErrMsgF( "prepare failed: query $query, error %s.\n", $dbh->errstr );
+ok defined $ref;
 
-    Test($state or $sth->execute)
-      or ErrMsgF( "execute failed: query $query, error %s.\n", $dbh->errstr );
+cmp_ok $ref->[0], 'eq', $utf8_str;
 
-    my $ref;
-    Test( $state or defined( $ref = $sth->fetchrow_arrayref ) )
-      or ErrMsgF( "fetch failed: query $query, error %s.\n", $sth->errstr );
+cmp_ok $ref->[3], 'eq', $utf8_str;
 
-    # Finally, check that we got back UTF-8 correctly.
-    Test( $state or ($ref->[0] eq $utf8_str) )
-      or ErrMsgF( "got back '$ref->[0]' instead of '$utf8_str' (normal utf8 collation).\n" );
+SKIP: {
+        eval {use Encode;};
+          skip "Can't test is_utf8 tests 'use Encode;' not available", 2, if $@;
+          ok !Encode::is_utf8($ref->[1]), "blob was made utf8!.";
 
-    # same as above for utf8_bin column
-    Test( $state or ($ref->[3] eq $utf8_str) )
-      or ErrMsgF( "got back '$ref->[3]' instead of '$utf8_str' (binary utf8 collation).\n" );
+          ok !Encode::is_utf8($ref->[2]), "shape was made utf8!.";
+      }
 
+cmp_ok $ref->[1], 'eq', $blob, "compare $ref->[1] eq $blob";
 
- 
+ok $sth->finish;
 
-    if (eval "use Encode;") {
-      # Check for utf8 flag
-      Test( $state or (!Encode::is_utf8($ref->[1])) )
-        or ErrMsgF( "blob was made utf8!.\n" );
+ok $dbh->do("DROP TABLE $table");
 
-      Test( $state or (!Encode::is_utf8($ref->[2])) )
-        or ErrMsgF( "shape was made utf8!.\n" );
-    }
-
-    # Finally, check that we got back bincol correctly.
-    Test( $state or ($ref->[1] eq $blob) )
-      or ErrMsgF( "got back '$ref->[1]' instead of '$blob'.\n" );
-
-
-    Test( $state or $sth->finish )
-      or ErrMsgF( "Cannot finish: %s.\n", $sth->errstr );
-
-    #
-    #   Finally drop the test table.
-    #
-    Test($state or $dbh->do("DROP TABLE $table"))
-	   or ErrMsgF("Cannot DROP test table $table: %s.\n",
-		      $dbh->errstr);
-
-    #   ... and disconnect
-    Test($state or $dbh->disconnect)
-	or ErrMsgF("Cannot disconnect: %s.\n", $dbh->errmsg);
-}
+ok $dbh->disconnect;
