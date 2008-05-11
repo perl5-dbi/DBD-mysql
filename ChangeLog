@@ -2,6 +2,7 @@
 
 * Took out mysql_server_init call where not needed
 * Complete re-write of test suit to use Test::More - tons of cleanups!
+* Makefile.PL changes to use current user in 'make test' if not defined
 
 2007-12-26 Patrick Galbraith <patg@grazr.com> (4.006)
 
