@@ -1,4 +1,5 @@
 #!perl
+# vim: ft=perl
 #
 #   $Id: 40blobs.t 1103 2008-04-29 02:53:28Z capttofu $
 #
@@ -26,7 +27,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 19; 
+plan tests => 25; 
 
 my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
 my $blob1= join '', map { $chars[rand @chars] } 0 .. 10000;
@@ -57,8 +58,8 @@ ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 ok $dbh->do($create), "create table $table";
 
 my $query = "INSERT INTO $table VALUES(?, ?)";
-
-my $sth= $dbh->prepare($query) or die "$DBI::errstr";
+my $sth;
+ok ($sth= $dbh->prepare($query));
 
 ok defined($sth);
 
@@ -66,36 +67,35 @@ ok $sth->execute(1, $blob1), "inserting \$blob1";
 
 ok $sth->finish;
 
-$sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") or 
-  die "$DBI::errstr";
+ok ($sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok $sth->execute, "select from $table";
 
-$row = $sth->fetchrow_arrayref or die "$DBI::errstr";
+ok ($row = $sth->fetchrow_arrayref);
 
-cmp_ok @$row, '==', 2, "two rows fetched";
+is @$row, 2, "two rows fetched";
 
-cmp_ok $$row[0], '==', 1, "first row id == 1";
+is $$row[0], 1, "first row id == 1";
 
 cmp_ok $$row[1], 'eq', $blob1, ShowBlob($blob1);
 
 ok $sth->finish;
 
-$sth= $dbh->prepare("UPDATE $table SET name = ? WHERE id = 1") or die "$DBI::errstr";
+ok ($sth= $dbh->prepare("UPDATE $table SET name = ? WHERE id = 1"));
 
 ok $sth->execute($blob2), 'inserting $blob2';
 
 ok ($sth->finish);
 
-$sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") or die "$DBI::errstr";
+ok ($sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok ($sth->execute);
 
-$row = $sth->fetchrow_arrayref or die "$DBI::errstr";
+ok ($row = $sth->fetchrow_arrayref);
 
-cmp_ok scalar @$row, '==', 2, 'two rows';
+is scalar @$row, 2, 'two rows';
 
-cmp_ok $$row[0], '==', 1, 'row id == 1';
+is $$row[0], 1, 'row id == 1';
 
 cmp_ok $$row[1], 'eq', $blob2, ShowBlob($blob2);
 

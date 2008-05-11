@@ -18,7 +18,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 9;
+plan tests => 10;
 
 ok(defined $dbh, "Connected to database");
 
@@ -30,8 +30,7 @@ ok($dbh->do("INSERT INTO $table VALUES(1, 'Alligator Descartes')"), "loading dat
 
 ok($dbh->do("DELETE FROM $table WHERE id = 1"), "deleting from table $table");
 
-my $sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1") 
-    or die "unable to perform query " . $dbh->errstr;
+ok (my $sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1")); 
 
 ok($sth->execute());
 

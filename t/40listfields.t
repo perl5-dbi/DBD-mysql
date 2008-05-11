@@ -29,7 +29,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 24; 
+plan tests => 25; 
 
 $dbh->{mysql_server_prepare}= 0;
 
@@ -52,6 +52,7 @@ ok $dbh->column_info(undef,undef,$table,'%'), "column_info for $table";
 $sth= $dbh->column_info(undef,undef,"this_does_not_exist",'%');
 
 ok $sth, "\$sth defined";
+
 ok !$sth->err(), "not error";
 
 $sth = $dbh->prepare("SELECT * FROM $table");
@@ -65,7 +66,7 @@ $res = $sth->{'NUM_OF_FIELDS'};
 
 ok $res, "$sth->{NUM_OF_FIELDS} defined";
 
-cmp_ok $res, '==', 2, "\$res $res == 2";
+is $res, 2, "\$res $res == 2";
 
 $ref = $sth->{'NAME'};
 
@@ -88,7 +89,7 @@ cmp_ok $ref->[0], 'eq', DBI::SQL_INTEGER(), "SQL_INTEGER";
 
 cmp_ok $ref->[1], 'eq', DBI::SQL_VARCHAR(), "SQL_VARCHAR";
 
-$sth= $dbh->prepare("DROP TABLE $table") or die "$DBI::errstr";
+ok ($sth= $dbh->prepare("DROP TABLE $table"));
 
 ok($sth->execute);
 

@@ -6,7 +6,7 @@
 #   executed as the very first test.
 #
 
-use Test::More tests => 5;
+use Test::More tests => 6;
 
 #
 #   Include lib.pl
@@ -17,7 +17,8 @@ require 'lib.pl';
 
 # Base DBD Driver Test
 BEGIN {
-    use_ok( 'DBI' );
+    use_ok('DBI') or BAIL_OUT "Unable to load DBI";
+    use_ok('DBD::mysql') or BAIL_OUT "Unable to load DBD::mysql";
 }
 
 $switch = DBI->internal;
@@ -32,4 +33,3 @@ cmp_ok ref $drh, 'eq', 'DBI::dr', 'DBI::dr set';
 
 ok $drh->{Version}, "Version $drh->{Version}"; 
 print "Driver version is ", $drh->{Version}, "\n";
-

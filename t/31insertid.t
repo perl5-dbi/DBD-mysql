@@ -1,4 +1,5 @@
-# -*- cperl -*-
+#!perl -w
+# vim: ft=perl
 
 use strict;
 use DBI ();
@@ -10,7 +11,6 @@ use lib 't', '.';
 require "lib.pl";
 
 my $dbh;
-
 eval{$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 			    {RaiseError => 1});};
 
@@ -18,7 +18,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 15; 
+plan tests => 18; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -32,23 +32,25 @@ ok $dbh->do($create), "create $table";
 
 my $query= "INSERT INTO $table (name) VALUES (?)";
 
-my $sth= $dbh->prepare($query) or die "$DBI::errstr";
+my $sth;
+ok ($sth= $dbh->prepare($query));
 
 ok defined $sth;
 
 ok $sth->execute("Jochen");
 
-cmp_ok $dbh->{'mysql_insertid'}, '==', 1, "insert id == $dbh->{mysql_insertid}";
+is $dbh->{'mysql_insertid'}, 1, "insert id == $dbh->{mysql_insertid}";
 
 ok $sth->execute("Patrick");
 
-my $sth2= $dbh->prepare("SELECT max(id) FROM $table") or die "$DBI::errstr";
+ok (my $sth2= $dbh->prepare("SELECT max(id) FROM $table"));
 
 ok defined $sth2;
 
 ok $sth2->execute();
 
-my $max_id= $sth2->fetch() or die "$DBI::errstr";
+my $max_id;
+ok ($max_id= $sth2->fetch());
 
 ok defined $max_id;
 

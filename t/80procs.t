@@ -27,14 +27,12 @@ if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
     plan skip_all => 
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
-plan tests => 24;
+plan tests => 29;
 
 $dbh->disconnect();
 
-$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1}) or die "$DBI::errstr";
-
-ok defined($dbh);
+ok ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}));
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -65,7 +63,7 @@ my $proc_call = 'CALL testproc()';
 ok $dbh->do($proc_call);
 
 my $proc_select = 'SELECT @a';
-$sth = $dbh->prepare($proc_select) or die "$DBI::errstr";
+ok ($sth = $dbh->prepare($proc_select));
 
 ok $sth->execute();
 
@@ -87,41 +85,42 @@ EOT
 
 ok $dbh->do($proc_create);
 
-$sth = $dbh->prepare("call test_multi_sets()") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("call test_multi_sets()"));
 
 ok $sth->execute();
 
-cmp_ok $sth->{NUM_OF_FIELDS}, '==', 1, "num_of_fields == 1";
+is $sth->{NUM_OF_FIELDS}, 1, "num_of_fields == 1";
 
-my $resultset = $sth->fetchrow_arrayref() or die "$DBI::errstr";
+my $resultset;
+ok ($resultset = $sth->fetchrow_arrayref());
   
 ok defined $resultset;
 
-cmp_ok @$resultset, '==', 1, "1 row in resultset";
+is @$resultset, 1, "1 row in resultset";
 
 undef $resultset;
 
 ok $sth->more_results();
 
-cmp_ok $sth->{NUM_OF_FIELDS}, '==', 2, "NUM_OF_FIELDS == 2";
+is $sth->{NUM_OF_FIELDS}, 2, "NUM_OF_FIELDS == 2";
 
-$resultset= $sth->fetchrow_arrayref() or die "$DBI::errstr";
+ok ($resultset= $sth->fetchrow_arrayref());
 
 ok defined $resultset;
 
-cmp_ok @$resultset, '==', 2, "2 rows in resultset";
+is @$resultset, 2, "2 rows in resultset";
 
 undef $resultset;
 
 ok $sth->more_results();
 
-cmp_ok $sth->{NUM_OF_FIELDS}, '==', 3, "NUM_OF_FIELDS == 3";
+is $sth->{NUM_OF_FIELDS}, 3, "NUM_OF_FIELDS == 3";
 
-$resultset= $sth->fetchrow_arrayref() or die "$DBI::errstr";
+ok ($resultset= $sth->fetchrow_arrayref());
 
 ok defined $resultset;
 
-cmp_ok @$resultset, '==', 3, "3 Rows in resultset";
+is @$resultset, 3, "3 Rows in resultset";
 
 local $SIG{__WARN__} = sub { die @_ };
 

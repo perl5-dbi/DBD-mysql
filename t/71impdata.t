@@ -46,5 +46,3 @@ is $drh->{Kids},       1, "1 kid";
 is $drh->{ActiveKids}, 1, "1 active kid";
 
 ok $dbh->disconnect, "Disconnect OK";
-
-__END__

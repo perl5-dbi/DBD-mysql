@@ -1,4 +1,6 @@
 #!perl -w
+# vim: ft=perl
+
 #
 #   $Id$
 #
@@ -6,28 +8,27 @@
 #   and modify/extend it.
 #
 
+use strict;
 use Test::More;
 use DBI ();
-use strict;
 use lib 't', '.';
 require 'lib.pl';
 $|= 1;
-our ($dbh, $drh, $state, $test_dsn, $test_user, $test_password, $mdriver, $dbdriver);
+use vars qw($table $test_dsn $test_user $test_password);
 
-$drh = DBI->install_driver($mdriver);
+my $drh;
+eval {$drh = DBI->install_driver('mysql')};
 
-if (! defined $drh) {
-    plan skip_all => "Can't obtain driver handle ERROR: $DBI::errstr. Can't continue test";
+if ($@) {
+    plan skip_all => "Can't obtain driver handle ERROR: $@. Can't continue test";
 }
 
-$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 })};
 
-if (! defined $dbh) {
-    plan skip_all => "Can't connect to database ERROR: $DBI::errstr. Can't continue test";
-}
-if (! defined $drh) {
-    plan skip_all => "Can't obtain driver handle. Can't continue test";
+if ($@) {
+    plan skip_all => "Can't connect to database ERROR: $@. Can't continue test";
 }
 
 unless ($dbh->can('take_imp_data')) {
@@ -106,16 +107,16 @@ sub read_write_test {
     # now the actual test:
 
     my $table= 't1';
-    ok $dbh->do("DROP TABLE IF EXISTS $table"), "Drop table $table if exists error: Error $dbh->err, $dbh->errstr";
+    ok $dbh->do("DROP TABLE IF EXISTS $table");
 
-    my $def= <<EOT;
+    my $create= <<EOT;
 CREATE TABLE $table (
         id int(4) NOT NULL default 0,
         name varchar(64) NOT NULL default '' );
 EOT
     
-    ok $dbh->do($def) ,"Create table $table error: $dbh->err, $dbh->errstr";
+    ok $dbh->do($create);
 
-    ok $dbh->do("DROP TABLE $table"), "Drop table $table error: $dbh->err, $dbh->errstr";
+    ok $dbh->do("DROP TABLE $table");
 }
 

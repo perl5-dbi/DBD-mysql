@@ -20,7 +20,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
-plan tests => 8;
+plan tests => 9;
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -33,7 +33,7 @@ EOT
 ok $dbh->do($create);
 
 my $query = "INSERT INTO $table (id, name) VALUES (?,?)";
-my $sth = $dbh->prepare($query) or die "$DBI::errstr";
+ok (my $sth = $dbh->prepare($query));
 
 ok $sth->execute(1, "Jocken");
 

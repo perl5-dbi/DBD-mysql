@@ -1,4 +1,5 @@
 #!perl -w
+# vim: ft=perl
 #
 #   $Id$
 #
@@ -20,7 +21,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 22; 
+plan tests => 30; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -35,55 +36,55 @@ ok $dbh->do($create), "CREATE TABLE $table";
 
 ok $dbh->do("INSERT INTO $table VALUES( 1, 'Alligator Descartes' )"), 'inserting first row';
 
-$sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok $sth->execute;
 
-cmp_ok $sth->rows, '==', 1, '\$sth->rows should be 1';
+is $sth->rows, 1, '\$sth->rows should be 1';
 
-$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
+ok ($aref= $sth->fetchall_arrayref);
 
-cmp_ok scalar @$aref, '==', 1, 'Verified rows should be 1';
+is scalar @$aref, 1, 'Verified rows should be 1';
 
 ok $sth->finish;
 
 ok $dbh->do("INSERT INTO $table VALUES( 2, 'Jochen Wiedmann' )"), 'inserting second row';
 
-$sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 1") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 1"));
 
 ok $sth->execute;
 
-cmp_ok $sth->rows, '==', 2, '\$sth->rows should be 2';
+is $sth->rows, 2, '\$sth->rows should be 2';
 
-$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
+ok ($aref= $sth->fetchall_arrayref);
 
-cmp_ok scalar @$aref, '==', 2, 'Verified rows should be 2';
+is scalar @$aref, 2, 'Verified rows should be 2';
 
 ok $sth->finish;
 
 ok $dbh->do("INSERT INTO $table VALUES(3, 'Tim Bunce')"), "inserting third row";
 
-$sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 2") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 2"));
 
 ok $sth->execute;
 
-cmp_ok $sth->rows, '==', 2, 'rows should be 2'; 
+is $sth->rows, 2, 'rows should be 2'; 
 
-$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
+ok ($aref= $sth->fetchall_arrayref);
 
-cmp_ok scalar @$aref, '==', 2, 'Verified rows should be 2';
+is scalar @$aref, 2, 'Verified rows should be 2';
 
 ok $sth->finish;
 
-$sth = $dbh->prepare("SELECT * FROM $table") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("SELECT * FROM $table"));
 
 ok $sth->execute;
 
-cmp_ok $sth->rows, '==', 3, 'rows should be 3'; 
+is $sth->rows, 3, 'rows should be 3'; 
 
-$aref= $sth->fetchall_arrayref or die "$DBI::errstr";
+ok ($aref= $sth->fetchall_arrayref);
 
-cmp_ok scalar @$aref, '==', 3, 'Verified rows should be 3';
+is scalar @$aref, 3, 'Verified rows should be 3';
 
 ok $dbh->do("DROP TABLE $table"), "drop table $table";
 

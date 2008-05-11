@@ -51,14 +51,14 @@ $have_transactions = have_transactions($dbh);
 my $engine= $have_transactions ? 'InnoDB' : 'MyISAM';
 
 if ($have_transactions) {
-  plan tests => 20; 
+  plan tests => 21; 
 
   ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
   my $create =<<EOT;
-  CREATE TABLE $table (
-      id INT(4) NOT NULL default 0,
-      name VARCHAR(64) NOT NULL default ''
-      ) ENGINE=$engine
+CREATE TABLE $table (
+    id INT(4) NOT NULL default 0,
+    name VARCHAR(64) NOT NULL default ''
+) ENGINE=$engine
 EOT
 
   ok $dbh->do($create), 'create $table';
@@ -99,7 +99,7 @@ EOT
 
   ok $dbh->disconnect;
 
-  $dbh = DBI->connect($test_dsn, $test_user, $test_password) or die "$DBI::errstr";
+  ok ($dbh = DBI->connect($test_dsn, $test_user, $test_password));
 
   ok $dbh, "connected";
 
@@ -130,8 +130,8 @@ EOT
   ok !$msg;
 
   ok $dbh->disconnect;
-  $dbh = DBI->connect($test_dsn, $test_user, $test_password) or die "$DBI::errstr";
-  ok ($dbh);
+
+  ok ($dbh = DBI->connect($test_dsn, $test_user, $test_password));
 
   $msg = num_rows($dbh, $table, 1);
   ok !$msg;

@@ -1,7 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
-use Test::More tests => 4;
+use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
 use lib '.', 't';
@@ -11,8 +11,15 @@ $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
 
-my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0});
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0});};
+
+if ($@) {
+    plan skip_all => "ERROR: $@. Can't continue test";
+}
+plan tests => 4; 
+
 ok(defined $dbh, "Connected to database");
 
 SKIP: {

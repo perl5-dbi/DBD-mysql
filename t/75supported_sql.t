@@ -17,7 +17,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
   plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 10; 
+plan tests => 12; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -30,11 +30,12 @@ EOT
 
 ok $dbh->do($create),"create $table";
 
-my $sth= $dbh->prepare("SHOW TABLES LIKE '$table'") or die "$DBI::errstr";
+my $sth;
+ok ($sth= $dbh->prepare("SHOW TABLES LIKE '$table'"));
 
 ok $sth->execute();
 
-$row= $sth->fetchrow_arrayref or die "$DBI::errstr";
+ok ($row= $sth->fetchrow_arrayref);
 
 cmp_ok $row->[0], 'eq', $table, "\$row->[0] eq $table";
 

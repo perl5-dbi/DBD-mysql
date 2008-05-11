@@ -16,14 +16,14 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 9; 
+plan tests => 11; 
 
 my ($rows, $errstr, $ret_ref);
 ok $dbh->do("drop table if exists $table"), "drop table $table";
 
 ok $dbh->do("create table $table (a int not null, primary key (a))"), "create table $table";
 
-$sth= $dbh->prepare("insert into $table values (?)") or die "$DBI::errstr";
+ok ($sth= $dbh->prepare("insert into $table values (?)"));
 
 ok $sth->bind_param(1,10000,DBI::SQL_INTEGER), "bind param 10000 col1";
 
@@ -33,7 +33,7 @@ ok $sth->bind_param(1,10001,DBI::SQL_INTEGER), "bind param 10001 col1";
   
 ok $sth->execute(), 'execute';
 
-$sth= $dbh->prepare("DROP TABLE $table") or die "DBI::errstr";
+ok ($sth= $dbh->prepare("DROP TABLE $table"));
 
 ok $sth->execute();
 

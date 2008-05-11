@@ -1,4 +1,5 @@
 #!perl -w
+# vim: ft=perl
 #
 #   $Id$
 #
@@ -20,7 +21,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 8; 
+plan tests => 10; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "DROP TABLE IF EXISTS $table";
 
@@ -34,11 +35,11 @@ ok $dbh->do($create), "create table $create";
 
 ok $dbh->do("INSERT INTO $table VALUES ( NULL, 'NULL-valued id' )"), "inserting nulls";
 
-$sth = $dbh->prepare("SELECT * FROM $table WHERE id IS NULL") or die "$DBI::errstr";
+ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id IS NULL"));
 
 do $sth->execute;
 
-my $aref = $sth->fetchrow_arrayref or die "$DBI::errstr";
+ok (my $aref = $sth->fetchrow_arrayref);
 
 ok !defined($$aref[0]);
 

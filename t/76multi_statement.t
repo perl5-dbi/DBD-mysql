@@ -21,7 +21,7 @@ if ($@) {
 }
 plan tests => 7; 
 
-ok(defined $dbh, "Connected to database with multi statement support");
+ok (defined $dbh, "Connected to database with multi statement support");
 
 $dbh->{mysql_server_prepare}= 0;
 
@@ -30,6 +30,7 @@ SKIP: {
     if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
 
   ok($dbh->do("DROP TABLE IF EXISTS $table"), "clean up");
+
   ok($dbh->do("CREATE TABLE $table (a INT)"), "create table");
 
   ok($dbh->do("INSERT INTO $table VALUES (1); INSERT INTO $table VALUES (2);"));
@@ -39,11 +40,11 @@ SKIP: {
   $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                      { RaiseError => 0, PrintError => 0, AutoCommit => 0,
                        mysql_multi_statements => 0 });
-  ok(defined $dbh, "Connected to database without multi statement support");
+  ok (defined $dbh, "Connected to database without multi statement support");
 
-  ok(not $dbh->do("INSERT INTO $table VALUES (1); INSERT INTO $table VALUES (2);"));
+  ok (not $dbh->do("INSERT INTO $table VALUES (1); INSERT INTO $table VALUES (2);"));
 
-  ok($dbh->do("DROP TABLE IF EXISTS $table"), "clean up");
+  ok ($dbh->do("DROP TABLE IF EXISTS $table"), "clean up");
 };
 
 $dbh->disconnect();

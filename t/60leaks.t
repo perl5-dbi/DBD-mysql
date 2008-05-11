@@ -94,9 +94,9 @@ for (my $i = 0;  $i < $COUNT_CONNECT;  $i++) {
 }
 $dbh2->disconnect;
 
-ok $ok, "\$ok $ok $msg";
-ok !$not_ok, "\$not_ok $not_ok $msg";
-cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok $msg";
+ok $ok, "\$ok $ok";
+ok !$not_ok, "\$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 print "Testing memory leaks in prepare/execute/finish\n";
 $msg = "Possible memory leak in prepare/execute/finish detected";
@@ -106,7 +106,7 @@ $not_ok = 0;
 undef $prev_size;
 
 for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
-  my $sth = $dbh->prepare("SELECT * FROM $table") or die "$DBI::errstr";
+  my $sth = $dbh->prepare("SELECT * FROM $table");
   $sth->execute();
   $sth->finish();
 
@@ -125,14 +125,14 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
   }
 }
 
-ok $ok, $msg;
-ok !$not_ok, "\$ok $ok \$not_ok $not_ok $msg";
-cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok $msg";
+ok $ok;
+ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 print "Testing memory leaks in fetchrow_arrayref\n";
-$msg = "Possible memory leak in fetchrow_arrayref detected";
+$msg= "Possible memory leak in fetchrow_arrayref detected";
 
-$sth= $dbh->prepare("INSERT INTO $table VALUES (?, ?)") or die "$DBI::errstr";
+$sth= $dbh->prepare("INSERT INTO $table VALUES (?, ?)") ;
 
 my $dataref= [[1, 'Jochen Wiedmann'],
   [2, 'Andreas König'],
@@ -151,8 +151,8 @@ undef $prev_size;
 
 for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
   {
-    my $sth = $dbh->prepare("SELECT * FROM $table") or die "$DBI::errstr";
-    $sth->execute() or die "$DBI::errstr";
+    my $sth = $dbh->prepare("SELECT * FROM $table");
+    $sth->execute();
     my $row;
     while ($row = $sth->fetchrow_arrayref()) { }
     $sth->finish();
@@ -172,9 +172,9 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
   }
 }
 
-ok $ok, $msg;
-ok !$not_ok, "\$ok $ok \$not_ok $not_ok $msg";
-cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok $msg";
+ok $ok;
+ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 print "Testing memory leaks in fetchrow_hashref\n";
 $msg = "Possible memory leak in fetchrow_hashref detected";
@@ -185,8 +185,8 @@ undef $prev_size;
 
 for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
   {
-    my $sth = $dbh->prepare("SELECT * FROM $table") or die "$DBI::errstr";
-    $sth->execute() or die "$DBI::errstr";
+    my $sth = $dbh->prepare("SELECT * FROM $table");
+    $sth->execute();
     my $row;
     while ($row = $sth->fetchrow_hashref()) { }
     $sth->finish();
@@ -206,9 +206,9 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
   }
 }
 
-ok $ok, $msg;
-ok !$not_ok, "\$ok $ok \$not_ok $not_ok $msg";
-cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok $msg";
+ok $ok;
+ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 ok $dbh->do("DROP TABLE $table");
 ok $dbh->disconnect;
