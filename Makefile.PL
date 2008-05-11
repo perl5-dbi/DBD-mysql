@@ -85,7 +85,7 @@ MSG
   }
 }
 
-foreach my $key (qw/testdb testhost testuser testpassword testsocket 
+for my $key (qw/testdb testhost testuser testpassword testsocket 
                     cflags embedded libs nocatchstderr ssl nofoundrows
                     ps-protocol force-embedded/)
 {
@@ -156,17 +156,17 @@ MSG
 
 delete $opt->{'help'};
 my $keylen = 0;
-foreach my $key (keys %$opt)
+for my $key (keys %$opt)
 {
   $keylen = length($key) if length($key) > $keylen;
 }
 my $slen = 0;
-foreach my $val (values %$source)
+for my $val (values %$source)
 {
   $slen = length($val) if length($val) > $slen;
 }
 
-foreach my $key (sort { $a cmp $b} keys %$opt)
+for my $key (sort { $a cmp $b} keys %$opt)
 {
   printf("  %-" . $keylen . "s (%-" . $slen . "s) = %s\n",
 	 $key, $source->{$key}, $opt->{$key})
@@ -490,12 +490,32 @@ sub Configure
     }
     else
     {
-      #print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
+      print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
     }
   }
 
   # Ok, mysql_config doesn't work. We need to do our best
-  if ($param eq "nocatchstderr" || $param eq "nofoundrows")
+  if ($param eq 'testuser') {
+      unless ($opt->{$param}) {
+        print "
+
+PLEASE NOTE:
+
+For 'make test' to run properly, you must ensure that the 
+database user '$ENV{USER}' can connect to your MySQL server 
+and has the proper privileges that these tests require such 
+as 'drop table', 'create table', 'drop procedure', 'create procedure'
+as well as others. 
+
+You can also optionally set the user to run 'make test' with:
+
+'perl Makefile.pl --testuser=username'
+
+";
+      $opt->{$param}= $ENV{USER};
+      }
+  }
+  elsif ($param eq "nocatchstderr" || $param eq "nofoundrows")
   {
     $source->{$param} = "default";
     $opt->{$param} = 0;
@@ -505,10 +525,8 @@ sub Configure
     $source->{$param} = "default";
     $opt->{$param} = $TESTDB;
   }
-  elsif ($param eq "testhost"  ||  $param eq "testuser"  ||
-         $param eq "testport"  ||  $param eq "testpassword" || 
-         $param eq "testsocket" 
-         )
+  elsif ($param eq "testhost" || $param eq "testport"  ||  
+        $param eq "testpassword" || $param eq "testsocket" )
   {
     $source->{$param} = "default";
     $opt->{$param} = "";
@@ -599,8 +617,8 @@ sub SearchFor {
   my @dirs = ($^O =~ /mswin32/i) ? qw(C:) : qw(/usr/local /usr /opt);
   unshift(@dirs, $fineDir) if defined($fineDir);
 
-  foreach my $f (@files) {
-    foreach my $dir (@dirs) {
+  for my $f (@files) {
+    for my $dir (@dirs) {
       my $try1 = $haveFileSpec ?
 	File::Spec->catdir($dir, $subdir) : "$dir/$subdir";
       my $try2 = $haveFileSpec ?
@@ -609,7 +627,7 @@ sub SearchFor {
 	File::Spec->catdir($try1, "mysql") : "$try1/mysql";
       my $try4 = $haveFileSpec ?
 	File::Spec->catdir($try2, $subdir) : "$try2/$subdir";
-      foreach my $path ($try3, $try4, $try2, $try1, $dir) {
+      for my $path ($try3, $try4, $try2, $try1, $dir) {
 	my $file = $haveFileSpec ?
 	  File::Spec->catfile($path, $f) : "$path/$f";
 	if (-f $file) {
@@ -624,9 +642,9 @@ sub SearchFor {
 sub SearchFor2 {
   my($files, $dirs) = @_;
 
-  foreach my $f (@{$files}) 
+  for my $f (@{$files}) 
   {
-    foreach my $dir (@{$dirs}) 
+    for my $dir (@{$dirs}) 
     {
       my $file = $haveFileSpec ?  File::Spec->catfile($dir, $f) : "$dir/$f";
       if (-f $file) 
@@ -674,7 +692,7 @@ sub replace
 {
   my ($str, $ref)=@_;
 
-  foreach my $find (keys %{$ref})
+  for my $find (keys %{$ref})
   {
     $str =~ s/$find/$ref->{$find}/g;
   }
@@ -687,7 +705,7 @@ sub prepare_files
   my $line;
   my @lib;
 
-  foreach my $file (keys %{$files})
+  for my $file (keys %{$files})
   {
 
     if ($files->{$file}->{makedir})
