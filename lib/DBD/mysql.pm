@@ -1071,7 +1071,12 @@ options to embedded server.
 
 Example:
 
+use DBI;
 $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
+$dbh = DBI->connect($testdsn,"a","b");
+
+This would cause the command line help to the embedded MySQL server library
+to be printed.
 
 
 =item mysql_embedded_groups

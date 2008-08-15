@@ -108,7 +108,11 @@ if ($opt->{'embedded'})
   if ($source->{'embedded'} eq 'mysql_config')
   {
     #We have to use libmygcc to resolve linking problem  
-    $opt->{'embedded'} .= " -lmygcc";
+    # this causes problems for cygwin
+    #$opt->{'embedded'} .= " -lmygcc";
+    # Under Cygwin (at least) we have to use libstdc++ to resolve linking
+    # problem because libmysqld is built using g++ rather than gcc.
+    $opt->{'embedded'} .= " -lstdc++";
   }
 
   my @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
@@ -261,9 +265,6 @@ if ($opt->{'embedded'})
                                        replace =>  { '\$mdriver =.*' => "\$mdriver =\'mysqlEmb\';"},
                                        makedir => 'mysqlEmb/t'
                                     },
-                       't/10dsnlist.t' => { filename => 'mysqlEmb/t/10dsnlist.t',
-                                            makedir => 'mysqlEmb/t'
-                                          },
                        't/20createdrop.t' => { filename => 'mysqlEmb/t/20createdrop.t',
                                                makedir => 'mysqlEmb/t'
                                              },
@@ -292,21 +293,6 @@ if ($opt->{'embedded'})
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
                        't/60leaks.t' => { filename => 'mysqlEmb/t/60leaks.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/dbdadmin.t' => { filename => 'mysqlEmb/t/dbdadmin.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/insertid.t' => { filename => 'mysqlEmb/t/insertid.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/texecute.t' => { filename => 'mysqlEmb/t/texecute.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/prepare_noerror.t' => { filename => 'mysqlEmb/t/prepare_noerror.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/param_values.t' => { filename => 'mysqlEmb/t/param_values.t',
                                                                     makedir => 'mysqlEmb/t'
                                                                   },
                        't/00base.t' => { filename => 'mysqlEmb/t/00base.t',
@@ -346,6 +332,8 @@ if ($opt->{'embedded'})
   $e{'LIBS'} = $opt->{'embedded'};
 
   $e{'INC'} .= " -DDBD_MYSQL_EMBEDDED";
+
+  print "Preparing embedded Makefile\n";
 
   #Create Makefile.conf for mysqlEmb Makefile.PL
   create_makefile(Data::Dumper->Dump([\%e], ["o"]));
@@ -387,9 +375,10 @@ Possible options are:
   --libs=<libs>          Use <libs> for running the linker; defaults
                          to the value of "mysql_config --libs" or a gussed
                          value
-  --embedded=<libs>      Build embedded version of DBD and use <libs> for this;
-                         defaults to the value of "mysql_config --embedded" 
-                         (default: off)
+  --force-embedded       Build version of driver supporting mysqlEmb
+  --embedded=<libs>      Use these libs when building the embedded version of
+                         DBD (with --force-embedded). Defaults to the value of
+                         "mysql_config --embedded".
   --testdb=<db>          Use the database <db> for running the test suite;
                          defaults to $TESTDB
   --testuser=<user>      Use the username <user> for running the test suite;
@@ -411,7 +400,6 @@ Possible options are:
   --ps-protocol          Toggle the use of driver emulated prepared statements
                          prepare, requires MySQL server >= 4.1.3 for
                          server side prepared statements, off by default 
-  --force-embedded       Force to build embedded version of driver
   --ssl			 Enable SSL support
   --help                 Print this message and exit
 

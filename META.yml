@@ -1,7 +1,7 @@
 # http://module-build.sourceforge.net/META-spec.html
 #XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
 name:         DBD-mysql
-version:      4.0.0
+version:      4.008
 version_from: lib/DBD/mysql.pm
 installdirs:  site
 requires:

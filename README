@@ -50,6 +50,28 @@ In short: If you are using
       make test # Some minor error messages can be ignored here
       make install
 
+  Windows/CygWin (to build with embedded MySQL too)
+
+    First, build MySQL
+      tar -xzf mysql-5.0.51b.tar.gz
+      cd mysql-5.0.51b/
+      ./configure --without-server --with-embedded-server
+      make
+      make install
+
+    Then build DBD::mysqlEmb
+      cpan
+      look DBD::mysql
+      perl Makefile.PL --force-embedded
+      make
+      make install
+
+    Test with the following snippet
+      perl -e 'use DBI; $dbh = DBI->connect("DBI:mysqlEmb:database=test;mysql_embedded=1;mysql_embedded_options=--help,--verbose","a","b");'
+    
+    If your build is OK, this will print the mysql embedded help.
+
+
   Linux/Red Hat (you may prefer gnorpm to use)
 
     rpm -i mysql mysql-devel mysql-server

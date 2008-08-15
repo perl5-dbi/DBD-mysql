@@ -4609,10 +4609,11 @@ int parse_number(char *string, STRLEN len, char **end)
 {
     int seen_neg;
     int seen_dec;
+    int seen_e;
+    int seen_plus;
     char *cp;
 
-    seen_neg= 0;
-    seen_dec= 0;
+    seen_neg= seen_dec= seen_e= seen_plus= 0;
 
     if (len <= 0) {
         len= strlen(string);
@@ -4628,17 +4629,14 @@ int parse_number(char *string, STRLEN len, char **end)
     {
         if ('-' == *cp)
         {
-            if (seen_neg)
+            if (seen_neg >= 2)
             {
-              /* second '-' */
+              /*
+                third '-'. number can contains two '-'.
+                because -1e-10 is valid number */
               break;
             }
-            else if (cp > string)
-            {
-              /* '-' after digit(s) */
-              break;
-            }
-            seen_neg= 1;
+            seen_neg += 1;
         }
         else if ('.' == *cp)
         {
@@ -4649,7 +4647,25 @@ int parse_number(char *string, STRLEN len, char **end)
             }
             seen_dec= 1;
         }
-        else if (!isdigit(*cp))
+        else if ('e' == *cp)
+        {
+            if (seen_e)
+            {
+                /* second 'e' */
+                break;
+            }
+            seen_e= 1;
+        }
+        else if ('+' == *cp)
+        {
+            if (seen_plus)
+            {
+                /* second '+' */
+                break;
+            }
+            seen_plus= 1;
+        }
+       else if (!isdigit(*cp))
         {
             break;
         }
