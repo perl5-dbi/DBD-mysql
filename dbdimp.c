@@ -1711,7 +1711,7 @@ static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
   D_imp_xxh(dbh);
 
   /* TODO- resolve this so that it is set only if DBI is 1.607 */
-#define TAKE_IMP_DATA_VERSION 0 
+#define TAKE_IMP_DATA_VERSION 1 
 #if TAKE_IMP_DATA_VERSION
   if (DBIc_has(imp_dbh, DBIcf_IMPSET))
   { /* eg from take_imp_data() */
@@ -2673,7 +2673,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     /* No more pending result set(s)*/
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBILOGFP,
-		    "\n      <- dbs_st_more_rows no more results\n");
+		    "\n      <- dbs_st_more_results no more results\n");
     return 0;
   }
 
@@ -2704,6 +2704,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
   next_result_return_code= mysql_next_result(svsock);
 
+  imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
+
   /*
     mysql_next_result returns
       0 if there are more results
@@ -2714,6 +2716,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
   {
     do_error(sth, mysql_errno(svsock), mysql_error(svsock),
              mysql_sqlstate(svsock));
+
     return 0;
   }
   else
@@ -2726,10 +2729,12 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
       do_error(sth, mysql_errno(svsock), mysql_error(svsock), 
                mysql_sqlstate(svsock));
 
+    imp_sth->row_num= mysql_affected_rows(imp_dbh->pmysql);
+
     if (imp_sth->result == NULL)
     {
       /* No "real" rowset*/
-      return 0;
+      return 1;
     }
     else
     {
@@ -3142,7 +3147,13 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   if (imp_sth->row_num+1 != (my_ulonglong)-1)
   {
     if (!imp_sth->result)
+    {
       imp_sth->insertid= mysql_insert_id(imp_dbh->pmysql);
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+      if (mysql_more_results(imp_dbh->pmysql))
+        DBIc_ACTIVE_on(imp_sth);
+#endif
+    }
     else
     {
       /** Store the result in the current statement handle */
@@ -3681,7 +3692,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
     We don't close the cursor till DESTROY.
     The application may re execute it.
   */
-  if (imp_sth && imp_sth->result)
+  if (imp_sth && DBIc_ACTIVE(imp_sth))
   {
     /*
       Clean-up previous result set(s) for sth to prevent

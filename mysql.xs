@@ -234,6 +234,9 @@ do(dbh, statement, attr=Nullsv, ...)
   int retval;
   struct imp_sth_ph_st* params= NULL;
   MYSQL_RES* result= NULL;
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+  int next_result_rc;
+#endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
   char            *str_ptr, *statement_ptr, *buffer;
@@ -247,6 +250,16 @@ do(dbh, statement, attr=Nullsv, ...)
   MYSQL_STMT      *stmt= NULL;
   MYSQL_BIND      *bind= NULL;
   imp_sth_phb_t   *fbind= NULL;
+#endif
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+    while (mysql_next_result(imp_dbh->pmysql)==0)
+    {
+      MYSQL_RES* res = mysql_use_result(imp_dbh->pmysql);
+      if (res)
+        mysql_free_result(res);
+      }
+#endif
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   /*
    * Globaly enabled using of server side prepared statement
@@ -281,8 +294,10 @@ do(dbh, statement, attr=Nullsv, ...)
 
     if (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))
     {
-      /* For commands that are not supported by server side prepared statement
-         mechanism lets try to pass them through regular API */
+      /*
+        For commands that are not supported by server side prepared
+        statement mechanism lets try to pass them through regular API
+      */
       if (mysql_stmt_errno(stmt) == ER_UNSUPPORTED_PS)
       {
         use_server_side_prepare= 0;
@@ -299,8 +314,8 @@ do(dbh, statement, attr=Nullsv, ...)
     else
     {
       /*
-        * 'items' is the number of arguments passed to XSUB, supplied by xsubpp
-        * compiler, as listed in manpage for perlxs
+        'items' is the number of arguments passed to XSUB, supplied
+        by xsubpp compiler, as listed in manpage for perlxs
       */
       if (items > 3)
       {
@@ -341,10 +356,10 @@ do(dbh, statement, attr=Nullsv, ...)
           }
 
           /*
-            if this statement has a result set, field types will be correctly
-            identified. If there is no result set, such as with an INSERT,
-            fields will not be defined, and all buffer_type will default to
-            MYSQL_TYPE_VAR_STRING
+            if this statement has a result set, field types will be
+            correctly identified. If there is no result set, such as
+            with an INSERT, fields will not be defined, and all
+            buffer_type will default to MYSQL_TYPE_VAR_STRING
           */
           col_type= (stmt->fields) ? stmt->fields[i].type : MYSQL_TYPE_STRING;
 
@@ -492,6 +507,29 @@ do(dbh, statement, attr=Nullsv, ...)
     mysql_free_result(result);
     result= 0;
   }
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+  if (retval != -2) /* -2 means error */
+    {
+      /* more results? -1 = no, >0 = error, 0 = yes (keep looping) */
+      while ((next_result_rc= mysql_next_result(imp_dbh->pmysql)) == 0)
+      {
+        result = mysql_use_result(imp_dbh->pmysql);
+          if (result)
+            mysql_free_result(result);
+          }
+          if (next_result_rc > 0)
+          {
+            if (dbis->debug >= 2)
+              PerlIO_printf(DBILOGFP, "\t<- do() ERROR: %s\n",
+                            mysql_error(imp_dbh->pmysql));
+
+              do_error(dbh, mysql_errno(imp_dbh->pmysql),
+                       mysql_error(imp_dbh->pmysql),
+                       mysql_sqlstate(imp_dbh->pmysql));
+              retval= -2;
+          }
+    }
+#endif
   /* remember that dbd_st_execute must return <= -2 for error	*/
   if (retval == 0)		/* ok with no rows affected	*/
     XST_mPV(0, "0E0");	/* (true but zero)		*/
