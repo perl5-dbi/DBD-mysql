@@ -17,6 +17,11 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
+if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
+    plan skip_all => 
+        "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
+}
+
 plan tests => 41;
 
 ok ($dbh->do("DROP TABLE IF EXISTS $table"));

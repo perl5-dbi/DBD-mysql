@@ -8,6 +8,7 @@
 
 use strict;
 use DBI;
+use DBI::Const::GetInfoType;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
@@ -38,7 +39,15 @@ ok (my $sth= $dbh->prepare("INSERT INTO $table (id, name) VALUES (?, ?)"));
 
 ok (my $sth2= $dbh->prepare("SELECT id, name FROM $table WHERE id = ?"));
 
-my $rows = [ [1, ''], [2, ' '], [3, ' a b c ']];
+my $rows;
+
+if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
+    $rows = [ [1, ''], [2, ''], [3, ' a b c']];
+}
+else {
+    $rows = [ [1, ''], [2, ' '], [3, ' a b c ']];
+}
+
 my $ref;
 for $ref (@$rows) {
 	my ($id, $name) = @$ref;

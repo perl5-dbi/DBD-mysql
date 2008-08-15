@@ -5,6 +5,7 @@
 Tokuhiro Matsuno!
 * Cleanups to make mysqlEmb work under Cygwin - Thanks to Chris Rodgers  
 <http://rodgers.org.uk/> ! 
+* Modified and disabled tests for MySQL version < 4.1 for unsupported features
 
 2008-5-11 Patrick Galbraith <patg@patg.net> (4.007)
 
