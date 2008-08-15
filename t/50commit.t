@@ -110,7 +110,7 @@ EOT
 
 }
 else {
-  plan tests => 11; 
+  plan tests => 13; 
 
   ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
   my $create =<<EOT;

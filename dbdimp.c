@@ -1562,6 +1562,7 @@ MYSQL *mysql_dr_connect(
                         imp_dbh->use_server_side_prepare);
 #endif
 
+        /* HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
         if ((svp = hv_fetch(hv, "mysql_enable_utf8", 17, FALSE)) && *svp) {
           /* Do not touch imp_dbh->enable_utf8 as we are called earlier
@@ -1709,7 +1710,8 @@ static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
   char* mysql_socket;
   D_imp_xxh(dbh);
 
-#define TAKE_IMP_DATA_VERSION 1
+  /* TODO- resolve this so that it is set only if DBI is 1.607 */
+#define TAKE_IMP_DATA_VERSION 0 
 #if TAKE_IMP_DATA_VERSION
   if (DBIc_has(imp_dbh, DBIcf_IMPSET))
   { /* eg from take_imp_data() */
@@ -1800,6 +1802,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
   imp_dbh->auto_reconnect = FALSE;
 
+  /* HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   imp_dbh->enable_utf8 = FALSE;  /* initialize mysql_enable_utf8 */
 #endif
@@ -2118,6 +2121,7 @@ dbd_db_STORE_attrib(
 
   else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing"))
 	imp_dbh->bind_type_guessing = SvIV(valuesv);
+  /*HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
@@ -2208,6 +2212,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       const char* msg = mysql_error(imp_dbh->pmysql);
       result= sv_2mortal(newSVpv(msg, strlen(msg)));
     }
+    /* HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
     else if (kl == strlen("enable_utf8") && strEQ(key, "enable_utf8"))
         result = sv_2mortal(newSViv(imp_dbh->enable_utf8));
@@ -3470,6 +3475,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch string data %s\n", fbh->data);
           sv_setpvn(sv, fbh->data, fbh->length);
+          /*HELMUT*/
 #ifdef sv_utf8_decode
           if(imp_dbh->enable_utf8)
               sv_utf8_decode(sv);
@@ -3585,6 +3591,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         }
         sv_setpvn(sv, col, len);
 	/* UTF8 */
+        /*HELMUT*/
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
 
 #if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION 

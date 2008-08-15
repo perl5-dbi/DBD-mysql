@@ -34,6 +34,7 @@ if ($@) {
 unless ($dbh->can('take_imp_data')) {
     plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
 }
+plan skip_all => "This test is disabled";
 plan tests => 21;
 
 pass("obtained driver handle");
