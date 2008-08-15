@@ -1,16 +1,20 @@
-2008-5-11 Patrick Galbraith <patg@grazr.com> (4.007)
+2008-8-15 Patrick Galbraith <patg@patg.net> (4.008)
+* Multi statement patch, thank you Chris Heath!
+* Disabled TAKE_IMP_DATA_VERSION because segfault with DBI < 1.607
+
+2008-5-11 Patrick Galbraith <patg@patg.net> (4.007)
 
 * Took out mysql_server_init call where not needed
 * Complete re-write of test suit to use Test::More - tons of cleanups!
 * Makefile.PL changes to use current user in 'make test' if not defined
 
-2007-12-26 Patrick Galbraith <patg@grazr.com> (4.006)
+2007-12-26 Patrick Galbraith <patg@patg.net> (4.006)
 
 * Cleanups on OS X compile
 * Fixes to syntax errors on AIX
 * Removed test code that was leaving trace files around
 
-2007-3-22 Patrick Galbraith <patg@grazr.com> (4.005)
+2007-3-22 Patrick Galbraith <patg@patg.net> (4.005)
 
 * Fixed mysql_warning issue < 4.1 (reminers, patches, help from ROAM, (issue 25713)
 * makerealclean patch from ROAM (issue #25714)
@@ -28,7 +32,7 @@
 
 
 
-2007-3-22 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.004)
+2007-3-22 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.004)
 * Work around a bug in old 3.23 servers by specifying NOT NULL for fields used
   as a primary key in tests. (Bug #20325, reported by Julian Ladisch)
 * Add support for mysql_warning_count statement handle attribute. (Bug #25457,
@@ -43,11 +47,11 @@
 * Fixed do_error definition (Scott Hildreth, Tim Bunce)
 * Conversion of test suite to Test::More
 
-2007-3-5 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.003)
+2007-3-5 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.003)
 * Fix inclusion of non-primary keys in primary_key_info. (Bug #26786,
   reported and patch by Dave Rolsky)
 
-2007-3-1 Patrick Galbraith <patg@grazr.com> Jim Winstead <jimw@mysql.com> (4.002)
+2007-3-1 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.002)
 * Fix re-exec of Makefile.PL when forcing $ENV{LANG} to 'C'. (RT #25233,
   reported by Slaven Rezic)
 * Rewrote table_info method to support all arguments (previously it would
@@ -77,7 +81,7 @@
   Dave Rolsky, and final implementation based on Connector/J code)
 
 
-2007-1-8 Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg@grazr.com> (4.001)
+2007-1-8 Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg@patg.net> (4.001)
 * Fix handling of unsigned integer values in result sets when using
   server-side prepared statements (they were not retrieved at all).
 * Fix handling of signed integer values when using server-side prepared
