@@ -17,7 +17,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                           mysql_auto_reconnect  => 1, 
                           RaiseError => 1, 
                           PrintError => 1, 
-                          AutoCommit => 0 });
+                          AutoCommit => 1 });
 };
 
 if ($@) {
