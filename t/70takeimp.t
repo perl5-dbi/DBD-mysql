@@ -30,7 +30,9 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "Can't connect to database ERROR: $@. Can't continue test";
 }
-
+unless ($DBI::VERSION ge '1.607') {
+    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
+}
 unless ($dbh->can('take_imp_data')) {
     plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
 }
@@ -74,8 +76,10 @@ is $drh->{Kids}, 0,
     is $warn, 4, 'we should have received 4 warnings';
 }
 
+print "here\n";
 my $dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
     { dbi_imp_data => $imp_data });
+print "there\n";
 
 # XXX: how can we test that the same connection is used?
 my $id2 = connection_id($dbh2);

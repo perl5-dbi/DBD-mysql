@@ -1,3 +1,7 @@
+2008-10-21 Patrick Galbraith <patg@patg.net> (4.009)
+* Fix to re-enable TAKE_IMP_DATA_VERSION. Still have to ensure DBI version 1.607 or higher
+* Fix to escaped single quotes throwing off bind param detection. Patch from Zhurs (zhurs@yandex.ru) Spasibo!
+
 2008-8-15 Patrick Galbraith <patg@patg.net> (4.008)
 * Multi statement patch, thanks to Chris Heath!
 * Disabled TAKE_IMP_DATA_VERSION because segfault with DBI < 1.607

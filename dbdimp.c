@@ -80,7 +80,7 @@ count_params(char *statement)
         while ((c = *ptr)  &&  c != end_token)
         {
           if (c == '\\')
-            if (! *ptr)
+            if (! *(++ptr))
               continue;
 
           ++ptr;
