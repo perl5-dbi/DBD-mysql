@@ -4278,6 +4278,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
             PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND AN INT NUMBER\n");
 
           buffer_type= MYSQL_TYPE_LONG;
+          buffer_length = sizeof imp_sth->fbind[idx].numeric_val.lval;
           imp_sth->fbind[idx].numeric_val.lval= SvIV(imp_sth->params[idx].value);
           buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -4294,6 +4295,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
             PerlIO_printf(DBILOGFP, "\t\tTRY TO BIND A FLOAT NUMBER\n");
 
           buffer_type= MYSQL_TYPE_DOUBLE;
+          buffer_length = sizeof imp_sth->fbind[idx].numeric_val.dval;
           imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
           buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
 
@@ -4320,15 +4322,8 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           break;
       }
 
-      if (buffer_type == MYSQL_TYPE_STRING)
-      {
-        buffer= SvPV(imp_sth->params[idx].value, slen);
-        buffer_length= slen;
-        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP,
-                        "   SCALAR type %d ->%s<- IS A STRING\n",
-                        sql_type, buffer);
-      }
+      buffer= SvPV(imp_sth->params[idx].value, slen);
+      buffer_length= slen;
     }
     else
     {

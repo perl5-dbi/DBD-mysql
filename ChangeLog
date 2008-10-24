@@ -1,3 +1,7 @@
+2008-10-24 Patrick Galbraith <patg@patg.net> (4.010)
+* Fix to dbd_bind_ph() for uninitialized value 'buffer_length'
+thanks for bug report and patch from Askniel.com (thanks!)
+
 2008-10-21 Patrick Galbraith <patg@patg.net> (4.009)
 * Fix to re-enable TAKE_IMP_DATA_VERSION. Still have to ensure DBI version 1.607 or higher
 * Fix to escaped single quotes throwing off bind param detection. Patch from Zhurs (zhurs@yandex.ru) Spasibo!
