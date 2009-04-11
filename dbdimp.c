@@ -1,8 +1,8 @@
 /*
  *  DBD::mysql - DBI driver for the mysql database
  *
- *  Copyright (c) 2005       Patrick Galbraith
- *  Copyright (c) 2003       Rudolf Lippan
+ *  Copyright (c) 2005-2009 Patrick Galbraith
+ *  Copyright (c) 2003-2005  Rudolf Lippan
  *  Copyright (c) 1997-2003  Jochen Wiedmann
  *
  *  You may distribute this under the terms of either the GNU General Public
@@ -20,7 +20,6 @@
 #include "dbdimp.h"
 
 #if defined(WIN32)  &&  defined(WORD)
-    /*  Don't exactly know who's responsible for defining WORD ... :-(  */
 #undef WORD
 typedef short WORD;
 #endif
@@ -456,7 +455,7 @@ static char *parse_params(
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
-        if ( bind_type_guessing > 1 )
+        if (bind_type_guessing)
         {
           valbuf= SvPV(ph->value, vallen);
           ph->type= SQL_INTEGER;
@@ -466,8 +465,6 @@ static char *parse_params(
               ph->type= SQL_VARCHAR;
           }
         }
-        else if (bind_type_guessing)
-          ph->type= SvNIOK(ph->value) ? SQL_INTEGER : SQL_VARCHAR;
         else
           ph->type= SQL_VARCHAR;
       }
@@ -2119,8 +2116,8 @@ dbd_db_STORE_attrib(
   else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
     imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
 
-  else if (kl == 31 && strEQ(key,"mysql_unsafe_bind_type_guessing"))
-	imp_dbh->bind_type_guessing = SvIV(valuesv);
+  else if (kl == 24 && strEQ(key,"mysql_bind_type_guessing"))
+    imp_dbh->bind_type_guessing = SvIV(valuesv);
   /*HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
@@ -2198,9 +2195,9 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (kl == strlen("auto_reconnect") && strEQ(key, "auto_reconnect"))
       result= sv_2mortal(newSViv(imp_dbh->auto_reconnect));
     break;
-  case 'u':
-    if (kl == strlen("unsafe_bind_type_guessing") &&
-        strEQ(key, "unsafe_bind_type_guessing"))
+  case 'b':
+    if (kl == strlen("bind_type_guessing") &&
+        strEQ(key, "bind_type_guessing"))
       result = sv_2mortal(newSViv(imp_dbh->bind_type_guessing));
     break;
   case 'e':
@@ -2807,7 +2804,7 @@ my_ulonglong mysql_st_internal_execute(
                                        int use_mysql_use_result
                                       )
 {
-  bool bind_type_guessing;
+  bool bind_type_guessing= false;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
   char *table;
@@ -2832,10 +2829,10 @@ my_ulonglong mysql_st_internal_execute(
   {
     D_imp_dbh(h);
     /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
-    if (imp_dbh)
+    if (imp_dbh && imp_dbh->bind_type_guessing)
       bind_type_guessing= imp_dbh->bind_type_guessing;
     else
-      bind_type_guessing=0;
+      bind_type_guessing= false;
   }
   /* h is a sth */
   else
@@ -4322,8 +4319,15 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           break;
       }
 
-      buffer= SvPV(imp_sth->params[idx].value, slen);
-      buffer_length= slen;
+      if (buffer_type == MYSQL_TYPE_STRING || buffer_type == MYSQL_TYPE_BLOB)
+      {
+        buffer= SvPV(imp_sth->params[idx].value, slen);
+        buffer_length= slen;
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBILOGFP,
+                        " SCALAR type %d ->length %d<- IS A STRING or BLOB\n",
+                        sql_type, buffer_length);
+      }
     }
     else
     {
