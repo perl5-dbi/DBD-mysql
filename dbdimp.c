@@ -2804,7 +2804,7 @@ my_ulonglong mysql_st_internal_execute(
                                        int use_mysql_use_result
                                       )
 {
-  bool bind_type_guessing= false;
+  bool bind_type_guessing= 0;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
   char *table;
@@ -2832,7 +2832,7 @@ my_ulonglong mysql_st_internal_execute(
     if (imp_dbh && imp_dbh->bind_type_guessing)
       bind_type_guessing= imp_dbh->bind_type_guessing;
     else
-      bind_type_guessing= false;
+      bind_type_guessing= 0;
   }
   /* h is a sth */
   else
