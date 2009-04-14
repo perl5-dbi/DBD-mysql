@@ -1276,6 +1276,33 @@ need to issue the command C<SET NAMES utf8> to get the same effect.
 
 This option is experimental and may change in future versions.
 
+=item mysql_bind_type_guessing
+
+This attribute causes the driver (emulated prepare statements) 
+to attempt to guess if a value being bound is a numeric value,
+and if so, doesn't quote the value.  This was created by 
+Dragonchild and is one way to deal with the performance issue 
+of using quotes in a statement that is inserting or updating a
+large numeric value. This was previously called 
+C<unsafe_bind_type_guessing> because it is experimental. I have 
+successfully run the full test suite with this option turned on,
+the name can now be simply C<mysql_bind_type_guessing>. 
+
+See bug: https://rt.cpan.org/Ticket/Display.html?id=43822
+
+C<mysql_bind_type_guessing> can be turned on via 
+
+ - through DSN 
+
+  my $dbh= DBI->connect('DBI:mysql:test', 'username', 'pass',
+  { mysql_bind_type_guessing => 1})
+
+  - OR after handle creation
+
+  $dbh->{mysql_bind_type_guessing} = 1;
+
+
+
 =head1 STATEMENT HANDLES
 
 The statement handles of DBD::mysql support a number

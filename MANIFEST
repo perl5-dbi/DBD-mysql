@@ -41,6 +41,7 @@ t/41blobs_prepare.t
 t/42bindparam.t
 t/50chopblanks.t
 t/50commit.t
+t/51bind_type_guessing.t
 t/55utf8.t
 t/60leaks.t
 t/65types.t

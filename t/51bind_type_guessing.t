@@ -18,7 +18,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 29; 
+plan tests => 16; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -31,16 +31,16 @@ EOTABLE
 
 ok $dbh->do($create), "creating table";
 
-my $statement= 'insert into bigt1 (id) values (?)';
+my $statement= "insert into $table (id) values (?)";
 
-$sth1;
+my $sth1;
 ok $sth1= $dbh->prepare($statement);
 
 my $rows;
 ok $rows= $sth1->execute('9999999999999999');
 cmp_ok $rows, '==',  1;
 
-$statement= 'update bigt1 set id = ?';
+$statement= "update $table set id = ?";
 my $sth2;
 ok $sth2= $dbh->prepare($statement);
 
@@ -51,13 +51,15 @@ $dbh->{mysql_bind_type_guessing}= 1;
 ok $rows= $sth1->execute('9999999999999997');
 cmp_ok $rows, '==',  1;
 
-$statement= 'update bigt1 set id = ? where id = ?';
+$statement= "update $table set id = ? where id = ?";
 
 ok $sth2= $dbh->prepare($statement);
-ok $rows= $sth1->execute('9999999999999996', '9999999999999997');
+ok $rows= $sth2->execute('9999999999999996', '9999999999999997');
 
 my $retref;
-ok $retref= $dbh->selectall_arrayref('select * from bigt1');
+ok $retref= $dbh->selectall_arrayref("select * from $table");
 
 cmp_ok $retref->[0][0], '==', 9999999999999998;
-cmp_ok $retref->[0][0], '==', 9999999999999996;
+cmp_ok $retref->[1][0], '==', 9999999999999996;
+
+ok $dbh->disconnect;

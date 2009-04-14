@@ -1,3 +1,13 @@
+2009-04-13 Patrick Galbraith <patg@patg.net> (4.011)
+* Renamed unsafe_bind_type_guessing, fixed some of the logic. This
+can be used to deal with bug 43822 
+(https://rt.cpan.org/Ticket/Display.html?id=43822)
+* Patch from Daniel Frett (daniel Dot frett At ccci Dot org) to fix 
+issue of binding sever side integer parameters (server-side prepare
+statements) resulting in corrupt data, bug 42723 
+(https://rt.cpan.org/Ticket/Display.html?id=42723)
+* Updated documentation, cruft cleanup (as always)
+
 2008-10-24 Patrick Galbraith <patg@patg.net> (4.010)
 * Fix to dbd_bind_ph() for uninitialized value 'buffer_length'
 thanks for bug report and patch from Askniel.com (thanks!)
