@@ -18,7 +18,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 16; 
+plan tests => 25; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -61,5 +61,25 @@ ok $retref= $dbh->selectall_arrayref("select * from $table");
 
 cmp_ok $retref->[0][0], '==', 9999999999999998;
 cmp_ok $retref->[1][0], '==', 9999999999999996;
+
+# checking varchars/empty strings/misidentification:
+$create= <<"EOTABLE";
+create table $table (
+    str varchar(80),
+    num bigint
+    )
+EOTABLE
+ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
+ok $dbh->do($create), "creating table w/ varchar";
+my $sth3;
+ok $sth3= $dbh->prepare("insert into $table (str, num) values (?, ?)");
+ok $rows= $sth3->execute(52.3, 44);
+ok $rows= $sth3->execute('', '     77');
+ok $rows= $sth3->execute(undef, undef);
+
+ok $sth3= $dbh->prepare("select * from $table limit ?");
+ok $rows= $sth3->execute(1);
+ok $rows= $sth3->execute('   1');
+$sth3->finish();
 
 ok $dbh->disconnect;

@@ -24,6 +24,8 @@
 typedef short WORD;
 #endif
 
+static int parse_number(char *string, STRLEN len, char **end);
+
 DBISTATE_DECLARE;
 
 typedef struct sql_type_info_s
@@ -557,6 +559,17 @@ static char *parse_params(
                 break;
             }
 
+            /* (note this sets *end, which we use if is_num) */
+            if( parse_number(valbuf, vallen, &end) != 0 && is_num)
+            {
+              if (bind_type_guessing) {
+                /* .. not a number, so apparerently we guessed wrong */
+                is_num = 0;
+                ph->type = SQL_VARCHAR;
+              }
+            }
+
+
             /* we're at the end of the query, so any placeholders if */
             /* after a LIMIT clause will be numbers and should not be quoted */
             if (limit_flag == 1)
@@ -570,7 +583,6 @@ static char *parse_params(
             }
             else
             {
-              parse_number(valbuf, vallen, &end);
               for (cp= valbuf; cp < end; cp++)
                   *ptr++= *cp;
             }
@@ -1384,7 +1396,8 @@ MYSQL *mysql_dr_connect(
             if ((server_groups_cnt=count_embedded_options(options)))
             {
               /* number of server_groups always server_groups+1 */
-              server_groups=fill_out_embedded_options(options, 0, (int)lna, ++server_groups_cnt);
+              server_groups=fill_out_embedded_options(options, 0, 
+                                                      (int)lna, ++server_groups_cnt);
               if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
               {
                 PerlIO_printf(DBILOGFP,
@@ -1465,66 +1478,83 @@ MYSQL *mysql_dr_connect(
       DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
       if (sv  &&  SvROK(sv))
       {
-	HV* hv = (HV*) SvRV(sv);
-	SV** svp;
-	STRLEN lna;
+        HV* hv = (HV*) SvRV(sv);
+        SV** svp;
+        STRLEN lna;
 
-	if ((svp = hv_fetch(hv, "mysql_compression", 17, FALSE))  &&
-	    *svp && SvTRUE(*svp))
+        if ((svp = hv_fetch(hv, "mysql_compression", 17, FALSE))  &&
+            *svp && SvTRUE(*svp))
         {
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP,
                           "imp_dbh->mysql_dr_connect: Enabling" \
                           " compression.\n");
-	  mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
-	}
-	if ((svp = hv_fetch(hv, "mysql_connect_timeout", 21, FALSE))
-	    &&  *svp  &&  SvTRUE(*svp))
+          mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
+        }
+        if ((svp = hv_fetch(hv, "mysql_connect_timeout", 21, FALSE))
+            &&  *svp  &&  SvTRUE(*svp))
         {
-	  int to = SvIV(*svp);
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBILOGFP,
-                    "imp_dbh->mysql_dr_connect: Setting" \
-                    " connect timeout (%d).\n",to);
-	  mysql_options(sock, MYSQL_OPT_CONNECT_TIMEOUT,
-			(const char *)&to);
-	}
-	if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
-	    *svp  &&  SvTRUE(*svp))
+          int to = SvIV(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->mysql_dr_connect: Setting" \
+                          " connect timeout (%d).\n",to);
+          mysql_options(sock, MYSQL_OPT_CONNECT_TIMEOUT,
+                        (const char *)&to);
+        }
+        if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
+            *svp  &&  SvTRUE(*svp))
         {
-	  char* df = SvPV(*svp, lna);
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBILOGFP,
-                    "imp_dbh->mysql_dr_connect: Reading" \
-                    " default file %s.\n", df);
-	  mysql_options(sock, MYSQL_READ_DEFAULT_FILE, df);
-	}
-	if ((svp = hv_fetch(hv, "mysql_read_default_group", 24,
-			    FALSE))  &&
-	    *svp  &&  SvTRUE(*svp)) {
-	  char* gr = SvPV(*svp, lna);
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBILOGFP,
+          char* df = SvPV(*svp, lna);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->mysql_dr_connect: Reading" \
+                          " default file %s.\n", df);
+          mysql_options(sock, MYSQL_READ_DEFAULT_FILE, df);
+        }
+        if ((svp = hv_fetch(hv, "mysql_read_default_group", 24,
+                            FALSE))  &&
+            *svp  &&  SvTRUE(*svp)) {
+          char* gr = SvPV(*svp, lna);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
                     "imp_dbh->mysql_dr_connect: Using" \
                     " default group %s.\n", gr);
 
-	  mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
-	}
-	if ((svp = hv_fetch(hv, "mysql_client_found_rows", 23, FALSE)) && *svp)
+          mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
+        }
+        if ((svp = hv_fetch(hv, "mysql_client_found_rows", 23, FALSE)) && *svp)
         {
-	  if (SvTRUE(*svp))
-	    client_flag |= CLIENT_FOUND_ROWS;
+          if (SvTRUE(*svp))
+            client_flag |= CLIENT_FOUND_ROWS;
           else
             client_flag &= ~CLIENT_FOUND_ROWS;
-	}
-	if ((svp = hv_fetch(hv, "mysql_use_result", 16, FALSE)) && *svp)
+        }
+        if ((svp = hv_fetch(hv, "mysql_use_result", 16, FALSE)) && *svp)
         {
           imp_dbh->use_mysql_use_result = SvTRUE(*svp);
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBILOGFP,
-                    "imp_dbh->use_mysql_use_result: %d\n",
-                    imp_dbh->use_mysql_use_result);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->use_mysql_use_result: %d\n",
+                          imp_dbh->use_mysql_use_result);
         }
+        if ((svp = hv_fetch(hv, "mysql_bind_type_guessing", 24, FALSE)) && *svp)
+        {
+          imp_dbh->bind_type_guessing= SvTRUE(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->bind_type_guessing: %d\n",
+                          imp_dbh->bind_type_guessing);
+        }
+        if ((svp = hv_fetch(hv, "mysql_no_autocommit_cmd", 23, FALSE)) && *svp)
+        {
+          imp_dbh->no_autocommit_cmd= SvTRUE(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->no_autocommit_cmd: %d\n",
+                          imp_dbh->no_autocommit_cmd);
+        }
+
 
 #if defined(CLIENT_MULTI_STATEMENTS)
 	if ((svp = hv_fetch(hv, "mysql_multi_statements", 22, FALSE)) && *svp)
@@ -2064,32 +2094,38 @@ dbd_db_STORE_attrib(
         return TRUE;
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-      if (mysql_autocommit(imp_dbh->pmysql, bool_value))
+      if (!imp_dbh->no_autocommit_cmd)
       {
-        do_error(dbh, TX_ERR_AUTOCOMMIT,
-                 bool_value ?
-                  "Turning on AutoCommit failed" :
-                  "Turning off AutoCommit failed"
-                 ,NULL);
-        return FALSE;
-      }
-#else
-      /* if setting AutoCommit on ... */
-      if (bool_value)
-      {
-        /* Setting autocommit will do a commit of any pending statement */
-        if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=1", 16))
+        if (mysql_autocommit(imp_dbh->pmysql, bool_value))
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed", NULL);
+          do_error(dbh, TX_ERR_AUTOCOMMIT,
+                   bool_value ?
+                   "Turning on AutoCommit failed" :
+                   "Turning off AutoCommit failed"
+                   ,NULL);
           return FALSE;
         }
       }
-      else
+#else
+      /* if setting AutoCommit on ... */
+      if (!imp_dbh->no_autocommit_cmd)
       {
-        if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=0", 16))
+        if (bool_value)
         {
-          do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed", NULL);
-          return FALSE;
+          /* Setting autocommit will do a commit of any pending statement */
+          if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=1", 16))
+          {
+            do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed", NULL);
+            return FALSE;
+          }
+        }
+        else
+        {
+          if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=0", 16))
+          {
+            do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed", NULL);
+            return FALSE;
+          }
         }
       }
 #endif
@@ -2115,10 +2151,10 @@ dbd_db_STORE_attrib(
     imp_dbh->auto_reconnect = bool_value;
   else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
     imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
-
+  else if (kl == 23 && strEQ(key,"mysql_no_autocommit_cmd"))
+    imp_dbh->no_autocommit_cmd= SvTRUE(valuesv);
   else if (kl == 24 && strEQ(key,"mysql_bind_type_guessing"))
-    imp_dbh->bind_type_guessing = SvIV(valuesv);
-  /*HELMUT */
+    imp_dbh->bind_type_guessing = SvTRUE(valuesv);
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
@@ -2256,6 +2292,11 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
       result= sv_2mortal(my_ulonglong2str(mysql_insert_id(imp_dbh->pmysql)));
+    break;
+  case 'n':
+    if (kl == strlen("no_autocommit_cmd") &&
+        strEQ(key, "no_autocommit_cmd"))
+      result = sv_2mortal(newSViv(imp_dbh->no_autocommit_cmd));
     break;
 
   case 'p':
@@ -4420,6 +4461,12 @@ int mysql_db_reconnect(SV* h)
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
   }
+
+  /*
+   *  Tell DBI, that dbh->disconnect should be called for this handle
+   */
+  DBIc_ACTIVE_on(imp_dbh);
+
   ++imp_dbh->stats.auto_reconnects_ok;
   return TRUE;
 }
@@ -4608,7 +4655,7 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
 #endif
 
 
-int parse_number(char *string, STRLEN len, char **end)
+static int parse_number(char *string, STRLEN len, char **end)
 {
     int seen_neg;
     int seen_dec;
@@ -4626,57 +4673,58 @@ int parse_number(char *string, STRLEN len, char **end)
 
     /* Skip leading whitespace */
     while (*cp && isspace(*cp))
-        cp++;
+      cp++;
 
     for ( ; *cp; cp++)
     {
-        if ('-' == *cp)
+      if ('-' == *cp)
+      {
+        if (seen_neg >= 2)
         {
-            if (seen_neg >= 2)
-            {
-              /*
-                third '-'. number can contains two '-'.
-                because -1e-10 is valid number */
-              break;
-            }
-            seen_neg += 1;
+          /*
+            third '-'. number can contains two '-'.
+            because -1e-10 is valid number */
+          break;
         }
-        else if ('.' == *cp)
+        seen_neg += 1;
+      }
+      else if ('.' == *cp)
+      {
+        if (seen_dec)
         {
-            if (seen_dec)
-            {
-                /* second '.' */
-                break;
-            }
-            seen_dec= 1;
+          /* second '.' */
+          break;
         }
-        else if ('e' == *cp)
+        seen_dec= 1;
+      }
+      else if ('e' == *cp)
+      {
+        if (seen_e)
         {
-            if (seen_e)
-            {
-                /* second 'e' */
-                break;
-            }
-            seen_e= 1;
+          /* second 'e' */
+          break;
         }
-        else if ('+' == *cp)
+        seen_e= 1;
+      }
+      else if ('+' == *cp)
+      {
+        if (seen_plus)
         {
-            if (seen_plus)
-            {
-                /* second '+' */
-                break;
-            }
-            seen_plus= 1;
+          /* second '+' */
+          break;
         }
-       else if (!isdigit(*cp))
-        {
-            break;
-        }
+        seen_plus= 1;
+      }
+      else if (!isdigit(*cp))
+      {
+        break;
+      }
     }
 
     *end= cp;
 
-    if (cp - string < (int) len) {
+    /* length 0 -> not a number */
+    if (len == 0 || cp - string < (int) len) {
         return -1;
     }
 

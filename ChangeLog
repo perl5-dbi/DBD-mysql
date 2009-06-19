@@ -1,3 +1,21 @@
+2009-06-18 Patrick Galbraith <patg@patg.net> (4.012)
+
+* Patch to bind_type_guessing from Craigslist, 
+  Thanks to Chris! Happiness is no quoted numbers. 
+  Fixed ChopBlanks to work with bind_type_guessing
+* Patch for win32 strawberry build 
+  Thanks to Curtis Jewell! Windows needs love
+* Patch for auto-reconnect to set active flag
+  Thanks to Doug Fischer!
+* Fixed bug 32464 http://bugs.mysql.com/bug.php?id=32464.
+  See https://rt.cpan.org/Ticket/Display.html?id=46308
+  Add connection flag mysql_no_autocommit_cmd which users of
+  MySQL Proxy can use to prevent 'set autocommit=#' from being
+  issued by the driver. 'perldoc DBD::mysql' to see how to use
+  this new flag
+* Added bind-type-guessing options to Makefile.PL so the entire 
+  test suite can be run with bind_type_guessing set.
+
 2009-04-13 Patrick Galbraith <patg@patg.net> (4.011)
 * Renamed unsafe_bind_type_guessing, fixed some of the logic. This
 can be used to deal with bug 43822 

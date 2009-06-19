@@ -143,9 +143,7 @@ struct imp_dbh_st {
 
     MYSQL *pmysql;
     int has_transactions;   /*  boolean indicating support for
-			     *  transactions, currently always
-			     *  TRUE for MySQL and always FALSE
-			     *  for mSQL.
+			     *  transactions, currently always  TRUE for MySQL
 			     */
     bool auto_reconnect;
     struct {
@@ -153,6 +151,7 @@ struct imp_dbh_st {
 	    unsigned int auto_reconnects_failed;
     } stats;
     unsigned short int  bind_type_guessing;
+    unsigned short int  no_autocommit_cmd;
     int use_mysql_use_result; /* TRUE if execute should use
                                * mysql_use_result rather than
                                * mysql_store_result

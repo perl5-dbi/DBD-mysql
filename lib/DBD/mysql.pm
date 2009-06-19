@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.011';
+$VERSION = '4.012';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1300,6 +1300,31 @@ C<mysql_bind_type_guessing> can be turned on via
   - OR after handle creation
 
   $dbh->{mysql_bind_type_guessing} = 1;
+
+=item mysql_no_autocommit_cmd
+
+This attribute causes the driver to not issue 'set autocommit'
+either through explicit or using mysql_autocommit(). This is 
+particularly useful in the case of using MySQL Proxy.
+
+See the bug report:
+
+https://rt.cpan.org/Public/Bug/Display.html?id=46308
+
+As well as:
+
+http://bugs.mysql.com/bug.php?id=32464
+
+C<mysql_no_autocommit_cmd> can be turned on via 
+
+ - through DSN 
+
+  my $dbh= DBI->connect('DBI:mysql:test', 'username', 'pass',
+  { mysql_no_autocommit_cmd => 1})
+
+  - OR after handle creation
+
+  $dbh->{mysql_no_autocommit_cmd} = 1;
 
 
 
