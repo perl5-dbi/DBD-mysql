@@ -775,7 +775,12 @@ DEATH
 	}
 	
 	$mysqladmin = Win32::GetShortPathName($mysqladmin);
-	my $v = qx($mysqladmin version);
+    my $v;
+    if ( defined $opt->{'testuser'} and defined $opt->{'testpassword'}) {
+        $v = qx( sprintf('%s --user=%s --password=%s version', $mysqladmin , $opt->{'testuser'}, $opt->{'testpassword'}) );
+    } else {
+        $v = qx($mysqladmin version);
+    }
 	unless ($v) {
 	  print STDERR "Problem running $mysqladmin - aborting ...\n";
 	  exit(1);
