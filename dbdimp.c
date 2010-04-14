@@ -63,15 +63,103 @@ typedef struct sql_type_info_s
 static int
 count_params(char *statement)
 {
-  char* ptr = statement;
-  int num_params = 0;
+  bool comment_end= false;
+  char* ptr= statement;
+  int num_params= 0;
+  int comment_length= 0;
   char c;
+
   if (dbis->debug >= 2)
     PerlIO_printf(DBILOGFP, ">count_params statement %s\n", statement);
 
   while ( (c = *ptr++) )
   {
     switch (c) {
+      /* so, this is a -- comment, so let's burn up characters */
+    case '-':
+      {
+        comment_length= 1;
+        /* let's see if the next one is a dash */
+        c = *ptr++;
+
+        if  (c == '-') {
+          /* if two dashes, ignore everything until newline */
+          while (c = *ptr)
+          {
+            if (dbis->debug >= 2)
+              PerlIO_printf(DBILOGFP, "%c\n", c);
+            ptr++;
+            comment_length++;
+            if (c == '\n')
+            {
+              comment_end= true;
+              break;
+            }
+          }
+          /*
+            so, if there was an end to the comment, increment by one more
+            to go past the new line
+
+            if not comment_end, the comment never ended and we need to iterate
+            back to the beginning of where we started and let the database 
+            handle whatever is in the statement
+          */
+          if (comment_end)
+            ptr++;
+          else
+            ptr-= comment_length;
+        }
+        /* otherwise, only one dash/hyphen, backtrack by one */
+        else
+          ptr--;
+        break;
+      }
+    /* c-type comments */
+    case '/':
+      {
+        c = *ptr++;
+        /* let's check if the next one is an asterisk */
+        if  (c == '*')
+        {
+          comment_length= 0;
+          comment_end= false;
+          /* ignore everything until closing comment */
+          while (c= *ptr)
+          {
+            ptr++;
+            comment_length++;
+
+            if (c == '*')
+            {
+              c = *ptr++;
+              /* alas, end of comment */
+              if (c == '/')
+              {
+                ptr++;
+                comment_end= true;
+                break;
+              }
+              /*
+                nope, just an asterisk, not so fast, not end of comment, go
+                back one
+              */
+              else
+                ptr--;
+            }
+          }
+          /*
+            if the end of the comment was never found, we have to backtrack
+            to whereever we first started skipping over the possible comment.
+            This means we will pass the statement to the database to see its own
+            fate and issue the error
+          */
+          if (!comment_end)
+            ptr -= comment_length;
+        }
+        else
+          ptr--;
+        break;
+      }
     case '`':
     case '"':
     case '\'':
@@ -412,13 +500,14 @@ static char *parse_params(
                           int num_params,
                           bool bind_type_guessing)
 {
-
+  bool comment_end= false;
   char *salloc, *statement_ptr;
   char *statement_ptr_end, *ptr, *valbuf;
   char *cp, *end;
   int alen, i;
   int slen= *slen_ptr;
   int limit_flag= 0;
+  int comment_length=0;
   STRLEN vallen;
   imp_sth_ph_t *ph;
 
@@ -498,6 +587,73 @@ static char *parse_params(
     }
     switch (*statement_ptr)
     {
+      /* comment detection. Anything goes in a comment */
+      case '-':
+      {
+        comment_length= 1;
+        comment_end= false;
+        *ptr++ = *statement_ptr++;
+        if  (*statement_ptr == '-')
+        {
+          /* ignore everything until newline */
+          while (*statement_ptr)
+          {
+            comment_length++;
+            *ptr++ = *statement_ptr++;
+            if (*statement_ptr == '\n')
+            {
+              comment_end= true;
+              break;
+            }
+          }
+          /* if comment end found, iterate past the \n */
+          if (comment_end)
+          {
+            *ptr++ = *statement_ptr++;
+          }
+          /* otherwise, go back to where we started, no end found */
+          else
+          {
+            statement_ptr -= comment_length;
+            ptr -= comment_length;
+          }
+        }
+        break;
+      }
+      /* c-type comments */
+      case '/':
+      {
+        comment_length= 1;
+        comment_end= false;
+        *ptr++ = *statement_ptr++;
+        if  (*statement_ptr == '*')
+        {
+          /* use up characters everything until newline */
+          while (*statement_ptr)
+          {
+            *ptr++ = *statement_ptr++;
+            comment_length++;
+            if (!strncmp(statement_ptr, "*/", 2))
+            {
+              comment_length += 2;
+              comment_end= true;
+              break;
+            }
+          }
+          /* iterate past the comment end */
+          if (comment_end)
+          {
+            *ptr++ = *statement_ptr++;
+            *ptr++ = *statement_ptr++;
+          }
+          else
+          {
+            statement_ptr -= comment_length;
+            ptr -= comment_length;
+          }
+        }
+        break;
+      }
       case '`':
       case '\'':
       case '"':
