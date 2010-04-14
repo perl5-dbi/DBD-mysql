@@ -2427,7 +2427,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
                0
               );
 
-      result= (newRV_noinc((SV*)hv));
+      result= sv_2mortal((newRV_noinc((SV*)hv)));
     }
 
   case 'h':
