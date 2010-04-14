@@ -36,12 +36,14 @@ t/40numrows.t
 t/40server_prepare.t
 t/40server_prepare_error.t
 t/40types.t
+t/40nulls_prepare.t
 t/41bindparam.t
 t/41blobs_prepare.t
 t/42bindparam.t
 t/50chopblanks.t
 t/50commit.t
 t/51bind_type_guessing.t
+t/52comment.t
 t/55utf8.t
 t/60leaks.t
 t/65types.t
@@ -50,9 +52,11 @@ t/71impdata.t
 t/75supported_sql.t
 t/76multi_statement.t
 t/80procs.t
+t/85init_command.t
 t/lib.pl
 t/mysql.dbtest
 t/mysql.mtest
+t/mem_leak.pl
 TODO
 myld
 constants.h

@@ -1,3 +1,11 @@
+2010-04-14 Patrick Galbraith <patg@patg.net> (4.013)
+* BUG 30033 Fixed handling of comments to allow comments that contain characters
+  that might otherwise cause placeholder detection to not work properly
+* BUG 53844, Fix for memory leak in stats. (Gregory Burmistrov)
+* BUG 49719, Fix for handling of NULLs in prepared statements (Gert Pache)
+* BUG 49484, Added mysql_init_command option.  (Peter John Edwards)
+* BUG 55627, Fix for testing failure due to strict mode (Yves) 
+
 2009-06-18 Patrick Galbraith <patg@patg.net> (4.012)
 
 * Patch to bind_type_guessing from Craigslist, 

@@ -1638,6 +1638,17 @@ MYSQL *mysql_dr_connect(
         SV** svp;
         STRLEN lna;
 
+        /* thanks to Peter John Edwards for mysql_init_command */ 
+        if ((svp = hv_fetch(hv, "mysql_init_command", 18, FALSE)) &&
+            *svp && SvTRUE(*svp))
+        {
+          char* df = SvPV(*svp, lna);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                           "imp_dbh->mysql_dr_connect: Setting" \
+                           " init command (%s).\n", df);
+          mysql_options(sock, MYSQL_INIT_COMMAND, df);
+        }
         if ((svp = hv_fetch(hv, "mysql_compression", 17, FALSE))  &&
             *svp && SvTRUE(*svp))
         {
