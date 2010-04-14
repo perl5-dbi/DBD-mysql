@@ -49,6 +49,9 @@
 #define mysql_warning_count(svsock) 0
 #endif
 
+#define true 1
+#define false 0
+
 /*
  *  The following are return codes passed in $h->err in case of
  *  errors by DBD::mysql.
