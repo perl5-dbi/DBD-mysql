@@ -6,6 +6,7 @@
 * BUG 49484, Added mysql_init_command option.  (Peter John Edwards)
 * BUG 55627, Fix for testing failure due to strict mode (Yves) 
 * BUG 51784, Fix for mysqladmin on Windows in Makefile (Zeeshan Muhammad)
+* BUG 41630, Typo in Makefile
 
 2009-06-18 Patrick Galbraith <patg@patg.net> (4.012)
 

@@ -504,7 +504,7 @@ mysql> grant all privileges on test.* to '$user'\@'localhost' identified by 's3k
 
 You can also optionally set the user to run 'make test' with:
 
-perl Makefile.pl --testuser=username
+perl Makefile.PL --testuser=username
 
 ";
       $opt->{$param} = $user;
