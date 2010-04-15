@@ -4472,13 +4472,28 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   if (imp_sth->use_server_side_prepare)
   {
       switch(sql_type) {
-      case SQL_NUMERIC: case SQL_INTEGER: case SQL_SMALLINT: case SQL_BIGINT: case SQL_TINYINT:
+      case SQL_NUMERIC:
+      case SQL_INTEGER:
+      case SQL_SMALLINT:
+      case SQL_BIGINT:
+      case SQL_TINYINT:
           buffer_type= MYSQL_TYPE_LONG;
           break;
-      case SQL_DOUBLE: case SQL_DECIMAL: case SQL_FLOAT: case SQL_REAL:
+      case SQL_DOUBLE:
+      case SQL_DECIMAL: 
+      case SQL_FLOAT: 
+      case SQL_REAL:
           buffer_type= MYSQL_TYPE_DOUBLE;
           break;
-      case SQL_CHAR: case SQL_VARCHAR: case SQL_DATE: case SQL_TIME: case SQL_TIMESTAMP: case SQL_LONGVARCHAR: case SQL_BINARY: case SQL_VARBINARY: case SQL_LONGVARBINARY:
+      case SQL_CHAR: 
+      case SQL_VARCHAR: 
+      case SQL_DATE: 
+      case SQL_TIME: 
+      case SQL_TIMESTAMP: 
+      case SQL_LONGVARCHAR: 
+      case SQL_BINARY: 
+      case SQL_VARBINARY: 
+      case SQL_LONGVARBINARY:
           buffer_type= MYSQL_TYPE_BLOB;
           break;
       default:
@@ -4840,9 +4855,10 @@ static int parse_number(char *string, STRLEN len, char **end)
     int seen_dec;
     int seen_e;
     int seen_plus;
+    int seen_digit;
     char *cp;
 
-    seen_neg= seen_dec= seen_e= seen_plus= 0;
+    seen_neg= seen_dec= seen_e= seen_plus= seen_digit= 0;
 
     if (len <= 0) {
         len= strlen(string);
@@ -4896,6 +4912,7 @@ static int parse_number(char *string, STRLEN len, char **end)
       }
       else if (!isdigit(*cp))
       {
+        seen_digit= 1;
         break;
       }
     }
@@ -4903,7 +4920,7 @@ static int parse_number(char *string, STRLEN len, char **end)
     *end= cp;
 
     /* length 0 -> not a number */
-    if (len == 0 || cp - string < (int) len) {
+    if (len == 0 || cp - string < (int) len || seen_digit == 0) {
         return -1;
     }
 
