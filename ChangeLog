@@ -1,3 +1,6 @@
+2010-04-xx Patrick Galbraith <patg@patg.net> (4.015)
+* BUG 56664 fixed t/40blobs.t skip_all logic (W. Phillip Moore)
+
 2010-04-14 Patrick Galbraith <patg@patg.net> (4.014)
 * BUG 30033 Fixed handling of comments to allow comments that contain characters
   that might otherwise cause placeholder detection to not work properly
