@@ -37,7 +37,9 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 14;
+else {
+    plan tests => 14;
+}
 
 if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
     $charset= '';
