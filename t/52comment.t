@@ -18,7 +18,7 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 9; 
+plan tests => 19; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -55,6 +55,13 @@ $statement= "SELECT id FROM $table /* it's a bug? */ WHERE id = ?";
 
 $retrow= $dbh->selectrow_arrayref($statement, {}, 1);
 cmp_ok $retrow->[0], '==', 1;
+
+$statement= "SELECT id FROM $table WHERE id = ? /* it's/a_directory/does\ this\ work/bug? */";
+
+for (0 .. 9) {
+    $retrow= $dbh->selectrow_arrayref($statement, {}, 1);
+    cmp_ok $retrow->[0], '==', 1;
+}
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
