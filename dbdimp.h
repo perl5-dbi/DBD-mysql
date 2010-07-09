@@ -154,6 +154,7 @@ struct imp_dbh_st {
 	    unsigned int auto_reconnects_failed;
     } stats;
     unsigned short int  bind_type_guessing;
+    bool bind_comment_placeholders;
     unsigned short int  no_autocommit_cmd;
     int use_mysql_use_result; /* TRUE if execute should use
                                * mysql_use_result rather than

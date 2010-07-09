@@ -61,7 +61,7 @@ typedef struct sql_type_info_s
 
 */
 static int
-count_params(char *statement)
+count_params(char *statement, bool bind_comment_placeholders)
 {
   bool comment_end= false;
   char* ptr= statement;
@@ -78,87 +78,98 @@ count_params(char *statement)
       /* so, this is a -- comment, so let's burn up characters */
     case '-':
       {
-        comment_length= 1;
-        /* let's see if the next one is a dash */
-        c = *ptr++;
-
-        if  (c == '-') {
-          /* if two dashes, ignore everything until newline */
-          while (c = *ptr)
+          if (bind_comment_placeholders)
           {
-            if (dbis->debug >= 2)
-              PerlIO_printf(DBILOGFP, "%c\n", c);
-            ptr++;
-            comment_length++;
-            if (c == '\n')
-            {
-              comment_end= true;
+              c = *ptr++;
               break;
-            }
           }
-          /*
-            so, if there was an end to the comment, increment by one more
-            to go past the new line
-
-            if not comment_end, the comment never ended and we need to iterate
-            back to the beginning of where we started and let the database 
-            handle whatever is in the statement
-          */
-          if (comment_end)
-            ptr++;
           else
-            ptr-= comment_length;
-        }
-        /* otherwise, only one dash/hyphen, backtrack by one */
-        else
-          ptr--;
-        break;
+          {
+              comment_length= 1;
+              /* let's see if the next one is a dash */
+              c = *ptr++;
+
+              if  (c == '-') {
+                  /* if two dashes, ignore everything until newline */
+                  while (c = *ptr)
+                  {
+                      if (dbis->debug >= 2)
+                          PerlIO_printf(DBILOGFP, "%c\n", c);
+                      ptr++;
+                      comment_length++;
+                      if (c == '\n')
+                      {
+                          comment_end= true;
+                          break;
+                      }
+                  }
+                  /*
+                    if not comment_end, the comment never ended and we need to iterate
+                    back to the beginning of where we started and let the database 
+                    handle whatever is in the statement
+                */
+                  if (! comment_end)
+                      ptr-= comment_length;
+              }
+              /* otherwise, only one dash/hyphen, backtrack by one */
+              else
+                  ptr--;
+              break;
+          }
       }
     /* c-type comments */
     case '/':
       {
-        c = *ptr++;
-        /* let's check if the next one is an asterisk */
-        if  (c == '*')
-        {
-          comment_length= 0;
-          comment_end= false;
-          /* ignore everything until closing comment */
-          while (c= *ptr)
+          if (bind_comment_placeholders)
           {
-            ptr++;
-            comment_length++;
-
-            if (c == '*')
-            {
               c = *ptr++;
-              /* alas, end of comment */
-              if (c == '/')
-              {
-                ptr++;
-                comment_end= true;
-                break;
-              }
-              /*
-                nope, just an asterisk, not so fast, not end of comment, go
-                back one
-              */
-              else
-                ptr--;
-            }
+              break;
           }
-          /*
-            if the end of the comment was never found, we have to backtrack
-            to whereever we first started skipping over the possible comment.
-            This means we will pass the statement to the database to see its own
-            fate and issue the error
-          */
-          if (!comment_end)
-            ptr -= comment_length;
-        }
-        else
-          ptr--;
-        break;
+          else
+          {
+              c = *ptr++;
+              /* let's check if the next one is an asterisk */
+              if  (c == '*')
+              {
+                  comment_length= 0;
+                  comment_end= false;
+                  /* ignore everything until closing comment */
+                  while (c= *ptr)
+                  {
+                      ptr++;
+                      comment_length++;
+
+                      if (c == '*')
+                      {
+                          c = *ptr++;
+                          /* alas, end of comment */
+                          if (c == '/')
+                          {
+                              comment_end= true;
+                              break;
+                          }
+                          /*
+                            nope, just an asterisk, not so fast, not
+                            end of comment, go back one
+                        */
+                          else
+                              ptr--;
+                      }
+                  }
+                  /*
+                    if the end of the comment was never found, we have
+                    to backtrack to whereever we first started skipping
+                    over the possible comment.
+                    This means we will pass the statement to the database
+                    to see its own fate and issue the error
+                */
+                  if (!comment_end)
+                      ptr -= comment_length;
+              }
+              else
+                  ptr--;
+              break;
+          }
       }
     case '`':
     case '"':
@@ -488,7 +499,7 @@ char **fill_out_embedded_options(char *options,
 }
 #endif
 
-/* 
+/*
   constructs an SQL statement previously prepared with
   actual values replacing placeholders
 */
@@ -498,7 +509,8 @@ static char *parse_params(
                           STRLEN *slen_ptr,
                           imp_sth_ph_t* params,
                           int num_params,
-                          bool bind_type_guessing)
+                          bool bind_type_guessing,
+                          bool bind_comment_placeholders)
 {
   bool comment_end= false;
   char *salloc, *statement_ptr;
@@ -590,69 +602,75 @@ static char *parse_params(
       /* comment detection. Anything goes in a comment */
       case '-':
       {
-        comment_length= 1;
-        comment_end= false;
-        *ptr++ = *statement_ptr++;
-        if  (*statement_ptr == '-')
-        {
-          /* ignore everything until newline */
-          while (*statement_ptr)
+          if (bind_comment_placeholders)
           {
-            comment_length++;
-            *ptr++ = *statement_ptr++;
-            if (*statement_ptr == '\n')
-            {
-              comment_end= true;
+              *ptr++= *statement_ptr++;
               break;
-            }
           }
-          /* if comment end found, iterate past the \n */
-          if (comment_end)
-          {
-            *ptr++ = *statement_ptr++;
-          }
-          /* otherwise, go back to where we started, no end found */
           else
           {
-            statement_ptr -= comment_length;
-            ptr -= comment_length;
+              comment_length= 1;
+              comment_end= false;
+              *ptr++ = *statement_ptr++;
+              if  (*statement_ptr == '-')
+              {
+                  /* ignore everything until newline or end of string */
+                  while (*statement_ptr)
+                  {
+                      comment_length++;
+                      *ptr++ = *statement_ptr++;
+                      if (!*statement_ptr || *statement_ptr == '\n')
+                      {
+                          comment_end= true;
+                          break;
+                      }
+                  }
+                  /* if not end of comment, go back to where we started, no end found */
+                  if (! comment_end)
+                  {
+                      statement_ptr -= comment_length;
+                      ptr -= comment_length;
+                  }
+              }
+              break;
           }
-        }
-        break;
       }
       /* c-type comments */
       case '/':
       {
-        comment_length= 1;
-        comment_end= false;
-        *ptr++ = *statement_ptr++;
-        if  (*statement_ptr == '*')
-        {
-          /* use up characters everything until newline */
-          while (*statement_ptr)
+          if (bind_comment_placeholders)
           {
-            *ptr++ = *statement_ptr++;
-            comment_length++;
-            if (!strncmp(statement_ptr, "*/", 2))
-            {
-              comment_length += 2;
-              comment_end= true;
+              *ptr++= *statement_ptr++;
               break;
-            }
-          }
-          /* iterate past the comment end */
-          if (comment_end)
-          {
-            *ptr++ = *statement_ptr++;
-            *ptr++ = *statement_ptr++;
           }
           else
           {
-            statement_ptr -= comment_length;
-            ptr -= comment_length;
+              comment_length= 1;
+              comment_end= false;
+              *ptr++ = *statement_ptr++;
+              if  (*statement_ptr == '*')
+              {
+                  /* use up characters everything until newline */
+                  while (*statement_ptr)
+                  {
+                      *ptr++ = *statement_ptr++;
+                      comment_length++;
+                      if (!strncmp(statement_ptr, "*/", 2))
+                      {
+                          comment_length += 2;
+                          comment_end= true;
+                          break;
+                      }
+                  }
+                  /* Go back to where started if comment end not found */
+                  if (! comment_end)
+                  {
+                      statement_ptr -= comment_length;
+                      ptr -= comment_length;
+                  }
+              }
+              break;
           }
-        }
-        break;
       }
       case '`':
       case '\'':
@@ -716,7 +734,7 @@ static char *parse_params(
             }
 
             /* (note this sets *end, which we use if is_num) */
-            if( parse_number(valbuf, vallen, &end) != 0 && is_num)
+            if ( parse_number(valbuf, vallen, &end) != 0 && is_num)
             {
               if (bind_type_guessing) {
                 /* .. not a number, so apparerently we guessed wrong */
@@ -1705,13 +1723,21 @@ MYSQL *mysql_dr_connect(
                           "imp_dbh->use_mysql_use_result: %d\n",
                           imp_dbh->use_mysql_use_result);
         }
-        if ((svp = hv_fetch(hv, "mysql_bind_type_guessing", 24, FALSE)) && *svp)
+        if ((svp = hv_fetch(hv, "mysql_bind_type_guessing", 24, TRUE)) && *svp)
         {
           imp_dbh->bind_type_guessing= SvTRUE(*svp);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP,
                           "imp_dbh->bind_type_guessing: %d\n",
                           imp_dbh->bind_type_guessing);
+        }
+        if ((svp = hv_fetch(hv, "mysql_bind_comment_placeholders", 31, FALSE)) && *svp)
+        {
+          imp_dbh->bind_comment_placeholders = SvTRUE(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBILOGFP,
+                          "imp_dbh->bind_comment_placeholders: %d\n",
+                          imp_dbh->bind_comment_placeholders);
         }
         if ((svp = hv_fetch(hv, "mysql_no_autocommit_cmd", 23, FALSE)) && *svp)
         {
@@ -1991,7 +2017,8 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
   imp_dbh->stats.auto_reconnects_ok= 0;
   imp_dbh->stats.auto_reconnects_failed= 0;
-  imp_dbh->bind_type_guessing= FALSE;
+  imp_dbh->bind_type_guessing= TRUE;
+  imp_dbh->bind_comment_placeholders= FALSE;
   imp_dbh->has_transactions= TRUE;
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
   imp_dbh->auto_reconnect = FALSE;
@@ -2322,6 +2349,8 @@ dbd_db_STORE_attrib(
     imp_dbh->no_autocommit_cmd= SvTRUE(valuesv);
   else if (kl == 24 && strEQ(key,"mysql_bind_type_guessing"))
     imp_dbh->bind_type_guessing = SvTRUE(valuesv);
+  else if (kl == 31 && strEQ(key,"mysql_bind_comment_placeholders"))
+    imp_dbh->bind_type_guessing = SvTRUE(valuesv);
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
@@ -2401,7 +2430,14 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   case 'b':
     if (kl == strlen("bind_type_guessing") &&
         strEQ(key, "bind_type_guessing"))
+    {
       result = sv_2mortal(newSViv(imp_dbh->bind_type_guessing));
+    }
+    else if (kl == strlen("bind_comment_placeholders") &&
+        strEQ(key, "bind_comment_placeholders"))
+    {
+      result = sv_2mortal(newSViv(imp_dbh->bind_comment_placeholders));
+    }
     break;
   case 'e':
     if (strEQ(key, "errno"))
@@ -2758,9 +2794,11 @@ dbd_st_prepare(
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   /* Count the number of parameters (driver, vs server-side) */
   if (imp_sth->use_server_side_prepare == 0)
-    DBIc_NUM_PARAMS(imp_sth) = count_params(statement);
+    DBIc_NUM_PARAMS(imp_sth) = count_params(statement,
+                                            imp_dbh->bind_comment_placeholders);
 #else
-    DBIc_NUM_PARAMS(imp_sth) = count_params(statement);
+  DBIc_NUM_PARAMS(imp_sth) = count_params(statement,
+                                          imp_dbh->bind_comment_placeholders);
 #endif
 
   /* Allocate memory for parameters */
@@ -3012,7 +3050,8 @@ my_ulonglong mysql_st_internal_execute(
                                        int use_mysql_use_result
                                       )
 {
-  bool bind_type_guessing= 0;
+  bool bind_type_guessing= TRUE;
+  bool bind_comment_placeholders= TRUE;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
   char *table;
@@ -3033,14 +3072,15 @@ my_ulonglong mysql_st_internal_execute(
     if/else (when compiled, it fails for imp_dbh not being defined).
   */
   /* h is a dbh */
-  if (htype==DBIt_DB)
+  if (htype == DBIt_DB)
   {
     D_imp_dbh(h);
     /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
     if (imp_dbh && imp_dbh->bind_type_guessing)
+    {
       bind_type_guessing= imp_dbh->bind_type_guessing;
-    else
-      bind_type_guessing= 0;
+      bind_comment_placeholders= bind_comment_placeholders;
+    }
   }
   /* h is a sth */
   else
@@ -3049,9 +3089,10 @@ my_ulonglong mysql_st_internal_execute(
     D_imp_dbh_from_sth;
     /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
     if (imp_dbh)
+    {
       bind_type_guessing= imp_dbh->bind_type_guessing;
-    else
-      bind_type_guessing=0;
+      bind_comment_placeholders= imp_dbh->bind_comment_placeholders;
+    }
   }
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3063,7 +3104,8 @@ my_ulonglong mysql_st_internal_execute(
                               &slen,
                               params,
                               num_params,
-                              bind_type_guessing);
+                              bind_type_guessing,
+                              bind_comment_placeholders);
 
   if (salloc)
   {
@@ -4912,7 +4954,8 @@ static int parse_number(char *string, STRLEN len, char **end)
       }
       else if (!isdigit(*cp))
       {
-        seen_digit= 1;
+        /* Not sure why this was changed */
+        /* seen_digit= 1; */
         break;
       }
     }
@@ -4920,7 +4963,9 @@ static int parse_number(char *string, STRLEN len, char **end)
     *end= cp;
 
     /* length 0 -> not a number */
-    if (len == 0 || cp - string < (int) len || seen_digit == 0) {
+    /* Need to revisit this */
+    /*if (len == 0 || cp - string < (int) len || seen_digit == 0) {*/
+    if (len == 0 || cp - string < (int) len) {
         return -1;
     }
 

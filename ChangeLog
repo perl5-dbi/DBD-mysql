@@ -1,14 +1,19 @@
-2010-04-xx Patrick Galbraith <patg@patg.net> (4.015)
-* BUG 56664 fixed t/40blobs.t skip_all logic (W. Phillip Moore)
+2010-07-09 Patrick Galbraith <patg@patg.net> (4.015)
+* BUG #56664 fixed t/40blobs.t skip_all logic (W. Phillip Moore)
+* BUG #57253 Fixed iteration past end of string (crash). (Chris Butler)
+* Added a new parameter for old behavior- mysql_bind_comment_placeholders which 
+  will make it possible to have placeholders bound for those who really 
+  want that behavior.
+* Fixed bind_type_guessing - always on now 
 
 2010-04-14 Patrick Galbraith <patg@patg.net> (4.014)
-* BUG 30033 Fixed handling of comments to allow comments that contain characters
+* BUG #30033 Fixed handling of comments to allow comments that contain characters
   that might otherwise cause placeholder detection to not work properly
-* BUG 53844, Fix for memory leak in stats. (Gregory Burmistrov)
-* BUG 49719, Fix for handling of NULLs in prepared statements (Gert Pache)
-* BUG 55627, Fix for testing failure due to strict mode (Yves) 
-* BUG 51784, Fix for mysqladmin on Windows in Makefile (Zeeshan Muhammad)
-* BUG 41630, Typo in Makefile
+* BUG #53844, Fix for memory leak in stats. (Gregory Burmistrov)
+* BUG #49719, Fix for handling of NULLs in prepared statements (Gert Pache)
+* BUG #55627, Fix for testing failure due to strict mode (Yves) 
+* BUG #51784, Fix for mysqladmin on Windows in Makefile (Zeeshan Muhammad)
+* BUG #41630, Typo in Makefile
 * Had to define true and false in dbdimp.h. Didn't work out of the box on Linux
 
 2009-09-16 Patrick Galbraith <patg@patg.net> (4.013)

@@ -15,14 +15,15 @@ my $dbh;
 eval { $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1,
                         PrintError => 1, 
-                        AutoCommit => 0, }
+                        AutoCommit => 0,
+                        mysql_bind_comment_placeholders => 1,}
                         );
      };
 if ($@) {
     plan skip_all => 
-        "ERROR: $DBI::errstr. Can't continue test";
+        "ERROR: $DBI::errstr, $@. Can't continue test";
 }
-plan tests => 30; 
+plan tests => 29; 
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -48,28 +49,24 @@ $sth->finish();
 $statement= <<EOSTMT;
 SELECT id 
 FROM $table
--- it's a bug?
+-- this comment has ? in the text 
 WHERE id = ?
 EOSTMT
 
-my $retrow= $dbh->selectrow_arrayref($statement, {}, 1);
+my $retrow= $dbh->selectrow_arrayref($statement, {}, 'hey', 1);
 cmp_ok $retrow->[0], '==', 1;
 
-$statement= "SELECT id FROM $table /* it's a bug? */ WHERE id = ?";
+$statement= "SELECT id FROM $table /* Some value here ? */ WHERE id = ?";
 
-$retrow= $dbh->selectrow_arrayref($statement, {}, 1);
-cmp_ok $retrow->[0], '==', 1;
-
-$statement= "SELECT id FROM $table WHERE id = ? /* it's a bug? */";
-
-$retrow= $dbh->selectrow_arrayref($statement, {}, 1);
+$retrow= $dbh->selectrow_arrayref($statement, {}, "hello", 1);
 cmp_ok $retrow->[0], '==', 1;
 
 $statement= "SELECT id FROM $table WHERE id = ? ";
 my $comment = "/* it's/a_directory/does\ this\ work/bug? */";
+$statement= $statement . $comment;
 
 for (0 .. 9) {
-    $retrow= $dbh->selectrow_arrayref($statement . $comment, {}, 1);
+    $retrow= $dbh->selectrow_arrayref($statement, {}, 1);
     cmp_ok $retrow->[0], '==', 1;
 }
 
