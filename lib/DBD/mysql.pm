@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.015';
+$VERSION = '4.016';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1293,6 +1293,41 @@ large numeric value. This was previously called
 C<unsafe_bind_type_guessing> because it is experimental. I have 
 successfully run the full test suite with this option turned on,
 the name can now be simply C<mysql_bind_type_guessing>. 
+
+CAVEAT: Even though you can insert an integer value into a 
+character column, if this column is indexed, if you query that
+column with the integer value not being quoted, it will not 
+use the index:
+
+MariaDB [test]> explain select * from test where value0 = '3' \G
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: test
+         type: ref
+possible_keys: value0
+          key: value0
+      key_len: 13
+          ref: const
+         rows: 1
+        Extra: Using index condition
+1 row in set (0.00 sec)
+
+MariaDB [test]> explain select * from test where value0 = 3
+    -> \G
+*************************** 1. row ***************************
+           id: 1
+  select_type: SIMPLE
+        table: test
+         type: ALL
+possible_keys: value0
+          key: NULL
+      key_len: NULL
+          ref: NULL
+         rows: 6
+        Extra: Using where
+1 row in set (0.00 sec)
+
 
 See bug: https://rt.cpan.org/Ticket/Display.html?id=43822
 

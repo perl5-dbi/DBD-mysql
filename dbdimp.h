@@ -145,26 +145,25 @@ struct imp_dbh_st {
     dbih_dbc_t com;         /*  MUST be first element in structure   */
 
     MYSQL *pmysql;
-    int has_transactions;   /*  boolean indicating support for
+    bool has_transactions;   /*  boolean indicating support for
 			     *  transactions, currently always  TRUE for MySQL
 			     */
     bool auto_reconnect;
+    bool bind_type_guessing;
+    bool bind_comment_placeholders;
+    bool no_autocommit_cmd;
+    bool use_mysql_use_result; /* TRUE if execute should use
+                               * mysql_use_result rather than
+                               * mysql_store_result
+                               */
+    bool use_server_side_prepare;
+#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+    bool enable_utf8;
+#endif
     struct {
 	    unsigned int auto_reconnects_ok;
 	    unsigned int auto_reconnects_failed;
     } stats;
-    unsigned short int  bind_type_guessing;
-    bool bind_comment_placeholders;
-    unsigned short int  no_autocommit_cmd;
-    int use_mysql_use_result; /* TRUE if execute should use
-                               * mysql_use_result rather than
-                               * mysql_store_result
-                               */
-    int use_server_side_prepare;
-    int has_autodetect_prepare;
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-    bool enable_utf8;
-#endif
 };
 
 

@@ -2017,7 +2017,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 
   imp_dbh->stats.auto_reconnects_ok= 0;
   imp_dbh->stats.auto_reconnects_failed= 0;
-  imp_dbh->bind_type_guessing= TRUE;
+  imp_dbh->bind_type_guessing= FALSE;
   imp_dbh->bind_comment_placeholders= FALSE;
   imp_dbh->has_transactions= TRUE;
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
@@ -3050,7 +3050,7 @@ my_ulonglong mysql_st_internal_execute(
                                        int use_mysql_use_result
                                       )
 {
-  bool bind_type_guessing= TRUE;
+  bool bind_type_guessing= FALSE;
   bool bind_comment_placeholders= TRUE;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
