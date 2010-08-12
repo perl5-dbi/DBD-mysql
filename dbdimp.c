@@ -1649,7 +1649,7 @@ MYSQL *mysql_dr_connect(
     {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
 
-      DBIc_set(imp_dbh, DBIcf_AutoCommit, &sv_yes);
+      DBIc_set(imp_dbh, DBIcf_AutoCommit, &PL_sv_yes);
       if (sv  &&  SvROK(sv))
       {
         HV* hv = (HV*) SvRV(sv);
@@ -2197,7 +2197,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 #endif
 
   /* The disconnect_all concept is flawed and needs more work */
-  if (!dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
+  if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
     sv_setiv(DBIc_ERR(imp_drh), (IV)1);
     sv_setpv(DBIc_ERRSTR(imp_drh),
              (char*)"disconnect_all not implemented");
@@ -2205,7 +2205,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
       DBIc_ERR(imp_drh), DBIc_ERRSTR(imp_drh)); */
     return FALSE;
   }
-  perl_destruct_level = 0;
+  PL_perl_destruct_level = 0;
   return FALSE;
 }
 
@@ -2411,7 +2411,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
         if (imp_dbh->has_transactions)
           return sv_2mortal(boolSV(DBIc_has(imp_dbh,DBIcf_AutoCommit)));
         /* Default */
-        return &sv_yes;
+        return &PL_sv_yes;
       }
       break;
   }
@@ -2482,7 +2482,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* hostinfo = mysql_get_host_info(imp_dbh->pmysql);
       result= hostinfo ?
-        sv_2mortal(newSVpv(hostinfo, strlen(hostinfo))) : &sv_undef;
+        sv_2mortal(newSVpv(hostinfo, strlen(hostinfo))) : &PL_sv_undef;
     }
     break;
 
@@ -2490,7 +2490,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (strEQ(key, "info"))
     {
       const char* info = mysql_info(imp_dbh->pmysql);
-      result= info ? sv_2mortal(newSVpv(info, strlen(info))) : &sv_undef;
+      result= info ? sv_2mortal(newSVpv(info, strlen(info))) : &PL_sv_undef;
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
@@ -2512,7 +2512,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* serverinfo = mysql_get_server_info(imp_dbh->pmysql);
       result= serverinfo ?
-        sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &sv_undef;
+        sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     }
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv((IV) imp_dbh->pmysql));
@@ -2522,14 +2522,14 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
-        sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
+        sv_2mortal(newSVpv(stats, strlen(stats))) : &PL_sv_undef;
     }
     else if (strEQ(key, "stats"))
     {
       /* Obsolete, as of 2.09 */
       const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
-        sv_2mortal(newSVpv(stats, strlen(stats))) : &sv_undef;
+        sv_2mortal(newSVpv(stats, strlen(stats))) : &PL_sv_undef;
     }
     else if (kl == 14 && strEQ(key,"server_prepare"))
         result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
@@ -4225,7 +4225,7 @@ dbd_st_FETCH_internal(
         break;
 
       default:
-        sv= &sv_undef;
+        sv= &PL_sv_undef;
         break;
       }
       av_push(av, sv);
@@ -4239,7 +4239,7 @@ dbd_st_FETCH_internal(
   }
 
   if (av == Nullav)
-    return &sv_undef;
+    return &PL_sv_undef;
 
   return sv_2mortal(newRV_inc((SV*)av));
 }
@@ -4726,7 +4726,7 @@ int mysql_db_reconnect(SV* h)
 	sv= newSVpv((char*) (c), 0);           \
 	SvREADONLY_on(sv);                      \
     } else {                                    \
-        sv= &sv_undef;                         \
+        sv= &PL_sv_undef;                         \
     }                                           \
     av_push(row, sv);
 
@@ -4803,7 +4803,7 @@ AV *dbd_db_type_info_all(SV *dbh, imp_dbh_t *imp_dbh)
       IV_PUSH(t->num_prec_radix);
     }
     else
-      av_push(row, &sv_undef);
+      av_push(row, &PL_sv_undef);
 
     IV_PUSH(t->sql_datatype); /* SQL_DATATYPE*/
     IV_PUSH(t->sql_datetime_sub); /* SQL_DATETIME_SUB*/

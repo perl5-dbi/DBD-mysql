@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.016';
+$VERSION = '4.017';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1908,24 +1908,50 @@ in the PPM program.
 
 =head1 AUTHORS
 
-The current version of B<DBD::mysql> is almost completely written
-by Jochen Wiedmann, and is now being maintained by
-Patrick Galbraith (I<patg@mysql.com>). 
-The first version's author was Alligator Descartes, who was aided
-and abetted by Gary Shea, Andreas König and Tim Bunce amongst others.
+Originally, there was a non-DBI driver, Mysql, which was much like 
+PHP drivers such as mysql and mysqli. The B<Mysql> module was 
+originally written by Andreas König <koenig@kulturbox.de> who still, to this
+day, contributes patches to DBD::mysql. An emulated version of Mysql was
+provided to DBD::mysql from Jochen Wiedmann, but eventually deprecated as it
+was another bundle of code to maintain.
 
-The B<Mysql> module was originally written by Andreas König
-<koenig@kulturbox.de>. The current version, mainly an emulation
-layer, is from Jochen Wiedmann.
+The first incarnation of DBD::mysql was developed by Alligator Descartes,
+who was also aided and abetted by Gary Shea, Andreas König and 
+Tim Bunce.
+
+The current incarnation of B<DBD::mysql> was written by Jochen Wiedmann,
+then numerous changes and bug-fixes were added by Rudy Lippan. Next, 
+prepared statement support was added by Patrick Galbraith and 
+Alexy Stroganov (who also soley added embedded server 
+support).
+
+For the past seven years DBD::mysql has been maintained by
+Patrick Galbraith (I<patg@patg.net>) along with the entire community 
+of Perl developers who keep sending patches and making Patrick's job
+easier. 
+
+
+=head1 CONTRIBUTIONS
+
+Anyone who desires to contribute to this project is encouraged to do so.
+Currently, the sourcecode for this project can be found at Github: 
+
+git://github.com/CaptTofu/DBD-mysql.git
+
+Either fork this repository and produce a branch with your changeset that 
+the maintainer can merge to his tree, or create a diff with git. The maintainer
+is more than glad to take contributions from the community as
+many features and fixes from DBD::mysql have come from the community.
 
 
 =head1 COPYRIGHT
 
 
 This module is 
-Large Portions Copyright (c) 2004-2006 MySQL Patrick Galbraith, Alexey Stroganov,
-Large Portions Copyright (c) 2003-2005 Rudolf Lippan; Large Portions 
-Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
+Large Portions Copyright (c) 2004-2010 Patrick Galbraith
+Large Portions Copyright (c) 2004-2006 Alexey Stroganov
+Large Portions Copyright (c) 2003-2005 Rudolf Lippan
+Large Portions Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
 for details.
@@ -1957,6 +1983,10 @@ http://groups.google.com/group/perl.dbi.users?hl=en&lr=
 Also, the main DBI site is at
 
 http://dbi.perl.org/
+
+And source:
+
+git://github.com/CaptTofu/DBD-mysql.git
 
 =head1 ADDITIONAL DBI INFORMATION
 
