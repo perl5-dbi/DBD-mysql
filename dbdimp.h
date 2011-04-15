@@ -24,6 +24,11 @@
 
 #include <errmsg.h> /* Comes with MySQL-devel */
 
+/* For now, we hardcode this, but in the future,
+ * we can detect capabilities of the MySQL libraries
+ * we're talking to */
+#define MYSQL_ASYNC 1
+
 /*
  * This is the version of MySQL wherer
  * the server will be used to process prepare
@@ -157,6 +162,9 @@ struct imp_dbh_st {
                                * mysql_store_result
                                */
     bool use_server_side_prepare;
+#if MYSQL_ASYNC
+    void* async_query_in_flight;
+#endif
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
     bool enable_utf8;
 #endif
@@ -251,6 +259,10 @@ struct imp_sth_st {
     int   use_mysql_use_result;  /*  TRUE if execute should use     */
                           /* mysql_use_result rather than           */
                           /* mysql_store_result */
+
+#if MYSQL_ASYNC
+    bool is_async;
+#endif
 };
 
 

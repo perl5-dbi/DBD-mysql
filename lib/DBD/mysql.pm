@@ -32,6 +32,12 @@ sub driver{
 				   'Attribution' => 'DBD::mysql by Patrick Galbraith'
 				 });
 
+    DBD::mysql::db->install_method('mysql_fd');
+    DBD::mysql::db->install_method('mysql_async_result');
+    DBD::mysql::db->install_method('mysql_async_ready');
+    DBD::mysql::st->install_method('mysql_async_result');
+    DBD::mysql::st->install_method('mysql_async_ready');
+
     $drh;
 }
 
@@ -217,6 +223,8 @@ use DBI qw(:sql_types);
 sub prepare {
     my($dbh, $statement, $attribs)= @_;
 
+    return unless $dbh->func('_async_check');
+
     # create a 'blank' dbh
     my $sth = DBI::_new_sth($dbh, {'Statement' => $statement});
 
@@ -394,6 +402,9 @@ sub _ListTables {
 
 sub column_info {
   my ($dbh, $catalog, $schema, $table, $column) = @_;
+
+  return unless $dbh->func('_async_check');
+
   $dbh->{mysql_server_prepare}||= 0;
   my $mysql_server_prepare_save= $dbh->{mysql_server_prepare};
   $dbh->{mysql_server_prepare}= 0;
@@ -585,6 +596,9 @@ sub column_info {
 
 sub primary_key_info {
   my ($dbh, $catalog, $schema, $table) = @_;
+
+  return unless $dbh->func('_async_check');
+
   $dbh->{mysql_server_prepare}||= 0;
   my $mysql_server_prepare_save= $dbh->{mysql_server_prepare};
 
@@ -635,6 +649,8 @@ sub foreign_key_info {
         $pk_catalog, $pk_schema, $pk_table,
         $fk_catalog, $fk_schema, $fk_table,
        ) = @_;
+
+    return unless $dbh->func('_async_check');
 
     # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
     my ($maj, $min, $point) = _version($dbh);
@@ -726,16 +742,41 @@ sub _version {
 
 sub get_info {
     my($dbh, $info_type) = @_;
+
+    return unless $dbh->func('_async_check');
     require DBD::mysql::GetInfo;
     my $v = $DBD::mysql::GetInfo::info{int($info_type)};
     $v = $v->($dbh) if ref $v eq 'CODE';
     return $v;
 }
 
+BEGIN {
+    my @needs_async_check = qw/data_sources statistics_info quote_identifier begin_work/;
+
+    foreach my $method (@needs_async_check) {
+        no strict 'refs';
+
+        my $super = "SUPER::$method";
+        *$method  = sub {
+            my $h = shift;
+            return unless $h->func('_async_check');
+            return $h->$super(@_);
+        };
+    }
+}
 
 
 package DBD::mysql::st; # ====== STATEMENT ======
 use strict;
+
+sub fetchrow_hashref {
+    my $sth = shift;
+
+    if(defined $sth->mysql_async_ready) {
+        return unless $sth->mysql_async_result;
+    }
+    return $sth->SUPER::fetchrow_hashref(@_);
+}
 
 1;
 
