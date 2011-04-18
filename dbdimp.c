@@ -3718,8 +3718,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   }
 #endif
 
-  fprintf(stderr, "here!\n");
-
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
