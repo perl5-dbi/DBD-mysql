@@ -5055,6 +5055,63 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
 #endif
 
 #if MYSQL_ASYNC
+int mysql_db_async_result(SV* h, MYSQL_RES** resp)
+{
+    D_imp_xxh(h);
+    imp_dbh_t* dbh;
+    MYSQL* svsock = NULL;
+    MYSQL_RES* _res;
+    int retval = 0;
+    int htype;
+
+    if(! resp) {
+        resp = &_res;
+    }
+
+    htype = DBIc_TYPE(imp_xxh);
+
+    if(htype == DBIt_DB) {
+        D_imp_dbh(h);
+        dbh = imp_dbh;
+    } else {
+        D_imp_sth(h);
+        D_imp_dbh_from_sth;
+        dbh = imp_dbh;
+    }
+
+    if(! dbh->async_query_in_flight) {
+        do_error(h, 2000, "Calling mysql_async_result on a synchronous handle", "HY000");
+        return -1;
+    }
+    if(dbh->async_query_in_flight != imp_xxh) {
+        do_error(h, 2000, "Calling mysql_async_result on the wrong handle", "HY000");
+        return -1;
+    }
+    dbh->async_query_in_flight = NULL;
+
+    svsock= dbh->pmysql;
+    retval= mysql_read_query_result(svsock);
+    if(! retval) {
+      *resp= mysql_store_result(svsock);
+
+      if (mysql_errno(svsock))
+        do_error(h, mysql_errno(svsock), mysql_error(svsock), mysql_sqlstate(svsock));
+      if (!*resp)
+        retval= mysql_affected_rows(svsock);
+      else {
+        retval= mysql_num_rows(*resp);
+        if(resp == &_res) {
+            mysql_free_result(*resp);
+        }
+      }
+    } else {
+        do_error(h, mysql_errno(svsock), mysql_error(svsock),
+                 mysql_sqlstate(svsock));
+        return -1;
+    }
+    return retval;
+}
+
 int mysql_db_async_ready(SV* h)
 {
     D_imp_xxh(h);

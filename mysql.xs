@@ -627,43 +627,15 @@ int mysql_async_result(dbh)
   CODE:
     {
 #if MYSQL_ASYNC
-        MYSQL *mysql = NULL;
-        MYSQL_RES *result = NULL;
-        int retval = 0;
+        int retval;
 
-        D_imp_dbh(dbh);
+        retval = mysql_db_async_result(dbh, NULL);
 
-        if(! imp_dbh->async_query_in_flight) {
-            do_error(dbh, 2000, "Calling mysql_async_result on a synchronous handle", "HY000");
-            XSRETURN_UNDEF;
-        }
-        if(imp_dbh->async_query_in_flight != imp_dbh) {
-            do_error(dbh, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
-            XSRETURN_UNDEF;
-        }
-        imp_dbh->async_query_in_flight = NULL;
-
-        mysql  = imp_dbh->pmysql;
-        retval = mysql_read_query_result(mysql);
-        if(! retval) {
-          result= mysql_store_result(mysql);
-
-          if (mysql_errno(mysql))
-            do_error(dbh, mysql_errno(mysql), mysql_error(mysql)
-                     ,mysql_sqlstate(mysql));
-
-          if (!result)
-            retval= mysql_affected_rows(mysql);
-          else {
-            retval= mysql_num_rows(result);
-            mysql_free_result(result);
-          }
+        if(retval >= 0) {
+            RETVAL = retval;
         } else {
-            do_error(dbh, mysql_errno(mysql), mysql_error(mysql),
-                     mysql_sqlstate(mysql));
             XSRETURN_UNDEF;
         }
-        RETVAL = retval;
 #else
         do_error(dbh, 2000, "Async support was not built into this version of DBD::mysql", "HY000");
         XSRETURN_UNDEF;
@@ -797,42 +769,17 @@ int mysql_async_result(sth)
   CODE:
     {
 #if MYSQL_ASYNC
-        MYSQL *mysql = NULL;
-        int retval = 0;
-
         D_imp_sth(sth);
-        D_imp_dbh_from_sth;
+        int retval;
 
-        if(! imp_dbh->async_query_in_flight) {
-            do_error(sth, 2000, "Calling mysql_async_result on a synchronous handle", "HY000");
-            XSRETURN_UNDEF;
-        }
-        if(imp_dbh->async_query_in_flight != imp_sth) {
-            do_error(sth, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
-            XSRETURN_UNDEF;
-        }
-        imp_dbh->async_query_in_flight = NULL;
+        retval= mysql_db_async_result(sth, &imp_sth->result);
 
-        mysql  = imp_dbh->pmysql;
-        imp_sth->row_num = mysql_read_query_result(mysql);
-        if(! imp_sth->row_num) {
-          imp_sth->result= mysql_store_result(mysql);
-
-          if (mysql_errno(mysql))
-            do_error(sth, mysql_errno(mysql), mysql_error(mysql)
-                     ,mysql_sqlstate(mysql));
-
-          if (!imp_sth->result)
-            imp_sth->row_num= mysql_affected_rows(mysql);
-          else {
-            imp_sth->row_num= mysql_num_rows(imp_sth->result);
-          }
+        if(retval >= 0) {
+            imp_sth->row_num = retval;
+            RETVAL = retval;
         } else {
-            do_error(sth, mysql_errno(mysql), mysql_error(mysql),
-                     mysql_sqlstate(mysql));
             XSRETURN_UNDEF;
         }
-        RETVAL = imp_sth->row_num;
 #else
         do_error(sth, 2000,
                  "Async support was not built into this version of DBD::mysql", "HY000");
