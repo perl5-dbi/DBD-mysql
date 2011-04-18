@@ -15,7 +15,6 @@
 #include "constants.h"
 
 #include <errno.h>
-#include <poll.h>
 #include <string.h>
 
 #if MYSQL_ASYNC
@@ -678,32 +677,14 @@ void mysql_async_ready(dbh)
   PPCODE:
     {
 #if MYSQL_ASYNC
-        D_imp_dbh(dbh);
+        int retval;
 
-        if(imp_dbh->async_query_in_flight) {
-            if(imp_dbh->async_query_in_flight == imp_dbh) {
-                struct pollfd fds;
-                int retval;
-
-                fds.fd = imp_dbh->pmysql->net.fd;
-                fds.events = POLLIN;
-
-                retval = poll(&fds, 1, 0);
-
-                if(retval > 0) {
-                    XSRETURN_YES;
-                } else if(retval == 0) {
-                    XSRETURN_NO;
-                } else {
-                    do_error(dbh, errno, strerror(errno), "HY000");
-                    XSRETURN_UNDEF;
-                }
-            } else {
-                do_error(dbh, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
-                XSRETURN_UNDEF;
-            }
+        retval = mysql_db_async_ready(dbh);
+        if(retval > 0) {
+            XSRETURN_YES;
+        } else if(retval == 0) {
+            XSRETURN_NO;
         } else {
-            do_error(dbh, 2000, "Handle is not in asynchronous mode", "HY000");
             XSRETURN_UNDEF;
         }
 #else
@@ -866,33 +847,14 @@ void mysql_async_ready(sth)
   PPCODE:
     {
 #if MYSQL_ASYNC
-        D_imp_sth(sth);
-        D_imp_dbh_from_sth;
+        int retval;
 
-        if(imp_dbh->async_query_in_flight) {
-            if(imp_dbh->async_query_in_flight == imp_sth) {
-                struct pollfd fds;
-                int retval;
-
-                fds.fd = imp_dbh->pmysql->net.fd;
-                fds.events = POLLIN;
-
-                retval = poll(&fds, 1, 0);
-
-                if(retval > 0) {
-                    XSRETURN_YES;
-                } else if(retval == 0) {
-                    XSRETURN_NO;
-                } else {
-                    do_error(sth, errno, strerror(errno), "HY000");
-                    XSRETURN_UNDEF;
-                }
-            } else {
-                do_error(sth, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
-                XSRETURN_UNDEF;
-            }
+        retval = mysql_db_async_ready(sth);
+        if(retval > 0) {
+            XSRETURN_YES;
+        } else if(retval == 0) {
+            XSRETURN_NO;
         } else {
-            do_error(sth, 2000, "Handle is not in asynchronous mode", "HY000");
             XSRETURN_UNDEF;
         }
 #else
