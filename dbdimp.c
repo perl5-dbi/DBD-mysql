@@ -3664,57 +3664,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
 #if MYSQL_ASYNC
   if(imp_dbh->async_query_in_flight) {
-      int retval;
-
-      if(imp_dbh->async_query_in_flight != imp_sth) {
-          do_error(sth, 2000, "Calling fetch on the wrong handle", "HY000");
-          return Nullav;
-      }
-      imp_dbh->async_query_in_flight = NULL;
-
-      retval = mysql_read_query_result(svsock);
-      if(retval) {
-          do_error(sth, mysql_errno(svsock), mysql_error(svsock),
-                  mysql_sqlstate(svsock));
-          return Nullav;
-      }
-      imp_sth->result = mysql_store_result(svsock);
-      if (!imp_sth->result)
-          imp_sth->row_num = mysql_affected_rows(svsock);
-      else
-          imp_sth->row_num = mysql_num_rows(imp_sth->result);
-      if (imp_sth->row_num+1 != (my_ulonglong)-1)
-      {
-          if (!imp_sth->result)
-          {
-              imp_sth->insertid= mysql_insert_id(svsock);
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
-              if (mysql_more_results(svsock))
-                  DBIc_ACTIVE_on(imp_sth);
-#endif
-          }
-          else
-          {
-              DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
-              DBIc_ACTIVE_on(imp_sth);
-              imp_sth->done_desc= 0;
-              imp_sth->fetch_done= 0;
-          }
-      }
-
-      imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
-
-      if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      {
-          /* 
-             PerlIO_printf doesn't always handle imp_sth->row_num %llu 
-             consistantly!!
-             */
-          char actual_row_num[64];
-          sprintf(actual_row_num, "%llu", imp_sth->row_num);
-          PerlIO_printf(DBILOGFP,
-                  " <- dbd_st_execute returning imp_sth->row_num %s\n",
-                  actual_row_num);
+      if(mysql_db_async_result(sth, &imp_sth->result) <= 0) {
+        return Nullav;
       }
   }
 #endif
@@ -5103,6 +5054,26 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
         if(resp == &_res) {
             mysql_free_result(*resp);
         }
+      }
+      if(htype == DBIt_ST) {
+        D_imp_sth(h);
+        D_imp_dbh_from_sth;
+
+        if(retval+1 != (my_ulonglong)-1) {
+            if(! *resp) {
+                imp_sth->insertid= mysql_insert_id(svsock);
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+                if (mysql_more_results(svsock))
+                    DBIc_ACTIVE_on(imp_sth);
+#endif
+            } else {
+                DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
+                DBIc_ACTIVE_on(imp_sth);
+                imp_sth->done_desc= 0;
+                imp_sth->fetch_done= 0;
+            }
+        }
+        imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
       }
     } else {
         do_error(h, mysql_errno(svsock), mysql_error(svsock),
