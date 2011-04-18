@@ -3666,7 +3666,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       int retval;
 
       if(imp_dbh->async_query_in_flight != imp_sth) {
-          do_error(dbh, 2000, "Calling fetch on the wrong handle", "HY000");
+          do_error(sth, 2000, "Calling fetch on the wrong handle", "HY000");
           return Nullav;
       }
       imp_dbh->async_query_in_flight = NULL;
