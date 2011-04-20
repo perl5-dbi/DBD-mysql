@@ -132,4 +132,5 @@ $sth->execute;
 ok defined($sth->mysql_async_ready);
 ok $sth->mysql_async_result;
 
+undef $sth;
 $dbh->disconnect;
