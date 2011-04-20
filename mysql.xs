@@ -751,6 +751,15 @@ rows(sth)
   CODE:
     D_imp_sth(sth);
     char buf[64];
+#if MYSQL_ASYNC
+    D_imp_dbh_from_sth;
+    if(imp_dbh->async_query_in_flight) {
+        if(mysql_db_async_result(sth, &imp_sth->result) < 0) {
+            XSRETURN_UNDEF;
+        }
+    }
+#endif
+
   /* fix to make rows able to handle errors and handle max value from 
      affected rows.
      if mysql_affected_row returns an error, it's value is 18446744073709551614,
