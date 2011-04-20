@@ -3461,6 +3461,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
                                                );
 #if MYSQL_ASYNC
     if(imp_dbh->async_query_in_flight) {
+        DBIc_ACTIVE_on(imp_sth);
         return 0;
     }
 #endif
@@ -5063,12 +5064,11 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
             if(! *resp) {
                 imp_sth->insertid= mysql_insert_id(svsock);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
-                if (mysql_more_results(svsock))
-                    DBIc_ACTIVE_on(imp_sth);
+                if (! mysql_more_results(svsock))
+                    DBIc_ACTIVE_off(imp_sth);
 #endif
             } else {
                 DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
-                DBIc_ACTIVE_on(imp_sth);
                 imp_sth->done_desc= 0;
                 imp_sth->fetch_done= 0;
             }
