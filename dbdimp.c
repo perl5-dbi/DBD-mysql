@@ -3999,29 +3999,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
 #if MYSQL_ASYNC
   D_imp_dbh_from_sth;
   if(imp_dbh->async_query_in_flight) {
-    if(imp_dbh->async_query_in_flight == imp_sth) {
-        imp_dbh->async_query_in_flight = NULL;
-
-        MYSQL* mysql = imp_dbh->pmysql;
-        int retval = mysql_read_query_result(mysql);
-        if(! retval) {
-          MYSQL_RES* result= mysql_store_result(mysql);
-
-          if (mysql_errno(mysql))
-            do_error(sth, mysql_errno(mysql), mysql_error(mysql)
-                     ,mysql_sqlstate(mysql));
-
-          if (result)
-            mysql_free_result(result);
-        } else {
-            do_error(sth, mysql_errno(mysql), mysql_error(mysql),
-                     mysql_sqlstate(mysql));
-            return 0;
-        }
-    } else {
-        do_error(sth, 2000, "Calling finish on the wrong handle", "HY000");
-        return 0;
-    }
+    mysql_db_async_result(sth, &imp_sth->result);
   }
 #endif
 
