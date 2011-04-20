@@ -82,7 +82,7 @@ unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
 plan tests => 
   2 * @db_safe_methods     +
   2 * @db_unsafe_methods   +
-  3 * @st_safe_methods     +
+  7 * @st_safe_methods     +
   2 * @common_safe_methods +
   3;
 
@@ -122,7 +122,6 @@ foreach my $method (@common_safe_methods) {
     ok defined($sth->mysql_async_result);
 }
 
-## check these during an async operation on a DBH
 ## what about checking DBH methods during an STH operation?
 foreach my $method (@st_safe_methods) {
     my $sth = $dbh->prepare('SELECT 1', { async => 1 });
@@ -134,6 +133,17 @@ foreach my $method (@st_safe_methods) {
     # statement safe methods clear async state
     ok !defined($sth->mysql_async_result), "Testing DBD::mysql::st method '$method' clears async state";
     like $sth->errstr, qr/Gathering asynchronous results for a synchronous handle/;
+}
+
+foreach my $method (@st_safe_methods) {
+    my $sync_sth  = $dbh->prepare('SELECT 1');
+    my $async_sth = $dbh->prepare('SELECT 1', { async => 1 });
+    $dbh->do('SELECT 1', { async => 1 });
+    ok !$sync_sth->execute;
+    ok $sync_sth->errstr;
+    ok !$async_sth->execute;
+    ok $async_sth->errstr;
+    $dbh->mysql_async_result;
 }
 
 my $sth = $dbh->prepare('SELECT 1', { async => 1 });
