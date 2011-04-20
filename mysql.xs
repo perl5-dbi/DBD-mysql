@@ -622,17 +622,19 @@ int mysql_fd(dbh)
   OUTPUT:
     RETVAL
 
-int mysql_async_result(dbh)
+void mysql_async_result(dbh)
     SV* dbh
-  CODE:
+  PPCODE:
     {
 #if MYSQL_ASYNC
         int retval;
 
         retval = mysql_db_async_result(dbh, NULL);
 
-        if(retval >= 0) {
-            RETVAL = retval;
+        if(retval > 0) {
+            XSRETURN_IV(retval);
+        } else if(retval == 0) {
+            XSRETURN_PV("0E0");
         } else {
             XSRETURN_UNDEF;
         }
@@ -641,8 +643,6 @@ int mysql_async_result(dbh)
         XSRETURN_UNDEF;
 #endif
     }
-  OUTPUT:
-    RETVAL
 
 void mysql_async_ready(dbh)
     SV* dbh
@@ -783,9 +783,12 @@ int mysql_async_result(sth)
 
         retval= mysql_db_async_result(sth, &imp_sth->result);
 
-        if(retval >= 0) {
+        if(retval > 0) {
             imp_sth->row_num = retval;
-            RETVAL = retval;
+            XSRETURN_IV(retval);
+        } else if(retval == 0) {
+            imp_sth->row_num = retval;
+            XSRETURN_PV("0E0");
         } else {
             XSRETURN_UNDEF;
         }
