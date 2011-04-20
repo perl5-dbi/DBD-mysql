@@ -81,7 +81,7 @@ unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
 }
 plan tests => 
   2 * @db_safe_methods     +
-  2 * @db_unsafe_methods   +
+  4 * @db_unsafe_methods   +
   7 * @st_safe_methods     +
   2 * @common_safe_methods +
   3;
@@ -144,6 +144,14 @@ foreach my $method (@st_safe_methods) {
     ok !$async_sth->execute;
     ok $async_sth->errstr;
     $dbh->mysql_async_result;
+}
+
+foreach my $method (@db_unsafe_methods) {
+    my $sth = $dbh->prepare('SELECT 1', { async => 1 });
+    $sth->execute;
+    ok !$dbh->do('SELECT 1', { async => 1 });
+    ok $dbh->errstr;
+    $sth->mysql_async_result;
 }
 
 my $sth = $dbh->prepare('SELECT 1', { async => 1 });
