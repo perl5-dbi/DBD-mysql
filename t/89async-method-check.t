@@ -23,10 +23,10 @@ my @db_unsafe_methods = qw/
 data_sources       do                 last_insert_id     selectrow_array
 selectrow_arrayref selectrow_hashref  selectall_arrayref selectall_hashref
 selectcol_arrayref prepare            prepare_cached     commit
-rollback           begin_work         disconnect         ping
-get_info           table_info         column_info        primary_key_info
-primary_key        foreign_key_info   statistics_info    tables
-type_info_all      type_info          quote              quote_identifier 
+rollback           begin_work         ping               get_info
+table_info         column_info        primary_key_info   primary_key
+foreign_key_info   statistics_info    tables             type_info_all
+type_info          quote              quote_identifier 
 /;
 
 my @st_safe_methods   = qw/
