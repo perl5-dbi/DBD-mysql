@@ -3402,6 +3402,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   dTHR;
 #endif
 
+  ASYNC_CHECK_RETURN(sth, -2);
+
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP,
       " -> dbd_st_execute for %08lx\n", (u_long) sth);
