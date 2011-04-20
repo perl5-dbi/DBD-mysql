@@ -769,13 +769,21 @@ BEGIN {
 package DBD::mysql::st; # ====== STATEMENT ======
 use strict;
 
-sub fetchrow_hashref {
-    my $sth = shift;
+BEGIN {
+    my @needs_async_result = qw/fetchrow_hashref fetchall_hashref/;
 
-    if(defined $sth->mysql_async_ready) {
-        return unless $sth->mysql_async_result;
+    foreach my $method (@needs_async_result) {
+        no strict 'refs';
+
+        my $super = "SUPER::$method";
+        *$method = sub {
+            my $sth = shift;
+            if(defined $sth->mysql_async_ready) {
+                return unless $sth->mysql_async_result;
+            }
+            return $sth->$super(@_);
+        };
     }
-    return $sth->SUPER::fetchrow_hashref(@_);
 }
 
 1;
