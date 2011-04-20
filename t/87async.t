@@ -21,7 +21,7 @@ unless($dbh) {
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
-plan tests => 49;
+plan tests => 57;
 
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 1;
@@ -160,6 +160,21 @@ $end = clock_gettime(CLOCK_REALTIME);
 ok(($end - $start) >= 5);
 ok !defined($dbh->mysql_async_result);
 ok !defined($dbh->mysql_async_ready);
+
+$rows = $dbh->do('UPDATE async_test SET value0 = 0 WHERE value0 = 999', { async => 1 });
+ok $rows;
+is $rows, '0E0';
+$rows = $dbh->mysql_async_result;
+ok $rows;
+is $rows, '0E0';
+
+$sth  = $dbh->prepare('UPDATE async_test SET value0 = 0 WHERE value0 = 999', { async => 1 });
+$rows = $sth->execute;
+ok $rows;
+is $rows, '0E0';
+$rows = $sth->mysql_async_result;
+ok $rows;
+is $rows, '0E0';
 
 undef $sth;
 ok $dbh->disconnect;
