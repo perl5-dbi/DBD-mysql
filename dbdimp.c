@@ -2158,8 +2158,6 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
 #endif
     D_imp_xxh(dbh);
 
-    ASYNC_CHECK_RETURN(dbh, FALSE);
-
     /* We assume that disconnect will always work       */
     /* since most errors imply already disconnected.    */
     DBIc_ACTIVE_off(imp_dbh);
