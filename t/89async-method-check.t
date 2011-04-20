@@ -122,7 +122,6 @@ foreach my $method (@common_safe_methods) {
     ok defined($sth->mysql_async_result);
 }
 
-## what about checking DBH methods during an STH operation?
 foreach my $method (@st_safe_methods) {
     my $sth = $dbh->prepare('SELECT 1', { async => 1 });
     $sth->execute;
