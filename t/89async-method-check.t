@@ -80,9 +80,10 @@ unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
 plan tests => 
-  2 * @db_safe_methods   +
-  2 * @db_unsafe_methods +
-  3 * @st_safe_methods   +
+  2 * @db_safe_methods     +
+  2 * @db_unsafe_methods   +
+  3 * @st_safe_methods     +
+  2 * @common_safe_methods +
   3;
 
 $dbh->do(<<SQL);
@@ -112,7 +113,15 @@ foreach my $method (@db_unsafe_methods) {
     ok defined($dbh->mysql_async_result);
 }
 
-## try common_safe_methods on sth
+foreach my $method (@common_safe_methods) {
+    my $sth = $dbh->prepare('SELECT 1', { async => 1 });
+    $sth->execute;
+    my $args = $dbh_args{$method} || []; # they're common methods, so this should be ok!
+    $sth->$method(@$args);
+    ok !$sth->errstr, "Testing method '$method' on DBD::mysql::db during asynchronous operation";
+    ok defined($sth->mysql_async_result);
+}
+
 ## check these during an async operation on a DBH
 ## what about checking DBH methods during an STH operation?
 foreach my $method (@st_safe_methods) {
