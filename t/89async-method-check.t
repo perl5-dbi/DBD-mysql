@@ -82,7 +82,7 @@ unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
 plan tests => 
   2 * @db_safe_methods   +
   2 * @db_unsafe_methods +
-  2 * @st_safe_methods   +
+  3 * @st_safe_methods   +
   3;
 
 $dbh->do(<<SQL);
@@ -125,6 +125,7 @@ foreach my $method (@st_safe_methods) {
 
     # statement safe methods clear async state
     ok !defined($sth->mysql_async_result), "Testing DBD::mysql::st method '$method' clears async state";
+    like $sth->errstr, qr/Gathering asynchronous results for a synchronous handle/;
 }
 
 my $sth = $dbh->prepare('SELECT 1', { async => 1 });
