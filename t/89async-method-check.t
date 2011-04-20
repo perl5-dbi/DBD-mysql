@@ -119,7 +119,6 @@ foreach my $method (@st_safe_methods) {
     my $sth = $dbh->prepare('SELECT 1', { async => 1 });
     $sth->execute;
     my $args = $sth_args{$method} || [];
-    diag "Testing method '$method'";
     $sth->$method(@$args);
     ok !$sth->errstr, "Testing method '$method' on DBD::mysql::st during asynchronous operation";
 
