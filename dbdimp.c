@@ -5008,11 +5008,11 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
     }
 
     if(! dbh->async_query_in_flight) {
-        do_error(h, 2000, "Calling mysql_async_result on a synchronous handle", "HY000");
+        do_error(h, 2000, "Gathering asynchronous results for a synchronous handle", "HY000");
         return -1;
     }
     if(dbh->async_query_in_flight != imp_xxh) {
-        do_error(h, 2000, "Calling mysql_async_result on the wrong handle", "HY000");
+        do_error(h, 2000, "Gathering async_query_in_flight results for the wrong handle", "HY000");
         return -1;
     }
     dbh->async_query_in_flight = NULL;
