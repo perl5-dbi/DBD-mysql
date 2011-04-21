@@ -3207,10 +3207,9 @@ my_ulonglong mysql_st_internal_execute(
 
 #if MYSQL_ASYNC
   if(async) {
-    int retval;
-    if((retval = mysql_send_query(svsock, sbuf, slen)) &&
+    if((mysql_send_query(svsock, sbuf, slen)) &&
        (!mysql_db_reconnect(h) ||
-        (retval = mysql_send_query(svsock, sbuf, slen))))
+        (mysql_send_query(svsock, sbuf, slen))))
     {
         Safefree(salloc);
         do_error(h, mysql_errno(svsock), mysql_error(svsock), 
