@@ -1,6 +1,7 @@
 #!perl -w
 # vim: ft=perl
 
+use Test::Deep;
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
@@ -21,7 +22,7 @@ unless($dbh) {
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
-plan tests => 59;
+plan tests => 87;
 
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 1;
@@ -182,6 +183,39 @@ ok !$rows;
 undef $sth;
 $rows = $dbh->do('INSERT INTO async_test VALUES(1, 2, 3)');
 is $rows, 1;
+
+$sth = $dbh->prepare('SELECT 1, value0, value1, value2 FROM async_test WHERE value0 = ?', { async => 1 });
+$sth->execute(1);
+is $sth->{'NUM_OF_FIELDS'}, undef;
+is $sth->{'NUM_OF_PARAMS'}, 1;
+is $sth->{'NAME'}, undef;
+is $sth->{'NAME_lc'}, undef;
+is $sth->{'NAME_uc'}, undef;
+is $sth->{'NAME_hash'}, undef;
+is $sth->{'NAME_lc_hash'}, undef;
+is $sth->{'NAME_uc_hash'}, undef;
+is $sth->{'TYPE'}, undef;
+is $sth->{'PRECISION'}, undef;
+is $sth->{'SCALE'}, undef;
+is $sth->{'NULLABLE'}, undef;
+is $sth->{'Database'}, $dbh;
+is $sth->{'Statement'}, 'SELECT 1, value0, value1, value2 FROM async_test WHERE value0 = ?';
+$sth->mysql_async_result;
+is $sth->{'NUM_OF_FIELDS'}, 4;
+is $sth->{'NUM_OF_PARAMS'}, 1;
+cmp_bag $sth->{'NAME'}, [qw/1 value0 value1 value2/];
+cmp_bag $sth->{'NAME_lc'}, [qw/1 value0 value1 value2/];
+cmp_bag $sth->{'NAME_uc'}, [qw/1 VALUE0 VALUE1 VALUE2/];
+cmp_bag [ keys %{$sth->{'NAME_hash'}} ], [qw/1 value0 value1 value2/];
+cmp_bag [ keys %{$sth->{'NAME_lc_hash'}} ], [qw/1 value0 value1 value2/];
+cmp_bag [ keys %{$sth->{'NAME_uc_hash'}} ], [qw/1 VALUE0 VALUE1 VALUE2/];
+is ref($sth->{'TYPE'}), 'ARRAY';
+is ref($sth->{'PRECISION'}), 'ARRAY';
+is ref($sth->{'SCALE'}), 'ARRAY';
+is ref($sth->{'NULLABLE'}), 'ARRAY';
+is $sth->{'Database'}, $dbh;
+is $sth->{'Statement'}, 'SELECT 1, value0, value1, value2 FROM async_test WHERE value0 = ?';
+$sth->finish;
 
 undef $sth;
 ok $dbh->disconnect;
