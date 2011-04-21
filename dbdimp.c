@@ -3211,43 +3211,41 @@ my_ulonglong mysql_st_internal_execute(
        (!mysql_db_reconnect(h) ||
         (mysql_send_query(svsock, sbuf, slen))))
     {
-        Safefree(salloc);
-        do_error(h, mysql_errno(svsock), mysql_error(svsock), 
-                 mysql_sqlstate(svsock));
-        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP, "IGNORING ERROR errno %d\n", errno);
-        return -2;
+        rows = -2;
+    } else {
+        rows = 0;
     }
-    Safefree(salloc);
-    rows = 0;
   } else {
 #endif
       if ((mysql_real_query(svsock, sbuf, slen))  &&
           (!mysql_db_reconnect(h)  ||
            (mysql_real_query(svsock, sbuf, slen))))
       {
-        Safefree(salloc);
-        do_error(h, mysql_errno(svsock), mysql_error(svsock), 
-                 mysql_sqlstate(svsock));
-        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP, "IGNORING ERROR errno %d\n", errno);
-        return -2;
+        rows = -2;
+      } else {
+          /** Store the result from the Query */
+          *result= use_mysql_use_result ?
+            mysql_use_result(svsock) : mysql_store_result(svsock);
+
+          if (mysql_errno(svsock))
+            do_error(h, mysql_errno(svsock), mysql_error(svsock)
+                     ,mysql_sqlstate(svsock));
+
+          if (!*result)
+            rows= mysql_affected_rows(svsock);
+          else
+            rows= mysql_num_rows(*result);
       }
-      Safefree(salloc);
-
-      /** Store the result from the Query */
-      *result= use_mysql_use_result ?
-        mysql_use_result(svsock) : mysql_store_result(svsock);
-
-      if (mysql_errno(svsock))
-        do_error(h, mysql_errno(svsock), mysql_error(svsock)
-                 ,mysql_sqlstate(svsock));
-
-      if (!*result)
-        rows= mysql_affected_rows(svsock);
-      else
-        rows= mysql_num_rows(*result);
 #if MYSQL_ASYNC
+  }
+  Safefree(salloc);
+
+  if(rows == -2) {
+    do_error(h, mysql_errno(svsock), mysql_error(svsock), 
+             mysql_sqlstate(svsock));
+    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+      PerlIO_printf(DBILOGFP, "IGNORING ERROR errno %d\n", errno);
+    rows = -2;
   }
 #endif
   return(rows);
