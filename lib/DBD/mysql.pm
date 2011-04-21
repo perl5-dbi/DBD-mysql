@@ -1759,6 +1759,32 @@ safe (By default it isn't.) by passing the option -with-thread-safe-client
 to configure. See the section on I<How to make a threadsafe client> in
 the manual.
 
+=head1 ASYNCHRONOUS QUERIES
+
+You can make a single asynchronous query per MySQL connection; this allows
+you to submit a long-running query to the server and have an event loop
+inform you when it's ready.  An asynchronous query is started by either
+setting the 'async' attribute to a truthy value in the L<DBI/do> method,
+or in the L<DBI/prepare> method.  Statements created with 'async' set to
+true in prepare always run their queries asynchronously when L<DBI/execute>
+is called.  The driver also offers three additional methods:
+C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>. 
+C<mysql_async_result> returns what do or execute would have; that is, the
+number of rows affected.  C<mysql_async_ready> returns true if
+C<mysql_async_result> will not block, and zero otherwise.  They both return
+C<undef> if that handle is not currently running an asynchronous query.
+C<mysql_fd> returns the file descriptor number for the MySQL connection; you
+can use this in an event loop.
+
+Here's an example of how to use the asynchronous query interface:
+
+  use feature 'say';
+  $dbh->do('SELECT SLEEP(10)', { async => 1 });
+  until($dbh->mysql_async_ready) {
+    say 'not ready yet!';
+    sleep 1;
+  }
+  my $rows = $dbh->mysql_async_result;
 
 =head1 INSTALLATION
 
