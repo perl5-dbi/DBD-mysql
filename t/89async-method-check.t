@@ -66,7 +66,14 @@ my %dbh_args = (
 );
 
 my %sth_args = (
-    fetchall_hashref => [1],
+    fetchall_hashref  => [1],
+    bind_param        => [1, 1],
+    bind_param_inout  => [1, \(my $scalar = 1), 64],
+    bind_param_array  => [1, [1]],
+    execute_array     => [{ ArrayTupleStatus => [] }, [1]],
+    execute_for_fetch => [sub { undef } ],
+    bind_col          => [1, \(my $scalar2 = 1)],
+    bind_columns      => [\(my $scalar3)],
 );
 
 my $dbh;
@@ -84,6 +91,7 @@ plan tests =>
   4 * @db_unsafe_methods   +
   7 * @st_safe_methods     +
   2 * @common_safe_methods +
+  2 * @st_unsafe_methods   +
   3;
 
 $dbh->do(<<SQL);
@@ -151,6 +159,16 @@ foreach my $method (@db_unsafe_methods) {
     ok !$dbh->do('SELECT 1', { async => 1 });
     ok $dbh->errstr;
     $sth->mysql_async_result;
+}
+
+foreach my $method (@st_unsafe_methods) {
+    my $sth = $dbh->prepare('SELECT value FROM async_test WHERE value = ?', { async => 1 });
+    $sth->execute(1);
+    my $args = $sth_args{$method} || [];
+    my @values = $sth->$method(@$args);
+    like $dbh->errstr, qr/Calling a synchronous function on an asynchronous handle/, "Testing method '$method' on DBD::mysql::st during asynchronous operation";
+
+    ok(defined $sth->mysql_async_result);
 }
 
 my $sth = $dbh->prepare('SELECT 1', { async => 1 });
