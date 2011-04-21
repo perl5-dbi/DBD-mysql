@@ -4559,6 +4559,9 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   unsigned int buffer_type= 0;
 #endif
 
+  D_imp_dbh_from_sth;
+  ASYNC_CHECK_RETURN(sth, FALSE);
+
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP,
                   "   Called: dbd_bind_ph\n");
