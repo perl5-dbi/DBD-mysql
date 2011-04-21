@@ -823,6 +823,17 @@ void mysql_async_ready(sth)
 #endif
     }
 
+void _async_check(sth)
+    SV* sth
+  PPCODE:
+    {
+        D_imp_sth(sth);
+        D_imp_dbh_from_sth;
+        ASYNC_CHECK_XS(sth);
+        XSRETURN_YES;
+    }
+
+
 MODULE = DBD::mysql    PACKAGE = DBD::mysql::GetInfo
 
 # This probably should be grabed out of some ODBC types header file
