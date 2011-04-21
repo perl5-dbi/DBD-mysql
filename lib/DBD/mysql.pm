@@ -771,6 +771,7 @@ use strict;
 
 BEGIN {
     my @needs_async_result = qw/fetchrow_hashref fetchall_hashref/;
+    my @needs_async_check = qw/bind_param_array bind_col bind_columns execute_for_fetch/;
 
     foreach my $method (@needs_async_result) {
         no strict 'refs';
@@ -782,6 +783,17 @@ BEGIN {
                 return unless $sth->mysql_async_result;
             }
             return $sth->$super(@_);
+        };
+    }
+
+    foreach my $method (@needs_async_check) {
+        no strict 'refs';
+
+        my $super = "SUPER::$method";
+        *$method = sub {
+            my $h = shift;
+            return unless $h->func('_async_check');
+            return $h->$super(@_);
         };
     }
 }
