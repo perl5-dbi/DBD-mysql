@@ -269,8 +269,8 @@ do(dbh, statement, attr=Nullsv, ...)
   MYSQL_BIND      *bind= NULL;
   imp_sth_phb_t   *fbind= NULL;
 #endif
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     ASYNC_CHECK_XS(dbh);
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     while (mysql_next_result(imp_dbh->pmysql)==0)
     {
       MYSQL_RES* res = mysql_use_result(imp_dbh->pmysql);
