@@ -43,25 +43,25 @@ my $sth;
 my ( $a, $b, $c );
 
 $start = clock_gettime(CLOCK_REALTIME);
-$rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(5), 0, 0)');
+$rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)');
 $end = clock_gettime(CLOCK_REALTIME);
 
 is $rows, 1;
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 
 $start = clock_gettime(CLOCK_REALTIME);
-$rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(5), 0, 0)', { async => 1 });
+$rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)', { async => 1 });
 ok defined($dbh->mysql_async_ready);
 $end = clock_gettime(CLOCK_REALTIME);
 
 ok $rows;
 is $rows, '0E0';
 
-ok(($end - $start) < 5);
+ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
 ok !defined($dbh->mysql_async_ready);
@@ -75,17 +75,17 @@ is $rows, 2;
 $dbh->do('DELETE FROM async_test');
 
 $start = clock_gettime(CLOCK_REALTIME);
-$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(5), ?, ?)', { async => 1 }, 1, 2);
+$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async => 1 }, 1, 2);
 $end = clock_gettime(CLOCK_REALTIME);
 
 ok $rows;
 is $rows, '0E0';
 
-ok(($end - $start) < 5);
+ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
 
@@ -97,20 +97,20 @@ is $a, 0;
 is $b, 1;
 is $c, 2;
 
-$sth = $dbh->prepare('SELECT SLEEP(5)');
+$sth = $dbh->prepare('SELECT SLEEP(2)');
 ok !defined($sth->mysql_async_ready);
 $start = clock_gettime(CLOCK_REALTIME);
 ok $sth->execute;
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 
-$sth = $dbh->prepare('SELECT SLEEP(5)', { async => 1 });
+$sth = $dbh->prepare('SELECT SLEEP(2)', { async => 1 });
 ok !defined($sth->mysql_async_ready);
 $start = clock_gettime(CLOCK_REALTIME);
 ok $sth->execute;
 ok defined($sth->mysql_async_ready);
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) < 5);
+ok(($end - $start) < 2);
 
 sleep 1 until $sth->mysql_async_ready;
 
@@ -118,9 +118,9 @@ my $row = $sth->fetch;
 $end = clock_gettime(CLOCK_REALTIME);
 ok $row;
 is $row->[0], 0;
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 
-$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(5), ?, ?', { async => 1 }, 1, 2);
+$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?', { async => 1 }, 1, 2);
 
 ok $rows;
 ok !$dbh->errstr;
@@ -130,17 +130,17 @@ ok $dbh->errstr;
 
 $dbh->do('DELETE FROM async_test');
 
-$sth = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(5), ?, ?)', { async => 1 });
+$sth = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async => 1 });
 $start = clock_gettime(CLOCK_REALTIME);
 $rows = $sth->execute(1, 2);
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) < 5);
+ok(($end - $start) < 2);
 ok $rows;
 is $rows, '0E0';
 
 $rows = $sth->mysql_async_result;
 $end = clock_gettime(CLOCK_REALTIME);
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 is $rows, 1;
 
 ( $a, $b, $c ) = $dbh->selectrow_array('SELECT * FROM async_test');
@@ -149,15 +149,15 @@ is $a, 0;
 is $b, 1;
 is $c, 2;
 
-$sth  = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(5), ?, ?)', { async => 1 });
-$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(5), ?, ?)', undef, 1, 2);
+$sth  = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async => 1 });
+$rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', undef, 1, 2);
 is $rows, 1;
 
 $start = clock_gettime(CLOCK_REALTIME);
-$dbh->selectrow_array('SELECT SLEEP(5)', { async => 1 });
+$dbh->selectrow_array('SELECT SLEEP(2)', { async => 1 });
 $end = clock_gettime(CLOCK_REALTIME);
 
-ok(($end - $start) >= 5);
+ok(($end - $start) >= 2);
 ok !defined($dbh->mysql_async_result);
 ok !defined($dbh->mysql_async_ready);
 
