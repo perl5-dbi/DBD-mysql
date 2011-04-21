@@ -21,7 +21,7 @@ unless($dbh) {
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
-plan tests => 57;
+plan tests => 59;
 
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 1;
@@ -175,6 +175,13 @@ is $rows, '0E0';
 $rows = $sth->mysql_async_result;
 ok $rows;
 is $rows, '0E0';
+
+$sth->execute;
+$rows = $dbh->do('INSERT INTO async_test VALUES(1, 2, 3)');
+ok !$rows;
+undef $sth;
+$rows = $dbh->do('INSERT INTO async_test VALUES(1, 2, 3)');
+is $rows, 1;
 
 undef $sth;
 ok $dbh->disconnect;
