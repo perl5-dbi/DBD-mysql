@@ -22,7 +22,7 @@ unless($dbh) {
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
-plan tests => 87;
+plan tests => 92;
 
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 1;
@@ -215,6 +215,27 @@ is ref($sth->{'SCALE'}), 'ARRAY';
 is ref($sth->{'NULLABLE'}), 'ARRAY';
 is $sth->{'Database'}, $dbh;
 is $sth->{'Statement'}, 'SELECT 1, value0, value1, value2 FROM async_test WHERE value0 = ?';
+$sth->finish;
+
+$sth->execute(1);
+$row = $sth->fetch;
+is_deeply $row, [1, 1, 2, 3];
+$sth->finish;
+
+$sth->execute(1);
+$row = $sth->fetchrow_arrayref;
+is_deeply $row, [1, 1, 2, 3];
+$sth->finish;
+
+$sth->execute(1);
+my @row = $sth->fetchrow_array;
+is_deeply \@row, [1, 1, 2, 3];
+$sth->finish;
+
+$sth->execute(1);
+$row = $sth->fetchrow_hashref;
+cmp_bag [ keys %$row ], [qw/1 value0 value1 value2/];
+cmp_bag [ values %$row ], [1, 1, 2, 3];
 $sth->finish;
 
 undef $sth;
