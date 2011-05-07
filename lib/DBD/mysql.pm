@@ -650,7 +650,7 @@ sub foreign_key_info {
         $fk_catalog, $fk_schema, $fk_table,
        ) = @_;
 
-    return unless $dbh->func('_async_check');
+#return unless $dbh->func('_async_check');
 
     # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
     my ($maj, $min, $point) = _version($dbh);
