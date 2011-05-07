@@ -650,11 +650,12 @@ sub foreign_key_info {
         $fk_catalog, $fk_schema, $fk_table,
        ) = @_;
 
-#return unless $dbh->func('_async_check');
+    return unless $dbh->func('_async_check');
 
     # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
+    # no one is going to be running 5.0.6, taking out the check for .6!!
     my ($maj, $min, $point) = _version($dbh);
-    return if $maj < 5 || ($maj == 5 && $point < 6);
+    return if $maj < 5 ;
 
     my $sql = <<'EOF';
 SELECT NULL AS PKTABLE_CAT,
