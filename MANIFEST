@@ -54,6 +54,7 @@ t/75supported_sql.t
 t/76multi_statement.t
 t/80procs.t
 t/85init_command.t
+t/86_bug_36972.t
 t/lib.pl
 t/mysql.dbtest
 t/mysql.mtest

@@ -2460,6 +2460,18 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       result = sv_2mortal(newSViv(imp_dbh->bind_comment_placeholders));
     }
     break;
+  case 'c':
+    if (kl == 10 && strEQ(key, "clientinfo"))
+    {
+      const char* clientinfo = mysql_get_client_info();
+      result= clientinfo ?
+        sv_2mortal(newSVpv(clientinfo, strlen(clientinfo))) : &sv_undef;
+    }
+    else if (kl == 13 && strEQ(key, "clientversion"))
+    {
+      result= sv_2mortal(my_ulonglong2str(mysql_get_client_version()));
+    }
+    break;
   case 'e':
     if (strEQ(key, "errno"))
       result= sv_2mortal(newSViv((IV)mysql_errno(imp_dbh->pmysql)));
@@ -2535,6 +2547,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       result= serverinfo ?
         sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     }
+    else if (kl == 13 && strEQ(key, "serverversion"))
+      result= sv_2mortal(my_ulonglong2str(mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv((IV) imp_dbh->pmysql));
     else if (strEQ(key, "sockfd"))

@@ -1,3 +1,8 @@
+2010-10-11 Patrick Galbraith <patg@patg.net> (4.018)
+* Added client and server info patch from Robert M. Jansen
+* Added documentation and tests for new features
+* More code cleanup
+
 2010-08-11 Patrick Galbraith <patg@patg.net> (4.017)
 * BUG #60085, Andreas Koenig's patch for DBI changes
 * Updated documents
