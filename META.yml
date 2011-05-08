@@ -1,12 +1,23 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         DBD-mysql
-version:      4.008
-version_from: lib/DBD/mysql.pm
-installdirs:  site
+--- #YAML:1.0
+name:               DBD-mysql
+version:            4.018
+abstract:           A MySQL driver for the Perl5 Database Interface (DBI)
+author:
+    - Rudy Lippan <rlippan@remotelinux.com>
+license:            unknown
+distribution_type:  module
+configure_requires:
+    ExtUtils::MakeMaker:  0
+build_requires:
+    ExtUtils::MakeMaker:  0
 requires:
-    Data::Dumper:                  0
-    DBI:                           1.08
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.17
+    Data::Dumper:  0
+    DBI:           1.08
+no_index:
+    directory:
+        - t
+        - inc
+generated_by:       ExtUtils::MakeMaker version 6.54
+meta-spec:
+    url:      http://module-build.sourceforge.net/META-spec-v1.4.html
+    version:  1.4

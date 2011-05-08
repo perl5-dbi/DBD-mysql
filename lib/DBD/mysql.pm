@@ -9,7 +9,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.017';
+$VERSION = '4.018';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1481,6 +1481,27 @@ A reference to an array of maximum column sizes. The I<max_length> is
 the maximum physically present in the result table, I<length> gives
 the theoretically possible maximum. I<max_length> is valid for MySQL
 only.
+
+=item mysql_clientinfo
+
+List information of the MySQL client library that DBD::mysql was built
+against:
+
+print "$dbh->{mysql_clientinfo}\n";
+
+5.2.0-MariaDB
+
+=item mysql_clientversion
+
+print "$dbh->{mysql_clientversion}\n";
+
+50200
+
+=item mysql_serverversion
+
+print "$dbh->{mysql_serverversion}\n";
+
+50200
 
 =item NAME
 
