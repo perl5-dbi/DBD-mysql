@@ -102,7 +102,7 @@ count_params(char *statement, bool bind_comment_placeholders)
 
               if  (c == '-') {
                   /* if two dashes, ignore everything until newline */
-                  while (c = *ptr)
+                  while ((c = *ptr))
                   {
                       if (dbis->debug >= 2)
                           PerlIO_printf(DBILOGFP, "%c\n", c);
@@ -145,7 +145,7 @@ count_params(char *statement, bool bind_comment_placeholders)
                   comment_length= 0;
                   comment_end= false;
                   /* ignore everything until closing comment */
-                  while (c= *ptr)
+                  while ((c= *ptr))
                   {
                       ptr++;
                       comment_length++;
@@ -2465,7 +2465,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* clientinfo = mysql_get_client_info();
       result= clientinfo ?
-        sv_2mortal(newSVpv(clientinfo, strlen(clientinfo))) : &sv_undef;
+        sv_2mortal(newSVpv(clientinfo, strlen(clientinfo))) : &PL_sv_undef;
     }
     else if (kl == 13 && strEQ(key, "clientversion"))
     {
@@ -3360,7 +3360,7 @@ my_ulonglong mysql_st_internal_execute41(
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBILOGFP,
                   "\t<- mysql_internal_execute_41 returning %d rows\n",
-                  rows);
+                  (int) rows);
   return(rows);
 
 error:
@@ -3588,10 +3588,10 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       {
         PerlIO_printf(DBILOGFP,"\t\ti %d col_type %d fbh->length %d\n",
-                      i, col_type, fbh->length);
+                      i, col_type, (int) fbh->length);
         PerlIO_printf(DBILOGFP,
                       "\t\tfields[i].length %d fields[i].type %d fields[i].charsetnr %d\n",
-                      fields[i].length, fields[i].type,
+                      (int) fields[i].length, fields[i].type,
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
@@ -3817,7 +3817,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         case MYSQL_TYPE_LONG:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch int data %d, unsigned? %d\n",
-                          fbh->ldata, buffer->is_unsigned);
+                          (int) fbh->ldata, buffer->is_unsigned);
           if (buffer->is_unsigned)
             sv_setuv(sv, fbh->ldata);
           else
@@ -3859,9 +3859,9 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     {
       PerlIO_printf(DBILOGFP, "\tdbd_st_fetch result set details\n");
-      PerlIO_printf(DBILOGFP, "\timp_sth->result=%08lx\n",imp_sth->result);
+      PerlIO_printf(DBILOGFP, "\timp_sth->result=%08lx\n",(long unsigned int) imp_sth->result);
       PerlIO_printf(DBILOGFP, "\tmysql_num_fields=%llu\n",
-                    mysql_num_fields(imp_sth->result));
+                    (long long unsigned int) mysql_num_fields(imp_sth->result));
       PerlIO_printf(DBILOGFP, "\tmysql_num_rows=%llu\n",
                     mysql_num_rows(imp_sth->result));
       PerlIO_printf(DBILOGFP, "\tmysql_affected_rows=%llu\n",
@@ -4451,7 +4451,7 @@ dbd_st_FETCH_internal(
       {
         /* We cannot return an IV, because the insertid is a long.  */
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP, "INSERT ID %d\n", imp_sth->insertid);
+          PerlIO_printf(DBILOGFP, "INSERT ID %d\n", (int) imp_sth->insertid);
 
         return sv_2mortal(my_ulonglong2str(imp_sth->insertid));
       }
@@ -4660,7 +4660,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP,
                           "   SCALAR type %d ->%ld<- IS A INT NUMBER\n",
-                          sql_type, (long) (*buffer));
+                          (int) sql_type, (long) (*buffer));
           break;
 
         case MYSQL_TYPE_DOUBLE:
@@ -4672,7 +4672,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP,
                           "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
-                          sql_type, (double)(*buffer));
+                          (int) sql_type, (double)(*buffer));
           break;
 
         case MYSQL_TYPE_BLOB:
@@ -4684,7 +4684,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case MYSQL_TYPE_STRING:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP,
-                          "   SCALAR type STRING %d, buffertype=%d\n", sql_type, buffer_type);
+                          "   SCALAR type STRING %d, buffertype=%d\n", (int) sql_type, buffer_type);
           break;
 
         default:
@@ -4698,7 +4698,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBILOGFP,
                         " SCALAR type %d ->length %d<- IS A STRING or BLOB\n",
-                        sql_type, buffer_length);
+                        (int) sql_type, buffer_length);
       }
     }
     else
@@ -4719,7 +4719,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBILOGFP,
                         "   FORCE REBIND: buffer type changed from %d to %d, sql-type=%d\n",
-                        imp_sth->bind[idx].buffer_type, buffer_type, sql_type);
+                        (int) imp_sth->bind[idx].buffer_type, buffer_type, (int) sql_type);
       imp_sth->has_been_bound = 0;
     }
 
