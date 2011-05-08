@@ -123,7 +123,7 @@ sub connect {
     DBD::mysql->_OdbcParse($dsn, $privateAttrHash,
 				    ['database', 'host', 'port']);
 
-    
+
     if ($DBI::VERSION >= 1.49)
     {
       $dbi_imp_data = delete $attrhash->{dbi_imp_data};
@@ -277,11 +277,11 @@ sub table_info ($) {
       (!defined($table) || $table eq ""))
   {
     my $sth = $dbh->prepare("SHOW DATABASES")
-      or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+      or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
           return undef);
 
     $sth->execute()
-      or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+      or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
         return DBI::set_err($dbh, $sth->err(), $sth->errstr()));
 
     while (my $ref = $sth->fetchrow_arrayref())
@@ -318,10 +318,10 @@ sub table_info ($) {
     {
       my $sth = $dbh->prepare("SHOW DATABASES LIKE " .
           $dbh->quote($schema))
-        or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+        or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
         return undef);
       $sth->execute()
-        or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+        or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
         return DBI::set_err($dbh, $sth->err(), $sth->errstr()));
 
       while (my $ref = $sth->fetchrow_arrayref())
@@ -352,7 +352,7 @@ sub table_info ($) {
       my $sth = $dbh->prepare("SHOW /*!50002 FULL*/ TABLES FROM " .
           $dbh->quote_identifier($database) .
           " LIKE " .  $dbh->quote($table))
-          or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+          or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
           return undef);
 
       $sth->execute() or
@@ -375,8 +375,8 @@ sub table_info ($) {
     rows          => \@rows,
     NUM_OF_FIELDS => scalar @names,
     NAME          => \@names,
-  }) 
-    or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save && 
+  })
+    or ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
       return $dbh->DBI::set_err($sponge->err(), $sponge->errstr()));
 
   $dbh->{mysql_server_prepare}= $mysql_server_prepare_save;
@@ -428,7 +428,7 @@ sub column_info {
   #return $desc_sth if $desc_sth->err();
   if (my $err = $desc_sth->err())
   {
-    # return the error, unless it is due to the table not 
+    # return the error, unless it is due to the table not
     # existing per DBI spec
     if ($err != $ER_NO_SUCH_TABLE)
     {
@@ -512,7 +512,7 @@ sub column_info {
 	    $info->{"mysql_values"} = \@type_params;
     }
     elsif ($basetype =~ /int/)
-    { 
+    {
       # big/medium/small/tiny etc + unsigned?
 	    $info->{DATA_TYPE} = SQL_INTEGER();
 	    $info->{NUM_PREC_RADIX} = 10;
@@ -532,12 +532,12 @@ sub column_info {
 	    $info->{COLUMN_SIZE} = ($basetype eq 'float') ? 32 : 64;
     }
     elsif ($basetype =~ /date|time/)
-    { 
+    {
       # date/datetime/time/timestamp
 	    if ($basetype eq 'time' or $basetype eq 'date')
       {
 		    #$info->{DATA_TYPE}   = ($basetype eq 'time') ? SQL_TYPE_TIME() : SQL_TYPE_DATE();
-        $info->{DATA_TYPE}   = ($basetype eq 'time') ? SQL_TIME() : SQL_DATE(); 
+        $info->{DATA_TYPE}   = ($basetype eq 'time') ? SQL_TIME() : SQL_DATE();
         $info->{COLUMN_SIZE} = ($basetype eq 'time') ? 8 : 10;
       }
 	    else
@@ -552,7 +552,7 @@ sub column_info {
 	    $info->{DECIMAL_DIGITS}= 0; # no fractional seconds
     }
     elsif ($basetype eq 'year')
-    {	
+    {
       # no close standard so treat as int
 	    $info->{DATA_TYPE}      = SQL_INTEGER();
 	    $info->{NUM_PREC_RADIX} = 10;
@@ -612,7 +612,7 @@ sub primary_key_info {
   }
 
   my $sponge = DBI->connect("DBI:Sponge:", '','')
-    or 
+    or
      ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
       return $dbh->DBI::set_err($DBI::err, "DBI::Sponge: $DBI::errstr"));
 
@@ -620,7 +620,7 @@ sub primary_key_info {
       rows          => [ map { [ @{$_}{@names} ] } values %col_info ],
       NUM_OF_FIELDS => scalar @names,
       NAME          => \@names,
-      }) or 
+      }) or
        ($dbh->{mysql_server_prepare}= $mysql_server_prepare_save &&
         return $dbh->DBI::set_err($sponge->err(), $sponge->errstr()));
 
@@ -1023,7 +1023,7 @@ flags:
 =item mysql_ssl_cipher
 
 These are used to specify the respective parameters of a call
-to mysql_ssl_set, if mysql_ssl is turned on.  
+to mysql_ssl_set, if mysql_ssl is turned on.
 
 
 =item mysql_local_infile
@@ -1043,12 +1043,12 @@ problems if server-side prepared statements are also enabled.
 =item Prepared statement support (server side prepare)
 
 As of 3.0002_1, server side prepare statements were on by default (if your
-server was >= 4.1.3). As of 3.0009, they were off by default again due to 
+server was >= 4.1.3). As of 3.0009, they were off by default again due to
 issues with the prepared statement API (all other mysql connectors are
 set this way until C API issues are resolved). The requirement to use
 prepared statements still remains that you have a server >= 4.1.3
 
-To use server side prepared statements, all you need to do is set the variable 
+To use server side prepared statements, all you need to do is set the variable
 mysql_server_prepare in the connect:
 
 $dbh = DBI->connect(
@@ -1060,8 +1060,8 @@ $dbh = DBI->connect(
 
 * Note: delimiter for this param is ';'
 
-There are many benefits to using server side prepare statements, mostly if you are 
-performing many inserts because of that fact that a single statement is prepared 
+There are many benefits to using server side prepare statements, mostly if you are
+performing many inserts because of that fact that a single statement is prepared
 to accept multiple insert values.
 
 To make sure that the 'make test' step tests whether server prepare works, you just
@@ -1072,7 +1072,7 @@ export MYSQL_SERVER_PREPARE=1
 
 =item mysql_embedded_options
 
-The option <mysql_embedded_options> can be used to pass 'command-line' 
+The option <mysql_embedded_options> can be used to pass 'command-line'
 options to embedded server.
 
 Example:
@@ -1087,8 +1087,8 @@ to be printed.
 
 =item mysql_embedded_groups
 
-The option <mysql_embedded_groups> can be used to specify the groups in the 
-config file(I<my.cnf>) which will be used to get options for embedded server. 
+The option <mysql_embedded_groups> can be used to specify the groups in the
+config file(I<my.cnf>) which will be used to get options for embedded server.
 If not specified [server] and [embedded] groups will be used.
 
 Example:
@@ -1215,7 +1215,7 @@ The following stats are being maintained:
 
 =item auto_reconnects_ok
 
-The number of times that DBD::mysql successfully reconnected to the mysql 
+The number of times that DBD::mysql successfully reconnected to the mysql
 server.
 
 =item auto_reconnects_failed
@@ -1235,9 +1235,9 @@ handles (read/write):
 
 This attribute determines whether DBD::mysql will automatically reconnect
 to mysql if the connection be lost. This feature defaults to off; however,
-if either the GATEWAY_INTERFACE or MOD_PERL envionment variable is set, 
-DBD::mysql will turn mysql_auto_reconnect on.  Setting mysql_auto_reconnect 
-to on is not advised if 'lock tables' is used because if DBD::mysql reconnect 
+if either the GATEWAY_INTERFACE or MOD_PERL envionment variable is set,
+DBD::mysql will turn mysql_auto_reconnect on.  Setting mysql_auto_reconnect
+to on is not advised if 'lock tables' is used because if DBD::mysql reconnect
 to mysql all table locks will be lost.  This attribute is ignored when
 AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
@@ -1249,10 +1249,10 @@ mysql_store_result. The former is faster and less memory consuming, but
 tends to block other processes. (That's why mysql_store_result is the
 default.)
 
-It is possible to set default value of the C<mysql_use_result> attribute 
+It is possible to set default value of the C<mysql_use_result> attribute
 for $dbh using several ways:
 
- - through DSN 
+ - through DSN
 
    $dbh= DBI->connect("DBI:mysql:test;mysql_use_result=1", "root", "");
 
@@ -1261,7 +1261,7 @@ for $dbh using several ways:
    $dbh->{'mysql_use_result'}=0; #disable
    $dbh->{'mysql_use_result'}=1; #enable
 
-It is possible to set/unset the C<mysql_use_result> attribute after 
+It is possible to set/unset the C<mysql_use_result> attribute after
 creation of statement handle. See below.
 
 =item mysql_enable_utf8
@@ -1284,19 +1284,19 @@ This option is experimental and may change in future versions.
 
 =item mysql_bind_type_guessing
 
-This attribute causes the driver (emulated prepare statements) 
+This attribute causes the driver (emulated prepare statements)
 to attempt to guess if a value being bound is a numeric value,
-and if so, doesn't quote the value.  This was created by 
-Dragonchild and is one way to deal with the performance issue 
+and if so, doesn't quote the value.  This was created by
+Dragonchild and is one way to deal with the performance issue
 of using quotes in a statement that is inserting or updating a
-large numeric value. This was previously called 
-C<unsafe_bind_type_guessing> because it is experimental. I have 
+large numeric value. This was previously called
+C<unsafe_bind_type_guessing> because it is experimental. I have
 successfully run the full test suite with this option turned on,
-the name can now be simply C<mysql_bind_type_guessing>. 
+the name can now be simply C<mysql_bind_type_guessing>.
 
-CAVEAT: Even though you can insert an integer value into a 
+CAVEAT: Even though you can insert an integer value into a
 character column, if this column is indexed, if you query that
-column with the integer value not being quoted, it will not 
+column with the integer value not being quoted, it will not
 use the index:
 
 MariaDB [test]> explain select * from test where value0 = '3' \G
@@ -1333,17 +1333,17 @@ See bug: https://rt.cpan.org/Ticket/Display.html?id=43822
 
 =item mysql_bind_comment_placeholders
 
-This attribute causes the driver (emulated prepare statements) 
-will cause any placeholders in comments to be bound. This is 
+This attribute causes the driver (emulated prepare statements)
+will cause any placeholders in comments to be bound. This is
 not correct prepared statement behavior, but some developers
-have come to depend on this behavior, so I have made it available 
+have come to depend on this behavior, so I have made it available
 in 4.015
 
 See bug: https://rt.cpan.org/Ticket/Display.html?id=
 
-C<mysql_bind_type_guessing> can be turned on via 
+C<mysql_bind_type_guessing> can be turned on via
 
- - through DSN 
+ - through DSN
 
   my $dbh= DBI->connect('DBI:mysql:test', 'username', 'pass',
   { mysql_bind_type_guessing => 1})
@@ -1355,7 +1355,7 @@ C<mysql_bind_type_guessing> can be turned on via
 =item mysql_no_autocommit_cmd
 
 This attribute causes the driver to not issue 'set autocommit'
-either through explicit or using mysql_autocommit(). This is 
+either through explicit or using mysql_autocommit(). This is
 particularly useful in the case of using MySQL Proxy.
 
 See the bug report:
@@ -1366,9 +1366,9 @@ As well as:
 
 http://bugs.mysql.com/bug.php?id=32464
 
-C<mysql_no_autocommit_cmd> can be turned on via 
+C<mysql_no_autocommit_cmd> can be turned on via
 
- - through DSN 
+ - through DSN
 
   my $dbh= DBI->connect('DBI:mysql:test', 'username', 'pass',
   { mysql_no_autocommit_cmd => 1})
@@ -1628,14 +1628,14 @@ due to a timeout, then by default the driver will reconnect and
 attempt to execute the same SQL statement again. However, this
 behaviour is disabled when AutoCommit is off: Otherwise the
 transaction state would be completely unpredictable after a
-reconnect.  
+reconnect.
 
 =item *
 
 The "reconnect" feature of DBD::mysql can be toggled by using the
 L<mysql_auto_reconnect> attribute. This behaviour should be turned off
 in code that uses LOCK TABLE because if the database server time out
-and DBD::mysql reconnect, table locks will be lost without any 
+and DBD::mysql reconnect, table locks will be lost without any
 indication of such loss.
 
 =back
@@ -1645,12 +1645,12 @@ indication of such loss.
 =head1 MULTIPLE RESULT SETS
 
 As of version 3.0002_5, DBD::mysql supports multiple result sets (Thanks
-to Guy Harrison!). This is the first release of this functionality, so 
+to Guy Harrison!). This is the first release of this functionality, so
 there may be issues. Please report bugs if you run into them!
 
 The basic usage of multiple result sets is
 
-  do 
+  do
   {
     while (@row= $sth->fetchrow_array())
     {
@@ -1675,7 +1675,7 @@ An example would be:
    select c, b, d, a;
   end") or print $DBI::errstr;
 
-  $sth=$dbh->prepare('call someproc()') || 
+  $sth=$dbh->prepare('call someproc()') ||
   die $DBI::err.": ".$DBI::errstr;
 
   $sth->execute || die DBI::err.": ".$DBI::errstr; $rowset=0;
@@ -1692,7 +1692,7 @@ An example would be:
       print "\n";
     }
   } until (!$sth->more_results)
- 
+
 For more examples, please see the eg/ directory. This is where helpful
 DBD::mysql code snippits will be added in the future.
 
@@ -1725,6 +1725,32 @@ the manual.
 Windows users may skip this section and pass over to L<WIN32
 INSTALLATION> below. Others, go on reading.
 
+=head2 Environment Variables
+
+For ease of use, you can now set environment variables for
+DBD::mysql installation. You can set any or all of the options, and
+export them by putting them in your .bashrc or the like:
+
+    export DBD_MYSQL_CFLAGS=-I/usr/local/mysql/include/mysql
+    export DBD_MYSQL_LIBS="-L/usr/local/mysql/lib/mysql -lmysqlclient"
+    export DBD_MYSQL_EMBEDDED=
+    export DBD_MYSQL_CONFIG=mysql_config
+    export DBD_MYSQL_NOCATCHSTDERR=0
+    export DBD_MYSQL_NOFOUNDROWS=0
+    export DBD_MYSQL_SSL=
+    export DBD_MYSQL_TESTDB=test
+    export DBD_MYSQL_TESTHOST=localhost
+    export DBD_MYSQL_TESTPASSWORD=s3kr1+
+    export DBD_MYSQL_TESTPORT=3306
+    export DBD_MYSQL_TESTUSER=me
+
+The most useful may be the host, database, port, socket, user, and password.
+
+Installation will first look to your mysql_config, and then your
+environment variables, and then it will guess with intelligent defaults.
+
+=head2 Installing with CPAN
+
 First of all, you do not need an installed MySQL server for installing
 DBD::mysql. However, you need at least the client
 libraries and possibly the header files, if you are compiling DBD::mysql
@@ -1747,12 +1773,14 @@ you a lot of questions. If you finally receive the CPAN prompt, enter
 
   install Bundle::DBD::mysql
 
+=head2 Manual Installation
+
 If this fails (which may be the case for a number of reasons, for
 example because you are behind a firewall or don't have network
 access), you need to do a manual installation. First of all you
 need to fetch the modules from CPAN search
 
-   http://search.cpan.org/ 
+   http://search.cpan.org/
 
 The following modules are required
 
@@ -1846,7 +1874,7 @@ patch:
       foreach (Text::ParseWords::quotewords('\s+', 0, $potential_libs)){
 
         $thislib = $_;
-                                                                       
+
 =item -
 
 Extract sources into F<C:\>. This will create a directory F<C:\mysql>
@@ -1929,37 +1957,37 @@ in the PPM program.
 
 =head1 AUTHORS
 
-Originally, there was a non-DBI driver, Mysql, which was much like 
-PHP drivers such as mysql and mysqli. The B<Mysql> module was 
+Originally, there was a non-DBI driver, Mysql, which was much like
+PHP drivers such as mysql and mysqli. The B<Mysql> module was
 originally written by Andreas König <koenig@kulturbox.de> who still, to this
 day, contributes patches to DBD::mysql. An emulated version of Mysql was
 provided to DBD::mysql from Jochen Wiedmann, but eventually deprecated as it
 was another bundle of code to maintain.
 
 The first incarnation of DBD::mysql was developed by Alligator Descartes,
-who was also aided and abetted by Gary Shea, Andreas König and 
+who was also aided and abetted by Gary Shea, Andreas König and
 Tim Bunce.
 
 The current incarnation of B<DBD::mysql> was written by Jochen Wiedmann,
-then numerous changes and bug-fixes were added by Rudy Lippan. Next, 
-prepared statement support was added by Patrick Galbraith and 
-Alexy Stroganov (who also soley added embedded server 
+then numerous changes and bug-fixes were added by Rudy Lippan. Next,
+prepared statement support was added by Patrick Galbraith and
+Alexy Stroganov (who also soley added embedded server
 support).
 
 For the past seven years DBD::mysql has been maintained by
-Patrick Galbraith (I<patg@patg.net>) along with the entire community 
+Patrick Galbraith (I<patg@patg.net>) along with the entire community
 of Perl developers who keep sending patches and making Patrick's job
-easier. 
+easier.
 
 
 =head1 CONTRIBUTIONS
 
 Anyone who desires to contribute to this project is encouraged to do so.
-Currently, the sourcecode for this project can be found at Github: 
+Currently, the sourcecode for this project can be found at Github:
 
 git://github.com/CaptTofu/DBD-mysql.git
 
-Either fork this repository and produce a branch with your changeset that 
+Either fork this repository and produce a branch with your changeset that
 the maintainer can merge to his tree, or create a diff with git. The maintainer
 is more than glad to take contributions from the community as
 many features and fixes from DBD::mysql have come from the community.
@@ -1968,11 +1996,11 @@ many features and fixes from DBD::mysql have come from the community.
 =head1 COPYRIGHT
 
 
-This module is 
+This module is
 Large Portions Copyright (c) 2004-2010 Patrick Galbraith
 Large Portions Copyright (c) 2004-2006 Alexey Stroganov
 Large Portions Copyright (c) 2003-2005 Rudolf Lippan
-Large Portions Copyright (c) 1997-2003 Jochen Wiedmann, with code portions 
+Large Portions Copyright (c) 1997-2003 Jochen Wiedmann, with code portions
 Copyright (c)1994-1997 their original authors This module is
 released under the same license as Perl itself. See the Perl README
 for details.
