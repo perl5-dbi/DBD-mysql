@@ -653,7 +653,7 @@ sub foreign_key_info {
     return unless $dbh->func('_async_check');
 
     # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
-    # no one is going to be running 5.0.6, taking out the check for .6!!
+    # no one is going to be running 5.0.6, taking out the check for $point > .6
     my ($maj, $min, $point) = _version($dbh);
     return if $maj < 5 ;
 

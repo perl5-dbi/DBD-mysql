@@ -55,10 +55,8 @@ SKIP: {
                                       REFERENCES parent(id) ON DELETE SET NULL)
               ENGINE=INNODB}));
 
-  $sth= $dbh->foreign_key_info(undef, 'test', 'parent', undef, 'test', 'test');
+  $sth= $dbh->foreign_key_info(undef, undef, 'parent', undef, undef, 'child');
   my ($info)= $sth->fetchall_arrayref({});
-  print "INFO\n";
-  print Dumper $info;
 
   is($info->[0]->{PKTABLE_NAME}, "parent");
   is($info->[0]->{PKCOLUMN_NAME}, "id");
