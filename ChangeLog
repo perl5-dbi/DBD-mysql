@@ -1,3 +1,7 @@
+2011-05-08 Patrick Galbraith <patg@patg.net>  Rob Hoelz <rhoelz@inoc.com>
+* Asynchronous support added by Rob Hoelz
+* Pedro Melo - fix to change sv_undef to PL_sv_undef from 4.018
+ 
 2010-10-11 Patrick Galbraith <patg@patg.net> (4.018)
 * Added client and server info patch from Robert M. Jansen
 * Added documentation and tests for new features
