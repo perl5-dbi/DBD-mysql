@@ -487,9 +487,16 @@ sub Configure {
     }
 
 # Ok, mysql_config doesn't work. We need to do our best
-    if ($param eq 'testuser') {
-        unless ($opt->{$param}) {
-            my $user = $ENV{USER} || '';
+# First check environment variables
+    if (defined($ENV{'DBD_MYSQL_'.uc($param)})) {
+        $opt->{$param} = $ENV{'DBD_MYSQL_'.uc($param)};
+        $source->{$param} = 'environment';
+    }
+
+    # Then try to guess
+    unless ($opt->{$param}) {
+      if ($param eq 'testuser') {
+        my $user = $ENV{USER} || '';
         print "
 
 PLEASE NOTE:
@@ -509,32 +516,31 @@ perl Makefile.PL --testuser=username
 ";
       $opt->{$param} = $user;
 	  $source->{$param} = 'guessed';
-      }
-  }
-  elsif ($param eq "nocatchstderr" || $param eq "nofoundrows") {
-    $source->{$param} = "default";
-    $opt->{$param} = 0;
-  }
-  elsif ($param eq "testdb") {
-    $source->{$param} = "default";
-    $opt->{$param} = $TESTDB;
-  }
-  elsif ($param eq "testhost" || $param eq "testport"  ||  
-        $param eq "testpassword" || $param eq "testsocket" ) {
-    $source->{$param} = "default";
-    $opt->{$param} = "";
-  }
-  elsif($param eq 'force-embedded') {
-    $source->{$param} = $opt->{$param} ? "default" : 'not set';
-  }
-  elsif ($param eq "cflags") {
-    $source->{$param} = "guessed";
-    my $dir = SearchFor('include', 'mysql.h');
-    if ($dir) {
-      $opt->{$param} = "-I$dir";
-      return;
     }
-    die <<"MSG";
+    elsif ($param eq "nocatchstderr" || $param eq "nofoundrows") {
+      $source->{$param} = "default";
+      $opt->{$param} = 0;
+    }
+    elsif ($param eq "testdb") {
+      $source->{$param} = "default";
+      $opt->{$param} = $TESTDB;
+    }
+    elsif ($param eq "testhost" || $param eq "testport"  ||  
+        $param eq "testpassword" || $param eq "testsocket" ) {
+      $source->{$param} = "default";
+      $opt->{$param} = "";
+    }
+    elsif($param eq 'force-embedded') {
+      $source->{$param} = $opt->{$param} ? "default" : 'not set';
+    }
+    elsif ($param eq "cflags") {
+      $source->{$param} = "guessed";
+      my $dir = SearchFor('include', 'mysql.h');
+      if ($dir) {
+        $opt->{$param} = "-I$dir";
+        return;
+      }
+      die <<"MSG";
 Failed to determine directory of mysql.h. Use
 
   perl Makefile.PL --cflags=-I<dir>
@@ -544,36 +550,36 @@ section "C Compiler flags" or type
 
   perl Makefile.PL --help
 MSG
-  }
-  elsif ($param eq "libs" || $param eq "embedded") {
-    $source->{$param} = "guessed";
-
-    if ($param eq "embedded" && !$opt->{'embedded'}) {
-      $opt->{$param}="";
-      return;
     }
+    elsif ($param eq "libs" || $param eq "embedded") {
+      $source->{$param} = "guessed";
 
-    my @files=();
-    my $default_libs;
-    if ($param eq "embedded") {
-      $default_libs= "-lmysqld -lpthread -lz -lm -lcrypt -lnsl";
-      @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-			qw(libmysqld.a);
-    }
-    else {
-      $default_libs= "-lmysqlclient -lz -lm -lcrypt -lnsl";
-      @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-			qw(libmysqlclient.a libmysqlclient.so);
-    }
+      if ($param eq "embedded" && !$opt->{'embedded'}) {
+        $opt->{$param}="";
+        return;
+      }
 
-    my $dir = SearchFor('lib', @files);
+      my @files=();
+      my $default_libs;
+      if ($param eq "embedded") {
+        $default_libs= "-lmysqld -lpthread -lz -lm -lcrypt -lnsl";
+        @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
+		  	qw(libmysqld.a);
+      }
+      else {
+        $default_libs= "-lmysqlclient -lz -lm -lcrypt -lnsl";
+        @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
+	  		qw(libmysqlclient.a libmysqlclient.so);
+      }
 
-    if ($dir) {
-        $opt->{$param} = "-L$dir $default_libs";
-      return;
-    }
-    my $f = join("|", @files);
-    die <<"MSG";
+      my $dir = SearchFor('lib', @files);
+
+      if ($dir) {
+          $opt->{$param} = "-L$dir $default_libs";
+        return;
+      }
+      my $f = join("|", @files);
+      die <<"MSG";
 Failed to determine directory of $f. Use
 
   perl Makefile.PL "--$param=-L<dir> $default_libs"
@@ -583,13 +589,14 @@ section "Linker flags" or type
 
   perl Makefile.PL --help
 MSG
-  } 
-  elsif ($param eq "ssl") {
-    $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
-    $source->{$param} = "guessed";
-  } 
-  else {
-    die "Unknown configuration parameter: $param";
+    } 
+    elsif ($param eq "ssl") {
+      $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
+      $source->{$param} = "guessed";
+    } 
+    else {
+      die "Unknown configuration parameter: $param";
+    }
   }
 }
 
