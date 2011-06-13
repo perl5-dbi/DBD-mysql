@@ -1,6 +1,7 @@
 #   -*- cperl -*-
 
 package DBD::mysql;
+use 5.005; #$! is used
 use strict;
 use vars qw(@ISA $VERSION $err $errstr $drh);
 
