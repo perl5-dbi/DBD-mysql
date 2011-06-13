@@ -27,7 +27,12 @@
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
  * we're talking to */
+#if defined(_MSC_VER) || defined(__MINGW32_VERSION)
+#define MYSQL_ASYNC 0
+#else
 #define MYSQL_ASYNC 1
+#endif
+
 
 /*
  * This is the version of MySQL wherer
