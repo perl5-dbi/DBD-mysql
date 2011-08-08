@@ -3834,11 +3834,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch string data %s\n", fbh->data);
           sv_setpvn(sv, fbh->data, fbh->length);
-          /*HELMUT*/
-#ifdef sv_utf8_decode
-          if(imp_dbh->enable_utf8)
-              sv_utf8_decode(sv);
-#endif
           break;
 
         default:
