@@ -89,6 +89,10 @@ for (my $i = 0;  $i < $COUNT_CONNECT;  $i++) {
         $not_ok++;
       }
     }
+    else {
+        $prev_size = $size;
+        $size      = size();
+    }
 		$prev_size = $size;
   }
 }
@@ -120,6 +124,10 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
       else {
         $not_ok++;
       }
+    }
+    else {
+        $prev_size = $size;
+        $size      = size();
     }
     $prev_size = $size;
   }
@@ -168,6 +176,10 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
         ++$not_ok;
       }
     }
+    else {
+        $prev_size = $size;
+        $size      = size();
+    }
     $prev_size = $size;
   }
 }
@@ -201,6 +213,10 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
       else {
         ++$not_ok;
       }
+    }
+    else {
+        $prev_size = $size;
+        $size      = size();
     }
     $prev_size = $size;
   }
