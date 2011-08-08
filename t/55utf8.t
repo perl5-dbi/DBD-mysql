@@ -30,7 +30,7 @@ if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
 }
 plan tests => 16 * 2;
 
-for my $mysql_server_prepare (0, 2) {
+for my $mysql_server_prepare (0, 1) {
 $dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
