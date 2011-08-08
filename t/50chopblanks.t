@@ -22,7 +22,11 @@ if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 29; 
+plan tests => 29 * 2;
+
+for my $mysql_server_prepare (0, 1) {
+eval {$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -75,3 +79,4 @@ ok $sth->finish;
 ok $sth2->finish;
 ok $dbh->do("DROP TABLE $table"), "drop $table";
 ok $dbh->disconnect;
+}
