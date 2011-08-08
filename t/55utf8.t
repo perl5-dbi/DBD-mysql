@@ -28,7 +28,11 @@ if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
     plan skip_all => 
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
-plan tests => 15;
+plan tests => 16 * 2;
+
+for my $mysql_server_prepare (0, 2) {
+$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -37,7 +41,8 @@ CREATE TABLE $table (
     name VARCHAR(64) CHARACTER SET utf8,
     bincol BLOB,
     shape GEOMETRY,
-    binutf VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin
+    binutf VARCHAR(64) CHARACTER SET utf8 COLLATE utf8_bin,
+    profile TEXT CHARACTER SET utf8
 )
 EOT
 
@@ -57,13 +62,13 @@ cmp_ok $dbh->quote($blob), 'eq', $quoted_blob, 'testing quoting of blob';
 $dbh->{mysql_enable_utf8}=1;
 
 my $query = <<EOI;
-INSERT INTO $table (name, bincol, shape, binutf) 
-    VALUES (?,?, GeomFromText('Point(132865 501937)'), ?)
+INSERT INTO $table (name, bincol, shape, binutf, profile) 
+    VALUES (?, ?, GeomFromText('Point(132865 501937)'), ?, ?)
 EOI
 
-ok $dbh->do($query, {}, $utf8_str,$blob, $utf8_str), "INSERT query $query\n";
+ok $dbh->do($query, {}, $utf8_str, $blob, $utf8_str, $utf8_str), "INSERT query $query\n";
 
-$query = "SELECT name,bincol,asbinary(shape), binutf FROM $table LIMIT 1";
+$query = "SELECT name,bincol,asbinary(shape), binutf, profile FROM $table LIMIT 1";
 my $sth = $dbh->prepare($query) or die "$DBI::errstr";
 
 ok $sth->execute;
@@ -76,6 +81,7 @@ ok defined $ref;
 cmp_ok $ref->[0], 'eq', $utf8_str;
 
 cmp_ok $ref->[3], 'eq', $utf8_str;
+cmp_ok $ref->[4], 'eq', $utf8_str;
 
 SKIP: {
         eval {use Encode;};
@@ -92,3 +98,4 @@ ok $sth->finish;
 ok $dbh->do("DROP TABLE $table");
 
 ok $dbh->disconnect;
+}
