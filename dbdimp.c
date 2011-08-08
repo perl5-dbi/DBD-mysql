@@ -3351,6 +3351,9 @@ my_ulonglong mysql_st_internal_execute41(
   */
   else
   {
+    /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
+    my_bool on = 1;
+    mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
     /* Get the total rows affected and return */
     if (mysql_stmt_store_result(stmt))
       goto error;
@@ -3590,8 +3593,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         PerlIO_printf(DBILOGFP,"\t\ti %d col_type %d fbh->length %d\n",
                       i, col_type, (int) fbh->length);
         PerlIO_printf(DBILOGFP,
-                      "\t\tfields[i].length %d fields[i].type %d fields[i].charsetnr %d\n",
-                      (int) fields[i].length, fields[i].type,
+                      "\t\tfields[i].length %lu fields[i].max_length fields[i].type %d fields[i].charsetnr %d\n",
+                      (int) fields[i].length, fields[i].max_length, fields[i].type,
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
@@ -3600,10 +3603,10 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBILOGFP, "\t\tmysql_to_perl_type returned %d\n",
                       col_type);
-      buffer->buffer_length= fields[i].length;
+      buffer->buffer_length= fields[i].max_length ? fields[i].max_length : fields[i].length;
       buffer->length= &(fbh->length);
       buffer->is_null= &(fbh->is_null);
-      Newz(908, fbh->data, fields[i].length, char);
+      Newz(908, fbh->data, buffer->buffer_length, char);
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
