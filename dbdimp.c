@@ -3835,14 +3835,14 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
             PerlIO_printf(DBILOGFP, "\t\tERROR IN st_fetch_string");
           STRLEN len= fbh->length;
 	/* ChopBlanks */
+          if (ChopBlanks)
+          {
 #if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
   /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
         if (fbh->charsetnr != 63)
 #else
 	if (!(fbh->flags & BINARY_FLAG))
 #endif
-          if (ChopBlanks)
-          {
             while (len && fbh->data[len-1] == ' ')
             {	--len; }
           }
