@@ -1,3 +1,15 @@
+2011-08-15 Masahiro Chiba <nihen@megabbs.com>, Patrick Galbraith <patg.net> (4.020)
+* Numerex fixes for prepared statements:
+	- Chop blanks fixed
+	- UTF8 improvements
+	- fixed memory allocation for BLOBs
+	- auto-reconnect
+* Fix in leak test, which failed sometime due to first assignment $prev_size over
+paging
+* Catalog test allows use of schemas other than 'test'
+
+
+
 2011-05-08 Patrick Galbraith <patg@patg.net>  Rob Hoelz <rhoelz@inoc.com> (4.019)
 * Asynchronous support added by Rob Hoelz - Thanks!
 * Amiri Barksdale - Enable environment variables for installation options, add

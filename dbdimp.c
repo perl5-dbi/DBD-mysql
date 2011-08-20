@@ -3588,7 +3588,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
                       i, col_type, (int) fbh->length);
         PerlIO_printf(DBILOGFP,
                       "\t\tfields[i].length %lu fields[i].max_length %lu fields[i].type %d fields[i].charsetnr %d\n",
-                      (int) fields[i].length, fields[i].max_length, fields[i].type,
+                      (long unsigned int) fields[i].length, (long unsigned int) fields[i].max_length, fields[i].type,
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
