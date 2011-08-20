@@ -3592,6 +3592,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
+#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
+      fbh->flags     = fields[i].flags;
+#endif
 
       buffer->buffer_type= mysql_to_perl_type(col_type);
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3825,11 +3828,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP, "\t\tst_fetch string data %s\n", fbh->data);
           sv_setpvn(sv, fbh->data, fbh->length);
-          /*HELMUT*/
-#ifdef sv_utf8_decode
-          if(imp_dbh->enable_utf8)
-              sv_utf8_decode(sv);
-#endif
           break;
 
         default:
@@ -3839,6 +3837,20 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           break;
 
         }
+
+	/* UTF8 */
+        /*HELMUT*/
+#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION 
+  /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
+        if (imp_dbh->enable_utf8 && fbh->charsetnr != 63)
+#else
+	if (imp_dbh->enable_utf8 && !(fbh->flags & BINARY_FLAG))
+#endif
+	  sv_utf8_decode(sv);
+#endif
+	/* END OF UTF8 */
       }
     }
 

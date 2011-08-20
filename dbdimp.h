@@ -212,6 +212,9 @@ typedef struct imp_sth_fbh_st {
     int            charsetnr;
     double         ddata;
     long           ldata;
+#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
+    unsigned int   flags;
+#endif
 } imp_sth_fbh_t;
 
 
