@@ -3824,19 +3824,25 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
             sv_setiv(sv, fbh->ldata);
           break;
 
-        case MYSQL_TYPE_STRING:
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBILOGFP, "\t\tst_fetch string data %s\n", fbh->data);
-          sv_setpvn(sv, fbh->data, fbh->length);
-          break;
-
         default:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBILOGFP, "\t\tERROR IN st_fetch_string");
-          sv_setpvn(sv, fbh->data, fbh->length);
-          break;
+          STRLEN len= fbh->length;
+	/* ChopBlanks */
+          if (ChopBlanks)
+          {
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+  /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
+        if (fbh->charsetnr != 63)
+#else
+	if (!(fbh->flags & BINARY_FLAG))
+#endif
+            while (len && fbh->data[len-1] == ' ')
+            {	--len; }
+          }
+	/* END OF ChopBlanks */
 
-        }
+          sv_setpvn(sv, fbh->data, len);
 
 	/* UTF8 */
         /*HELMUT*/
@@ -3851,6 +3857,10 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 	  sv_utf8_decode(sv);
 #endif
 	/* END OF UTF8 */
+          break;
+
+        }
+
       }
     }
 
