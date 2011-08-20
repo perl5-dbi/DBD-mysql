@@ -19,7 +19,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
-plan tests => 21; 
+plan tests => 27; 
 
 ok(defined $dbh, "connecting");
 
@@ -67,5 +67,18 @@ ok($sth2->execute(), "inserting data");
 is_deeply($dbh->selectall_arrayref('SELECT * FROM t2'), [[101, 102, 103, 104]]);
 
 ok ($dbh->do(qq{DROP TABLE t2}), "cleaning up");
+
+#
+# Bug LONGBLOB wants 4GB memory
+#
+ok($dbh->do(qq{DROP TABLE IF EXISTS t3}), "making slate clean");
+ok($dbh->do(q{CREATE TABLE t3 (id INT, mydata LONGBLOB)}), "creating test table");
+my $sth3;
+ok($sth3 = $dbh->prepare(q{INSERT INTO t3 VALUES (?,?)}));
+ok($sth3->execute(1, 2), "insert t3");
+
+is_deeply($dbh->selectall_arrayref('SELECT id, mydata FROM t3'), [[1, 2]]);
+
+ok ($dbh->do(qq{DROP TABLE t3}), "cleaning up");
 
 $dbh->disconnect();
