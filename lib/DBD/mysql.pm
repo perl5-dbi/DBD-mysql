@@ -10,7 +10,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.019';
+$VERSION = '4.020';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1305,6 +1305,13 @@ to mysql all table locks will be lost.  This attribute is ignored when
 AutoCommit is turned off, and when AutoCommit is turned off, DBD::mysql will
 not automatically reconnect to the server.
 
+It is also possible to set the default value of the C<mysql_auto_reconnect>
+attribute for the $dbh by passing it in the C<\%attr> hash for C<DBI->connect>.
+
+Note that if you are using a module or framework that performs reconnections
+for you (for example L<DBIx::Connector> in fixup mode), this value must be set 
+to 0.
+
 =item mysql_use_result
 
 This attribute forces the driver to use mysql_use_result rather than
@@ -1312,8 +1319,8 @@ mysql_store_result. The former is faster and less memory consuming, but
 tends to block other processes. (That's why mysql_store_result is the
 default.)
 
-It is possible to set default value of the C<mysql_use_result> attribute
-for $dbh using several ways:
+It is possible to set the default value of the C<mysql_use_result> attribute
+for the $dbh using several ways:
 
  - through DSN
 
@@ -1325,7 +1332,7 @@ for $dbh using several ways:
    $dbh->{'mysql_use_result'}=1; #enable
 
 It is possible to set/unset the C<mysql_use_result> attribute after
-creation of statement handle. See below.
+creation of the statement handle. See below.
 
 =item mysql_enable_utf8
 

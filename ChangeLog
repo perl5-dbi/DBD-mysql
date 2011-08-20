@@ -1,37 +1,40 @@
-2011-08-15 Masahiro Chiba <nihen@megabbs.com>, Patrick Galbraith <patg.net> (4.020)
-* Numerex fixes for prepared statements:
+2011-08-15 Patrick Galbraith <patg at patg dot net> (4.020)
+* Numerous (!! Thank you!!) fixes for prepared statements: Masahiro Chiba <nihen at megabbs
+dot com>
 	- Chop blanks fixed
 	- UTF8 improvements
 	- fixed memory allocation for BLOBs
 	- auto-reconnect
 * Fix in leak test, which failed sometime due to first assignment $prev_size over
-paging
-* Catalog test allows use of schemas other than 'test'
+paging (Masahiro Chiba)
+* Catalog test allows use of schemas other than 'test' (Masahiro Chiba)
+* Documentation fix for auto_reconnect (Karen Etheridge <ether at cpan dot
+org>)
+* Win32 and general installation fixes (Alexandr Ciornii, http://chorny.net)
 
 
-
-2011-05-08 Patrick Galbraith <patg@patg.net>  Rob Hoelz <rhoelz@inoc.com> (4.019)
+2011-05-08 Patrick Galbraith <patg at patg dot net>  Rob Hoelz <rhoelz at inoc dot com> (4.019)
 * Asynchronous support added by Rob Hoelz - Thanks!
 * Amiri Barksdale - Enable environment variables for installation options, add
 docs to POD - Thanks!
 * Pedro Melo - fix to change sv_undef to PL_sv_undef from 4.018 - Thanks!
  
-2010-10-11 Patrick Galbraith <patg@patg.net> (4.018)
+2010-10-11 Patrick Galbraith <patg at patg dot net> (4.018)
 * Added client and server info patch from Robert M. Jansen
 * Added documentation and tests for new features
 * More code cleanup
 
-2010-08-11 Patrick Galbraith <patg@patg.net> (4.017)
+2010-08-11 Patrick Galbraith <patg at patg dot net> (4.017)
 * BUG #60085, Andreas Koenig's patch for DBI changes
 * Updated documents
 
-2010-07-10 Patrick Galbraith <patg@patg.net> (4.016)
+2010-07-10 Patrick Galbraith <patg at patg dot net> (4.016)
 * Disabled mysql_bind_type_guessing due to one performance issue 
   querying on a indexed character column unquoted will mean the index 
   is not used
 * Fixed int types that should be bools
 
-2010-07-09 Patrick Galbraith <patg@patg.net> (4.015)
+2010-07-09 Patrick Galbraith <patg at patg dot net> (4.015)
 * BUG #56664 fixed t/40blobs.t skip_all logic (W. Phillip Moore)
 * BUG #57253 Fixed iteration past end of string (crash). (Chris Butler)
 * Added a new parameter for old behavior- mysql_bind_comment_placeholders which 
@@ -39,7 +42,7 @@ docs to POD - Thanks!
   want that behavior.
 * Fixed bind_type_guessing - always on now 
 
-2010-04-14 Patrick Galbraith <patg@patg.net> (4.014)
+2010-04-14 Patrick Galbraith <patg at patg dot net> (4.014)
 * BUG #30033 Fixed handling of comments to allow comments that contain characters
   that might otherwise cause placeholder detection to not work properly
 * BUG #53844, Fix for memory leak in stats. (Gregory Burmistrov)
@@ -49,7 +52,7 @@ docs to POD - Thanks!
 * BUG #41630, Typo in Makefile
 * Had to define true and false in dbdimp.h. Didn't work out of the box on Linux
 
-2009-09-16 Patrick Galbraith <patg@patg.net> (4.013)
+2009-09-16 Patrick Galbraith <patg at patg dot net> (4.013)
 
 * #49484: PATCH add support for MYSQL_INIT_COMMAND - Peter John Edwards 
 * #48242: 'mysql_bind_type_guessing' doesn't work correctly
@@ -57,7 +60,7 @@ with minus sign - Thanks Serguei Trouchelle!
 * #45616: t/40blobs.t cannot pass without database access - 
 ServerError() not declared - Thanks ysth http://ysth.livejournal.com/
 
-2009-06-18 Patrick Galbraith <patg@patg.net> (4.012)
+2009-06-18 Patrick Galbraith <patg at patg dot net> (4.012)
 
 * Patch to bind_type_guessing from Craigslist, 
   Thanks to Chris! Happiness is no quoted numbers. 
@@ -75,7 +78,7 @@ ServerError() not declared - Thanks ysth http://ysth.livejournal.com/
 * Added bind-type-guessing options to Makefile.PL so the entire 
   test suite can be run with bind_type_guessing set.
 
-2009-04-13 Patrick Galbraith <patg@patg.net> (4.011)
+2009-04-13 Patrick Galbraith <patg at patg dot net> (4.011)
 * Renamed unsafe_bind_type_guessing, fixed some of the logic. This
 can be used to deal with bug 43822 
 (https://rt.cpan.org/Ticket/Display.html?id=43822)
@@ -85,15 +88,15 @@ statements) resulting in corrupt data, bug 42723
 (https://rt.cpan.org/Ticket/Display.html?id=42723)
 * Updated documentation, cruft cleanup (as always)
 
-2008-10-24 Patrick Galbraith <patg@patg.net> (4.010)
+2008-10-24 Patrick Galbraith <patg at patg dot net> (4.010)
 * Fix to dbd_bind_ph() for uninitialized value 'buffer_length'
 thanks for bug report and patch from Askniel.com (thanks!)
 
-2008-10-21 Patrick Galbraith <patg@patg.net> (4.009)
+2008-10-21 Patrick Galbraith <patg at patg dot net> (4.009)
 * Fix to re-enable TAKE_IMP_DATA_VERSION. Still have to ensure DBI version 1.607 or higher
 * Fix to escaped single quotes throwing off bind param detection. Patch from Zhurs (zhurs@yandex.ru) Spasibo!
 
-2008-8-15 Patrick Galbraith <patg@patg.net> (4.008)
+2008-8-15 Patrick Galbraith <patg at patg dot net> (4.008)
 * Multi statement patch, thanks to Chris Heath!
 * Disabled TAKE_IMP_DATA_VERSION because segfault with DBI < 1.607
 * #29528: bind_param(..., SQL_FLOAT) ignores exponents - fixed, Thanks to
@@ -102,19 +105,19 @@ Tokuhiro Matsuno!
 <http://rodgers.org.uk/> ! 
 * Modified and disabled tests for MySQL version < 4.1 for unsupported features
 
-2008-5-11 Patrick Galbraith <patg@patg.net> (4.007)
+2008-5-11 Patrick Galbraith <patg at patg dot net> (4.007)
 
 * Took out mysql_server_init call where not needed
 * Complete re-write of test suit to use Test::More - tons of cleanups!
 * Makefile.PL changes to use current user in 'make test' if not defined
 
-2007-12-26 Patrick Galbraith <patg@patg.net> (4.006)
+2007-12-26 Patrick Galbraith <patg at patg dot net> (4.006)
 
 * Cleanups on OS X compile
 * Fixes to syntax errors on AIX
 * Removed test code that was leaving trace files around
 
-2007-3-22 Patrick Galbraith <patg@patg.net> (4.005)
+2007-3-22 Patrick Galbraith <patg at patg dot net> (4.005)
 
 * Fixed mysql_warning issue < 4.1 (reminers, patches, help from ROAM, (issue 25713)
 * makerealclean patch from ROAM (issue #25714)
@@ -132,7 +135,7 @@ Tokuhiro Matsuno!
 
 
 
-2007-3-22 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.004)
+2007-3-22 Patrick Galbraith <patg at patg dot net> Jim Winstead <jimw@mysql.com> (4.004)
 * Work around a bug in old 3.23 servers by specifying NOT NULL for fields used
   as a primary key in tests. (Bug #20325, reported by Julian Ladisch)
 * Add support for mysql_warning_count statement handle attribute. (Bug #25457,
@@ -147,11 +150,11 @@ Tokuhiro Matsuno!
 * Fixed do_error definition (Scott Hildreth, Tim Bunce)
 * Conversion of test suite to Test::More
 
-2007-3-5 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.003)
+2007-3-5 Patrick Galbraith <patg at patg dot net> Jim Winstead <jimw@mysql.com> (4.003)
 * Fix inclusion of non-primary keys in primary_key_info. (Bug #26786,
   reported and patch by Dave Rolsky)
 
-2007-3-1 Patrick Galbraith <patg@patg.net> Jim Winstead <jimw@mysql.com> (4.002)
+2007-3-1 Patrick Galbraith <patg at patg dot net> Jim Winstead <jimw@mysql.com> (4.002)
 * Fix re-exec of Makefile.PL when forcing $ENV{LANG} to 'C'. (RT #25233,
   reported by Slaven Rezic)
 * Rewrote table_info method to support all arguments (previously it would
@@ -181,7 +184,7 @@ Tokuhiro Matsuno!
   Dave Rolsky, and final implementation based on Connector/J code)
 
 
-2007-1-8 Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg@patg.net> (4.001)
+2007-1-8 Jim Winstead <jimw@mysql.com> Patrick Galbraith <patg at patg dot net> (4.001)
 * Fix handling of unsigned integer values in result sets when using
   server-side prepared statements (they were not retrieved at all).
 * Fix handling of signed integer values when using server-side prepared
@@ -221,7 +224,7 @@ Tokuhiro Matsuno!
 * Tested with ALL mysql versions, fixed 40types, 40bind_param tests to work with 4.0, 4.1
 * Fixed dbdimp.c to not test for MYSQL_DATA_TRUNCATED unless >= mysql 5.0 
 
-2006-12-22 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (4.00)
+2006-12-22 Patrick Galbraith <patg at patg dot net>, Alexey Stroganov (4.00)
 * Added Alexey Stroganov's patch which fixes varying number of columns in 
   multiple result sets. Added new test cases to 80procs.t based of his
   test script (bug #21028) (Thanks Alexey!). Also fixed 80procs.t to allow
@@ -235,11 +238,11 @@ Tokuhiro Matsuno!
 * Turned off prepared statements by default
 * Tested this with 5.1, 5.0, 4.1, 4.0. Works with ALL these versions!
 
-2006-10-10 Patrick Galbraith <patg@patg.net>, Alexey Stroganov (3.0009_1)
+2006-10-10 Patrick Galbraith <patg at patg dot net>, Alexey Stroganov (3.0009_1)
 * Added fbind and bind alloc to dbd_st_describe. This was causing a crash
   when using with mod_perl
 
-2006-10-10 Patrick Galbraith <patg@patg.net> (3.0008_1)
+2006-10-10 Patrick Galbraith <patg at patg dot net> (3.0008_1)
 * Added patch for SSL Verify Certificate (Thanks Eric Chen!)
 * Added multiple fixes to dbd_st_prepare which fixed variable overwrite
   and unset increment counter. Also improved loop which checks statements
@@ -250,7 +253,7 @@ Tokuhiro Matsuno!
   (Thanks to Eric Milkie!)
 * Fixed casting of num_params to unsigned int in calls to NewZ in mysql.xs
 
-2006-10-07 Patrick Galbraith <patg@patg.net>, Jim Winstead <jimw@mysql.com>
+2006-10-07 Patrick Galbraith <patg at patg dot net>, Jim Winstead <jimw@mysql.com>
   (3.0007_2)
   * Added UTF8 patch from Dominic Mitchell (Thanks!)
   * Fixed declaration of "row" in mysql_st_internal_execute which caused compile
