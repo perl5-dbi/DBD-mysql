@@ -63,7 +63,7 @@ SKIP: {
   is($info->[0]->{FKTABLE_NAME}, "child");
   is($info->[0]->{FKCOLUMN_NAME}, "parent_id");
 
-  $sth= $dbh->foreign_key_info(undef, 'test', 'parent', undef, undef, undef);
+  $sth= $dbh->foreign_key_info(undef, undef, 'parent', undef, undef, undef);
   ($info)= $sth->fetchall_arrayref({});
 
   is($info->[0]->{PKTABLE_NAME}, "parent");
@@ -71,7 +71,7 @@ SKIP: {
   is($info->[0]->{FKTABLE_NAME}, "child");
   is($info->[0]->{FKCOLUMN_NAME}, "parent_id");
 
-  $sth= $dbh->foreign_key_info(undef, undef, undef, undef, 'test', 'child');
+  $sth= $dbh->foreign_key_info(undef, undef, undef, undef, undef, 'child');
   ($info)= $sth->fetchall_arrayref({});
 
   is($info->[0]->{PKTABLE_NAME}, "parent");
