@@ -325,7 +325,9 @@ do(dbh, statement, attr=Nullsv, ...)
 
     stmt= mysql_stmt_init(imp_dbh->pmysql);
 
-    if (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))
+    if ((mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))  &&
+        (!mysql_db_reconnect(dbh) ||
+         (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))))
     {
       /*
         For commands that are not supported by server side prepared
