@@ -3443,12 +3443,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
   if (imp_sth->use_server_side_prepare && ! imp_sth->use_mysql_use_result)
   {
-    if (DBIc_ACTIVE(imp_sth) && !(mysql_st_clean_cursor(sth, imp_sth)))
-    {
-      do_error(sth, JW_ERR_SEQUENCE,
-               "Error happened while tried to clean up stmt", NULL);
-      return 0;
-    }
     imp_sth->row_num= mysql_st_internal_execute41(
                                                   sth,
                                                   DBIc_NUM_PARAMS(imp_sth),
