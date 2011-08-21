@@ -46,20 +46,30 @@ ok $rows= $sth->execute('1');
 cmp_ok $rows, '==',  1;
 $sth->finish();
 
+
+my $retrow;
+
+if ( $test_dsn =~ m/mysql_server_prepare=1/ ) {
+    # server_prepare can't bind placeholder on comment.
+    ok 1;
+    ok 2;
+}
+else {
 $statement= <<EOSTMT;
 SELECT id 
 FROM $table
 -- this comment has ? in the text 
 WHERE id = ?
 EOSTMT
+    $retrow= $dbh->selectrow_arrayref($statement, {}, 'hey', 1);
+    cmp_ok $retrow->[0], '==', 1;
 
-my $retrow= $dbh->selectrow_arrayref($statement, {}, 'hey', 1);
-cmp_ok $retrow->[0], '==', 1;
+    $statement= "SELECT id FROM $table /* Some value here ? */ WHERE id = ?";
 
-$statement= "SELECT id FROM $table /* Some value here ? */ WHERE id = ?";
+    $retrow= $dbh->selectrow_arrayref($statement, {}, "hello", 1);
+    cmp_ok $retrow->[0], '==', 1;
+}
 
-$retrow= $dbh->selectrow_arrayref($statement, {}, "hello", 1);
-cmp_ok $retrow->[0], '==', 1;
 
 $statement= "SELECT id FROM $table WHERE id = ? ";
 my $comment = "/* it's/a_directory/does\ this\ work/bug? */";
