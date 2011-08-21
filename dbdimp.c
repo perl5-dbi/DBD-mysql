@@ -3295,6 +3295,8 @@ my_ulonglong mysql_st_internal_execute41(
                                          int *has_been_bound
                                         )
 {
+  int i;
+  enum enum_field_types enum_type;
   int execute_retval;
   my_ulonglong rows=0;
   D_imp_xxh(sth);
@@ -3351,9 +3353,16 @@ my_ulonglong mysql_st_internal_execute41(
   */
   else
   {
-    /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
-    my_bool on = 1;
-    mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
+    for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i) {
+        enum_type = mysql_to_perl_type(stmt->fields[i].type);
+        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG)
+        {
+            /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
+            my_bool on = 1;
+            mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
+            break;
+        }
+    }
     /* Get the total rows affected and return */
     if (mysql_stmt_store_result(stmt))
       goto error;
@@ -3600,27 +3609,25 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBILOGFP, "\t\tmysql_to_perl_type returned %d\n",
                       col_type);
-      buffer->buffer_length= fields[i].max_length ? fields[i].max_length : fields[i].length;
       buffer->length= &(fbh->length);
       buffer->is_null= &(fbh->is_null);
-      Newz(908, fbh->data, buffer->buffer_length, char);
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
+        buffer->buffer_length= sizeof(fbh->ddata);
         buffer->buffer= (char*) &fbh->ddata;
         break;
 
       case MYSQL_TYPE_LONG:
+        buffer->buffer_length= sizeof(fbh->ldata);
         buffer->buffer= (char*) &fbh->ldata;
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
-      case MYSQL_TYPE_STRING:
-        buffer->buffer= (char *) fbh->data;
-
       default:
+        buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
+        Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
-
       }
     }
 
