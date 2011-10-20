@@ -3285,6 +3285,8 @@ my_ulonglong mysql_st_internal_execute(
       }
 #if MYSQL_ASYNC
   }
+#endif
+
   Safefree(salloc);
 
   if(rows == -2) {
@@ -3294,7 +3296,6 @@ my_ulonglong mysql_st_internal_execute(
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "IGNORING ERROR errno %d\n", errno);
     rows = -2;
   }
-#endif
   return(rows);
 }
 
