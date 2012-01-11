@@ -1309,7 +1309,7 @@ It is also possible to set the default value of the C<mysql_auto_reconnect>
 attribute for the $dbh by passing it in the C<\%attr> hash for C<DBI->connect>.
 
 Note that if you are using a module or framework that performs reconnections
-for you (for example L<DBIx::Connector> in fixup mode), this value must be set 
+for you (for example L<DBIx::Connector> in fixup mode), this value must be set
 to 0.
 
 =item mysql_use_result
@@ -1398,18 +1398,7 @@ possible_keys: value0
         Extra: Using where
 1 row in set (0.00 sec)
 
-
 See bug: https://rt.cpan.org/Ticket/Display.html?id=43822
-
-=item mysql_bind_comment_placeholders
-
-This attribute causes the driver (emulated prepare statements)
-will cause any placeholders in comments to be bound. This is
-not correct prepared statement behavior, but some developers
-have come to depend on this behavior, so I have made it available
-in 4.015
-
-See bug: https://rt.cpan.org/Ticket/Display.html?id=
 
 C<mysql_bind_type_guessing> can be turned on via
 
@@ -1421,6 +1410,14 @@ C<mysql_bind_type_guessing> can be turned on via
   - OR after handle creation
 
   $dbh->{mysql_bind_type_guessing} = 1;
+
+=item mysql_bind_comment_placeholders
+
+This attribute causes the driver (emulated prepare statements)
+will cause any placeholders in comments to be bound. This is
+not correct prepared statement behavior, but some developers
+have come to depend on this behavior, so I have made it available
+in 4.015
 
 =item mysql_no_autocommit_cmd
 
@@ -1798,7 +1795,7 @@ setting the 'async' attribute to a truthy value in the L<DBI/do> method,
 or in the L<DBI/prepare> method.  Statements created with 'async' set to
 true in prepare always run their queries asynchronously when L<DBI/execute>
 is called.  The driver also offers three additional methods:
-C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>. 
+C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>.
 C<mysql_async_result> returns what do or execute would have; that is, the
 number of rows affected.  C<mysql_async_ready> returns true if
 C<mysql_async_result> will not block, and zero otherwise.  They both return
@@ -2161,5 +2158,3 @@ http://bugs.mysql.com/
 
 
 =cut
-
-
