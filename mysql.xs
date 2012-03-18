@@ -302,7 +302,7 @@ do(dbh, statement, attr=Nullsv, ...)
     async = (svp) ? *svp : &PL_sv_no;
   }
   if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
-    PerlIO_printf(DBILOGFP,
+    PerlIO_printf(DBIc_LOGPIO(imp_dbh),
                   "mysql.xs do() use_server_side_prepare %d, async %d\n",
                   use_server_side_prepare, async);
 
@@ -555,7 +555,8 @@ do(dbh, statement, attr=Nullsv, ...)
           if (next_result_rc > 0)
           {
             if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
-              PerlIO_printf(DBILOGFP, "\t<- do() ERROR: %s\n",
+              PerlIO_printf(DBIc_LOGPIO(imp_dbh),
+                            "\t<- do() ERROR: %s\n",
                             mysql_error(imp_dbh->pmysql));
 
               do_error(dbh, mysql_errno(imp_dbh->pmysql),
