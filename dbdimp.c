@@ -72,7 +72,7 @@ typedef struct sql_type_info_s
 
 */
 static int
-count_params(char *statement, bool bind_comment_placeholders)
+count_params(imp_xxh_t *imp_xxh, char *statement, bool bind_comment_placeholders)
 {
   bool comment_end= false;
   char* ptr= statement;
@@ -80,8 +80,8 @@ count_params(char *statement, bool bind_comment_placeholders)
   int comment_length= 0;
   char c;
 
-  if (dbis->debug >= 2)
-    PerlIO_printf(DBILOGFP, ">count_params statement %s\n", statement);
+  if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+    PerlIO_printf(DBIc_LOGPIO(imp_xxh), ">count_params statement %s\n", statement);
 
   while ( (c = *ptr++) )
   {
@@ -104,8 +104,8 @@ count_params(char *statement, bool bind_comment_placeholders)
                   /* if two dashes, ignore everything until newline */
                   while ((c = *ptr))
                   {
-                      if (dbis->debug >= 2)
-                          PerlIO_printf(DBILOGFP, "%c\n", c);
+                      if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+                          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%c\n", c);
                       ptr++;
                       comment_length++;
                       if (c == '\n')
@@ -515,6 +515,7 @@ char **fill_out_embedded_options(char *options,
   actual values replacing placeholders
 */
 static char *parse_params(
+                          imp_xxh_t *imp_xxh,
                           MYSQL *sock,
                           char *statement,
                           STRLEN *slen_ptr,
@@ -534,8 +535,8 @@ static char *parse_params(
   STRLEN vallen;
   imp_sth_ph_t *ph;
 
-  if (dbis->debug >= 2)
-    PerlIO_printf(DBILOGFP, ">parse_params statement %s\n", statement);
+  if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+    PerlIO_printf(DBIc_LOGPIO(imp_xxh), ">parse_params statement %s\n", statement);
 
   if (num_params == 0)
     return NULL;
@@ -2842,10 +2843,10 @@ dbd_st_prepare(
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   /* Count the number of parameters (driver, vs server-side) */
   if (imp_sth->use_server_side_prepare == 0)
-    DBIc_NUM_PARAMS(imp_sth) = count_params(statement,
+    DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, statement,
                                             imp_dbh->bind_comment_placeholders);
 #else
-  DBIc_NUM_PARAMS(imp_sth) = count_params(statement,
+  DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, statement,
                                           imp_dbh->bind_comment_placeholders);
 #endif
 
@@ -3161,7 +3162,8 @@ my_ulonglong mysql_st_internal_execute(
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "mysql_st_internal_execute MYSQL_VERSION_ID %d\n",
                   MYSQL_VERSION_ID );
 
-  salloc= parse_params(svsock,
+  salloc= parse_params(imp_xxh,
+                              svsock,
                               sbuf,
                               &slen,
                               params,
