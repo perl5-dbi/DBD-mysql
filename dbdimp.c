@@ -1395,7 +1395,7 @@ static const sql_type_info_t *native2sql(int t)
  *
  *  Purpose: Called when the driver is installed by DBI
  *
- *  Input:   dbistate - pointer to the DBIS variable, used for some
+ *  Input:   dbistate - pointer to the DBI state variable, used for some
  *               DBI internal things
  *
  *  Returns: Nothing
@@ -1404,7 +1404,7 @@ static const sql_type_info_t *native2sql(int t)
 
 void dbd_init(dbistate_t* dbistate)
 {
-    DBIS = dbistate;
+    DBISTATE_INIT;
 }
 
 
@@ -3056,7 +3056,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
       /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
       DBIc_NUM_FIELDS(imp_sth)= 0; /* for DBI <= 1.53 */
-      DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+      DBIc_DBISTATE(imp_sth)->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
           sv_2mortal(newSViv(mysql_num_fields(imp_sth->result)))
       );
 
@@ -3650,8 +3650,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
  *           imp_sth - drivers private statement handle data
  *
  *  Returns: array of columns; the array is allocated by DBI via
- *           DBIS->get_fbav(imp_sth), even the values of the array
- *           are prepared, we just need to modify them appropriately
+ *           DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth), even the values
+ *           of the array are prepared, we just need to modify them
+ *           appropriately
  *
  **************************************************************************/
 
@@ -3760,7 +3761,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
     imp_sth->currow++;
 
-    av= DBIS->get_fbav(imp_sth);
+    av= DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth);
     num_fields=mysql_stmt_field_count(imp_sth->stmt);
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBILOGFP,
@@ -3946,7 +3947,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       }
     }
 
-    av= DBIS->get_fbav(imp_sth);
+    av= DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth);
 
     for (i= 0;  i < num_fields; ++i)
     {
