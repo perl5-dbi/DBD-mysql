@@ -1009,7 +1009,7 @@ If your DSN contains the option "mysql_connect_timeout=##", the connect
 request to the server will timeout if it has not been successful after
 the given number of seconds.
 
- =item mysql_init_command
+=item mysql_init_command
 
  If your DSN contains the option "mysql_init_command_timeout=##", then
  this SQL statement is executed when connecting to the MySQL server.
@@ -2055,13 +2055,13 @@ in the PPM program.
 
 Originally, there was a non-DBI driver, Mysql, which was much like
 PHP drivers such as mysql and mysqli. The B<Mysql> module was
-originally written by Andreas König <koenig@kulturbox.de> who still, to this
+originally written by Andreas Kï¿½nig <koenig@kulturbox.de> who still, to this
 day, contributes patches to DBD::mysql. An emulated version of Mysql was
 provided to DBD::mysql from Jochen Wiedmann, but eventually deprecated as it
 was another bundle of code to maintain.
 
 The first incarnation of DBD::mysql was developed by Alligator Descartes,
-who was also aided and abetted by Gary Shea, Andreas König and
+who was also aided and abetted by Gary Shea, Andreas Kï¿½nig and
 Tim Bunce.
 
 The current incarnation of B<DBD::mysql> was written by Jochen Wiedmann,
