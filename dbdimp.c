@@ -1661,7 +1661,7 @@ MYSQL *mysql_dr_connect(
     {
       SV* sv = DBIc_IMP_DATA(imp_dbh);
 
-      DBIc_set(imp_dbh, DBIcf_AutoCommit, &PL_sv_yes);
+      DBIc_set(imp_dbh, DBIcf_AutoCommit, TRUE);
       if (sv  &&  SvROK(sv))
       {
         HV* hv = (HV*) SvRV(sv);
@@ -2309,42 +2309,27 @@ dbd_db_STORE_attrib(
       if (bool_value == oldval)
         return TRUE;
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+      /* if setting AutoCommit on ... */
       if (!imp_dbh->no_autocommit_cmd)
       {
-        if (mysql_autocommit(imp_dbh->pmysql, bool_value))
+        if (
+#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
+            mysql_autocommit(imp_dbh->pmysql, bool_value)
+#else
+            mysql_real_query(imp_dbh->pmysql,
+                             bool_value ? "SET AUTOCOMMIT=1" : "SET AUTOCOMMIT=0",
+                             16)
+#endif
+           )
         {
           do_error(dbh, TX_ERR_AUTOCOMMIT,
                    bool_value ?
                    "Turning on AutoCommit failed" :
                    "Turning off AutoCommit failed"
                    ,NULL);
-          return FALSE;
+          return TRUE;  /* TRUE means we handled it - important to avoid spurious errors */
         }
       }
-#else
-      /* if setting AutoCommit on ... */
-      if (!imp_dbh->no_autocommit_cmd)
-      {
-        if (bool_value)
-        {
-          /* Setting autocommit will do a commit of any pending statement */
-          if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=1", 16))
-          {
-            do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning on AutoCommit failed", NULL);
-            return FALSE;
-          }
-        }
-        else
-        {
-          if (mysql_real_query(imp_dbh->pmysql, "SET AUTOCOMMIT=0", 16))
-          {
-            do_error(dbh, TX_ERR_AUTOCOMMIT, "Turning off AutoCommit failed", NULL);
-            return FALSE;
-          }
-        }
-      }
-#endif
       DBIc_set(imp_dbh, DBIcf_AutoCommit, bool_value);
     }
     else
@@ -2352,8 +2337,8 @@ dbd_db_STORE_attrib(
       /*
        *  We do support neither transactions nor "AutoCommit".
        *  But we stub it. :-)
-     */
-      if (!SvTRUE(valuesv))
+      */
+      if (!bool_value)
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
                  "Transactions not supported by database" ,NULL);
