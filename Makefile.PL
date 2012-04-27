@@ -237,6 +237,7 @@ my %o = ( 'NAME' => 'DBD::mysql',
           'XS' => {'mysql.xs' => 'mysql.c'},
 	  'OBJECT' => '$(O_FILES)',
 	  'LIBS' => $opt->{'libs'},
+	  $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
 	  'VERSION_FROM' => 'lib/DBD/mysql.pm'
 	);
 
@@ -490,6 +491,18 @@ sub Configure {
             # with -L'...'
             $str =~ s/\-L\'(.*?)\'/-L$1/sg;
             $str =~ s/\-L\"(.*?)\"/-L$1/sg;
+
+            # Separate libs from ldflags
+            if ($param eq 'libs') {
+                my (@libs, @ldflags);
+                for (split ' ', $str) {
+                    if (/^-[Ll]/) { push @libs, $_ }
+                    else          { push @ldflags, $_ }
+                }
+                $str = "@libs";
+                $opt->{ldflags} = "@ldflags";
+                $source->{ldflags} = "mysql_config";
+            }
 
             $opt->{$param} = $str;
             $source->{$param} = "mysql_config";

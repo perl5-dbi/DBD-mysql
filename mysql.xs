@@ -304,7 +304,7 @@ do(dbh, statement, attr=Nullsv, ...)
   if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_dbh),
                   "mysql.xs do() use_server_side_prepare %d, async %d\n",
-                  use_server_side_prepare, async);
+                  use_server_side_prepare, SvTRUE(async));
 
   hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
 

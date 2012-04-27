@@ -337,6 +337,10 @@ my_ulonglong mysql_st_internal_execute41(SV *,
 int mysql_st_clean_cursor(SV*, imp_sth_t*);
 #endif
 
+#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
+int mysql_st_next_results(SV*, imp_sth_t*);
+#endif
+
 #if defined(DBD_MYSQL_EMBEDDED)
 int count_embedded_options(char *);
 char ** fill_out_embedded_options(char *, int , int , int );
