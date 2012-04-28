@@ -72,7 +72,7 @@ typedef struct sql_type_info_s
 
 */
 static int
-count_params(imp_xxh_t *imp_xxh, char *statement, bool bind_comment_placeholders)
+count_params(imp_xxh_t *imp_xxh, pTHX_ char *statement, bool bind_comment_placeholders)
 {
   bool comment_end= false;
   char* ptr= statement;
@@ -309,7 +309,7 @@ static void free_fbuffer(imp_sth_fbh_t *fbh)
   free statement param structure per num_params
 */
 static void
-free_param(imp_sth_ph_t *params, int num_params)
+free_param(pTHX_ imp_sth_ph_t *params, int num_params)
 {
   if (params)
   {
@@ -516,7 +516,7 @@ char **fill_out_embedded_options(char *options,
 */
 static char *parse_params(
                           imp_xxh_t *imp_xxh,
-                          MYSQL *sock,
+                          pTHX_ MYSQL *sock,
                           char *statement,
                           STRLEN *slen_ptr,
                           imp_sth_ph_t* params,
@@ -797,6 +797,7 @@ static char *parse_params(
 
 int bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
 {
+  dTHX;
   if (ph->value)
   {
     if (SvMAGICAL(ph->value))
@@ -1405,6 +1406,7 @@ static const sql_type_info_t *native2sql(int t)
 
 void dbd_init(dbistate_t* dbistate)
 {
+    dTHX;
     DBISTATE_INIT;
 }
 
@@ -1426,6 +1428,7 @@ void dbd_init(dbistate_t* dbistate)
 
 void do_error(SV* h, int rc, const char* what, const char* sqlstate)
 {
+  dTHX;
   D_imp_xxh(h);
   STRLEN lna;
   SV *errstr;
@@ -1458,6 +1461,7 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
 */
 void do_warn(SV* h, int rc, char* what)
 {
+  dTHX;
   D_imp_xxh(h);
   STRLEN lna;
 
@@ -1513,15 +1517,16 @@ MYSQL *mysql_dr_connect(
                         MYSQL* sock,
                         char* mysql_socket,
                         char* host,
-			                  char* port,
+			char* port,
                         char* user,
                         char* password,
-			                  char* dbname,
+			char* dbname,
                         imp_dbh_t *imp_dbh)
 {
   int portNr;
   unsigned int client_flag;
   MYSQL* result;
+  dTHX;
   D_imp_xxh(dbh);
 
   /* per Monty, already in client.c in API */
@@ -1918,7 +1923,7 @@ MYSQL *mysql_dr_connect(
 /*
   safe_hv_fetch
 */
-static char *safe_hv_fetch(HV *hv, const char *name, int name_length)
+static char *safe_hv_fetch(pTHX_ HV *hv, const char *name, int name_length)
 {
   SV** svp;
   STRLEN len;
@@ -1936,7 +1941,7 @@ static char *safe_hv_fetch(HV *hv, const char *name, int name_length)
 /*
  Frontend for mysql_dr_connect
 */
-static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
+static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
 {
   SV* sv;
   HV* hv;
@@ -1976,12 +1981,12 @@ static int my_login(SV* dbh, imp_dbh_t *imp_dbh)
   if (SvTYPE(hv) != SVt_PVHV)
     return FALSE;
 
-  host=		safe_hv_fetch(hv, "host", 4);
-  port=		safe_hv_fetch(hv, "port", 4);
-  user=		safe_hv_fetch(hv, "user", 4);
-  password=	safe_hv_fetch(hv, "password", 8);
-  dbname=	safe_hv_fetch(hv, "database", 8);
-  mysql_socket=	safe_hv_fetch(hv, "mysql_socket", 12);
+  host=		safe_hv_fetch(aTHX_ hv, "host", 4);
+  port=		safe_hv_fetch(aTHX_ hv, "port", 4);
+  user=		safe_hv_fetch(aTHX_ hv, "user", 4);
+  password=	safe_hv_fetch(aTHX_ hv, "password", 8);
+  dbname=	safe_hv_fetch(aTHX_ hv, "database", 8);
+  mysql_socket=	safe_hv_fetch(aTHX_ hv, "mysql_socket", 12);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -2024,6 +2029,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
 #ifdef dTHR
   dTHR;
 #endif
+  dTHX;
   D_imp_xxh(dbh);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -2046,7 +2052,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
   imp_dbh->enable_utf8 = FALSE;  /* initialize mysql_enable_utf8 */
 #endif
 
-  if (!my_login(dbh, imp_dbh))
+  if (!my_login(aTHX_ dbh, imp_dbh))
   {
     do_error(dbh, mysql_errno(imp_dbh->pmysql),
             mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
@@ -2155,21 +2161,22 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
 {
 #ifdef dTHR
-    dTHR;
+  dTHR;
 #endif
-    D_imp_xxh(dbh);
+  dTHX;
+  D_imp_xxh(dbh);
 
-    /* We assume that disconnect will always work       */
-    /* since most errors imply already disconnected.    */
-    DBIc_ACTIVE_off(imp_dbh);
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %lx\n",
-		      (long) imp_dbh->pmysql);
-    mysql_close(imp_dbh->pmysql );
+  /* We assume that disconnect will always work       */
+  /* since most errors imply already disconnected.    */
+  DBIc_ACTIVE_off(imp_dbh);
+  if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %lx\n",
+        (long) imp_dbh->pmysql);
+      mysql_close(imp_dbh->pmysql );
 
-    /* We don't free imp_dbh since a reference still exists    */
-    /* The DESTROY method is the only one to 'free' memory.    */
-    return TRUE;
+  /* We don't free imp_dbh since a reference still exists    */
+  /* The DESTROY method is the only one to 'free' memory.    */
+  return TRUE;
 }
 
 
@@ -2187,10 +2194,11 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
  *
  **************************************************************************/
 
-int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
+int dbd_discon_all(SV *drh, imp_drh_t *imp_drh) {
 #if defined(dTHR)
-    dTHR;
+  dTHR;
 #endif
+  dTHX;
   D_imp_xxh(drh);
 
 #if defined(DBD_MYSQL_EMBEDDED)
@@ -2294,6 +2302,7 @@ dbd_db_STORE_attrib(
                     SV* valuesv
                    )
 {
+  dTHX;
   STRLEN kl;
   char *key = SvPV(keysv, kl);
   SV *cachesv = Nullsv;
@@ -2386,7 +2395,7 @@ dbd_db_STORE_attrib(
  *
  **************************************************************************/
 static SV*
-my_ulonglong2str(my_ulonglong val)
+my_ulonglong2str(pTHX_ my_ulonglong val)
 {
   char buf[64];
   char *ptr = buf + sizeof(buf) - 1;
@@ -2405,6 +2414,7 @@ my_ulonglong2str(my_ulonglong val)
 
 SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
 {
+  dTHX;
   STRLEN kl;
   char *key = SvPV(keysv, kl);
   char* fine_key = NULL;
@@ -2455,7 +2465,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 13 && strEQ(key, "clientversion"))
     {
-      result= sv_2mortal(my_ulonglong2str(mysql_get_client_version()));
+      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_client_version()));
     }
     break;
   case 'e':
@@ -2513,7 +2523,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
-      result= sv_2mortal(my_ulonglong2str(mysql_insert_id(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
     break;
   case 'n':
     if (kl == strlen("no_autocommit_cmd") &&
@@ -2534,7 +2544,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
         sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     }
     else if (kl == 13 && strEQ(key, "serverversion"))
-      result= sv_2mortal(my_ulonglong2str(mysql_get_server_version(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv((IV) imp_dbh->pmysql));
     else if (strEQ(key, "sockfd"))
@@ -2595,6 +2605,7 @@ dbd_st_prepare(
 {
   int i;
   SV **svp;
+  dTHX;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   char *str_ptr;
   int col_type, prepare_retval, limit_flag=0;
@@ -2828,10 +2839,10 @@ dbd_st_prepare(
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   /* Count the number of parameters (driver, vs server-side) */
   if (imp_sth->use_server_side_prepare == 0)
-    DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, statement,
+    DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, aTHX_ statement,
                                             imp_dbh->bind_comment_placeholders);
 #else
-  DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, statement,
+  DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, aTHX_ statement,
                                           imp_dbh->bind_comment_placeholders);
 #endif
 
@@ -2857,6 +2868,7 @@ dbd_st_prepare(
  *************************************************************************/
 int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
 {
+  dTHX;
   D_imp_dbh_from_sth;
   D_imp_xxh(sth);
   int next_result_rc= -1;
@@ -2935,6 +2947,7 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
  *************************************************************************/
 int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 {
+  dTHX;
   D_imp_dbh_from_sth;
   D_imp_xxh(sth);
 
@@ -3084,6 +3097,7 @@ my_ulonglong mysql_st_internal_execute(
                                        int use_mysql_use_result
                                       )
 {
+  dTHX;
   bool bind_type_guessing= FALSE;
   bool bind_comment_placeholders= TRUE;
   STRLEN slen;
@@ -3148,7 +3162,7 @@ my_ulonglong mysql_st_internal_execute(
                   MYSQL_VERSION_ID );
 
   salloc= parse_params(imp_xxh,
-                              svsock,
+                              aTHX_ svsock,
                               sbuf,
                               &slen,
                               params,
@@ -3282,6 +3296,7 @@ my_ulonglong mysql_st_internal_execute41(
                                          int *has_been_bound
                                         )
 {
+  dTHX;
   int execute_retval;
   my_ulonglong rows=0;
   D_imp_xxh(sth);
@@ -3394,6 +3409,7 @@ error:
 
 int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 {
+  dTHX;
   char actual_row_num[64];
   int i;
   SV **statement;
@@ -3516,6 +3532,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
 int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 {
+  dTHX;
   D_imp_xxh(sth);
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t--> dbd_describe\n");
@@ -3646,6 +3663,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 AV*
 dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 {
+  dTHX;
   int num_fields, ChopBlanks, i, rc;
   unsigned long *lengths;
   AV *av;
@@ -4010,6 +4028,7 @@ int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
  **************************************************************************/
 
 int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
+  dTHX;
   D_imp_xxh(sth);
 
 #if defined (dTHR)
@@ -4079,6 +4098,7 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
  **************************************************************************/
 
 void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
+  dTHX;
   D_imp_xxh(sth);
 
 #if defined (dTHR)
@@ -4135,7 +4155,7 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
   /* Free values allocated by dbd_bind_ph */
   if (imp_sth->params)
   {
-    free_param(imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
+    free_param(aTHX_ imp_sth->params, DBIc_NUM_PARAMS(imp_sth));
     imp_sth->params= NULL;
   }
 
@@ -4176,6 +4196,7 @@ dbd_st_STORE_attrib(
                     SV *valuesv
                    )
 {
+  dTHX; 
   STRLEN(kl);
   char *key= SvPV(keysv, kl);
   int retval= FALSE;
@@ -4240,6 +4261,7 @@ dbd_st_FETCH_internal(
   int cacheit
 )
 {
+  dTHX;
   D_imp_sth(sth);
   AV *av= Nullav;
   MYSQL_FIELD *curField;
@@ -4380,6 +4402,7 @@ dbd_st_FETCH_internal(
                           SV *keysv
                          )
 {
+  dTHX;
   STRLEN(kl);
   char *key= SvPV(keysv, kl);
   SV *retsv= Nullsv;
@@ -4460,7 +4483,7 @@ dbd_st_FETCH_internal(
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %d\n", (int) imp_sth->insertid);
 
-        return sv_2mortal(my_ulonglong2str(imp_sth->insertid));
+        return sv_2mortal(my_ulonglong2str(aTHX_ imp_sth->insertid));
       }
       break;
     case 15:
@@ -4561,8 +4584,9 @@ int dbd_st_blob_read (
  *
  **************************************************************************/
 
-int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
+int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
+  dTHX;
   int rc;
   int param_num= SvIV(param);
   int idx= param_num - 1;
@@ -4764,6 +4788,7 @@ int dbd_bind_ph (SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
 int mysql_db_reconnect(SV* h)
 {
+  dTHX;
   D_imp_xxh(h);
   imp_dbh_t* imp_dbh;
   MYSQL save_socket;
@@ -4802,7 +4827,7 @@ int mysql_db_reconnect(SV* h)
    * prevent my_login from thinking it's adopting an active child which
    * would prevent the handle from actually reconnecting
    */
-  if (!dbd_db_disconnect(h, imp_dbh) || !my_login(h, imp_dbh))
+  if (!dbd_db_disconnect(h, imp_dbh) || !my_login(aTHX_ h, imp_dbh))
   {
     do_error(h, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
              mysql_sqlstate(imp_dbh->pmysql));
@@ -4847,6 +4872,7 @@ int mysql_db_reconnect(SV* h)
 
 AV *dbd_db_type_info_all(SV *dbh, imp_dbh_t *imp_dbh)
 {
+  dTHX;
   AV *av= newAV();
   AV *row;
   HV *hv;
@@ -4935,6 +4961,7 @@ AV *dbd_db_type_info_all(SV *dbh, imp_dbh_t *imp_dbh)
 */
 SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 {
+  dTHX;
   SV *result;
 
   if (SvGMAGICAL(str))
@@ -4991,6 +5018,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
         SV *catalog, SV *schema, SV *table, SV *field, SV *attr)
 {
+  dTHX;
   /* all these non-op settings are to stifle OS X compile warnings */
   imp_dbh= imp_dbh;
   dbh= dbh;
@@ -5001,126 +5029,128 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
   attr= attr;
 
   ASYNC_CHECK_RETURN(dbh, &PL_sv_undef);
-  return sv_2mortal(my_ulonglong2str(mysql_insert_id(imp_dbh->pmysql)));
+  return sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
 }
 #endif
 
 #if MYSQL_ASYNC
 int mysql_db_async_result(SV* h, MYSQL_RES** resp)
 {
-    D_imp_xxh(h);
-    imp_dbh_t* dbh;
-    MYSQL* svsock = NULL;
-    MYSQL_RES* _res;
-    int retval = 0;
-    int htype;
+  dTHX;
+  D_imp_xxh(h);
+  imp_dbh_t* dbh;
+  MYSQL* svsock = NULL;
+  MYSQL_RES* _res;
+  int retval = 0;
+  int htype;
 
-    if(! resp) {
-        resp = &_res;
-    }
+  if(! resp) {
+      resp = &_res;
+  }
 
-    htype = DBIc_TYPE(imp_xxh);
+  htype = DBIc_TYPE(imp_xxh);
 
-    if(htype == DBIt_DB) {
-        D_imp_dbh(h);
-        dbh = imp_dbh;
-    } else {
-        D_imp_sth(h);
-        D_imp_dbh_from_sth;
-        dbh = imp_dbh;
-    }
+  if(htype == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
 
-    if(! dbh->async_query_in_flight) {
-        do_error(h, 2000, "Gathering asynchronous results for a synchronous handle", "HY000");
-        return -1;
-    }
-    if(dbh->async_query_in_flight != imp_xxh) {
-        do_error(h, 2000, "Gathering async_query_in_flight results for the wrong handle", "HY000");
-        return -1;
-    }
-    dbh->async_query_in_flight = NULL;
+  if(! dbh->async_query_in_flight) {
+      do_error(h, 2000, "Gathering asynchronous results for a synchronous handle", "HY000");
+      return -1;
+  }
+  if(dbh->async_query_in_flight != imp_xxh) {
+      do_error(h, 2000, "Gathering async_query_in_flight results for the wrong handle", "HY000");
+      return -1;
+  }
+  dbh->async_query_in_flight = NULL;
 
-    svsock= dbh->pmysql;
-    retval= mysql_read_query_result(svsock);
-    if(! retval) {
-      *resp= mysql_store_result(svsock);
+  svsock= dbh->pmysql;
+  retval= mysql_read_query_result(svsock);
+  if(! retval) {
+    *resp= mysql_store_result(svsock);
 
-      if (mysql_errno(svsock))
-        do_error(h, mysql_errno(svsock), mysql_error(svsock), mysql_sqlstate(svsock));
-      if (!*resp)
-        retval= mysql_affected_rows(svsock);
-      else {
-        retval= mysql_num_rows(*resp);
-        if(resp == &_res) {
-            mysql_free_result(*resp);
-        }
+    if (mysql_errno(svsock))
+      do_error(h, mysql_errno(svsock), mysql_error(svsock), mysql_sqlstate(svsock));
+    if (!*resp)
+      retval= mysql_affected_rows(svsock);
+    else {
+      retval= mysql_num_rows(*resp);
+      if(resp == &_res) {
+          mysql_free_result(*resp);
       }
-      if(htype == DBIt_ST) {
-        D_imp_sth(h);
-        D_imp_dbh_from_sth;
+    }
+    if(htype == DBIt_ST) {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
 
-        if(retval+1 != (my_ulonglong)-1) {
-            if(! *resp) {
-                imp_sth->insertid= mysql_insert_id(svsock);
+      if(retval+1 != (my_ulonglong)-1) {
+          if(! *resp) {
+              imp_sth->insertid= mysql_insert_id(svsock);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
-                if (! mysql_more_results(svsock))
-                    DBIc_ACTIVE_off(imp_sth);
+              if (! mysql_more_results(svsock))
+                  DBIc_ACTIVE_off(imp_sth);
 #endif
-            } else {
-                DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
-                imp_sth->done_desc= 0;
-                imp_sth->fetch_done= 0;
-            }
-        }
-        imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
+          } else {
+              DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
+              imp_sth->done_desc= 0;
+              imp_sth->fetch_done= 0;
+          }
       }
-    } else {
-        do_error(h, mysql_errno(svsock), mysql_error(svsock),
-                 mysql_sqlstate(svsock));
-        return -1;
+      imp_sth->warning_count = mysql_warning_count(imp_dbh->pmysql);
     }
-    return retval;
+  } else {
+      do_error(h, mysql_errno(svsock), mysql_error(svsock),
+               mysql_sqlstate(svsock));
+      return -1;
+  }
+  return retval;
 }
 
 int mysql_db_async_ready(SV* h)
 {
-    D_imp_xxh(h);
-    imp_dbh_t* dbh;
-    int htype;
+  dTHX;
+  D_imp_xxh(h);
+  imp_dbh_t* dbh;
+  int htype;
 
-    htype = DBIc_TYPE(imp_xxh);
-    
-    if(htype == DBIt_DB) {
-        D_imp_dbh(h);
-        dbh = imp_dbh;
-    } else {
-        D_imp_sth(h);
-        D_imp_dbh_from_sth;
-        dbh = imp_dbh;
-    }
+  htype = DBIc_TYPE(imp_xxh);
+  
+  if(htype == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
 
-    if(dbh->async_query_in_flight) {
-        if(dbh->async_query_in_flight == imp_xxh) {
-            struct pollfd fds;
-            int retval;
+  if(dbh->async_query_in_flight) {
+      if(dbh->async_query_in_flight == imp_xxh) {
+          struct pollfd fds;
+          int retval;
 
-            fds.fd = dbh->pmysql->net.fd;
-            fds.events = POLLIN;
+          fds.fd = dbh->pmysql->net.fd;
+          fds.events = POLLIN;
 
-            retval = poll(&fds, 1, 0);
+          retval = poll(&fds, 1, 0);
 
-            if(retval < 0) {
-                do_error(h, errno, strerror(errno), "HY000");
-            }
-            return retval;
-        } else {
-            do_error(h, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
-            return -1;
-        }
-    } else {
-        do_error(h, 2000, "Handle is not in asynchronous mode", "HY000");
-        return -1;
-    }
+          if(retval < 0) {
+              do_error(h, errno, strerror(errno), "HY000");
+          }
+          return retval;
+      } else {
+          do_error(h, 2000, "Calling mysql_async_ready on the wrong handle", "HY000");
+          return -1;
+      }
+  } else {
+      do_error(h, 2000, "Handle is not in asynchronous mode", "HY000");
+      return -1;
+  }
 }
 #endif
 

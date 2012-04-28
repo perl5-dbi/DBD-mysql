@@ -15,6 +15,8 @@
  *  $Id$
  */
 
+#define PERL_NO_GET_CONTEXT
+
 /*
  *  Header files we use
  */
