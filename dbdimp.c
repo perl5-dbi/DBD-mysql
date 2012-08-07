@@ -2304,7 +2304,7 @@ dbd_db_STORE_attrib(
   {
     if (imp_dbh->has_transactions)
     {
-      int oldval = DBIc_has(imp_dbh,DBIcf_AutoCommit);
+      bool oldval = DBIc_has(imp_dbh,DBIcf_AutoCommit) ? 1 : 0;
 
       if (bool_value == oldval)
         return TRUE;
