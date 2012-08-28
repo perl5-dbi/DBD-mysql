@@ -22,7 +22,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 77;
+plan tests => 78;
 
 ok(defined $dbh, "connecting");
 
@@ -280,6 +280,13 @@ SKIP: {
   $sth= $dbh->column_info(undef, undef, "t1", "a'b");
   ($info)= $sth->fetchall_arrayref({});
   is(scalar @$info, 1);
+
+  #
+  # The result set is ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
+  #
+  $sth= $dbh->column_info(undef, undef, "t1", undef);
+  my ($info)= $sth->fetchall_arrayref({});
+  is(join(' ++ ', map { $_->{COLUMN_NAME} } @{$info}), "a ++ b ++ a_ ++ a'b ++ bar");
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
   $dbh->disconnect();

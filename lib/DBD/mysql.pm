@@ -452,6 +452,7 @@ sub column_info {
   }
 
   my $ordinal_pos = 0;
+  my @fields;
   for my $row (@$desc)
   {
     my $type = $row->{type};
@@ -460,6 +461,7 @@ sub column_info {
     my $typemod   = $2;
     my $attr      = $3;
 
+    push @fields, $row->{field};
     my $info = $col_info{ $row->{field} }= {
 	    TABLE_CAT               => $catalog,
 	    TABLE_SCHEM             => $schema,
@@ -583,7 +585,7 @@ sub column_info {
           return $dbh->DBI::set_err($DBI::err, "DBI::Sponge: $DBI::errstr"));
 
   my $sth = $sponge->prepare("column_info $table", {
-      rows          => [ map { [ @{$_}{@names} ] } values %col_info ],
+      rows          => [ map { [ @{$_}{@names} ] } map { $col_info{$_} } @fields ],
       NUM_OF_FIELDS => scalar @names,
       NAME          => \@names,
       }) or
