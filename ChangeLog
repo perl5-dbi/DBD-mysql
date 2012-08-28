@@ -1,3 +1,20 @@
+2012-08-28 Patrick Galbraith et open source community <patg at patg dot net> (4.022)
+* Fixes for Win32 from Rom Hoelz (https://github.com/hoelzro) 
+* Pulling back in work for 4.021 that didn't get pushed and much other work from Chip Salzenberg (https://github.com/chipdude)
+* Column info order fix from Tokuhiro Matsuno (https://github.com/tokuhirom)
+* Fix AutoCommit comparison logic to avoid spurious commands to mysql from Matthew Horsfall (https://github.com/wolfsage)
+* server_preapre can't bind placeholder on comment. from Misahiro Chiba (https://github.com/nihen)
+* server_prepare; data is null, allocate big memory bug. from Misahiro Chiba (https://github.com/nihen)
+ 
+2012-04-15 Patrick Galbraith (work of others) <patg at patg dot net> (4.021)
+* Fix to enable PERL_NO_GET_CONTEXT to spee up DBD on thread Perls 
+(Dave Mitchell <davem at iabyn dot com>) Thank you!
+* Fix to is_prefix not being exported by mysql Aran Deltax <bluefeet at gmail dot com> Thank you!
+* Eliminate DBIS usage Dagfinn Ilmari Mannsåker <ilmari at ilmari dot org> Thank you!
+* Enhanced / Fixed server side prepared statement checks (Steven Hartland) Thank you!
+* Fix missprint in doc of DBD::mysql of mysql_bind_type_guessing (Perlover http://blog.perloever.com) Thank you!
+* Misprint in lib/DBD/mysql.pm (Perlover) Thank you!
+
 2011-08-15 Patrick Galbraith <patg at patg dot net> (4.020)
 * Numerous (!! Thank you!!) fixes for prepared statements: Masahiro Chiba <nihen at megabbs
 dot com>
