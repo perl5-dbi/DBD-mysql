@@ -66,6 +66,7 @@ constants.h
 dbdimp.c
 dbdimp.h
 README
+README.OSX
 MANIFEST.SKIP
 Makefile.PL.embedded
 Makefile.PL

@@ -8,6 +8,14 @@ The driver installation is described in
 
 In short: If you are using
 
+  OS X
+
+  Please see the excellent post at https://discussions.apple.com/thread/3932531?start=0&tstart=0&fb_source=message
+  (Thanks to Kris Davey for pointing this out to me). I plan to see if I can get the build process 
+  to be more intelligent about using build flags that work. It is very difficult as it's 
+  not a driver problem per se but a problem in how one builds DBD::mysql with a binary client lib
+  built on a different compiler than the one the user is using.
+
   Windows/ActivePerl
 
     1.) If you need to use an HTTP Proxy, set the environment
