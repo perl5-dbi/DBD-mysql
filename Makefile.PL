@@ -349,9 +349,9 @@ if ($opt->{'embedded'})
 
 }
 
-if (eval ($ExtUtils::MakeMaker::VERSION) >= 5.43) {
+if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'CAPI'} = 'TRUE'
-    if ($ExtUtils::MakeMaker::VERSION >= 5.43
+    if (eval $ExtUtils::MakeMaker::VERSION >= 5.43
 	&&  $Config::Config{'archname'} =~ /-object\b/i);
   $o{'AUTHOR'} = 'Patrick Galbraith <patg@patg.net>';
   $o{'ABSTRACT'} =
