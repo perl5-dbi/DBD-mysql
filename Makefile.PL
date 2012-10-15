@@ -349,7 +349,7 @@ if ($opt->{'embedded'})
 
 }
 
-if ($ExtUtils::MakeMaker::VERSION >= 5.43) {
+if (eval ($ExtUtils::MakeMaker::VERSION) >= 5.43) {
   $o{'CAPI'} = 'TRUE'
     if ($ExtUtils::MakeMaker::VERSION >= 5.43
 	&&  $Config::Config{'archname'} =~ /-object\b/i);
