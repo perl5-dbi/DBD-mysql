@@ -3009,6 +3009,10 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
     return 0;
   }
+  else if(next_result_return_code == -1)                                                                                                                  
+  {                                                                                                                                                       
+    return 0;                                                                                                                                             
+  }  
   else
   {
     /* Store the result from the Query */
@@ -3016,14 +3020,20 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
      mysql_use_result(svsock) : mysql_store_result(svsock);
 
     if (mysql_errno(svsock))
+    {
       do_error(sth, mysql_errno(svsock), mysql_error(svsock), 
                mysql_sqlstate(svsock));
+      return 0;
+    }
 
     imp_sth->row_num= mysql_affected_rows(imp_dbh->pmysql);
 
     if (imp_sth->result == NULL)
     {
       /* No "real" rowset*/
+      DBIc_NUM_FIELDS(imp_sth)= 0; /* for DBI <= 1.53 */
+      DBIS->set_attr_k(sth, sv_2mortal(newSVpvn("NUM_OF_FIELDS",13)), 0,
+			               sv_2mortal(newSViv(0)));
       return 1;
     }
     else
