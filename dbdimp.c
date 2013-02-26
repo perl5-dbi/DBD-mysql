@@ -3791,6 +3791,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         )
     {
       SV *sv= AvARRAY(av)[i]; /* Note: we (re)use the SV in the AV	*/
+      STRLEN len;
 
       /* This is wrong, null is not being set correctly
        * This is not the way to determine length (this would break blobs!)
@@ -3840,7 +3841,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         default:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tERROR IN st_fetch_string");
-          STRLEN len= fbh->length;
+          len= fbh->length;
 	/* ChopBlanks */
           if (ChopBlanks)
           {
