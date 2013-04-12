@@ -214,12 +214,14 @@ void
 _ListDBs(dbh)
   SV*	dbh
   PPCODE:
+  MYSQL_RES* res;
+  MYSQL_ROW cur;
+
   D_imp_dbh(dbh);
 
   ASYNC_CHECK_XS(dbh);
 
-  MYSQL_RES* res = mysql_list_dbs(imp_dbh->pmysql, NULL);
-  MYSQL_ROW cur;
+  res = mysql_list_dbs(imp_dbh->pmysql, NULL);
   if (!res  &&
       (!mysql_db_reconnect(dbh)  ||
        !(res = mysql_list_dbs(imp_dbh->pmysql, NULL))))
@@ -607,10 +609,12 @@ quote(dbh, str, type=NULL)
   PROTOTYPE: $$;$
   PPCODE:
     {
+        SV* quoted;
+
         D_imp_dbh(dbh);
         ASYNC_CHECK_XS(dbh);
 
-        SV* quoted = dbd_db_quote(dbh, str, type);
+        quoted = dbd_db_quote(dbh, str, type);
 	ST(0) = quoted ? sv_2mortal(quoted) : str;
 	XSRETURN(1);
     }

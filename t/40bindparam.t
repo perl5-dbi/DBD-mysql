@@ -86,7 +86,6 @@ ok($sth->execute);
 ok ($sth->bind_columns(undef, \$id, \$name));
 
 $ref = $sth->fetch ; 
-exit;
 
 is $id,  -1, 'id set to -1'; 
 
