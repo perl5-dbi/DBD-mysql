@@ -3628,23 +3628,17 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tMYSQL_TYPE_DOUBLE %s\n",
-                      (char *) &fbh->data);
         buffer->buffer_length= sizeof(fbh->ddata);
         buffer->buffer= (char*) &fbh->ddata;
         break;
 
       case MYSQL_TYPE_LONG:
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tMYSQL_TYPE_LONG %s\n",
-                      (char *) &fbh->data);
         buffer->buffer_length= sizeof(fbh->ldata);
         buffer->buffer= (char*) &fbh->ldata;
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
       default:
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tTYPE default %s\n",
-                      (char *) &fbh->data);
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
