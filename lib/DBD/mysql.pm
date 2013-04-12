@@ -10,7 +10,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.022';
+$VERSION = '4.023';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1447,9 +1447,6 @@ See the bug report:
 
 https://rt.cpan.org/Public/Bug/Display.html?id=46308
 
-As well as:
-
-http://bugs.mysql.com/bug.php?id=32464
 
 C<mysql_no_autocommit_cmd> can be turned on via
 
@@ -2119,20 +2116,9 @@ for details.
 
 =head1 MAILING LIST SUPPORT
 
-This module is maintained and supported on a mailing list,
+This module is maintained and supported on a mailing list, dbi-users.
 
-    perl@lists.mysql.com
-
-To subscribe to this list, go to
-
-http://lists.mysql.com/perl?sub=1
-
-Mailing list archives are available at
-
-http://lists.mysql.com/perl
-
-Additionally you might try the dbi-user mailing list for questions about
-DBI and its modules in general. Subscribe via
+To subscribe to this list, send and email to 
 
 dbi-users-subscribe@perl.org
 
@@ -2163,7 +2149,10 @@ Information on the DBI interface itself can be gained by typing:
 
     perldoc DBI
 
-right now!
+Information on the DBD::mysql specifically can be gained by typing:
+
+    perldoc DBD::mysql 
+
 
 
 =head1 BUG REPORTING, ENHANCEMENT/FEATURE REQUESTS
@@ -2172,7 +2161,11 @@ Please report bugs, including all the information needed
 such as DBD::mysql version, MySQL version, OS type/version, etc
 to this link:
 
-http://bugs.mysql.com/
+http://rt.cpan.org
 
+Note: until recently, MySQL/Sun/Oracle responded to bugs and assisted in 
+fixing bugs which many thanks should be given for their help! 
+This driver is outside the realm of the numerous components they support, and the 
+maintainer and community solely support DBD::mysql
 
 =cut

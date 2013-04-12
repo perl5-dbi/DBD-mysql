@@ -1,3 +1,13 @@
+2013-04-12 Patrick Galbraith et open source community <patg at patg dot net> (4.023)
+* Fix primary_key_info result ordering - https://github.com/CaptTofu/DBD-mysql/pull/39 - Dagfinn Ilmari Mannsåker
+* allow compilation with msvc - https://github.com/CaptTofu/DBD-mysql/pull/37 - Walde Christian
+* just to set MYSQL_OPT_WRITE_TIMEOUT and MYSQL_OPT_READ_TIMEOUT by dsn - https://github.com/CaptTofu/DBD-mysql/pull/36 - Naosuke Yokoe 
+* just remove unnecessary "my" - https://github.com/CaptTofu/DBD-mysql/pull/34 - Shoichi Kaji
+* eval $ExtUtils::MakeMaker::VERSION requires for old ExtUtils::MakeMaker - https://github.com/CaptTofu/DBD-mysql/pull/32 - Daisuke Murase
+* Updated documentation to reflect that bugs will be reported at rt.cpan.org
+* Updated version
+* Chased tail finding issue with -1 being converted to max unsigned int in PS mode
+
 2012-08-28 Patrick Galbraith et open source community <patg at patg dot net> (4.022)
 * Fixes for Win32 from Rom Hoelz (https://github.com/hoelzro) 
 * Pulling back in work for 4.021 that didn't get pushed and much other work from Chip Salzenberg (https://github.com/chipdude)
