@@ -3618,17 +3618,23 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tMYSQL_TYPE_DOUBLE %s\n",
+                      (char *) &fbh->data);
         buffer->buffer_length= sizeof(fbh->ddata);
         buffer->buffer= (char*) &fbh->ddata;
         break;
 
       case MYSQL_TYPE_LONG:
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tMYSQL_TYPE_LONG %s\n",
+                      (char *) &fbh->data);
         buffer->buffer_length= sizeof(fbh->ldata);
         buffer->buffer= (char*) &fbh->ldata;
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
       default:
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tTYPE default %s\n",
+                      (char *) &fbh->data);
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
@@ -3811,6 +3817,10 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
           Renew(fbh->data, fbh->length, char);
           buffer->buffer_length= fbh->length;
           buffer->buffer= (char *) fbh->data;
+
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tbuffer->buffer: %s\n", (char *) buffer->buffer);
+
           /*TODO: Use offset instead of 0 to fetch only remain part of data*/
           if (mysql_stmt_fetch_column(imp_sth->stmt, buffer , i, 0))
             do_error(sth, mysql_stmt_errno(imp_sth->stmt),
@@ -3835,11 +3845,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
             sv_setuv(sv, fbh->ldata);
           else
             sv_setiv(sv, fbh->ldata);
+
           break;
 
         default:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tERROR IN st_fetch_string");
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tERROR IN st_fetch_string\n");
           STRLEN len= fbh->length;
 	/* ChopBlanks */
           if (ChopBlanks)
@@ -3868,6 +3879,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 	if (imp_dbh->enable_utf8 && !(fbh->flags & BINARY_FLAG))
 #endif
 	  sv_utf8_decode(sv);
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tsv_utf8_decode(%d)\n",
+              SvIV(sv));
 #endif
 	/* END OF UTF8 */
           break;

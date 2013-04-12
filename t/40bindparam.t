@@ -7,13 +7,14 @@
 use DBI ();
 use DBI::Const::GetInfoType;
 use Test::More;
+use Data::Dumper;
 use lib 't', '.';
 require 'lib.pl';
 use vars qw($table $test_dsn $test_user $test_password);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
@@ -21,6 +22,7 @@ if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
     plan skip_all => 
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
+$dbh->trace(4, './patg.log');
 
 plan tests => 41;
 
@@ -84,6 +86,7 @@ ok($sth->execute);
 ok ($sth->bind_columns(undef, \$id, \$name));
 
 $ref = $sth->fetch ; 
+exit;
 
 is $id,  -1, 'id set to -1'; 
 

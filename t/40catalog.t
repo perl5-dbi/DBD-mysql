@@ -285,7 +285,7 @@ SKIP: {
   # The result set is ordered by TABLE_CAT, TABLE_SCHEM, TABLE_NAME and ORDINAL_POSITION.
   #
   $sth= $dbh->column_info(undef, undef, "t1", undef);
-  my ($info)= $sth->fetchall_arrayref({});
+  ($info)= $sth->fetchall_arrayref({});
   is(join(' ++ ', map { $_->{COLUMN_NAME} } @{$info}), "a ++ b ++ a_ ++ a'b ++ bar");
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "cleaning up");
