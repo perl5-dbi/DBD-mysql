@@ -634,7 +634,11 @@ sub primary_key_info {
       return $dbh->DBI::set_err($DBI::err, "DBI::Sponge: $DBI::errstr"));
 
   my $sth= $sponge->prepare("primary_key_info $table", {
-      rows          => [ map { [ @{$_}{@names} ] } values %col_info ],
+      rows          => [
+        map { [ @{$_}{@names} ] }
+        sort { $a->{KEY_SEQ} <=> $b->{KEY_SEQ} }
+        values %col_info
+      ],
       NUM_OF_FIELDS => scalar @names,
       NAME          => \@names,
       }) or
