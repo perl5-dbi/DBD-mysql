@@ -1704,6 +1704,28 @@ MYSQL *mysql_dr_connect(
           mysql_options(sock, MYSQL_OPT_CONNECT_TIMEOUT,
                         (const char *)&to);
         }
+        if ((svp = hv_fetch(hv, "mysql_write_timeout", 19, FALSE))
+            &&  *svp  &&  SvTRUE(*svp))
+        {
+          int to = SvIV(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                          "imp_dbh->mysql_dr_connect: Setting" \
+                          " write timeout (%d).\n",to);
+          mysql_options(sock, MYSQL_OPT_WRITE_TIMEOUT,
+                        (const char *)&to);
+        }
+        if ((svp = hv_fetch(hv, "mysql_read_timeout", 18, FALSE))
+            &&  *svp  &&  SvTRUE(*svp))
+        {
+          int to = SvIV(*svp);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                          "imp_dbh->mysql_dr_connect: Setting" \
+                          " read timeout (%d).\n",to);
+          mysql_options(sock, MYSQL_OPT_READ_TIMEOUT,
+                        (const char *)&to);
+        }
         if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {

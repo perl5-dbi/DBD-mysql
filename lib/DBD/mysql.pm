@@ -1011,6 +1011,18 @@ If your DSN contains the option "mysql_connect_timeout=##", the connect
 request to the server will timeout if it has not been successful after
 the given number of seconds.
 
+=item mysql_write_timeout
+
+If your DSN contains the option "mysql_write_timeout=##", the write
+operation to the server will timeout if it has not been successful after
+the given number of seconds.
+
+=item mysql_read_timeout
+
+If your DSN contains the option "mysql_read_timeout=##", the read
+operation to the server will timeout if it has not been successful after
+the given number of seconds.
+
 =item mysql_init_command
 
  If your DSN contains the option "mysql_init_command_timeout=##", then
