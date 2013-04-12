@@ -22,7 +22,6 @@ if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
     plan skip_all => 
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
-$dbh->trace(4, './patg.log');
 
 plan tests => 41;
 
