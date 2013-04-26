@@ -1,3 +1,6 @@
+2013-??-??
+* Fix memory leak if mysql_server_prepare is enabled - RT76462 - Masahiro Chiba
+
 2013-04-12 Patrick Galbraith et open source community <patg at patg dot net> (4.023)
 * Fix primary_key_info result ordering - https://github.com/CaptTofu/DBD-mysql/pull/39 - Dagfinn Ilmari Mannsåker
 * allow compilation with msvc - https://github.com/CaptTofu/DBD-mysql/pull/37 - Walde Christian
