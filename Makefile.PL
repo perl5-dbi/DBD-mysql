@@ -811,7 +811,8 @@ DEATH
 	$mysqladmin = Win32::GetShortPathName($mysqladmin);
     my $v;
     if ( defined $opt->{'testuser'} and defined $opt->{'testpassword'}) {
-        $v = qx( sprintf('%s --user=%s --password=%s version', $mysqladmin , $opt->{'testuser'}, $opt->{'testpassword'}) );
+ 	my $custom_mysqladmin = sprintf('%s --user=%s --password=%s version', $mysqladmin , $opt->{'testuser'}, $opt->{'testpassword'});
+        $v = qx($custom_mysqladmin);
     } else {
         $v = qx($mysqladmin version);
     }
