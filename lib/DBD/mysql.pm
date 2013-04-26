@@ -927,14 +927,14 @@ statements with:
 		      $number, $dbh->quote("name"));
   $dbh->do($query);
 
-See L<DBI(3)> for details on the quote and do methods. An alternative
+See L<DBI> for details on the quote and do methods. An alternative
 approach is
 
   $dbh->do("INSERT INTO foo VALUES (?, ?)", undef,
 	   $number, $name);
 
 in which case the quote method is executed automatically. See also
-the bind_param method in L<DBI(3)>. See L<DATABASE HANDLES> below
+the bind_param method in L<DBI>. See L<DATABASE HANDLES> below
 for more details on database handles.
 
 If you want to retrieve results, you need to create a so-called
@@ -1311,6 +1311,7 @@ handles (read/write):
  $bool_value = $dbh->{mysql_auto_reconnect};
  $dbh->{mysql_auto_reconnect} = $AutoReconnect ? 1 : 0;
 
+=over
 
 =item mysql_auto_reconnect
 
@@ -1459,7 +1460,7 @@ C<mysql_no_autocommit_cmd> can be turned on via
 
   $dbh->{mysql_no_autocommit_cmd} = 1;
 
-
+=back
 
 =head1 STATEMENT HANDLES
 
@@ -1721,8 +1722,6 @@ and DBD::mysql reconnect, table locks will be lost without any
 indication of such loss.
 
 =back
-
-=over
 
 =head1 MULTIPLE RESULT SETS
 
