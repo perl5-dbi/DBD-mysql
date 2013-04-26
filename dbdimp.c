@@ -3534,7 +3534,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       /** Store the result in the current statement handle */
       DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
       DBIc_ACTIVE_on(imp_sth);
-      imp_sth->done_desc= 0;
+      if (!imp_sth->use_server_side_prepare)
+        imp_sth->done_desc= 0;
       imp_sth->fetch_done= 0;
     }
   }
