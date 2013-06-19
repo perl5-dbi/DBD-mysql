@@ -19,6 +19,8 @@ if ($@) {
         "ERROR: $DBI::errstr. Can't continue test";
 }
 
+CheckRoutinePerms($dbh);
+
 # 
 # DROP/CREATE PROCEDURE will give syntax error 
 # for versions < 5.0

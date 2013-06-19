@@ -280,5 +280,19 @@ sub SQL_INTEGER { 4 };
 sub ErrMsg (@) { print (@_); }
 sub ErrMsgF (@) { printf (@_); }
 
+sub CheckRoutinePerms {
+    my $dbh = shift @_;
+
+    # check for necessary privs
+    local $dbh->{PrintError} = 0;
+    eval { $dbh->do('DROP PROCEDURE IF EXISTS testproc') };
+    my $died = $@;
+
+    return unless $died;
+    note "$died";
+    plan skip_all => 'test user lacks routine privs'
+        if $died =~ qr/alter routine command denied to user/;
+    die $died;
+};
 
 1;
