@@ -363,7 +363,7 @@ if (eval ($ExtUtils::MakeMaker::VERSION) >= 5.43) {
     MIN_PERL_VERSION => '5.005',
     META_MERGE => {
       resources => {
-        repository => 'https://github.com/CaptTofu/DBD-mysql',
+        repository => 'https://github.com/perl5-dbi/DBD-mysql',
       },
     },
     BUILD_REQUIRES => { 'Test::More' => 0,

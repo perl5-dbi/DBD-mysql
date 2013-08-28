@@ -20,7 +20,7 @@ no_index:
 generated_by:       ExtUtils::MakeMaker version 6.54
 resources:
     license: http://dev.perl.org/licenses/
-    repository: git://github.com/CaptTofu/DBD-mysql.git
+    repository: git://github.com/perl5-dbi/DBD-mysql
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4
