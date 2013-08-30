@@ -10,7 +10,7 @@ use DynaLoader();
 use Carp ();
 @ISA = qw(DynaLoader);
 
-$VERSION = '4.023';
+$VERSION = '4.024';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -1335,8 +1335,8 @@ to 0.
 
 This attribute forces the driver to use mysql_use_result rather than
 mysql_store_result. The former is faster and less memory consuming, but
-tends to block other processes. (That's why mysql_store_result is the
-default.)
+tends to block other processes. mysql_store_result is the default due to that 
+fact storing the result is expected behavior with most applications.
 
 It is possible to set the default value of the C<mysql_use_result> attribute
 for the $dbh using several ways:
