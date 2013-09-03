@@ -28,12 +28,7 @@ sections. L<BINARY INSTALLATION>. L<SOURCE INSTALLATION>.
 
 Finally, if you encounter any problems, do not forget to
 read the section on known problems. L<KNOWN PROBLEMS>. If
-that doesn't help, you should look into the archive of the
-mailing list B<perl@lists.mysql.com>. See
-http://www.mysql.com for archive locations. And if that
-still doesn't help, please post a question on this mailing
-list.
-
+that doesn't help, you should check the section on L<SUPPORT>.
 
 =head1 PREREQUISITES
 
@@ -793,8 +788,12 @@ before runing 'perl Makefile.PL'
 
 Finally, if everything else fails, you are not alone. First of
 all, for an immediate answer, you should look into the archives
-of the mailing list B<perl@lists.mysql.com>. See
-http://www.mysql.com for archive locations.
+of the dbi-users mailing list, which is available at
+L<http://groups.google.com/group/perl.dbi.users?hl=en&lr=>
+
+To subscribe to this list, send and email to
+
+dbi-users-subscribe@perl.org
 
 If you don't find an appropriate posting and reply in the
 mailing list, please post a question. Typically a reply will
