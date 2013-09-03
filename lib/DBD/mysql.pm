@@ -920,7 +920,7 @@ method like so:
   $dbh = DBI->connect("DBI:mysql:database=$db;host=$host",
 		      $user, $password, {RaiseError => 1});
 
-Once you have connected to a database, you can can execute SQL
+Once you have connected to a database, you can execute SQL
 statements with:
 
   my $query = sprintf("INSERT INTO foo VALUES (%d, %s)",
@@ -1335,7 +1335,7 @@ to 0.
 
 This attribute forces the driver to use mysql_use_result rather than
 mysql_store_result. The former is faster and less memory consuming, but
-tends to block other processes. mysql_store_result is the default due to that 
+tends to block other processes. mysql_store_result is the default due to that
 fact storing the result is expected behavior with most applications.
 
 It is possible to set the default value of the C<mysql_use_result> attribute
@@ -2078,7 +2078,7 @@ Tim Bunce.
 The current incarnation of B<DBD::mysql> was written by Jochen Wiedmann,
 then numerous changes and bug-fixes were added by Rudy Lippan. Next,
 prepared statement support was added by Patrick Galbraith and
-Alexy Stroganov (who also soley added embedded server
+Alexy Stroganov (who also soleley added embedded server
 support).
 
 For the past seven years DBD::mysql has been maintained by
@@ -2117,7 +2117,7 @@ for details.
 
 This module is maintained and supported on a mailing list, dbi-users.
 
-To subscribe to this list, send and email to 
+To subscribe to this list, send and email to
 
 dbi-users-subscribe@perl.org
 
@@ -2150,7 +2150,7 @@ Information on the DBI interface itself can be gained by typing:
 
 Information on the DBD::mysql specifically can be gained by typing:
 
-    perldoc DBD::mysql 
+    perldoc DBD::mysql
 
 
 
@@ -2162,9 +2162,9 @@ to this link:
 
 http://rt.cpan.org
 
-Note: until recently, MySQL/Sun/Oracle responded to bugs and assisted in 
-fixing bugs which many thanks should be given for their help! 
-This driver is outside the realm of the numerous components they support, and the 
+Note: until recently, MySQL/Sun/Oracle responded to bugs and assisted in
+fixing bugs which many thanks should be given for their help!
+This driver is outside the realm of the numerous components they support, and the
 maintainer and community solely support DBD::mysql
 
 =cut
