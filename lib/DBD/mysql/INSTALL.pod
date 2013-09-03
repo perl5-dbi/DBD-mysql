@@ -49,10 +49,10 @@ http://www.activestate.com for details.
 =item MySQL
 
 You need not install the actual MySQL database server, the
-client files and the devlopment files are sufficient. For
+client files and the development files are sufficient. For
 example, Fedora Core 4 Linux distribution comes with RPM files
-(using YUM) B<mysql.i386> and B<mysql-server.i386> (use "yum search" 
-to find exact package names). These are sufficient, if the MySQL 
+(using YUM) B<mysql.i386> and B<mysql-server.i386> (use "yum search"
+to find exact package names). These are sufficient, if the MySQL
 server is located on a foreign machine.  You may also create client
 files by compiling from the MySQL source distribution and using
 
@@ -167,14 +167,14 @@ For installation from source the following RPM's are required
   mysql-devel
   libz-devel
 
-Please try 
+Please try
 
   yum search mysql
 
 To see the exact names
 
 Note: (important) FC 3 comes with MySQL 3.x, and some people have
-upgraded using MySQL RPMs for newer versions. If you do this, you 
+upgraded using MySQL RPMs for newer versions. If you do this, you
 must re-compile you DBD::mysql because your existing DBD::mysql will be
 linked against the old version of MySQL's client libs. CPAN has no way to
 know or detect that you have upgraded MySQL.
@@ -206,7 +206,7 @@ installation. This may be achieved using command line switches
 which comes with most MySQL distributions. If your MySQL distribution
 contains mysql_config the easiest method is to ensure this binary
 is on your path.
- 
+
 e.g.
 
   PATH=$PATH:/usr/local/mysql/bin
@@ -274,7 +274,7 @@ L</Compiler flags>. L</Linker flags>.
 
 For Windows/CygWin there is a special section below.
 L<Windows/CygWin>.
- 
+
 
 =head2 Configuration
 
@@ -373,10 +373,10 @@ If you want to configure your own settings for database name,
 database user and so on, then you have to create a script with
 the same name, that replies
 
-  
+
 =head2 Compiler flags
 
-Note: the folling info about compiler and linker flags, you shouldn't have
+Note: the following info about compiler and linker flags, you shouldn't have
 to use these options because Makefile.PL is pretty good at utilising
 mysql_config to get the flags that you need for a successful compile.
 
@@ -504,7 +504,7 @@ Below you find information on particular systems:
 
 If you are a user of Cygwin (the Redhat distribution) you already
 know, it contains a nicely running perl 5.6.1, installation of
-additional modules usually works as a charme via the standard
+additional modules usually works like a charm via the standard
 procedure of
 
     perl makefile.PL
@@ -523,12 +523,12 @@ You MUST compile the MySQL clients yourself under Cygwin, to get a
 'libmysqlclient.a' compiled under Cygwin. Really! You'll only need
 that library and the header files, you don't need any other client parts.
 Continue to use the Windows binaries. And don't attempt (currently) to
-build the MySQL Server part, it is unneccessary, as MySQL AB does an
+build the MySQL Server part, it is unnecessary, as MySQL AB does an
 excellent job to deliver optimized binaries for the mainstream
 operating systems, and it is told, that the server compiled under Cygwin is
 unstable.
 
-Install MySQL (if you havn't already)
+Install MySQL (if you haven't already)
 
 =over
 
@@ -713,7 +713,7 @@ Running "make" terminates with an error message like
     -o blib/arch/auto/DBD/mysql/mysql.so  -shared
     -L/usr/local/lib dbdimp.o mysql.o -L/usr/lib/mysql
     -lmysqlclient -lm -L/usr/lib/gcc-lib/i386-redhat-linux/2.96
-    -lgcc -lz 
+    -lgcc -lz
   /usr/bin/ld: cannot find -lz
   collect2: ld returned 1 exit status
   make: *** [blib/arch/auto/DBD/mysql/mysql.so] Error 1
@@ -778,13 +778,13 @@ library, for example
 
 The use of a statically linked library is described in the
 previous section on linker flags. L</Configuration>.
-L</Linker flags>.  
+L</Linker flags>.
 
 =item 4.)
 
-Red Hat 8 & 9 set the Default locale to UTF which causes problems with 
-MakeMaker.  To build DBD::mysql on these systems, do a 'unset LANG' 
-before runing 'perl Makefile.PL'
+Red Hat 8 & 9 set the Default locale to UTF which causes problems with
+MakeMaker.  To build DBD::mysql on these systems, do a 'unset LANG'
+before running 'perl Makefile.PL'
 
 =back
 

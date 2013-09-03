@@ -67,7 +67,7 @@ sub sql_user_name {
 
 ####################
 # makefunc()
-# returns a ref to a sub that that calls into  XS to get 
+# returns a ref to a sub that calls into  XS to get
 # values for info types that must needs be coded in C
 
 sub makefunk ($) {
