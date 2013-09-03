@@ -125,7 +125,14 @@ or
 
 The driver is maintained by a mailing list:
 
-  perl@lists.mysql.com
+This module is maintained and supported on a mailing list, dbi-users.
+To subscribe to this list, send and email to
+
+  dbi-users-subscribe@perl.org
+
+Mailing list archives are at
+
+  http://groups.google.com/group/perl.dbi.users?hl=en&lr=
 
 You can also get help from the maintainer, Patrick Galbraith patg@patg.net
 
