@@ -2092,7 +2092,7 @@ easier.
 Anyone who desires to contribute to this project is encouraged to do so.
 Currently, the source code for this project can be found at Github:
 
-git://github.com/CaptTofu/DBD-mysql.git
+L<https://github.com/perl5-dbi/DBD-mysql/>
 
 Either fork this repository and produce a branch with your changeset that
 the maintainer can merge to his tree, or create a diff with git. The maintainer
@@ -2131,7 +2131,7 @@ http://dbi.perl.org/
 
 And source:
 
-git://github.com/CaptTofu/DBD-mysql.git
+https://github.com/perl5-dbi/DBD-mysql/
 
 =head1 ADDITIONAL DBI INFORMATION
 
