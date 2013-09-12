@@ -7,4 +7,6 @@ mysql.o
 mysql.xsi
 pm_to_blib
 t/mysql.mtest
-
+MYMETA.*
+*.tmp
+/DBD-mysql-*

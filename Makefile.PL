@@ -353,7 +353,7 @@ if (eval ($ExtUtils::MakeMaker::VERSION) >= 5.43) {
   $o{'CAPI'} = 'TRUE'
     if ($ExtUtils::MakeMaker::VERSION >= 5.43
 	&&  $Config::Config{'archname'} =~ /-object\b/i);
-  $o{'AUTHOR'} = 'Rudy Lippan <rlippan@remotelinux.com>';
+  $o{'AUTHOR'} = 'Patrick Galbraith <patg@patg.net>';
   $o{'ABSTRACT'} =
     'A MySQL driver for the Perl5 Database Interface (DBI)';
   $o{'PREREQ_PM'} = { 'DBI' => 1.08,
@@ -367,6 +367,7 @@ if (eval ($ExtUtils::MakeMaker::VERSION) >= 5.43) {
       },
     },
     BUILD_REQUIRES => { 'Test::More' => 0,
+                        'Test::Deep' => 0,
     },
     CONFIGURE_REQUIRES => { 'DBI' => 1.08,
     },
