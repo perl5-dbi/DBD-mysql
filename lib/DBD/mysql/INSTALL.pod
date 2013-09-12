@@ -1,6 +1,6 @@
 =head1 NAME
 
-INSTALL - How to install and configure DBD::mysql
+DBD::mysql::INSTALL - How to install and configure DBD::mysql
 
 
 =head1 SYNOPSIS
