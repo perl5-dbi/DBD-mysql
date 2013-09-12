@@ -102,7 +102,7 @@ is $drh2->{ActiveKids}, 1,
 read_write_test($dbh2);
 
 # must cut the connection data again
-ok ($imp_data = $dbh2->take_imp_data), "didn't get imp_data";
+ok ($imp_data = $dbh2->take_imp_data, "didn't get imp_data");
 
 
 sub read_write_test {
