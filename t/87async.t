@@ -5,7 +5,7 @@ use Test::Deep;
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
-use Time::HiRes qw(clock_gettime CLOCK_REALTIME);
+use Time::HiRes;
 use strict;
 
 use vars qw($test_dsn $test_user $test_password);
@@ -43,17 +43,17 @@ my $rows;
 my $sth;
 my ( $a, $b, $c );
 
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)');
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 
 is $rows, 1;
 ok(($end - $start) >= 2);
 
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)', { async => 1 });
 ok defined($dbh->mysql_async_ready);
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 
 ok $rows;
 is $rows, '0E0';
@@ -61,7 +61,7 @@ is $rows, '0E0';
 ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
@@ -75,9 +75,9 @@ is $rows, 2;
 
 $dbh->do('DELETE FROM async_test');
 
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async => 1 }, 1, 2);
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 
 ok $rows;
 is $rows, '0E0';
@@ -85,7 +85,7 @@ is $rows, '0E0';
 ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
@@ -100,23 +100,23 @@ is $c, 2;
 
 $sth = $dbh->prepare('SELECT SLEEP(2)');
 ok !defined($sth->mysql_async_ready);
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 ok $sth->execute;
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) >= 2);
 
 $sth = $dbh->prepare('SELECT SLEEP(2)', { async => 1 });
 ok !defined($sth->mysql_async_ready);
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 ok $sth->execute;
 ok defined($sth->mysql_async_ready);
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) < 2);
 
 sleep 1 until $sth->mysql_async_ready;
 
 my $row = $sth->fetch;
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok $row;
 is $row->[0], 0;
 ok(($end - $start) >= 2);
@@ -132,15 +132,15 @@ ok $dbh->errstr;
 $dbh->do('DELETE FROM async_test');
 
 $sth = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async => 1 });
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 $rows = $sth->execute(1, 2);
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) < 2);
 ok $rows;
 is $rows, '0E0';
 
 $rows = $sth->mysql_async_result;
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 ok(($end - $start) >= 2);
 is $rows, 1;
 
@@ -154,9 +154,9 @@ $sth  = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async =
 $rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', undef, 1, 2);
 is $rows, 1;
 
-$start = clock_gettime(CLOCK_REALTIME);
+$start = Time::HiRes::gettimeofday();
 $dbh->selectrow_array('SELECT SLEEP(2)', { async => 1 });
-$end = clock_gettime(CLOCK_REALTIME);
+$end = Time::HiRes::gettimeofday();
 
 ok(($end - $start) >= 2);
 ok !defined($dbh->mysql_async_result);
