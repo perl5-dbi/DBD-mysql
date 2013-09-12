@@ -91,7 +91,7 @@ MSG
     $opt->{'mysql_config'} = "mysql_config";
   }
 
-for my $key (qw/testdb testhost testuser testpassword testsocket 
+for my $key (qw/testdb testhost testuser testpassword testsocket testport
                     cflags embedded libs nocatchstderr ssl nofoundrows
                     ps-protocol bind-type-guessing force-embedded/)
 {
