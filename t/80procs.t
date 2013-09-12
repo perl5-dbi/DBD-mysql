@@ -38,7 +38,7 @@ ok $dbh->do("DROP TABLE IF EXISTS $table");
 
 my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
 
-ok $dbh->do($drop_proc);
+ok ($dbh->do($drop_proc), "DROP PROCEDURE") or diag "errstr=$DBI::errstr, err=$DBI::err";
 
 
 my $proc_create = <<EOPROC;
