@@ -17,16 +17,16 @@ use vars qw($test_dsn $test_user $test_password $table);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 if ($@) {
     plan skip_all => 
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 29 * 2;
+plan tests => 36;
 
-for my $mysql_server_prepare (0, 1) {
+for my $mysql_server_prepare (0) {
 eval {$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
 
@@ -45,23 +45,18 @@ ok (my $sth2= $dbh->prepare("SELECT id, name FROM $table WHERE id = ?"));
 
 my $rows;
 
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
-    $rows = [ [1, ''], [2, ''], [3, ' a b c']];
-}
-else {
-    $rows = [ [1, ''], [2, ' '], [3, ' a b c ']];
-}
+$rows = [ [1, ''], [2, ' '], [3, ' a b c '], [4, 'blah'] ];
 
-my $ref;
-for $ref (@$rows) {
+for my $ref (@$rows) {
 	my ($id, $name) = @$ref;
-    ok $sth->execute($id, $name), "inserting ($id, $name) into $table";
-	ok $sth2->execute($id), "selecting where id = $id";
+        ok $sth->execute($id, $name), "insert into $table values ($id, '$name')";
+	ok $sth2->execute($id), "select id, name from $table where id = $id";
 
 	# First try to retreive without chopping blanks.
 	$sth2->{'ChopBlanks'} = 0;
-	ok ($ref = $sth2->fetchrow_arrayref);
-	cmp_ok $$ref[1], 'eq', $name, "\$name should not have blanks chopped";
+        my $ret_ref = [];
+	ok ($ret_ref = $sth2->fetchrow_arrayref);
+	cmp_ok $ret_ref->[1], 'eq', $name, "\$name should not have blanks chopped";
 
 	# Now try to retreive with chopping blanks.
 	$sth2->{'ChopBlanks'} = 1;
@@ -70,9 +65,10 @@ for $ref (@$rows) {
 
 	my $n = $name;
 	$n =~ s/\s+$//;
-	ok ($ref = $sth2->fetchrow_arrayref);
+        $ret_ref = [];
+	ok ($ret_ref = $sth2->fetchrow_arrayref);
 
-	cmp_ok $$ref[1], 'eq', $n, "should have blanks chopped";
+	cmp_ok $ret_ref->[1], 'eq', $n, "should have blanks chopped";
 
 }
 ok $sth->finish;
