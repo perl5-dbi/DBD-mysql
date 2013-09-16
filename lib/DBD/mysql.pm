@@ -812,6 +812,8 @@ __END__
 
 =pod
 
+=encoding utf8
+
 =head1 NAME
 
 DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
