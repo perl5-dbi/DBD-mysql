@@ -1,7 +1,17 @@
-2013-??-??
+2013-09-17 Michiel Beijen, Patrick Galbraith, DBI/DBD community
 * Fix memory leak if mysql_server_prepare is enabled - RT76462 - Masahiro Chiba
+* Small dist improvements:  Michiel Beijen <michiel.beijen@otrs.com>
+* Undefined $DBI::errstr on execute fail on Windows: Michiel Beijen <michiel.beijen@otrs.com>
+* Better diagnostics for 80procs.t Fixes RT#71199: Alexandr Ciornii <alexchorny@gmail.com> 
+* Fix #64013: INSTALL.pod is shown with 'man install': Juergen Weigert <jw@suse.com>
+* Added 'testport' to keys in Makefile.PL Fixes RT#83492: Michiel Beijen <michiel.beijen@otrs.com>
+* Fixed test 70takeimp warning. Michiel Beijen <michiel.beijen@otrs.com>
+* Made test t/87async.t not stop on Win32. Michiel Beijen <michiel.beijen@otrs.com>
+* Update github location.  Update support information. Michiel Beijen <michiel.beijen@otrs.com>
+* POD Fixes  Patch from RT77043 by Gunnar Wolf, Debian Perl Group. Michiel Beijen <michiel.beijen@otrs.com>
 
 2013-04-12 Patrick Galbraith et open source community <patg at patg dot net> (4.023)
+    Fix memory leak if mysql_server_prepare is enabled.
 * Fix primary_key_info result ordering - https://github.com/CaptTofu/DBD-mysql/pull/39 - Dagfinn Ilmari Mannsåker
 * allow compilation with msvc - https://github.com/CaptTofu/DBD-mysql/pull/37 - Walde Christian
 * just to set MYSQL_OPT_WRITE_TIMEOUT and MYSQL_OPT_READ_TIMEOUT by dsn - https://github.com/CaptTofu/DBD-mysql/pull/36 - Naosuke Yokoe 
@@ -10,6 +20,9 @@
 * Updated documentation to reflect that bugs will be reported at rt.cpan.org
 * Updated version
 * Chased tail finding issue with -1 being converted to max unsigned int in PS mode
+* Various typos and other unicode fixes dsteinbrunner <dsteinbrunner@gmail.com>
+* Fixed permissions on files.
+* Clarified documentation and bumped version for next release
 
 2012-08-28 Patrick Galbraith et open source community <patg at patg dot net> (4.022)
 * Fixes for Win32 from Rom Hoelz (https://github.com/hoelzro) 
