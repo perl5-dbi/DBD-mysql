@@ -2104,15 +2104,37 @@ many features and fixes from DBD::mysql have come from the community.
 
 =head1 COPYRIGHT
 
-
 This module is
-Large Portions Copyright (c) 2004-2010 Patrick Galbraith
+
+=over
+
+=item *
+
+Large Portions Copyright (c) 2004-2013 Patrick Galbraith
+
+=item *
+
 Large Portions Copyright (c) 2004-2006 Alexey Stroganov
+
+=item *
+
 Large Portions Copyright (c) 2003-2005 Rudolf Lippan
+
+=item *
+
 Large Portions Copyright (c) 1997-2003 Jochen Wiedmann, with code portions
-Copyright (c)1994-1997 their original authors This module is
-released under the same license as Perl itself. See the Perl README
-for details.
+
+=item *
+
+Copyright (c)1994-1997 their original authors
+
+=back
+
+
+=head1 LICENSE
+
+This module is released under the same license as Perl itself. See
+L<http://www.perl.com/perl/misc/Artistic.html> for details.
 
 
 =head1 MAILING LIST SUPPORT
