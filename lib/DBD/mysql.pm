@@ -2119,28 +2119,21 @@ for details.
 
 This module is maintained and supported on a mailing list, dbi-users.
 
-To subscribe to this list, send and email to
+To subscribe to this list, send an email to
 
 dbi-users-subscribe@perl.org
 
 Mailing list archives are at
 
-http://groups.google.com/group/perl.dbi.users?hl=en&lr=
+L<http://groups.google.com/group/perl.dbi.users?hl=en&lr=>
 
-Also, the main DBI site is at
-
-http://dbi.perl.org/
-
-And source:
-
-https://github.com/perl5-dbi/DBD-mysql/
 
 =head1 ADDITIONAL DBI INFORMATION
 
 Additional information on the DBI project can be found on the World
 Wide Web at the following URL:
 
-    http://dbi.perl.org
+L<http://dbi.perl.org>
 
 where documentation, pointers to the mailing lists and mailing list
 archives and pointers to the most current versions of the modules can
@@ -2150,10 +2143,11 @@ Information on the DBI interface itself can be gained by typing:
 
     perldoc DBI
 
-Information on the DBD::mysql specifically can be gained by typing:
+Information on DBD::mysql specifically can be gained by typing:
 
     perldoc DBD::mysql
 
+(this will display the document you're currently reading)
 
 
 =head1 BUG REPORTING, ENHANCEMENT/FEATURE REQUESTS
@@ -2162,7 +2156,7 @@ Please report bugs, including all the information needed
 such as DBD::mysql version, MySQL version, OS type/version, etc
 to this link:
 
-http://rt.cpan.org
+L<https://rt.cpan.org/Dist/Display.html?Name=DBD-mysql>
 
 Note: until recently, MySQL/Sun/Oracle responded to bugs and assisted in
 fixing bugs which many thanks should be given for their help!
