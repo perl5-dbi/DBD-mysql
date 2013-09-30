@@ -1869,32 +1869,27 @@ If you are using precompiled binaries, then it may be possible to
 use just selected RPM's like MySQL-client and MySQL-devel or something
 similar, depending on the distribution.
 
-First you need to install the DBI module. For using I<dbimon>, a
-simple DBI shell it is recommended to install Data::ShowTable another
-Perl module.
-
 I recommend trying automatic installation via the CPAN module. Try
 
-  perl -MCPAN -e shell
+  cpan
 
 If you are using the CPAN module for the first time, it will prompt
 you a lot of questions. If you finally receive the CPAN prompt, enter
 
-  install Bundle::DBD::mysql
+  install DBD::mysql
 
 =head2 Manual Installation
 
 If this fails (which may be the case for a number of reasons, for
 example because you are behind a firewall or don't have network
 access), you need to do a manual installation. First of all you
-need to fetch the modules from CPAN search
+need to fetch the modules from CPAN
 
-   http://search.cpan.org/
+   L<https://metacpan.org>
 
 The following modules are required
 
   DBI
-  Data::ShowTable
   DBD::mysql
 
 Then enter the following commands (note - versions are just examples):
@@ -1904,13 +1899,6 @@ Then enter the following commands (note - versions are just examples):
   perl Makefile.PL
   make
   make test
-  make install
-
-  cd ..
-  gzip -cd Data-ShowTable-(version).tar.gz | tar xf -
-  cd Data-ShowTable-3.3
-  perl Makefile.PL
-  make
   make install
 
   cd ..
