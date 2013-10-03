@@ -1919,8 +1919,6 @@ F</usr/lib/mysql/libmysqlclient.a> or F</usr/lib/libmysqlclient.so>.
 =head1 WIN32 INSTALLATION
 
 If you are using ActivePerl, you may use ppm to install DBD-mysql.
-For Perl 5.6, upgrade to Build 623 or later, then it is sufficient
-to run
 
   ppm install DBI
   ppm install DBD::mysql
@@ -1930,47 +1928,12 @@ variable http_proxy, for example like this:
 
   set http_proxy=http://myproxy.com:8080/
 
-As of this writing, DBD::mysql is missing in the ActivePerl 5.8.0
-repository. However, Randy Kobes has kindly donated an own
-distribution and the following might succeed:
-
-  ppm install http://theoryx5.uwinnipeg.ca/ppms/DBD-mysql.ppd
-
-Otherwise you definitely *need* a C compiler. And it *must* be the same
-compiler that was being used for compiling Perl itself. If you don't
-have a C compiler, the file README.win32 from the Perl source
-distribution tells you where to obtain freely distributable C compilers
-like egcs or gcc. The Perl sources are available via CPAN search
-
-  http://search.cpan.org
 
 I recommend using the win32clients package for installing DBD::mysql
 under Win32, available for download on www.tcx.se. The following steps
 have been required for me:
 
 =over
-
-=item -
-
-The current Perl versions (5.6, as of this writing) do have a problem
-with detecting the C libraries. I recommend to apply the following
-patch:
-
-  *** c:\Perl\lib\ExtUtils\Liblist.pm.orig Sat Apr 15 20:03:40 2000
-  --- c:\Perl\lib\ExtUtils\Liblist.pm      Sat Apr 15 20:03:45 2000
-  ***************
-  *** 230,235 ****
-  --- 230,239 ----
-      # add "$Config{installarchlib}/CORE" to default search path
-      push @libpath, "$Config{installarchlib}/CORE";
-
-  +     if ($VC  and  exists($ENV{LIB})  and  defined($ENV{LIB})) {
-  +       push(@libpath, split(/;/, $ENV{LIB}));
-  +     }
-  +
-      foreach (Text::ParseWords::quotewords('\s+', 0, $potential_libs)){
-
-        $thislib = $_;
 
 =item -
 
@@ -1991,7 +1954,7 @@ example F<C:\src\siteperl>
 
 =item -
 
-Open a DOS shell and change directory to F<C:\src\siteperl>.
+Open a CMD.exe shell and change directory to F<C:\src\siteperl>.
 
 =item -
 
@@ -2027,30 +1990,6 @@ Continued in the usual way:
 
   nmake
   nmake install
-
-=back
-
-If you want to create a PPM package for the ActiveState Perl version, then
-modify the above steps as follows: Run
-
-  perl Makefile.PL NAME=DBD-mysql BINARY_LOCATION=DBD-mysql.tar.gz
-  nmake ppd
-  nmake
-
-Once that is done, use tar and gzip (for example those from the CygWin32
-distribution) to create an archive:
-
-  mkdir x86
-  tar cf x86/DBD-mysql.tar blib
-  gzip x86/DBD-mysql.tar
-
-Put the files x86/DBD-mysql.tar.gz and DBD-mysql.ppd onto some WWW server
-and install them by typing
-
-  install http://your.server.name/your/directory/DBD-mysql.ppd
-
-in the PPM program.
-
 
 =head1 AUTHORS
 
