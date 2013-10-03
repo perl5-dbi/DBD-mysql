@@ -14,5 +14,5 @@ before_script:
   - mysql -e 'create database myapp_test;'
 install:
    - cpanm Test::Deep DBI
-env: SLOW_TESTS=1
+env: EXTENDED_TESTING=1
 script: "perl Makefile.PL --testuser=travis --testdb myapp_test && make && make test"
