@@ -19,8 +19,8 @@ my $COUNT_PREPARE = 10000;  # Number of prepare/execute/finish iterations
 
 my $have_storable;
 
-if (!$ENV{SLOW_TESTS}) {
-    plan skip_all => "Skip \$ENV{SLOW_TESTS} is not set\n";
+if (!$ENV{EXTENDED_TESTING}) {
+    plan skip_all => "Skip \$ENV{EXTENDED_TESTING} is not set\n";
 }
 
 eval { require Proc::ProcessTable; };
