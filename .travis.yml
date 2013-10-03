@@ -13,6 +13,6 @@ before_install:
 before_script:
   - mysql -e 'create database myapp_test;'
 install:
-   - cpanm Test::Deep Proc::ProcessTable
+   - cpanm Test::Deep Proc::ProcessTable DBI
 env: SLOW_TESTS=1
 script: "perl Makefile.PL --testuser=travis --testdb myapp_test && make && make test"
