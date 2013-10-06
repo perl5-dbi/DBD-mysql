@@ -27,17 +27,13 @@ Makefile.PL.embedded
 MANIFEST
 MANIFEST.SKIP
 META.yml			Module meta-data (added by MakeMaker)
+META.json
 myld
-MYMETA.json
-MYMETA.yml
 mysql.bs
 mysql.c
 mysql.o
 mysql.xs
 mysql.xsi
-pm_to_blib
-pod2htmd.tmp
-pod2htmi.tmp
 README
 README.OSX
 t/00base.t
@@ -95,4 +91,6 @@ t/mem_leak.pl
 t/mysql.dbtest
 t/mysql.mtest
 t/pod.t
+t/rt83494-quotes-comments.t
+t/rt85919-fetch-lost-connection.t
 TODO
