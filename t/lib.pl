@@ -9,6 +9,7 @@
 # All this code is subject to being GUTTED soon
 #
 use strict;
+use Test::More;
 use vars qw($table $mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
 $table= 't1';
 
@@ -289,7 +290,6 @@ sub CheckRoutinePerms {
     my $died = $@;
 
     return unless $died;
-    note "$died";
     plan skip_all => 'test user lacks routine privs'
         if $died =~ qr/alter routine command denied to user/;
     die $died;
