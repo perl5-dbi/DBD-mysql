@@ -1,7 +1,10 @@
 \B\.git\b
 ^blib\/
+pm_to_blib
 \~$
 ^Makefile(\.old)?$
 .gitignore
 ^DBD-mysql-\d
 \.bak$
+\.tmp$
+^MYMETA
