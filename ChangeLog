@@ -1,4 +1,7 @@
-2013-09-17 Michiel Beijen, Patrick Galbraith, DBI/DBD community
+2013-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
+* Fix example in POD doc for NUM_OF_FIELDS - RT36730, reported by tapoutmma.
+
+2013-09-17 Michiel Beijen, Patrick Galbraith, DBI/DBD community (4.024)
 * Fix memory leak if mysql_server_prepare is enabled - RT76462 - Masahiro Chiba
 * Small dist improvements:  Michiel Beijen <michiel.beijen@otrs.com>
 * Undefined $DBI::errstr on execute fail on Windows: Michiel Beijen <michiel.beijen@otrs.com>
