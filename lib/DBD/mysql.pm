@@ -1501,13 +1501,13 @@ header of table names together with all rows:
       die "Error:" . $sth->errstr . "\n";
   }
   my $names = $sth->{'NAME'};
-  my $numFields = $sth->{'NUM_OF_FIELDS'};
-  for (my $i = 0;  $i < $numFields;  $i++) {
+  my $numFields = $sth->{'NUM_OF_FIELDS'} - 1;
+  for my $i ( 0..$numFields ) {
       printf("%s%s", $i ? "," : "", $$names[$i]);
   }
   print "\n";
   while (my $ref = $sth->fetchrow_arrayref) {
-      for (my $i = 0;  $i < $numFields;  $i++) {
+      for my $i ( 0..$numFields ) {
 	  printf("%s%s", $i ? "," : "", $$ref[$i]);
       }
       print "\n";
@@ -1764,7 +1764,7 @@ An example would be:
   $sth->execute || die DBI::err.": ".$DBI::errstr; $rowset=0;
   do {
     print "\nRowset ".++$i."\n---------------------------------------\n\n";
-    foreach $colno (0..$sth->{NUM_OF_FIELDS}) {
+    foreach $colno (0..$sth->{NUM_OF_FIELDS}-1) {
       print $sth->{NAME}->[$colno]."\t";
     }
     print "\n";
