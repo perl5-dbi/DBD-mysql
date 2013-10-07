@@ -1,6 +1,8 @@
 #!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use DBI;
 
 my $db='test';
@@ -34,7 +36,7 @@ die $DBI::err.": ".$DBI::errstr;
 $sth->execute || die DBI::err.": ".$DBI::errstr;
 do {
   print "\nResult set ".++$i."\n---------------------------------------\n\n";
-  for my $colno (0..$sth->{NUM_OF_FIELDS}) {
+  for my $colno (0..$sth->{NUM_OF_FIELDS}-1) {
     print $sth->{NAME}->[$colno]."\t";
   }
   print "\n";
