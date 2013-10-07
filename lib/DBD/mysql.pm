@@ -1991,6 +1991,8 @@ Continued in the usual way:
   nmake
   nmake install
 
+=back
+
 =head1 AUTHORS
 
 Originally, there was a non-DBI driver, Mysql, which was much like
