@@ -15,5 +15,5 @@ before_script:
 install:
    - cpanm Test::Deep DBI
 env: EXTENDED_TESTING=1
-   - cpanm Test::Deep Proc::ProcessTable
+   - cpanm Test::Deep Test::Pod Proc::ProcessTable DBI
 script: "perl Makefile.PL --testuser=travis --testdb myapp_test && make && make test"
