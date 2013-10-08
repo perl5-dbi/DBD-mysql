@@ -1031,9 +1031,9 @@ the given number of seconds.
 
 =item mysql_init_command
 
- If your DSN contains the option "mysql_init_command_timeout=##", then
- this SQL statement is executed when connecting to the MySQL server.
- It is automatically re-executed if reconnection occurs.
+If your DSN contains the option "mysql_init_command=##", then
+this SQL statement is executed when connecting to the MySQL server.
+It is automatically re-executed if reconnection occurs.
 
 =item mysql_read_default_file
 
