@@ -6,7 +6,6 @@ use DBI;
 use Test::More;
 use Data::Dumper;
 use English qw( -no_match_vars );
-our $VERSION = 0.01;
 
 my $CONF =  $ENV{MYCONF} || "$ENV{HOME}/.my.cnf";
 my $emulate = 0;
