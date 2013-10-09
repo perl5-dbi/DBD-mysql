@@ -17,7 +17,6 @@ eg/proc_example2a.pl
 eg/proc_example2b.pl
 eg/proc_example3.pl
 eg/proc_example4.pl
-INSTALL.html
 lib/Bundle/DBD/mysql.pm
 lib/DBD/mysql.pm
 lib/DBD/mysql/GetInfo.pm
@@ -34,7 +33,7 @@ mysql.c
 mysql.o
 mysql.xs
 mysql.xsi
-README
+README.pod
 t/00base.t
 t/10connect.t
 t/15reconnect.t

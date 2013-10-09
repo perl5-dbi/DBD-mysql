@@ -47,7 +47,7 @@ or a lib$missing.so. There are a few ways to resolve this:
 
      perl\@lists.mysql.com
 
-For further hints, see INSTALL.html, section Linker flags.
+For further hints, see DBD::mysql::INSTALL, section Linker flags.
 MSG
     exit 1;
   }

@@ -68,8 +68,8 @@ my $source = {};
     {
       print <<"MSG";
 
-Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist. 
-Please check path/permissions. Will try to use default mysql_config 
+Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist.
+Please check path/permissions. Will try to use default mysql_config
 script found through PATH.
 MSG
       $opt->{'mysql_config'}= "mysql_config";
@@ -84,7 +84,7 @@ MSG
     {
       print <<MSG;
 
-Cannot find the file 'mysql_config'! Your execution PATH doesn't seem 
+Cannot find the file 'mysql_config'! Your execution PATH doesn't seem
 not contain the path to mysql_config. Resorting to guessed values!
 MSG
     }
@@ -113,7 +113,7 @@ if ($opt->{'embedded'})
 {
   if ($source->{'embedded'} eq 'mysql_config')
   {
-    #We have to use libmygcc to resolve linking problem  
+    #We have to use libmygcc to resolve linking problem
     # this causes problems for cygwin
     #$opt->{'embedded'} .= " -lmygcc";
     # Under Cygwin (at least) we have to use libstdc++ to resolve linking
@@ -139,7 +139,7 @@ Please use
 
   perl Makefile.PL --embedded="-L<dir> <flags>"
 
-to set correct directory. For details see the INSTALL.html file,
+to set correct directory. For details see DBD::mysql::INSTALL,
 section "Linker flags" or type
 
   perl Makefile.PL --help
@@ -185,7 +185,7 @@ for my $key (sort { $a cmp $b} keys %$opt)
 print <<"MSG";
 
 To change these settings, see 'perl Makefile.PL --help' and
-'perldoc INSTALL'.
+'perldoc DBD::mysql::INSTALL'.
 
 MSG
 
@@ -194,10 +194,10 @@ sleep 5;
 eval { require File::Spec };
 my $dsn= '';
 if (exists $opt->{'ps-protocol'}) {
-  $dsn = "\$::test_dsn .= \";mysql_server_prepare=1\";\n"; 
+  $dsn = "\$::test_dsn .= \";mysql_server_prepare=1\";\n";
 }
 elsif (exists $opt->{'bind-type-guessing'}) {
-    $dsn= "\$::test_dsn .= \";mysql_bind_type_guessing=1\";\n"; 
+    $dsn= "\$::test_dsn .= \";mysql_bind_type_guessing=1\";\n";
 }
 my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
@@ -229,7 +229,7 @@ $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
 	  'INC' => $cflags,
 	  'dist'         => { 'SUFFIX'       => ".gz",
-			      'DIST_DEFAULT' => 'all installhtml tardist',
+			      'DIST_DEFAULT' => 'all tardist',
 			      'COMPRESS'     => "gzip -9f" },
 	  'clean' => { 'FILES' => '*.xsi' },
 		'realclean' => { 'FILES' => 't/mysql.mtest' },
@@ -262,11 +262,11 @@ if ($opt->{'embedded'})
                                                        makedir => 'mysqlEmb/lib/DBD/mysqlEmb'
                                                      },
                        't/mysql.dbtest' => { filename => 'mysqlEmb/t/mysqlEmb.dbtest',
-                                             makedir => 'mysqlEmb/t' 
+                                             makedir => 'mysqlEmb/t'
                                            },
                        't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
                                              makedir => 'mysqlEmb/t',
-                                             replace =>  { 'DBI:mysql'=> 'DBI:mysqlEmb', 
+                                             replace =>  { 'DBI:mysql'=> 'DBI:mysqlEmb',
                                                             'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb,--skip-bdb";'
                                                          }
                                            },
@@ -418,14 +418,14 @@ Possible options are:
   --nocatchstderr        Supress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavior of \$sth->rows() so that it
-  			 returns the number of rows physically modified 
+  			 returns the number of rows physically modified
 			 instead of the rows matched
   --ps-protocol          Toggle the use of driver emulated prepared statements
                          prepare, requires MySQL server >= 4.1.3 for
-                         server side prepared statements, off by default 
-  --bind-type-guessing   Toggle the use of driver attribute mysql_bind_type_guessing 
+                         server side prepared statements, off by default
+  --bind-type-guessing   Toggle the use of driver attribute mysql_bind_type_guessing
                          This feature makes it so driver-emulated prepared statements
-                         try to "guess" if a value being bound is numeric, in which 
+                         try to "guess" if a value being bound is numeric, in which
                          case, quotes will not be put around the value.
   --ssl			         Enable SSL support
   --help                 Print this message and exit
@@ -439,7 +439,7 @@ it can be found):
   mysql_config --embedded
   mysql_config --testdb
 
-and so on. See the INSTALL.html file for details.
+and so on. See DBD::mysql::INSTALL for details.
 USAGE
   exit 1;
 }
@@ -475,7 +475,7 @@ sub Configure {
 
 # First try to get options values from mysql_config
     my $command = $opt->{'mysql_config'} . " --$param";
-    eval 
+    eval
     {
         open(PIPE, "$command |") or die "Can't find mysql_config.";
     };
@@ -529,11 +529,11 @@ sub Configure {
 
 PLEASE NOTE:
 
-For 'make test' to run properly, you must ensure that the 
-database user '$user' can connect to your MySQL server 
-and has the proper privileges that these tests require such 
+For 'make test' to run properly, you must ensure that the
+database user '$user' can connect to your MySQL server
+and has the proper privileges that these tests require such
 as 'drop table', 'create table', 'drop procedure', 'create procedure'
-as well as others. 
+as well as others.
 
 mysql> grant all privileges on test.* to '$user'\@'localhost' identified by 's3kr1t';
 
@@ -553,7 +553,7 @@ perl Makefile.PL --testuser=username
       $source->{$param} = "default";
       $opt->{$param} = $TESTDB;
     }
-    elsif ($param eq "testhost" || $param eq "testport"  ||  
+    elsif ($param eq "testhost" || $param eq "testport"  ||
         $param eq "testpassword" || $param eq "testsocket" ) {
       $source->{$param} = "default";
       $opt->{$param} = "";
@@ -573,7 +573,7 @@ Failed to determine directory of mysql.h. Use
 
   perl Makefile.PL --cflags=-I<dir>
 
-to set this directory. For details see the INSTALL.html file,
+to set this directory. For details see DBD::mysql::INSTALL,
 section "C Compiler flags" or type
 
   perl Makefile.PL --help
@@ -612,16 +612,16 @@ Failed to determine directory of $f. Use
 
   perl Makefile.PL "--$param=-L<dir> $default_libs"
 
-to set this directory. For details see the INSTALL.html file,
+to set this directory. For details see the DBD::mysql::INSTALL,
 section "Linker flags" or type
 
   perl Makefile.PL --help
 MSG
-    } 
+    }
     elsif ($param eq "ssl") {
       $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
       $source->{$param} = "guessed";
-    } 
+    }
     else {
       die "Unknown configuration parameter: $param";
     }
@@ -662,12 +662,12 @@ sub SearchFor {
 sub SearchFor2 {
   my($files, $dirs) = @_;
 
-  for my $f (@{$files}) 
+  for my $f (@{$files})
   {
-    for my $dir (@{$dirs}) 
+    for my $dir (@{$dirs})
     {
       my $file = $haveFileSpec ?  File::Spec->catfile($dir, $f) : "$dir/$f";
-      if (-f $file) 
+      if (-f $file)
       {
         $fineDir = $dir;
         return $dir;
@@ -678,7 +678,7 @@ sub SearchFor2 {
 
 
 sub check_include_version {
-  
+
   my ($dir, $ver) = @_;
 
   my $headerfile;
@@ -768,7 +768,7 @@ sub create_makefile
 sub win32_mysql_config {
 	my ($mysql_dir) = @_;
 	my $mysqladmin;
-	
+
 	if ($mysql_dir) {
 	  unless (-d $mysql_dir) {
 		die qq{"$mysql_dir" does not exist};
@@ -808,7 +808,7 @@ DEATH
 		copy(File::Spec->catfile($pkglibdir, 'libmysql.lib'), File::Spec->catfile($pkglibdir, 'libmysql.a'));
 		copy(File::Spec->catfile($pkglibdir, 'zlib.lib'), File::Spec->catfile($pkglibdir, 'libzlib.a'));
 	}
-	
+
 	$mysqladmin = Win32::GetShortPathName($mysqladmin);
     my $v;
     if ( defined $opt->{'testuser'} and defined $opt->{'testpassword'}) {
@@ -836,17 +836,17 @@ DEATH
 
 	my $license = <<'EOL';
 # Copyright (C) 2005 MySQL AB & MySQL Finland AB & TCX DataKonsult AB
-# 
+#
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -891,7 +891,7 @@ EOL
 
 	print << "END";
 
-mysql_config.pl, and an associated bat file, has been 
+mysql_config.pl, and an associated bat file, has been
 successfully created under
    $basedir\\bin
 
@@ -913,7 +913,7 @@ sub path_ext {
     #Win9X: doesn't have PATHEXT
     push @path_ext, qw(com exe bat);
   }
-  
+
   return @path_ext;
 }
 
@@ -938,15 +938,6 @@ sub libscan {
     return '' if $path =~ /\B\.svn\b|~#|\BSCCS\b/;
     $path;
 }
-
-sub macro {
-  "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
-
-installhtml: lib/DBD/mysql/INSTALL.pod
-\tpod2html --infile=lib/DBD/mysql/INSTALL.pod --outfile=INSTALL.html
-
-POSTAMBLE
-};
 
 sub dynamic_lib {
   my $self = shift;

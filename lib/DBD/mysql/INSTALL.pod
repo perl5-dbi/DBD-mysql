@@ -179,6 +179,11 @@ know or detect that you have upgraded MySQL.
 Please see the the post at
 L<https://discussions.apple.com/thread/3932531>
 
+(Thanks to Kris Davey for pointing this out to me). I plan to see if I can get the build process
+to be more intelligent about using build flags that work. It is very difficult as it's
+not a driver problem per se but a problem in how one builds DBD::mysql with a binary client lib
+built on a different compiler than the one the user is using.
+
 =head2 Other systems
 
 In the case of Linux or FreeBSD distributions it is very likely
