@@ -35,7 +35,6 @@ mysql.o
 mysql.xs
 mysql.xsi
 README
-README.OSX
 t/00base.t
 t/10connect.t
 t/15reconnect.t

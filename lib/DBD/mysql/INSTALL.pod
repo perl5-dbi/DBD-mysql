@@ -174,6 +174,11 @@ must re-compile you DBD::mysql because your existing DBD::mysql will be
 linked against the old version of MySQL's client libs. CPAN has no way to
 know or detect that you have upgraded MySQL.
 
+=head2 Mac OS X
+
+Please see the the post at
+L<https://discussions.apple.com/thread/3932531>
+
 =head2 Other systems
 
 In the case of Linux or FreeBSD distributions it is very likely
