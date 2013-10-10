@@ -98,6 +98,12 @@ for my $key (qw/testdb testhost testuser testpassword testsocket testport
   Configure($opt, $source, $key);
 }
 
+#if we have a testport but no host, assume localhost
+if ( $opt->{testport} && !$opt->{testhost} ) {
+  $opt->{testhost} = 'localhost';
+  $source->{testhost} = 'guessed';
+}
+
 #We have to rename/move Makefile.PL in mysqlEmb directory
 #since MakeMaker will find it and will try to execute it.
 if (-f "mysqlEmb/Makefile.PL")
