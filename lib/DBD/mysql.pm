@@ -1632,6 +1632,7 @@ Whenever possible, the ANSI SQL name is preferred.
 =item mysql_warning_count
 
 The number of warnings generated during execution of the SQL statement.
+This attribute is available on both statement handles and database handles.
 
 =back
 
