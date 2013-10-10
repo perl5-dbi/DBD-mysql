@@ -939,6 +939,15 @@ sub libscan {
     $path;
 }
 
+sub macro {
+  "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
+
+installhtml: lib/DBD/mysql/INSTALL.pod
+\tpod2html --infile=lib/DBD/mysql/INSTALL.pod --outfile=INSTALL.html
+
+POSTAMBLE
+};
+
 sub dynamic_lib {
   my $self = shift;
   my $result = $self->SUPER::dynamic_lib(@_);
