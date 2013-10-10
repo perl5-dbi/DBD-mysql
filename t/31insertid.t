@@ -1,5 +1,7 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use strict;
 use DBI ();
@@ -15,15 +17,16 @@ eval{$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 			    {RaiseError => 1});};
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 18; 
+plan tests => 18;
 
-ok $dbh->do("DROP TABLE IF EXISTS $table");
+ok $dbh->do('SET @@auto_increment_offset = 1');
+ok $dbh->do('SET @@auto_increment_increment = 1');
 
 my $create = <<EOT;
-CREATE TABLE $table (
+CREATE TEMPORARY TABLE $table (
   id INT(3) PRIMARY KEY AUTO_INCREMENT NOT NULL,
   name VARCHAR(64))
 EOT
@@ -58,11 +61,8 @@ cmp_ok $sth->{'mysql_insertid'}, '==', $max_id->[0], "sth insert id $sth->{'mysq
 
 cmp_ok $dbh->{'mysql_insertid'}, '==', $max_id->[0], "dbh insert id $dbh->{'mysql_insertid'} == max(id) $max_id->[0] in $table";
 
-
 ok $sth->finish();
 
 ok $sth2->finish();
-
-ok $dbh->do("DROP TABLE $table");
 
 ok $dbh->disconnect();
