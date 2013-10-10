@@ -20,11 +20,11 @@ The driver is maintained by a mailing list:
 This module is maintained and supported on a mailing list, dbi-users.
 To subscribe to this list, send an email to
 
-  dbi-users-subscribe@perl.org
+dbi-users-subscribe@perl.org
 
 Mailing list archives are at
 
-  L<http://groups.google.com/group/perl.dbi.users>
+L<http://groups.google.com/group/perl.dbi.users>
 
 You can also get help from the maintainer, Patrick Galbraith patg@patg.net
 
