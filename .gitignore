@@ -10,5 +10,6 @@ t/mysql.mtest
 MYMETA.*
 *.tmp
 *.bak
+*.old
 INSTALL.html
 /DBD-mysql-*

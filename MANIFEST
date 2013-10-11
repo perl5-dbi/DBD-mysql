@@ -2,7 +2,6 @@ ChangeLog
 constants.h
 dbdimp.c
 dbdimp.h
-dbdimp.o
 eg/bigint_quotes.pl
 eg/bug14979.pl
 eg/bug21028.pl
@@ -28,11 +27,7 @@ MANIFEST.SKIP
 META.yml			Module meta-data (added by MakeMaker)
 META.json
 myld
-mysql.bs
-mysql.c
-mysql.o
 mysql.xs
-mysql.xsi
 README.pod
 t/00base.t
 t/10connect.t
