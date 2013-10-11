@@ -2592,6 +2592,11 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (kl == 9  &&  strEQ(key, "thread_id"))
       result= sv_2mortal(newSViv(mysql_thread_id(imp_dbh->pmysql)));
     break;
+
+  case 'w':
+    if (kl == 13 && strEQ(key, "warning_count"))
+      result= sv_2mortal(newSViv(mysql_warning_count(imp_dbh->pmysql)));
+    break;
   }
 
   if (result== NULL)
