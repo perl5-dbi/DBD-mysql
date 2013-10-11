@@ -1964,7 +1964,7 @@ sure that you have a clean build tree by running
 
   nmake realclean
 
-If you don't have VC++, replace nmake with your flavour of make. If
+If you don't have VC++, replace nmake with your flavor of make. If
 error messages are reported in this step, you may safely ignore them.
 
 =item -
