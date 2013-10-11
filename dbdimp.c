@@ -1938,6 +1938,13 @@ MYSQL *mysql_dr_connect(
       */
       result->reconnect=0;
     }
+    else {
+      /* 
+         sock was allocated with mysql_init() 
+         fixes: https://rt.cpan.org/Ticket/Display.html?id=86153
+      */
+      Safefree(sock);
+    }
     return result;
   }
 }
