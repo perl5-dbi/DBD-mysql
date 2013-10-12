@@ -9,7 +9,6 @@
 
 
 use DBI ();
-use DBI::Const::GetInfoType;
 use Test::More;
 use vars qw($table $test_dsn $test_user $test_password);
 use lib '.', 't';
@@ -29,7 +28,7 @@ sub ShowBlob($) {
 }
 
 my $dbh;
-my $charset= 'DEFAULT CHARSET=utf8'; 
+my $charset= 'DEFAULT CHARSET=utf8';
 
 eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1}) or ServerError() ;};
@@ -41,7 +40,7 @@ else {
     plan tests => 14;
 }
 
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
+if (!CheckMinimumVersion($dbh, '4.1')) {
     $charset= '';
 }
 
@@ -52,7 +51,7 @@ ok $dbh->do("DROP TABLE IF EXISTS $table"), "Drop table if exists $table";
 my $create = <<EOT;
 CREATE TABLE $table (
     id INT(3) NOT NULL DEFAULT 0,
-    name BLOB ) $charset 
+    name BLOB ) $charset
 EOT
 
 ok ($dbh->do($create));

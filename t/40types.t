@@ -16,7 +16,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 print "err perl $@\n";
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 plan tests => 20;
@@ -24,8 +24,8 @@ plan tests => 20;
 ok(defined $dbh, "Connected to database");
 
 SKIP: {
-skip "New Data types not supported by server", 19 
-  if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0";
+skip "New Data types not supported by server", 19
+if !CheckMinimumVersion($dbh, '5.0');
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 

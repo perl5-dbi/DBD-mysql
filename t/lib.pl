@@ -10,6 +10,7 @@
 #
 use strict;
 use Test::More;
+use DBI::Const::GetInfoType;
 use vars qw($table $mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
 $table= 't1';
 
@@ -294,5 +295,27 @@ sub CheckRoutinePerms {
         if $died =~ qr/alter routine command denied to user/;
     die $died;
 };
+
+# pass $dbh and minimum version, e.g. $dbh, '5.1';
+sub CheckMinimumVersion {
+    my $dbh = shift @_;
+    my $version = shift @_;
+
+    my ($major, $minor) = split (/\./, $version);
+
+    if ( $dbh->get_info($GetInfoType{SQL_DBMS_VER}) =~ /(^\d+)\.(\d+)\./ ) {
+
+        # major version higher than requested
+        return 1 if $1 > $major;
+
+        # major version too low
+        return if $1 < $major;
+
+        # check minor version
+        return 1 if $2 >= $minor;
+    }
+
+    return;
+}
 
 1;

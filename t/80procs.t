@@ -5,7 +5,6 @@ use strict;
 use lib 't', '.';
 require 'lib.pl';
 use DBI;
-use DBI::Const::GetInfoType;
 use Test::More;
 use Carp qw(croak);
 use vars qw($table $test_dsn $test_user $test_password);
@@ -15,18 +14,18 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1})};
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 
 CheckRoutinePerms($dbh);
 
-# 
-# DROP/CREATE PROCEDURE will give syntax error 
+#
+# DROP/CREATE PROCEDURE will give syntax error
 # for versions < 5.0
 #
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
-    plan skip_all => 
+if (!CheckMinimumVersion($dbh, '5.0') ) {
+    plan skip_all =>
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
 plan tests => 29;
@@ -95,7 +94,7 @@ is $sth->{NUM_OF_FIELDS}, 1, "num_of_fields == 1";
 
 my $resultset;
 ok ($resultset = $sth->fetchrow_arrayref());
-  
+
 ok defined $resultset;
 
 is @$resultset, 1, "1 row in resultset";

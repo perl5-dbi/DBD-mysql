@@ -5,8 +5,7 @@
 # executes report an error but may have worked.
 
 use strict;
-use DBI ();
-use DBI::Const::GetInfoType;
+use DBI;
 use Test::More;
 use lib '.', 't';
 require 'lib.pl';
@@ -22,12 +21,12 @@ if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
 
-# 
-# DROP/CREATE PROCEDURE will give syntax error 
+#
+# DROP/CREATE PROCEDURE will give syntax error
 # for versions < 5.0
 #
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
-    plan skip_all => 
+if (!CheckMinimumVersion($dbh, '4.1')) {
+    plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
 plan tests => 3;

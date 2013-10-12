@@ -1,11 +1,10 @@
 #!perl -w
 #
-#   $Id: 40bindparam.t 6127 2008-10-08 22:36:13Z zhur $ 
+#   $Id: 40bindparam.t 6127 2008-10-08 22:36:13Z zhur $
 #
 
 
 use DBI ();
-use DBI::Const::GetInfoType;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
@@ -17,8 +16,8 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
-    plan skip_all => 
+if (!CheckMinimumVersion($dbh, '4.1') ) {
+    plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
 

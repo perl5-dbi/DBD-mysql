@@ -28,9 +28,6 @@ ok(defined $dbh, "connecting");
 
 my $sth;
 
-my ($version)= $dbh->selectrow_array("SELECT version()")
-  or DbiError($dbh->err, $dbh->errstr);
-
 #
 # Bug #26604: foreign_key_info() implementation
 #
@@ -38,7 +35,7 @@ my ($version)= $dbh->selectrow_array("SELECT version()")
 #
 SKIP: {
   skip "Server is too old to support INFORMATION_SCHEMA for foreign keys", 16
-    if substr($version, 0, 1) < 5;
+if !CheckMinimumVersion($dbh, '5.0');
 
   my ($dummy,$have_innodb)=
     $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
@@ -90,7 +87,7 @@ SKIP: {
 #
 SKIP: {
   skip "Server can't handle tricky table names", 33
-    if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
+    if !CheckMinimumVersion($dbh, '4.1');
 
   my $sth = $dbh->table_info("%", undef, undef, undef);
   is(scalar @{$sth->fetchall_arrayref()}, 0, "No catalogs expected");
@@ -173,7 +170,7 @@ SKIP: {
   $info = $sth->fetchall_arrayref({});
 
   is(scalar @$info, 5, "five tables expected");
-  
+
   # Check that tables() finds and escapes the tables named with quotes
   $info = [ $dbh->tables(undef, undef, $base . 'a%') ];
   like($info->[0], qr/\.`t_dbd_mysql_a'b`$/, "table with single quote");
@@ -193,7 +190,7 @@ SKIP: {
 #
 SKIP: {
   skip "Server is too old to support views", 19
-    if substr($version, 0, 1) < 5;
+  if !CheckMinimumVersion($dbh, '5.0');
 
   #
   # Bug #26603: (one part) support views in table_info()

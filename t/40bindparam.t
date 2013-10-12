@@ -1,11 +1,10 @@
 #!perl -w
 #
-#   $Id$ 
+#   $Id$
 #
 
 
 use DBI ();
-use DBI::Const::GetInfoType;
 use Test::More;
 use Data::Dumper;
 use lib 't', '.';
@@ -18,8 +17,9 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1") {
-    plan skip_all => 
+
+if (!CheckMinimumVersion($dbh, '4.1')) {
+    plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
 
@@ -84,11 +84,11 @@ ok($sth->execute);
 
 ok ($sth->bind_columns(undef, \$id, \$name));
 
-$ref = $sth->fetch ; 
+$ref = $sth->fetch ;
 
-is $id,  -1, 'id set to -1'; 
+is $id,  -1, 'id set to -1';
 
-cmp_ok $name, 'eq', 'abc', 'name eq abc'; 
+cmp_ok $name, 'eq', 'abc', 'name eq abc';
 
 $ref = $sth->fetch;
 is $id, 1, 'id set to 1';

@@ -3,7 +3,6 @@
 
 use Test::More;
 use DBI;
-use DBI::Const::GetInfoType;
 use lib '.', 't';
 require 'lib.pl';
 use strict;
@@ -24,7 +23,7 @@ ok(defined $dbh, "Connected to database");
 
 SKIP: {
   skip "Server doesn't report warnings", 7
-    if $dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "4.1";
+    if !CheckMinimumVersion($dbh, '4.1');
 
   my $sth;
   ok($sth= $dbh->prepare("DROP TABLE IF EXISTS no_such_table"));
