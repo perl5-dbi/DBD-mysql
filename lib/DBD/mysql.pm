@@ -2,12 +2,9 @@
 
 use strict;
 use warnings;
-
-use vars qw(@ISA $VERSION $err $errstr $drh);
 require 5.008_001; # just as DBI
 
 package DBD::mysql;
-require 5.008_001; # just as DBI
 
 use DBI ();
 use DynaLoader();

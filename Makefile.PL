@@ -1,21 +1,9 @@
 # -*- cperl -*-
 
-use 5.005;
+use 5.008_001;
 use Config;
-BEGIN {
-
-    if ($] == 5.008 && $ENV{"LANG"} ne "C" && $^O ne 'MSWin32') {
-	$ENV{LANG} = "C";
-	print STDERR "\n\n\n\$ENV{LANG} is not 'C' execing 'perl Makefile.PL'".
-	" with ENV{LANG} == 'C'\n You can skip this check by: 'export ".
-	"LANG='C' before running 'perl Makefile.PL or by upgrading your Perl'\n\n\n";
-
-	sleep(5);
-        exec ($Config{perlpath}, $0, @ARGV )|| die $!;
-    }
-}
 use strict;
-BEGIN { $^W = 1; }
+use warnings;
 use Getopt::Long();
 use ExtUtils::MakeMaker();
 use Data::Dumper ();
@@ -26,8 +14,7 @@ require DBI::DBD;
 
 my $TESTDB = "test";
 
-use vars qw($opt);
-$opt = { "help" => \&Usage, };
+our $opt = { "help" => \&Usage, };
 
 Getopt::Long::GetOptions(
     $opt,
