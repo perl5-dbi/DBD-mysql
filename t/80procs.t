@@ -28,7 +28,7 @@ if (!CheckMinimumVersion($dbh, '5.0') ) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
-plan tests => 29;
+plan tests => 31;
 
 $dbh->disconnect();
 
@@ -122,6 +122,10 @@ ok ($resultset= $sth->fetchrow_arrayref());
 ok defined $resultset;
 
 is @$resultset, 3, "3 Rows in resultset";
+
+ok $sth->more_results();
+
+is $sth->{NUM_OF_FIELDS}, 0, "NUM_OF_FIELDS == 0"; +
 
 local $SIG{__WARN__} = sub { die @_ };
 
