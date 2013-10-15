@@ -1,4 +1,5 @@
 2013-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
+* Fix method redefinition warnings in threads on Perl >= 5.16 - Dagfinn Ilmari Mannsåker
 * use strict and warnings everywhere.
 * Minimum perl version is now 5.8.1, just as for DBI.
 * Improved database version check so tests run correctly on MariaDB 10.
