@@ -1,7 +1,8 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 use DBI;
 use Carp qw(croak);
@@ -17,10 +18,10 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
     { RaiseError => 1, AutoCommit => 1});};
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "Can't connect to database ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 49; 
+plan tests => 49;
 
 ok(defined $dbh, "Connected to database");
 
@@ -54,7 +55,7 @@ ok($rows == 1, "One row should have been inserted");
 
 ok($sth->finish, "Finishing up with statement handle");
 
-ok($sth= $dbh->prepare("SELECT id, name FROM t1 WHERE id = 1"), 
+ok($sth= $dbh->prepare("SELECT id, name FROM t1 WHERE id = 1"),
   "Testing prepare of query");
 
 ok($sth->execute(), "Testing execute of query");
@@ -64,10 +65,10 @@ ok($ret_ref = $sth->fetchall_arrayref(),
 
 ok($sth= $dbh->prepare("INSERT INTO t1 values (?, ?)"),
   "Preparing insert, this time using placeholders");
-	
+
 my $testInsertVals = {};
 for (my $i = 0 ; $i < 10; $i++)
-{ 
+{
   my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
   my $random_chars= join '', map { $chars[rand @chars] } 0 .. 16;
    # save these values for later testing
@@ -95,7 +96,7 @@ ok($sth= $dbh->prepare("DROP TABLE IF EXISTS t1"),
 
 ok($sth->execute(), "Executing drop table");
 
-# Bug #20153: Fetching all data from a statement handle does not mark it 
+# Bug #20153: Fetching all data from a statement handle does not mark it
 # as finished
 ok($sth= $dbh->prepare("SELECT 1"), "Prepare - Testing bug #20153");
 ok($sth->execute(), "Execute - Testing bug #20153");

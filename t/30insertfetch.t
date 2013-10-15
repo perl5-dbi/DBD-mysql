@@ -1,12 +1,13 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
 use lib 't', '.';
 require 'lib.pl';
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
@@ -15,7 +16,7 @@ my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 plan tests => 10;
@@ -30,7 +31,7 @@ ok($dbh->do("INSERT INTO $table VALUES(1, 'Alligator Descartes')"), "loading dat
 
 ok($dbh->do("DELETE FROM $table WHERE id = 1"), "deleting from table $table");
 
-ok (my $sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1")); 
+ok (my $sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok($sth->execute());
 

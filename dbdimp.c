@@ -7,8 +7,6 @@
  *
  *  You may distribute this under the terms of either the GNU General Public
  *  License or the Artistic License, as specified in the Perl README file.
- *
- *  $Id: dbdimp.c 12860 2009-06-19 01:52:29Z capttofu $
  */
 
 

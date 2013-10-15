@@ -3,8 +3,7 @@
 use strict;
 use warnings;
 
-use strict;
-use DBI ();
+use DBI;
 use Test::More;
 use Data::Dumper;
 

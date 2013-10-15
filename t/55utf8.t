@@ -1,10 +1,8 @@
-#!perl -w
-# vim: ft=perl
-#
-#   This checks for UTF-8 support.
-#
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use DBI;
 use Carp qw(croak);
 use Test::More;
@@ -23,7 +21,7 @@ if ($@) {
 #
 # DROP/CREATE PROCEDURE will give syntax error for these versions
 #
-if (!CheckMinimumVersion($dbh, '5.0')) {
+if (!MinimumVersion($dbh, '5.0')) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }

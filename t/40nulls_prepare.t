@@ -1,15 +1,11 @@
-#!perl -w
-# vim: ft=perl
-
-# this test is for bug 49719
-# https://rt.cpan.org/Ticket/Display.html?id=49719
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 use DBI;
-use DBI::Const::GetInfoType;
 use Carp qw(croak);
-use Data::Dumper;
 use lib 't', '.';
 require 'lib.pl';
 
@@ -21,10 +17,10 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
     { RaiseError => 1, AutoCommit => 1});};
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "Can't connect to database ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 22; 
+plan tests => 22;
 
 ok(defined $dbh, "Connected to database");
 

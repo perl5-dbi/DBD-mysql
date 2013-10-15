@@ -1,4 +1,4 @@
-#/usr/bin/perl
+#!/usr/bin/perl
 
 # Test special characters inside comments
 # http://bugs.debian.org/311040

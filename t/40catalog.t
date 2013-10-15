@@ -1,13 +1,13 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Data::Dumper;
 use Test::More;
 use DBI;
-use DBI::Const::GetInfoType;
 use lib '.', 't';
 require 'lib.pl';
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
@@ -35,7 +35,7 @@ my $sth;
 #
 SKIP: {
   skip "Server is too old to support INFORMATION_SCHEMA for foreign keys", 16
-if !CheckMinimumVersion($dbh, '5.0');
+if !MinimumVersion($dbh, '5.0');
 
   my ($dummy,$have_innodb)=
     $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
@@ -87,7 +87,7 @@ if !CheckMinimumVersion($dbh, '5.0');
 #
 SKIP: {
   skip "Server can't handle tricky table names", 33
-    if !CheckMinimumVersion($dbh, '4.1');
+    if !MinimumVersion($dbh, '4.1');
 
   my $sth = $dbh->table_info("%", undef, undef, undef);
   is(scalar @{$sth->fetchall_arrayref()}, 0, "No catalogs expected");
@@ -190,7 +190,7 @@ SKIP: {
 #
 SKIP: {
   skip "Server is too old to support views", 19
-  if !CheckMinimumVersion($dbh, '5.0');
+  if !MinimumVersion($dbh, '5.0');
 
   #
   # Bug #26603: (one part) support views in table_info()

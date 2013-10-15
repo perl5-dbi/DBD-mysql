@@ -1,23 +1,26 @@
-#   -*- cperl -*-
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+use vars qw(@ISA $VERSION $err $errstr $drh);
+require 5.008_001; # just as DBI
 
 package DBD::mysql;
-use strict;
-use vars qw(@ISA $VERSION $err $errstr $drh);
 require 5.008_001; # just as DBI
 
 use DBI ();
 use DynaLoader();
 use Carp ();
-@ISA = qw(DynaLoader);
-
-$VERSION = '4.025';
+our @ISA = qw(DynaLoader);
+our $VERSION = '4.025';
 
 bootstrap DBD::mysql $VERSION;
 
 
-$err = 0;	# holds error code   for DBI::err
-$errstr = "";	# holds error string for DBI::errstr
-$drh = undef;	# holds driver handle once initialised
+our $err = 0;	# holds error code   for DBI::err
+our $errstr = "";	# holds error string for DBI::errstr
+our $drh = undef;	# holds driver handle once initialised
 
 sub driver{
     return $drh if $drh;

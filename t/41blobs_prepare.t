@@ -1,18 +1,8 @@
-#!perl
-# vim: ft=perl
-#
-#   $Id: 40blobs.t 1103 2008-04-29 02:53:28Z capttofu $
-#
-#   This is a test for correct handling of BLOBS; namely $dbh->quote
-#   is expected to work correctly.
-#
-
-#
-# Thank you to Brad Choate for finding the bug that resulted in this test,
-# which he kindly sent code that this test uses!
-#
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use DBI;
 use Test::More;
 
@@ -27,7 +17,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 25; 
+plan tests => 25;
 
 my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
 my $blob1= join '', map { $chars[rand @chars] } 0 .. 10000;

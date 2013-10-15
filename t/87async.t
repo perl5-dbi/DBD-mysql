@@ -1,12 +1,13 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::Deep;
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
 use Time::HiRes;
-use strict;
 
 use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';

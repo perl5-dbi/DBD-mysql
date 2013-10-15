@@ -1,12 +1,9 @@
-#!perl -w
-# vim: ft=perl
-# Test problem in 3.0002_4 and 3.0005 where if a statement is prepared
-# and multiple executes are performed, if any execute fails all subsequent
-# executes report an error but may have worked.
+#!/usr/bin/perl
 
 use strict;
-use DBI ();
-use DBI::Const::GetInfoType;
+use warnings;
+
+use DBI;
 use Test::More;
 use lib '.', 't';
 require 'lib.pl';

@@ -1,19 +1,11 @@
-#!perl -w
-# vim: ft=perl
-#
-#   $Id$
-#
-#   This is a test for statement attributes being present appropriately.
-#
+#!/usr/bin/perl
 
-
-#
-#   Include lib.pl
-#
+use strict;
+use warnings;
 
 use DBI;
 use Test::More;
-use vars qw($verbose);
+use vars qw($COL_NULLABLE $table $test_dsn $test_user $test_password);
 use lib '.', 't';
 require 'lib.pl';
 
@@ -29,7 +21,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 25; 
+plan tests => 26;
 
 $dbh->{mysql_server_prepare}= 0;
 
@@ -49,7 +41,7 @@ ok $dbh->table_info(undef,undef,$table), "table info for $table";
 
 ok $dbh->column_info(undef,undef,$table,'%'), "column_info for $table";
 
-$sth= $dbh->column_info(undef,undef,"this_does_not_exist",'%');
+my $sth= $dbh->column_info(undef,undef,"this_does_not_exist",'%');
 
 ok $sth, "\$sth defined";
 
@@ -68,11 +60,11 @@ ok $res, "$sth->{NUM_OF_FIELDS} defined";
 
 is $res, 2, "\$res $res == 2";
 
-$ref = $sth->{'NAME'};
+my $ref = $sth->{'NAME'};
 
 ok $ref, "\$sth->{NAME} defined";
 
-cmp_ok $$ref[0], 'eq', 'id', "$$ref[0] eq 'id'"; 
+cmp_ok $$ref[0], 'eq', 'id', "$$ref[0] eq 'id'";
 
 cmp_ok $$ref[1], 'eq', 'name', "$$ref[1] eq 'name'";
 
@@ -106,3 +98,5 @@ $quoted = eval { $dbh->quote('abc', DBI::SQL_VARCHAR()) };
 ok (!$@);
 
 cmp_ok $quoted, 'eq', "\'abc\'", "equals 'abc'";
+
+ok($dbh->disconnect());

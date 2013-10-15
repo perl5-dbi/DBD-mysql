@@ -1,15 +1,11 @@
-#!perl -w
-#
-#   $Id$
-#
-#   This is a skeleton test. For writing new tests, take this file
-#   and modify/extend it.
-#
+#!/usr/bin/perl
+
 use strict;
+use warnings;
+
 use DBI;
 use Test::More;
 use Carp qw(croak);
-use Data::Dumper;
 use vars qw($table $test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
@@ -35,10 +31,10 @@ my ($dbh, $sth);
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $@. Can't continue test";
 }
-plan tests => 21; 
+plan tests => 21;
 
 sub size {
   my($p, $pt);
@@ -118,7 +114,7 @@ for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
     $size = size();
     if (defined($prev_size))
     {
-      if ($size == $prev_size) { 
+      if ($size == $prev_size) {
         $ok++;
       }
       else {

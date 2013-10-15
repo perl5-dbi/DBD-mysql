@@ -1,11 +1,8 @@
-#!perl -w
-# vim: ft=perl
-#
-#   $Id$
-#
-#   This is a test for correctly handling NULL values.
-#
+#!/usr/bin/perl
+
 use strict;
+use warnings;
+
 use DBI;
 use Test::More;
 use Carp qw(croak);
@@ -18,10 +15,10 @@ my ($dbh, $sth);
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 10; 
+plan tests => 10;
 
 ok $dbh->do("DROP TABLE IF EXISTS $table"), "DROP TABLE IF EXISTS $table";
 

@@ -1,7 +1,8 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 use DBI;
 use lib 't', '.';
@@ -17,7 +18,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
-plan tests => 11; 
+plan tests => 11;
 
 ok(defined $dbh, "connecting");
 

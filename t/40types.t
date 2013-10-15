@@ -1,12 +1,13 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
 use lib '.', 't';
 require 'lib.pl';
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
@@ -25,7 +26,7 @@ ok(defined $dbh, "Connected to database");
 
 SKIP: {
 skip "New Data types not supported by server", 19
-if !CheckMinimumVersion($dbh, '5.0');
+if !MinimumVersion($dbh, '5.0');
 
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
 

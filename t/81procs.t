@@ -1,7 +1,8 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use lib 't', '.';
 require 'lib.pl';
 use DBI;
@@ -18,16 +19,21 @@ if ($@) {
         "ERROR: $DBI::errstr. Can't continue test";
 }
 
-CheckRoutinePerms($dbh);
 
 #
 # DROP/CREATE PROCEDURE will give syntax error
 # for versions < 5.0
 #
-if (!CheckMinimumVersion($dbh, '5.0')) {
+if (!MinimumVersion($dbh, '5.0')) {
     plan skip_all =>
-        "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
+        "You must have MySQL version 5.0 and greater for this test to run";
 }
+
+if (!CheckRoutinePerms($dbh)) {
+    plan skip_all =>
+        "Your test user does not have ALTER_ROUTINE privileges.";
+}
+
 plan tests => 32;
 
 $dbh->disconnect();

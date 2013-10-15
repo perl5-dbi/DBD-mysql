@@ -1,23 +1,20 @@
-#!perl -w
-#
-#   $Id$ 
-#
-#   This is testing the transaction support.
-#
+#!/usr/bin/perl
 
+use strict;
+use warnings;
 
 use DBI;
-use Test::More; 
+use Test::More;
 use lib 't', '.';
 require 'lib.pl';
 
-use vars qw($got_warning $test_dsn $test_user $test_password $table);
+use vars qw($have_transactions $got_warning $test_dsn $test_user $test_password $table);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 
@@ -51,7 +48,7 @@ $have_transactions = have_transactions($dbh);
 my $engine= $have_transactions ? 'InnoDB' : 'MyISAM';
 
 if ($have_transactions) {
-  plan tests => 21; 
+  plan tests => 21;
 
   ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
   my $create =<<EOT;
@@ -110,7 +107,7 @@ EOT
 
 }
 else {
-  plan tests => 13; 
+  plan tests => 13;
 
   ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
   my $create =<<EOT;
@@ -126,7 +123,7 @@ EOT
   # Check whether AutoCommit mode works.
 
   ok $dbh->do("INSERT INTO $table VALUES (1, 'Jochen')");
-  $msg = num_rows($dbh, $table, 1);
+  my $msg = num_rows($dbh, $table, 1);
   ok !$msg;
 
   ok $dbh->disconnect;
@@ -162,7 +159,7 @@ EOT
   eval { $result = $dbh->rollback; };
   $SIG{__WARN__} = 'DEFAULT';
 
-  ok $got_warning, "Should be warning defined upon rollback of non-trx table"; 
+  ok $got_warning, "Should be warning defined upon rollback of non-trx table";
 
   ok $dbh->do("DROP TABLE $table");
   ok $dbh->disconnect();

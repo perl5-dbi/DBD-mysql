@@ -1,7 +1,8 @@
-# Hej, Emacs, give us -*- perl -*- mode here!
-#
-#   $Id$
-#
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
 # database specific definitions for a 'mysql' database
 
 my $have_transactions;

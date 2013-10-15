@@ -1,22 +1,18 @@
-#!perl -w
-# vim: ft=perl
-#
-#   $Id$
-#
-#   This is a test for correct handling of BLOBS; namely $dbh->quote
-#   is expected to work correctly.
-#
+#!/usr/bin/perl
 
+use strict;
+use warnings;
 
-use DBI ();
 use Test::More;
+use DBI;
 use vars qw($table $test_dsn $test_user $test_password);
 use lib '.', 't';
 require 'lib.pl';
 
 sub ShowBlob($) {
     my ($blob) = @_;
-    for ($i = 0;  $i < 8;  $i++) {
+    my $b;
+    for (my $i = 0;  $i < 8;  $i++) {
         if (defined($blob)  &&  length($blob) > $i) {
             $b = substr($blob, $i*32);
         }
@@ -40,7 +36,7 @@ else {
     plan tests => 14;
 }
 
-if (!CheckMinimumVersion($dbh, '4.1')) {
+if (!MinimumVersion($dbh, '4.1')) {
     $charset= '';
 }
 
@@ -58,10 +54,10 @@ ok ($dbh->do($create));
 
 my ($blob, $qblob) = "";
 my $b = "";
-for ($j = 0;  $j < 256;  $j++) {
+for (my $j = 0;  $j < 256;  $j++) {
     $b .= chr($j);
 }
-for ($i = 0;  $i < $size;  $i++) {
+for (1 .. $size) {
     $blob .= $b;
 }
 ok ($qblob = $dbh->quote($blob));
@@ -72,11 +68,11 @@ $query = "INSERT INTO $table VALUES(1, $qblob)";
 ok ($dbh->do($query));
 
 #   Now, try SELECT'ing the row out.
-ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
+ok (my $sth = $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok ($sth->execute);
 
-ok ($row = $sth->fetchrow_arrayref);
+ok (my $row = $sth->fetchrow_arrayref);
 
 ok defined($row), "row returned defined";
 

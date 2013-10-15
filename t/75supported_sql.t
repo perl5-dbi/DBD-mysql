@@ -1,9 +1,11 @@
-#!perl -w
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use vars qw($table $test_dsn $test_user $test_password);
 use Carp qw(croak);
-use DBI ();
+use DBI;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
@@ -17,7 +19,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
   plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 12; 
+plan tests => 12;
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 

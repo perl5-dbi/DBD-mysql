@@ -11,8 +11,6 @@
  *
  *  You may distribute this under the terms of either the GNU General Public
  *  License or the Artistic License, as specified in the Perl README file.
- *
- *  $Id$
  */
 
 #define PERL_NO_GET_CONTEXT

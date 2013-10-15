@@ -1,10 +1,10 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More ;
 use DBI;
-use DBI::Const::GetInfoType;
-use strict;
 use vars qw($mdriver);
 $|= 1;
 
@@ -19,7 +19,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr Can't continue test";
 }
-plan tests => 2; 
+plan tests => 2;
 
 ok defined $dbh, "Connected to database";
 

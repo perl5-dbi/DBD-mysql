@@ -1,10 +1,11 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
-use strict;
 
 use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
@@ -26,7 +27,7 @@ selectcol_arrayref prepare            prepare_cached     commit
 rollback           begin_work         ping               get_info
 table_info         column_info        primary_key_info   primary_key
 foreign_key_info   statistics_info    tables             type_info_all
-type_info          quote              quote_identifier 
+type_info          quote              quote_identifier
 /;
 
 my @st_safe_methods   = qw/
@@ -86,7 +87,7 @@ unless($dbh) {
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
-plan tests => 
+plan tests =>
   2 * @db_safe_methods     +
   4 * @db_unsafe_methods   +
   7 * @st_safe_methods     +

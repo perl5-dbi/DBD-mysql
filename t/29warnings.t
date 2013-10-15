@@ -1,11 +1,12 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use lib '.', 't';
 require 'lib.pl';
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
@@ -18,7 +19,7 @@ if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
 
-if ( !CheckMinimumVersion($dbh, '4.1') ) {
+if ( !MinimumVersion($dbh, '4.1') ) {
     plan skip_all => "Servers < 4.1 do not report warnings";
 }
 

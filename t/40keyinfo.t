@@ -1,9 +1,10 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
-use strict;
 use lib 't', '.';
 require 'lib.pl';
 $|= 1;
@@ -16,7 +17,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 7; 
+plan tests => 7;
 
 $dbh->{mysql_server_prepare}= 0;
 

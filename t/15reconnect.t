@@ -1,10 +1,10 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
-use DBI::Const::GetInfoType;
-use strict;
 $|= 1;
 
 use vars qw($test_dsn $test_user $test_password);

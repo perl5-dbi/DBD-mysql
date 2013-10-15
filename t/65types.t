@@ -1,7 +1,8 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use vars qw($table $test_dsn $test_user $test_password);
 use Test::More;
 use DBI;
@@ -15,13 +16,13 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
-plan tests => 19; 
+plan tests => 19;
 
 ok $dbh->do("drop table if exists $table");
 
 my $create= <<EOT;
 create table $table (
-    a int, 
+    a int,
     primary key (a)
 )
 EOT
@@ -38,7 +39,7 @@ ok $sth->bind_param(1,10000,DBI::SQL_INTEGER);
 ok $sth->execute();
 
 ok $sth->bind_param(1,10001,DBI::SQL_INTEGER);
-  
+
 ok $sth->execute();
 
 ok $dbh->do("DROP TABLE $table");
@@ -58,7 +59,7 @@ ok $sth->execute();
 ok $sth->bind_param(1,10001,DBI::SQL_INTEGER);
 
 ok $sth->bind_param(2,.3333333,DBI::SQL_DOUBLE);
-  
+
 ok $sth->execute();
 
 ok $sth->finish;

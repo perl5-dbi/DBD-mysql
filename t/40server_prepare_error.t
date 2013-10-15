@@ -1,10 +1,8 @@
-#!perl -w
-# vim: ft=perl
-# Test problem in 3.0002_4 and 3.0005 where if a statement is prepared
-# and multiple executes are performed, if any execute fails all subsequent
-# executes report an error but may have worked.
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use DBI;
 use Test::More;
 use lib '.', 't';
@@ -25,7 +23,7 @@ if ($@) {
 # DROP/CREATE PROCEDURE will give syntax error
 # for versions < 5.0
 #
-if (!CheckMinimumVersion($dbh, '4.1')) {
+if (!MinimumVersion($dbh, '4.1')) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }

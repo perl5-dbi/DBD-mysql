@@ -1,7 +1,5 @@
 /* Hej, Emacs, this is -*- C -*- mode!
 
-   $Id$
-
    Copyright (c) 2003      Rudolf Lippan
    Copyright (c) 1997-2003 Jochen Wiedmann
 

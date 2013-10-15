@@ -1,15 +1,11 @@
-#!perl -w
-# vim: ft=perl
-#
-#   $Id$
-#
-#   This tests, whether the number of rows can be retrieved.
-#
+#!/usr/bin/perl
+
 use strict;
+use warnings;
+
 use DBI;
 use Test::More;
 use Carp qw(croak);
-use Data::Dumper;
 use vars qw($table $test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
@@ -18,10 +14,10 @@ my ($dbh, $sth, $aref);
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 30; 
+plan tests => 30;
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
@@ -29,7 +25,7 @@ my $create= <<EOT;
 CREATE TABLE $table (
   id INT(4) NOT NULL DEFAULT 0,
   name varchar(64) NOT NULL DEFAULT ''
-) 
+)
 EOT
 
 ok $dbh->do($create), "CREATE TABLE $table";
@@ -68,7 +64,7 @@ ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id >= 2"));
 
 ok $sth->execute;
 
-is $sth->rows, 2, 'rows should be 2'; 
+is $sth->rows, 2, 'rows should be 2';
 
 ok ($aref= $sth->fetchall_arrayref);
 
@@ -80,7 +76,7 @@ ok ($sth = $dbh->prepare("SELECT * FROM $table"));
 
 ok $sth->execute;
 
-is $sth->rows, 3, 'rows should be 3'; 
+is $sth->rows, 3, 'rows should be 3';
 
 ok ($aref= $sth->fetchall_arrayref);
 

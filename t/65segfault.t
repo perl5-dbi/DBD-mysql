@@ -1,34 +1,35 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
 use lib 't', '.';
 require 'lib.pl';
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { 
-                          mysql_auto_reconnect  => 1, 
-                          RaiseError => 1, 
-                          PrintError => 1, 
+                      {
+                          mysql_auto_reconnect  => 1,
+                          RaiseError => 1,
+                          PrintError => 1,
                           AutoCommit => 1 });
 };
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 my $dbh2;
 eval {$dbh2= DBI->connect($test_dsn, $test_user, $test_password);};
 
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 plan tests => 5;

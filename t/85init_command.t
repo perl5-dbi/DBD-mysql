@@ -1,10 +1,11 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
-use strict;
 $|= 1;
 
 use vars qw($table $test_dsn $test_user $test_password);
@@ -13,8 +14,8 @@ require 'lib.pl';
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-        {   RaiseError => 1, 
-            PrintError => 1, 
+        {   RaiseError => 1,
+            PrintError => 1,
             AutoCommit => 0,
             mysql_init_command => 'SET SESSION wait_timeout=7' });};
 

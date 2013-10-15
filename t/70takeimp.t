@@ -1,16 +1,10 @@
-#!perl -w
-# vim: ft=perl
-
-#
-#   $Id$
-#
-#   This is a skeleton test. For writing new tests, take this file
-#   and modify/extend it.
-#
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
-use DBI ();
+use DBI;
 use lib 't', '.';
 require 'lib.pl';
 $|= 1;
@@ -53,10 +47,10 @@ $imp_data = $dbh->take_imp_data;
 ok $imp_data, "Didn't get imp_data";
 
 my $imp_data_length= length($imp_data);
-cmp_ok $imp_data_length, '>=', 80, 
+cmp_ok $imp_data_length, '>=', 80,
     "test that our imp_data is greater than or equal to 80, actual $imp_data_length";
 
-is $drh->{Kids}, 0, 
+is $drh->{Kids}, 0,
     'our Driver should have 0 Kid(s) after calling take_imp_data';
 
 {
@@ -118,7 +112,7 @@ CREATE TABLE $table (
         id int(4) NOT NULL default 0,
         name varchar(64) NOT NULL default '' );
 EOT
-    
+
     ok $dbh->do($create);
 
     ok $dbh->do("DROP TABLE $table");

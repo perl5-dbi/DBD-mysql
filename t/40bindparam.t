@@ -1,12 +1,10 @@
-#!perl -w
-#
-#   $Id$
-#
+#!/usr/bin/perl
 
+use strict;
+use warnings;
 
-use DBI ();
+use DBI;
 use Test::More;
-use Data::Dumper;
 use lib 't', '.';
 require 'lib.pl';
 use vars qw($table $test_dsn $test_user $test_password);
@@ -18,7 +16,7 @@ if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
 
-if (!CheckMinimumVersion($dbh, '4.1')) {
+if (!MinimumVersion($dbh, '4.1')) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
@@ -36,7 +34,7 @@ EOT
 
 ok ($dbh->do($create));
 
-ok ($sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)"));
+ok (my $sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)"));
 
 # Automatic type detection
 my $numericVal = 1;
@@ -82,9 +80,11 @@ ok ($sth = $dbh->prepare("SELECT * FROM $table ORDER BY id"));
 
 ok($sth->execute);
 
+my ($id, $name);
+
 ok ($sth->bind_columns(undef, \$id, \$name));
 
-$ref = $sth->fetch ;
+my $ref = $sth->fetch ;
 
 is $id,  -1, 'id set to -1';
 

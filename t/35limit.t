@@ -1,10 +1,11 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
+
+use strict;
+use warnings;
 
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
-use strict;
 $|= 1;
 
 my $rows = 0;
@@ -20,7 +21,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $@. Can't continue test";
 }
-plan tests => 111; 
+plan tests => 111;
 
 ok(defined $dbh, "Connected to database");
 
@@ -31,14 +32,14 @@ ok($dbh->do("CREATE TABLE $table (id INT(4), name VARCHAR(64))"), "creating tabl
 ok(($sth = $dbh->prepare("INSERT INTO $table VALUES (?,?)")));
 
 print "PERL testing insertion of values from previous prepare of insert statement:\n";
-for (my $i = 0 ; $i < 100; $i++) { 
+for (my $i = 0 ; $i < 100; $i++) {
   my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
   my $random_chars = join '', map { $chars[rand @chars] } 0 .. 16;
 # save these values for later testing
   $testInsertVals->{$i} = $random_chars;
   ok(($rows = $sth->execute($i, $random_chars)));
 }
-print "PERL rows : " . $rows . "\n"; 
+print "PERL rows : " . $rows . "\n";
 
 print "PERL testing prepare of select statement with LIMIT placeholders:\n";
 ok($sth = $dbh->prepare("SELECT * FROM $table LIMIT ?, ?"));

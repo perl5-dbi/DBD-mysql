@@ -1,7 +1,8 @@
-#!perl -w
-# vim: ft=perl
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
@@ -29,7 +30,7 @@ SKIP: {
   my $v= $dbh->get_info($GetInfoType{SQL_DBMS_VER});
   diag "Testing multicall against SQL_DBMS_VER: $v";
   skip "Server doesn't support multi statements", 24
-  if !CheckMinimumVersion($dbh, '4.1');
+  if !MinimumVersion($dbh, '4.1');
 
   ok($dbh->do("SET SQL_MODE=''"),"init connection SQL_MODE non strict");
 

@@ -1,12 +1,9 @@
-#!perl -w
-#
-#   $Id: 30insertfetch.t 1228 2004-09-04 01:23:38Z capttofu $
-#
-#   This is a simple insert/fetch test.
-#
-use Test::More;
-use DBI ();
+#!/usr/bin/perl
+
 use strict;
+use warnings;
+use Test::More;
+use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
@@ -25,8 +22,8 @@ if ($@) {
 
 plan tests => 13;
 
-my $create= <<EOT; 
-CREATE TABLE $table ( 
+my $create= <<EOT;
+CREATE TABLE $table (
     id int(4) NOT NULL default 0,
     name varchar(64) NOT NULL default ''
     )
@@ -40,7 +37,7 @@ ok $dbh->do("LOCK TABLES $table WRITE"), "lock table $table";
 
 ok $dbh->do("INSERT INTO $table VALUES(1, 'Alligator Descartes')"), "Insert ";
 
-ok $dbh->do("DELETE FROM $table WHERE id = 1"), "Delete"; 
+ok $dbh->do("DELETE FROM $table WHERE id = 1"), "Delete";
 
 my $sth;
 eval {$sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1")};

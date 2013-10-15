@@ -1,14 +1,9 @@
-#!perl -w
-# vim: ft=perl
-#
-#   $Id$
-#
-#   This driver should check whether 'ChopBlanks' works.
-#
+#!/usr/bin/perl
 
 use strict;
+use warnings;
+
 use DBI;
-use DBI::Const::GetInfoType;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
@@ -19,7 +14,7 @@ my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 if ($@) {
-    plan skip_all => 
+    plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
 plan tests => 36;

@@ -1,14 +1,8 @@
-#   Hej, Emacs, give us -*- perl mode here!
-#
-#   $Id$
-#
-#   lib.pl is the file where database specific things should live,
-#   whereever possible. For example, you define certain constants
-#   here and the like.
-#
-# All this code is subject to being GUTTED soon
-#
+#!/usr/bin/perl
+
 use strict;
+use warnings;
+
 use Test::More;
 use DBI::Const::GetInfoType;
 use vars qw($table $mdriver $dbdriver $childPid $test_dsn $test_user $test_password);
@@ -282,22 +276,41 @@ sub SQL_INTEGER { 4 };
 sub ErrMsg (@) { print (@_); }
 sub ErrMsgF (@) { printf (@_); }
 
+=item CheckRoutinePerms()
+
+Check if the current user of the DBH has permissions to create/drop procedures
+
+    if (!CheckRoutinePerms($dbh)) {
+        plan skip_all =>
+            "Your test user does not have ALTER_ROUTINE privileges.";
+    }
+
+=cut
+
 sub CheckRoutinePerms {
     my $dbh = shift @_;
 
     # check for necessary privs
     local $dbh->{PrintError} = 0;
     eval { $dbh->do('DROP PROCEDURE IF EXISTS testproc') };
-    my $died = $@;
+    return if $@ =~ qr/alter routine command denied to user/;
 
-    return unless $died;
-    plan skip_all => 'test user lacks routine privs'
-        if $died =~ qr/alter routine command denied to user/;
-    die $died;
+    return 1;
 };
 
-# pass $dbh and minimum version, e.g. $dbh, '5.1';
-sub CheckMinimumVersion {
+=item MinimumVersion()
+
+Check to see if the database where the test run against is
+of a certain minimum version
+
+    if (!MinimumVersion($dbh, '5.0')) {
+        plan skip_all =>
+            "You must have MySQL version 5.0 and greater for this test to run";
+    }
+
+=cut
+
+sub MinimumVersion {
     my $dbh = shift @_;
     my $version = shift @_;
 
