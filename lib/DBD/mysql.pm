@@ -1,9 +1,9 @@
 #   -*- cperl -*-
 
 package DBD::mysql;
-use 5.005; #$! is used
 use strict;
 use vars qw(@ISA $VERSION $err $errstr $drh);
+require 5.008_001; # just as DBI
 
 use DBI ();
 use DynaLoader();
