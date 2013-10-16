@@ -84,6 +84,7 @@ if (-f ($file = "t/$mdriver.mtest")  ||
     # Note the use of the pairing {} in order to get local, but static,
     # variables.
     my (@stateStack, $count, $off, $skip_all_reason, $skip_n_reason, @skip_n);
+    $::numTests = 0;
 
     $count = 0;
     @skip_n = ();

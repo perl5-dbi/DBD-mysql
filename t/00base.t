@@ -22,7 +22,7 @@ my $switch = DBI->internal;
 cmp_ok ref $switch, 'eq', 'DBI::dr', 'Internal set';
 
 # This is a special case. install_driver should not normally be used.
-$drh= DBI->install_driver($mdriver);
+my $drh= DBI->install_driver($mdriver);
 
 ok $drh, 'Install driver';
 
