@@ -19,6 +19,7 @@ our $err = 0;	# holds error code   for DBI::err
 our $errstr = "";	# holds error string for DBI::errstr
 our $drh = undef;	# holds driver handle once initialised
 
+my $methods_are_installed = 0;
 sub driver{
     return $drh if $drh;
     my($class, $attr) = @_;
@@ -33,11 +34,15 @@ sub driver{
 				   'Attribution' => 'DBD::mysql by Patrick Galbraith'
 				 });
 
-    DBD::mysql::db->install_method('mysql_fd');
-    DBD::mysql::db->install_method('mysql_async_result');
-    DBD::mysql::db->install_method('mysql_async_ready');
-    DBD::mysql::st->install_method('mysql_async_result');
-    DBD::mysql::st->install_method('mysql_async_ready');
+    if (!$methods_are_installed) {
+	DBD::mysql::db->install_method('mysql_fd');
+	DBD::mysql::db->install_method('mysql_async_result');
+	DBD::mysql::db->install_method('mysql_async_ready');
+	DBD::mysql::st->install_method('mysql_async_result');
+	DBD::mysql::st->install_method('mysql_async_ready');
+
+	$methods_are_installed++;
+    }
 
     $drh;
 }
