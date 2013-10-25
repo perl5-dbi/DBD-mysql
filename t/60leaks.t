@@ -10,18 +10,18 @@ use vars qw($table $test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my $COUNT_CONNECT = 4000;   # Number of connect/disconnect iterations
-my $COUNT_PREPARE = 10000;  # Number of prepare/execute/finish iterations
+my $COUNT_CONNECT = 4000;     # Number of connect/disconnect iterations
+my $COUNT_PREPARE = 10000;    # Number of prepare/execute/finish iterations
 
 my $have_storable;
 
 if (!$ENV{EXTENDED_TESTING}) {
-    plan skip_all => "Skip \$ENV{EXTENDED_TESTING} is not set\n";
+        plan skip_all => "Skip \$ENV{EXTENDED_TESTING} is not set\n";
 }
 
 eval { require Proc::ProcessTable; };
 if ($@) {
-    plan skip_all => "Skip Proc::ProcessTable not installed \n";
+        plan skip_all => "Skip Proc::ProcessTable not installed \n";
 }
 
 eval { require Storable };
@@ -29,32 +29,32 @@ $have_storable = $@ ? 0 : 1;
 
 my ($dbh, $sth);
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+                                            { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all =>
-        "ERROR: $@. Can't continue test";
+        plan skip_all =>
+                "ERROR: $@. Can't continue test";
 }
 plan tests => 21;
 
 sub size {
-  my($p, $pt);
-  $pt = Proc::ProcessTable->new('cache_ttys' => $have_storable);
-  for $p (@{$pt->table()}) {
-    if ($p->pid() == $$) {
-      return $p->size();
+    my($p, $pt);
+    $pt = Proc::ProcessTable->new('cache_ttys' => $have_storable);
+    for $p (@{$pt->table()}) {
+        if ($p->pid() == $$) {
+            return $p->size();
+        }
     }
-  }
-  die "Cannot find my own process?!?\n";
-  exit 0;
+    die "Cannot find my own process?!?\n";
+    exit 0;
 }
 
 ok $dbh->do("DROP TABLE IF EXISTS $table");
 
 my $create= <<EOT;
 CREATE TABLE $table (
-  id INT(4) NOT NULL DEFAULT 0,
-  name VARCHAR(64) NOT NULL DEFAULT ''
-  )
+    id INT(4) NOT NULL DEFAULT 0,
+    name VARCHAR(64) NOT NULL DEFAULT ''
+    )
 EOT
 
 ok $dbh->do($create);
@@ -67,30 +67,32 @@ $ok = 0;
 $not_ok = 0;
 $prev_size= undef;
 
-for (my $i = 0;  $i < $COUNT_CONNECT;  $i++) {
-  eval {$dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
-    { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-  if ($@) {
-    $not_ok++;
-    last;
-  }
-
-	if ($i % 100  ==  99) {
-    $size = size();
-    if (defined($prev_size)) {
-      if ($size == $prev_size) {
-        $ok++;
-      }
-      else {
+for (my $i = 0;    $i < $COUNT_CONNECT;    $i++) {
+    eval {$dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
+                               { RaiseError => 1, 
+                                 PrintError => 1,
+                                 AutoCommit => 0 });};
+    if ($@) {
         $not_ok++;
-      }
+        last;
     }
-    else {
+
+    if ($i % 100    ==    99) {
+        $size = size();
+        if (defined($prev_size)) {
+            if ($size == $prev_size) {
+                $ok++;
+            }
+            else {
+                $not_ok++;
+            }
+        }
+        else {
+            $prev_size = $size;
+            $size = size();
+        }
         $prev_size = $size;
-        $size      = size();
     }
-		$prev_size = $size;
-  }
 }
 $dbh2->disconnect;
 
@@ -105,28 +107,28 @@ $ok = 0;
 $not_ok = 0;
 undef $prev_size;
 
-for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
-  my $sth = $dbh->prepare("SELECT * FROM $table");
-  $sth->execute();
-  $sth->finish();
+for (my $i = 0; $i < $COUNT_PREPARE; $i++) {
+    my $sth = $dbh->prepare("SELECT * FROM $table");
+    $sth->execute();
+    $sth->finish();
 
-  if ($i % 100  ==  99) {
-    $size = size();
-    if (defined($prev_size))
-    {
-      if ($size == $prev_size) {
-        $ok++;
-      }
-      else {
-        $not_ok++;
-      }
-    }
-    else {
+    if ($i % 100 == 99) {
+        $size = size();
+        if (defined($prev_size))
+        {
+            if ($size == $prev_size) {
+                $ok++;
+            }
+            else {
+                $not_ok++;
+            }
+        }
+        else {
+            $prev_size = $size;
+            $size = size();
+        }
         $prev_size = $size;
-        $size      = size();
     }
-    $prev_size = $size;
-  }
 }
 
 ok $ok;
@@ -139,45 +141,45 @@ $msg= "Possible memory leak in fetchrow_arrayref detected";
 $sth= $dbh->prepare("INSERT INTO $table VALUES (?, ?)") ;
 
 my $dataref= [[1, 'Jochen Wiedmann'],
-  [2, 'Andreas König'],
-  [3, 'Tim Bunce'],
-  [4, 'Alligator Descartes'],
-  [5, 'Jonathan Leffler']];
+    [2, 'Andreas König'],
+    [3, 'Tim Bunce'],
+    [4, 'Alligator Descartes'],
+    [5, 'Jonathan Leffler']];
 
 for (@$dataref) {
-  ok $sth->execute($_->[0], $_->[1]),
-    "insert into $table values ($_->[0], '$_->[1]')";
+    ok $sth->execute($_->[0], $_->[1]),
+        "insert into $table values ($_->[0], '$_->[1]')";
 }
 
 $ok = 0;
 $not_ok = 0;
 undef $prev_size;
 
-for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
-  {
-    my $sth = $dbh->prepare("SELECT * FROM $table");
-    $sth->execute();
-    my $row;
-    while ($row = $sth->fetchrow_arrayref()) { }
-    $sth->finish();
-  }
+for (my $i = 0; $i < $COUNT_PREPARE; $i++) {
+    {
+        my $sth = $dbh->prepare("SELECT * FROM $table");
+        $sth->execute();
+        my $row;
+        while ($row = $sth->fetchrow_arrayref()) { }
+        $sth->finish();
+    }
 
-  if ($i % 100  ==  99) {
-    $size = size();
-    if (defined($prev_size)) {
-      if ($size == $prev_size) {
-        ++$ok;
-      }
-      else {
-        ++$not_ok;
-      }
-    }
-    else {
+    if ($i % 100 == 99) {
+        $size = size();
+        if (defined($prev_size)) {
+            if ($size == $prev_size) {
+                ++$ok;
+            }
+            else {
+                ++$not_ok;
+            }
+        }
+        else {
+                $prev_size = $size;
+                $size = size();
+        }
         $prev_size = $size;
-        $size      = size();
     }
-    $prev_size = $size;
-  }
 }
 
 ok $ok;
@@ -191,31 +193,31 @@ $ok = 0;
 $not_ok = 0;
 undef $prev_size;
 
-for (my $i = 0;  $i < $COUNT_PREPARE;  $i++) {
-  {
-    my $sth = $dbh->prepare("SELECT * FROM $table");
-    $sth->execute();
-    my $row;
-    while ($row = $sth->fetchrow_hashref()) { }
-    $sth->finish();
-  }
+for (my $i = 0; $i < $COUNT_PREPARE; $i++) {
+    {
+        my $sth = $dbh->prepare("SELECT * FROM $table");
+        $sth->execute();
+        my $row;
+        while ($row = $sth->fetchrow_hashref()) { }
+        $sth->finish();
+    }
 
-  if ($i % 100  ==  99) {
-    $size = size();
-    if (defined($prev_size)) {
-      if ($size == $prev_size) {
-        ++$ok;
-      }
-      else {
-        ++$not_ok;
-      }
-    }
-    else {
+    if ($i % 100 == 99) {
+        $size = size();
+        if (defined($prev_size)) {
+            if ($size == $prev_size) {
+                ++$ok;
+            }
+            else {
+                ++$not_ok;
+            }
+        }
+        else {
+            $prev_size = $size;
+            $size = size();
+        }
         $prev_size = $size;
-        $size      = size();
     }
-    $prev_size = $size;
-  }
 }
 
 ok $ok;
