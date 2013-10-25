@@ -15,9 +15,12 @@ require 'lib.pl';
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-
 if ($@) {
-    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+    # https://rt.cpan.org/Ticket/Display.html?id=31823
+    if ($DBI::err == 1045) {
+        Test::More::BAIL_OUT("ERROR: $DBI::errstr\nAborting remaining tests!"); 
+    }
+    plan skip_all => "ERROR: $DBI::errstr $DBI::err Can't continue test";
 }
 plan tests => 2;
 
