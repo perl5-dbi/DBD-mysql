@@ -13,7 +13,6 @@ before_install:
 before_script:
   - mysql -e 'create database myapp_test;'
 install:
-   - cpanm Test::Deep DBI
+   - cpanm DBI Test::Pod Test::Deep Proc::ProcessTable
 env: EXTENDED_TESTING=1
-   - cpanm Test::Deep Test::Pod Proc::ProcessTable DBI
 script: "perl Makefile.PL --testuser=travis --testdb myapp_test && make && make test"
