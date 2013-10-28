@@ -149,8 +149,6 @@ sub connect {
       return undef;
     }
 
-    # Call msqlConnect func in mSQL.xs file
-    # and populate internal handle data.
     DBD::mysql::db::_login($this, $dsn, $username, $password)
 	  or $this = undef;
 
@@ -198,33 +196,35 @@ package DBD::mysql::db; # ====== DATABASE ======
 use strict;
 use DBI qw(:sql_types);
 
-%DBD::mysql::db::db2ANSI = ("INT"   =>  "INTEGER",
-			   "CHAR"  =>  "CHAR",
-			   "REAL"  =>  "REAL",
-			   "IDENT" =>  "DECIMAL"
-                          );
+%DBD::mysql::db::db2ANSI = (
+    "INT"   =>  "INTEGER",
+    "CHAR"  =>  "CHAR",
+    "REAL"  =>  "REAL",
+    "IDENT" =>  "DECIMAL"
+);
 
-### ANSI datatype mapping to mSQL datatypes
-%DBD::mysql::db::ANSI2db = ("CHAR"          => "CHAR",
-			   "VARCHAR"       => "CHAR",
-			   "LONGVARCHAR"   => "CHAR",
-			   "NUMERIC"       => "INTEGER",
-			   "DECIMAL"       => "INTEGER",
-			   "BIT"           => "INTEGER",
-			   "TINYINT"       => "INTEGER",
-			   "SMALLINT"      => "INTEGER",
-			   "INTEGER"       => "INTEGER",
-			   "BIGINT"        => "INTEGER",
-			   "REAL"          => "REAL",
-			   "FLOAT"         => "REAL",
-			   "DOUBLE"        => "REAL",
-			   "BINARY"        => "CHAR",
-			   "VARBINARY"     => "CHAR",
-			   "LONGVARBINARY" => "CHAR",
-			   "DATE"          => "CHAR",
-			   "TIME"          => "CHAR",
-			   "TIMESTAMP"     => "CHAR"
-			  );
+### ANSI datatype mapping to MySQL datatypes
+%DBD::mysql::db::ANSI2db = (
+    "CHAR"          => "CHAR",
+    "VARCHAR"       => "CHAR",
+    "LONGVARCHAR"   => "CHAR",
+    "NUMERIC"       => "INTEGER",
+    "DECIMAL"       => "INTEGER",
+    "BIT"           => "INTEGER",
+    "TINYINT"       => "INTEGER",
+    "SMALLINT"      => "INTEGER",
+    "INTEGER"       => "INTEGER",
+    "BIGINT"        => "INTEGER",
+    "REAL"          => "REAL",
+    "FLOAT"         => "REAL",
+    "DOUBLE"        => "REAL",
+    "BINARY"        => "CHAR",
+    "VARBINARY"     => "CHAR",
+    "LONGVARBINARY" => "CHAR",
+    "DATE"          => "CHAR",
+    "TIME"          => "CHAR",
+    "TIMESTAMP"     => "CHAR"
+);
 
 sub prepare {
     my($dbh, $statement, $attribs)= @_;
