@@ -461,10 +461,10 @@ sub column_info {
   for my $row (@$desc)
   {
     my $type = $row->{type};
-    $type =~ m/^(\w+)(?:\((.*?)\))?\s*(.*)/;
+    $type =~ m/^(\w+)(\((.+)\))?\s?(.*)?$/;
     my $basetype  = lc($1);
-    my $typemod   = $2;
-    my $attr      = $3;
+    my $typemod   = $3;
+    my $attr      = $4;
 
     push @fields, $row->{field};
     my $info = $col_info{ $row->{field} }= {

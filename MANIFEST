@@ -80,7 +80,7 @@ t/90no-async.t
 t/91errcheck.t
 t/99_bug_server_prepare_blob_null.t
 t/lib.pl
-t/mem_leak.pl
+t/manifest.t
 t/mysql.dbtest
 t/mysql.mtest
 t/pod.t

@@ -5,7 +5,7 @@ use warnings;
 
 use DBI;
 use Test::More;
-use vars qw($COL_NULLABLE $table $test_dsn $test_user $test_password);
+use vars qw($COL_NULLABLE $test_dsn $test_user $test_password);
 use lib '.', 't';
 require 'lib.pl';
 
@@ -21,25 +21,23 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 26;
+plan tests => 25;
 
 $dbh->{mysql_server_prepare}= 0;
 
-ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
-
 $create = <<EOC;
-CREATE TABLE $table (
+CREATE TEMPORARY TABLE dbd_mysql_40listfields (
     id INT(4) NOT NULL,
     name VARCHAR(64),
     key id (id)
     )
 EOC
 
-ok $dbh->do($create), "create table $table";
+ok $dbh->do($create), "create table dbd_mysql_40listfields";
 
-ok $dbh->table_info(undef,undef,$table), "table info for $table";
+ok $dbh->table_info(undef,undef,'dbd_mysql_40listfields'), "table info for dbd_mysql_40listfields";
 
-ok $dbh->column_info(undef,undef,$table,'%'), "column_info for $table";
+ok $dbh->column_info(undef,undef,'dbd_mysql_40listfields','%'), "column_info for dbd_mysql_40listfields";
 
 my $sth= $dbh->column_info(undef,undef,"this_does_not_exist",'%');
 
@@ -47,7 +45,7 @@ ok $sth, "\$sth defined";
 
 ok !$sth->err(), "not error";
 
-$sth = $dbh->prepare("SELECT * FROM $table");
+$sth = $dbh->prepare("SELECT * FROM dbd_mysql_40listfields");
 
 ok $sth, "prepare succeeded";
 
@@ -81,7 +79,7 @@ cmp_ok $ref->[0], 'eq', DBI::SQL_INTEGER(), "SQL_INTEGER";
 
 cmp_ok $ref->[1], 'eq', DBI::SQL_VARCHAR(), "SQL_VARCHAR";
 
-ok ($sth= $dbh->prepare("DROP TABLE $table"));
+ok ($sth= $dbh->prepare("DROP TABLE dbd_mysql_40listfields"));
 
 ok($sth->execute);
 
@@ -98,5 +96,6 @@ $quoted = eval { $dbh->quote('abc', DBI::SQL_VARCHAR()) };
 ok (!$@);
 
 cmp_ok $quoted, 'eq', "\'abc\'", "equals 'abc'";
+
 
 ok($dbh->disconnect());
