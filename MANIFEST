@@ -84,6 +84,7 @@ t/manifest.t
 t/mysql.dbtest
 t/mysql.mtest
 t/pod.t
+t/rt50304-column_info_parentheses.t
 t/rt83494-quotes-comments.t
 t/rt85919-fetch-lost-connection.t
 TODO
