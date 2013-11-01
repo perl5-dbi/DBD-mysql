@@ -172,7 +172,7 @@ So you need to install from sources. If you are lucky, the Perl
 module C<CPAN> will do all for you, thanks to the excellent work
 of Andreas König. Otherwise you will need to do a manual
 installation.
-All of these installation types have an own section:
+All of these installation types have their own section:
 L</CPAN installation>, L</Manual installation> and L</Configuration>.
 
 The DBD::mysql Makefile.PL needs to know where to find your MySQL
@@ -205,7 +205,7 @@ be on a remote machine.
 
 On Fedora the process is as follows. Please note that Fedora actually
 ships with MariaDB but not with MySQL. This is not a problem, it
-will work just as good.
+will work just as well.
 In this example we install and start a local server for running the
 tests against.
 
