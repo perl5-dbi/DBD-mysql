@@ -190,12 +190,39 @@ e.g.
   PATH=$PATH:/usr/local/mysql/bin
   export PATH
 
+As stated, to compile DBD::mysql you'll need a C compiler. This should
+be the same compiler as the one used to build perl AND the mysql client
+libraries. If you're on linux, this is most typically the case and you
+need not worry. If you're on UNIX systems, you might want to pay
+attention.
+
+Also you'll need to get the MySQL client and development headers on
+your system. The easiest is to get these from your package manager.
+
+To run the tests that ship with the module, you'll need access to a
+running MySQL server. This can be running on localhost, but it can also
+be on a remote machine.
+
+On Fedora the process is as follows. Please note that Fedora actually
+ships with MariaDB but not with MySQL. This is not a problem, it
+will work just as good.
+In this example we install and start a local server for running the
+tests against.
+
+    yum -y install make gcc mariadb-devel mariadb-libs mariadb-server
+    yum -y install "perl(Test::Deep)" "perl(Test::More)"
+    systemctl start mariadb.service
 
 =head2 CPAN installation
 
 Installation of DBD::mysql can be incredibly easy:
 
   cpan DBD::mysql
+
+Please note that this will only work if the prerequisites are
+fulfilled, which means you have a C-compiler installed, and you
+have the development headers and mysql client libraries available
+on your system.
 
 If you are using the CPAN module for the first time, just answer
 the questions by accepting the defaults which are fine in most
