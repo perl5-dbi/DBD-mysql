@@ -213,6 +213,31 @@ tests against.
     yum -y install "perl(Test::Deep)" "perl(Test::More)"
     systemctl start mariadb.service
 
+
+=head2 Environment Variables
+
+For ease of use, you can set environment variables for
+DBD::mysql installation. You can set any or all of the options, and
+export them by putting them in your .bashrc or the like:
+
+    export DBD_MYSQL_CFLAGS=-I/usr/local/mysql/include/mysql
+    export DBD_MYSQL_LIBS="-L/usr/local/mysql/lib/mysql -lmysqlclient"
+    export DBD_MYSQL_EMBEDDED=
+    export DBD_MYSQL_CONFIG=mysql_config
+    export DBD_MYSQL_NOCATCHSTDERR=0
+    export DBD_MYSQL_NOFOUNDROWS=0
+    export DBD_MYSQL_SSL=
+    export DBD_MYSQL_TESTDB=test
+    export DBD_MYSQL_TESTHOST=localhost
+    export DBD_MYSQL_TESTPASSWORD=s3kr1+
+    export DBD_MYSQL_TESTPORT=3306
+    export DBD_MYSQL_TESTUSER=me
+
+The most useful may be the host, database, port, socket, user, and password.
+
+Installation will first look to your mysql_config, and then your
+environment variables, and then it will guess with intelligent defaults.
+
 =head2 CPAN installation
 
 Installation of DBD::mysql can be incredibly easy:

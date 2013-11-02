@@ -6,16 +6,16 @@ require 5.008_001; # just as DBI
 
 package DBD::mysql;
 
-use DBI ();
+use DBI;
 use DynaLoader();
-use Carp ();
+use Carp;
 our @ISA = qw(DynaLoader);
 our $VERSION = '4.025';
 
 bootstrap DBD::mysql $VERSION;
 
 
-our $err = 0;	# holds error code   for DBI::err
+our $err = 0;	    # holds error code for DBI::err
 our $errstr = "";	# holds error string for DBI::errstr
 our $drh = undef;	# holds driver handle once initialised
 
@@ -1238,18 +1238,18 @@ obtained with
 Otherwise reuse the existing connection of a database handle (dbh).
 
 There's only one function available for administrative purposes, comparable
-to the m(y)sqladmin programs. The command being execute depends on the
+to the mysqladmin programs. The command being execute depends on the
 first argument:
 
 =over
 
 =item createdb
 
-Creates the database $dbname. Equivalent to "m(y)sqladmin create $dbname".
+Creates the database $dbname. Equivalent to "mysqladmin create $dbname".
 
 =item dropdb
 
-Drops the database $dbname. Equivalent to "m(y)sqladmin drop $dbname".
+Drops the database $dbname. Equivalent to "mysqladmin drop $dbname".
 
 It should be noted that database deletion is
 I<not prompted for> in any way.  Nor is it undo-able from DBI.
@@ -1261,7 +1261,7 @@ These method should be used at your own risk.
 =item shutdown
 
 Silently shuts down the database engine. (Without prompting!)
-Equivalent to "m(y)sqladmin shutdown".
+Equivalent to "mysqladmin shutdown".
 
 =item reload
 
@@ -1808,6 +1808,7 @@ safe (By default it isn't.) by passing the option -with-thread-safe-client
 to configure. See the section on I<How to make a threadsafe client> in
 the manual.
 
+
 =head1 ASYNCHRONOUS QUERIES
 
 You can make a single asynchronous query per MySQL connection; this allows
@@ -1835,169 +1836,6 @@ Here's an example of how to use the asynchronous query interface:
   }
   my $rows = $dbh->mysql_async_result;
 
-=head1 INSTALLATION
-
-Windows users may skip this section and pass over to L<WIN32
-INSTALLATION> below. Others, go on reading.
-
-=head2 Environment Variables
-
-For ease of use, you can now set environment variables for
-DBD::mysql installation. You can set any or all of the options, and
-export them by putting them in your .bashrc or the like:
-
-    export DBD_MYSQL_CFLAGS=-I/usr/local/mysql/include/mysql
-    export DBD_MYSQL_LIBS="-L/usr/local/mysql/lib/mysql -lmysqlclient"
-    export DBD_MYSQL_EMBEDDED=
-    export DBD_MYSQL_CONFIG=mysql_config
-    export DBD_MYSQL_NOCATCHSTDERR=0
-    export DBD_MYSQL_NOFOUNDROWS=0
-    export DBD_MYSQL_SSL=
-    export DBD_MYSQL_TESTDB=test
-    export DBD_MYSQL_TESTHOST=localhost
-    export DBD_MYSQL_TESTPASSWORD=s3kr1+
-    export DBD_MYSQL_TESTPORT=3306
-    export DBD_MYSQL_TESTUSER=me
-
-The most useful may be the host, database, port, socket, user, and password.
-
-Installation will first look to your mysql_config, and then your
-environment variables, and then it will guess with intelligent defaults.
-
-=head2 Installing with CPAN
-
-First of all, you do not need an installed MySQL server for installing
-DBD::mysql. However, you need at least the client
-libraries and possibly the header files, if you are compiling DBD::mysql
-from source. In the case of MySQL you can create a
-client-only version by using the configure option --without-server.
-If you are using precompiled binaries, then it may be possible to
-use just selected RPM's like MySQL-client and MySQL-devel or something
-similar, depending on the distribution.
-
-I recommend trying automatic installation via the CPAN module. Try
-
-  cpan
-
-If you are using the CPAN module for the first time, it will prompt
-you a lot of questions. If you finally receive the CPAN prompt, enter
-
-  install DBD::mysql
-
-=head2 Manual Installation
-
-If this fails (which may be the case for a number of reasons, for
-example because you are behind a firewall or don't have network
-access), you need to do a manual installation. First of all you
-need to fetch the modules from CPAN
-
-   L<https://metacpan.org>
-
-The following modules are required
-
-  DBI
-  DBD::mysql
-
-Then enter the following commands (note - versions are just examples):
-
-  gzip -cd DBI-(version).tar.gz | tar xf -
-  cd DBI-(version)
-  perl Makefile.PL
-  make
-  make test
-  make install
-
-  cd ..
-  gzip -cd DBD-mysql-(version)-tar.gz | tar xf -
-  cd DBD-mysql-(version)
-  perl Makefile.PL
-  make
-  make test
-  make install
-
-During "perl Makefile.PL" you will be prompted some questions.
-Other questions are the directories with header files and libraries.
-For example, of your file F<mysql.h> is in F</usr/include/mysql/mysql.h>,
-then enter the header directory F</usr>, likewise for
-F</usr/lib/mysql/libmysqlclient.a> or F</usr/lib/libmysqlclient.so>.
-
-
-=head1 WIN32 INSTALLATION
-
-If you are using ActivePerl, you may use ppm to install DBD-mysql.
-
-  ppm install DBI
-  ppm install DBD::mysql
-
-If you need an HTTP proxy, you might need to set the environment
-variable http_proxy, for example like this:
-
-  set http_proxy=http://myproxy.com:8080/
-
-
-I recommend using the win32clients package for installing DBD::mysql
-under Win32, available for download on www.tcx.se. The following steps
-have been required for me:
-
-=over
-
-=item -
-
-Extract sources into F<C:\>. This will create a directory F<C:\mysql>
-with subdirectories include and lib.
-
-IMPORTANT: Make sure this subdirectory is not shared by other TCX
-files! In particular do *not* store the MySQL server in the same
-directory. If the server is already installed in F<C:\mysql>,
-choose a location like F<C:\tmp>, extract the win32clients there.
-Note that you can remove this directory entirely once you have
-installed DBD::mysql.
-
-=item -
-
-Extract the DBD::mysql sources into another directory, for
-example F<C:\src\siteperl>
-
-=item -
-
-Open a CMD.exe shell and change directory to F<C:\src\siteperl>.
-
-=item -
-
-The next step is only required if you repeat building the modules: Make
-sure that you have a clean build tree by running
-
-  nmake realclean
-
-If you don't have VC++, replace nmake with your flavor of make. If
-error messages are reported in this step, you may safely ignore them.
-
-=item -
-
-Run
-
-  perl Makefile.PL
-
-which will prompt you for some settings. The really important ones are:
-
-  Which DBMS do you want to use?
-
-enter a 1 here (MySQL only), and
-
-  Where is your mysql installed? Please tell me the directory that
-  contains the subdir include.
-
-where you have to enter the win32clients directory, for example
-F<C:\mysql> or F<C:\tmp\mysql>.
-
-=item -
-
-Continued in the usual way:
-
-  nmake
-  nmake install
-
-=back
 
 =head1 AUTHORS
 
