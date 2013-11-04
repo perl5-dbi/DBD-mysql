@@ -1,4 +1,4 @@
-2013-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
+2013-11-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
 * Fix method redefinition warnings in threads on Perl >= 5.16 - Dagfinn Ilmari Mannsåker
 * use strict and warnings everywhere.
 * Minimum perl version is now 5.8.1, just as for DBI.
@@ -9,6 +9,8 @@
 * Corrected documentation for mysql_init_command option - Alexey Molchanov <alexey.molchanov@portaone.com>
 * Skip stored procedure tests if user is unpriviliged - RT83348 - Chris Weyl <cweyl@alumni.drew.edu>
 * Fix example in POD doc for NUM_OF_FIELDS - RT36730, reported by tapoutmma.
+* Fix for memory leak (RT86153) when connecting with incorrect password
+* Bail if connect fails early on (RT31823)
 
 2013-09-17 Michiel Beijen, Patrick Galbraith, DBI/DBD community (4.024)
 * Fix memory leak if mysql_server_prepare is enabled - RT76462 - Masahiro Chiba

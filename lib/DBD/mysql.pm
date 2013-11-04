@@ -1921,6 +1921,25 @@ For example, of your file F<mysql.h> is in F</usr/include/mysql/mysql.h>,
 then enter the header directory F</usr>, likewise for
 F</usr/lib/mysql/libmysqlclient.a> or F</usr/lib/libmysqlclient.so>.
 
+=head1 MARIADB NATIVE CLIENT INSTALLATION
+
+The MariaDB native client is another option for connecting to a MySQL 
+database licensed LGPL 2.1. To build DBD::mysql against this client, you
+will first need to build the client. Generally, this is done with
+the following:
+
+  cd path/to/src/mariadb-native-client
+  cmake -G "Unix Makefiles'
+  make
+  sudo make install
+
+Once the client is built and installed, you can build DBD::mysql against
+it:
+
+  perl Makefile.PL --testuser=xxx --testpassword=xxx --testsocket=/path/to//mysqld.sock --mysql_config=/usr/local/bin/mariadb_config 
+  make
+  make test
+  make install
 
 =head1 WIN32 INSTALLATION
 
@@ -2018,10 +2037,10 @@ prepared statement support was added by Patrick Galbraith and
 Alexy Stroganov (who also soleley added embedded server
 support).
 
-For the past seven years DBD::mysql has been maintained by
-Patrick Galbraith (I<patg@patg.net>) along with the entire community
-of Perl developers who keep sending patches and making Patrick's job
-easier.
+For the past nine years DBD::mysql has been maintained by
+Patrick Galbraith (I<patg@patg.net>), and recently with the great help of
+Michiel Beijen (I<michiel.beijen@gmail.com>),  along with the entire community
+of Perl developers who keep sending patches to help continue improving DBD::mysql 
 
 
 =head1 CONTRIBUTIONS

@@ -86,4 +86,5 @@ t/mysql.mtest
 t/pod.t
 t/rt83494-quotes-comments.t
 t/rt85919-fetch-lost-connection.t
+t/rt86153-reconnect-fail-memory.t
 TODO
