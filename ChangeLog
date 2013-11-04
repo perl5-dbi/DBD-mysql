@@ -1,4 +1,5 @@
 2013-11-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
+* Set with parentheses and column_info - RT50304 - reported and fixed by Kevin Bosak.
 * Fix method redefinition warnings in threads on Perl >= 5.16 - Dagfinn Ilmari Mannsåker
 * use strict and warnings everywhere.
 * Minimum perl version is now 5.8.1, just as for DBI.

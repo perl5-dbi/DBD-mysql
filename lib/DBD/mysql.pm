@@ -6,16 +6,16 @@ require 5.008_001; # just as DBI
 
 package DBD::mysql;
 
-use DBI ();
+use DBI;
 use DynaLoader();
-use Carp ();
+use Carp;
 our @ISA = qw(DynaLoader);
 our $VERSION = '4.025';
 
 bootstrap DBD::mysql $VERSION;
 
 
-our $err = 0;	# holds error code   for DBI::err
+our $err = 0;	    # holds error code for DBI::err
 our $errstr = "";	# holds error string for DBI::errstr
 our $drh = undef;	# holds driver handle once initialised
 
@@ -149,8 +149,6 @@ sub connect {
       return undef;
     }
 
-    # Call msqlConnect func in mSQL.xs file
-    # and populate internal handle data.
     DBD::mysql::db::_login($this, $dsn, $username, $password)
 	  or $this = undef;
 
@@ -198,33 +196,35 @@ package DBD::mysql::db; # ====== DATABASE ======
 use strict;
 use DBI qw(:sql_types);
 
-%DBD::mysql::db::db2ANSI = ("INT"   =>  "INTEGER",
-			   "CHAR"  =>  "CHAR",
-			   "REAL"  =>  "REAL",
-			   "IDENT" =>  "DECIMAL"
-                          );
+%DBD::mysql::db::db2ANSI = (
+    "INT"   =>  "INTEGER",
+    "CHAR"  =>  "CHAR",
+    "REAL"  =>  "REAL",
+    "IDENT" =>  "DECIMAL"
+);
 
-### ANSI datatype mapping to mSQL datatypes
-%DBD::mysql::db::ANSI2db = ("CHAR"          => "CHAR",
-			   "VARCHAR"       => "CHAR",
-			   "LONGVARCHAR"   => "CHAR",
-			   "NUMERIC"       => "INTEGER",
-			   "DECIMAL"       => "INTEGER",
-			   "BIT"           => "INTEGER",
-			   "TINYINT"       => "INTEGER",
-			   "SMALLINT"      => "INTEGER",
-			   "INTEGER"       => "INTEGER",
-			   "BIGINT"        => "INTEGER",
-			   "REAL"          => "REAL",
-			   "FLOAT"         => "REAL",
-			   "DOUBLE"        => "REAL",
-			   "BINARY"        => "CHAR",
-			   "VARBINARY"     => "CHAR",
-			   "LONGVARBINARY" => "CHAR",
-			   "DATE"          => "CHAR",
-			   "TIME"          => "CHAR",
-			   "TIMESTAMP"     => "CHAR"
-			  );
+### ANSI datatype mapping to MySQL datatypes
+%DBD::mysql::db::ANSI2db = (
+    "CHAR"          => "CHAR",
+    "VARCHAR"       => "CHAR",
+    "LONGVARCHAR"   => "CHAR",
+    "NUMERIC"       => "INTEGER",
+    "DECIMAL"       => "INTEGER",
+    "BIT"           => "INTEGER",
+    "TINYINT"       => "INTEGER",
+    "SMALLINT"      => "INTEGER",
+    "INTEGER"       => "INTEGER",
+    "BIGINT"        => "INTEGER",
+    "REAL"          => "REAL",
+    "FLOAT"         => "REAL",
+    "DOUBLE"        => "REAL",
+    "BINARY"        => "CHAR",
+    "VARBINARY"     => "CHAR",
+    "LONGVARBINARY" => "CHAR",
+    "DATE"          => "CHAR",
+    "TIME"          => "CHAR",
+    "TIMESTAMP"     => "CHAR"
+);
 
 sub prepare {
     my($dbh, $statement, $attribs)= @_;
@@ -461,10 +461,10 @@ sub column_info {
   for my $row (@$desc)
   {
     my $type = $row->{type};
-    $type =~ m/^(\w+)(?:\((.*?)\))?\s*(.*)/;
+    $type =~ m/^(\w+)(\((.+)\))?\s?(.*)?$/;
     my $basetype  = lc($1);
-    my $typemod   = $2;
-    my $attr      = $3;
+    my $typemod   = $3;
+    my $attr      = $4;
 
     push @fields, $row->{field};
     my $info = $col_info{ $row->{field} }= {
@@ -1238,18 +1238,18 @@ obtained with
 Otherwise reuse the existing connection of a database handle (dbh).
 
 There's only one function available for administrative purposes, comparable
-to the m(y)sqladmin programs. The command being execute depends on the
+to the mysqladmin programs. The command being execute depends on the
 first argument:
 
 =over
 
 =item createdb
 
-Creates the database $dbname. Equivalent to "m(y)sqladmin create $dbname".
+Creates the database $dbname. Equivalent to "mysqladmin create $dbname".
 
 =item dropdb
 
-Drops the database $dbname. Equivalent to "m(y)sqladmin drop $dbname".
+Drops the database $dbname. Equivalent to "mysqladmin drop $dbname".
 
 It should be noted that database deletion is
 I<not prompted for> in any way.  Nor is it undo-able from DBI.
@@ -1261,7 +1261,7 @@ These method should be used at your own risk.
 =item shutdown
 
 Silently shuts down the database engine. (Without prompting!)
-Equivalent to "m(y)sqladmin shutdown".
+Equivalent to "mysqladmin shutdown".
 
 =item reload
 
@@ -1808,6 +1808,7 @@ safe (By default it isn't.) by passing the option -with-thread-safe-client
 to configure. See the section on I<How to make a threadsafe client> in
 the manual.
 
+
 =head1 ASYNCHRONOUS QUERIES
 
 You can make a single asynchronous query per MySQL connection; this allows
@@ -1835,6 +1836,7 @@ Here's an example of how to use the asynchronous query interface:
   }
   my $rows = $dbh->mysql_async_result;
 
+<<<<<<< HEAD
 =head1 INSTALLATION
 
 Windows users may skip this section and pass over to L<WIN32
@@ -2017,6 +2019,8 @@ Continued in the usual way:
   nmake install
 
 =back
+=======
+>>>>>>> e6c50a6a181fe87b8fabf0af4c8b9443c1628b3f
 
 =head1 AUTHORS
 
@@ -2034,7 +2038,7 @@ Tim Bunce.
 The current incarnation of B<DBD::mysql> was written by Jochen Wiedmann,
 then numerous changes and bug-fixes were added by Rudy Lippan. Next,
 prepared statement support was added by Patrick Galbraith and
-Alexy Stroganov (who also soleley added embedded server
+Alexy Stroganov (who also solely added embedded server
 support).
 
 For the past nine years DBD::mysql has been maintained by

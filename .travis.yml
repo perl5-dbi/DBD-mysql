@@ -10,10 +10,6 @@ before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libmysqlclient-dev
  - perlbrew install-cpanm -f
-before_script:
-  - mysql -e 'create database myapp_test;'
 install:
-   - cpanm Test::Deep DBI
-env: EXTENDED_TESTING=1
-   - cpanm Test::Deep Test::Pod Proc::ProcessTable DBI
-script: "perl Makefile.PL --testuser=travis --testdb myapp_test && make && make test"
+  - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
+script: "export EXTENDED_TESTING=1 && export RELEASE_TESTING=1 && perl Makefile.PL && make disttest"
