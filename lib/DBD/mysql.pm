@@ -1836,7 +1836,6 @@ Here's an example of how to use the asynchronous query interface:
   }
   my $rows = $dbh->mysql_async_result;
 
-<<<<<<< HEAD
 =head1 INSTALLATION
 
 Windows users may skip this section and pass over to L<WIN32
@@ -2019,8 +2018,6 @@ Continued in the usual way:
   nmake install
 
 =back
-=======
->>>>>>> e6c50a6a181fe87b8fabf0af4c8b9443c1628b3f
 
 =head1 AUTHORS
 
