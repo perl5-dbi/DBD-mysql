@@ -1,7 +1,6 @@
-=head1 DBD::mysql - database driver for Perl
+=head1 NAME
 
-This is the Perl L<DBI> driver for access to MySQL databases.
-
+DBD::mysql - MySQL database driver for Perl L<DBI>
 
 =head2 Usage
 
