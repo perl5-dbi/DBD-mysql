@@ -24,8 +24,8 @@ Makefile.PL
 Makefile.PL.embedded
 MANIFEST
 MANIFEST.SKIP
-META.yml			Module meta-data (added by MakeMaker)
 META.json
+META.yml			Module meta-data (added by MakeMaker)
 myld
 mysql.xs
 README.pod
@@ -84,6 +84,7 @@ t/manifest.t
 t/mysql.dbtest
 t/mysql.mtest
 t/pod.t
+t/rt25389-bin-case.t
 t/rt50304-column_info_parentheses.t
 t/rt83494-quotes-comments.t
 t/rt85919-fetch-lost-connection.t
