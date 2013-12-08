@@ -7,43 +7,33 @@
 use strict;
 use warnings;
 
-use DBI ();
+use DBI;
+use Test::More;
 
 use vars qw($test_dsn $test_user $test_password $state);
 require "t/lib.pl";
 
-while (Testing()) {
-  my ($dbh, $sth);
-  #
-  # Connect to the database
-  Test($state or
-       ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
-                           {RaiseError => 0})));
-
-  my $q;
-
-  #
-  # Placeholder inside a comment
-  #
-  $q = " -- Does the question mark at the end confuse DBI::MySQL?\nselect ?";
-
-  Test($state or ($sth = $dbh->prepare($q)));
-  Test($state or ($sth->execute(42)));
-  Test($state or ($sth->{ParamValues}));
-  Test($state or ($sth->finish));
-
-  #
-  # Quote inside a comment
-  #
-  $q = " -- 'Tis the quote that confuses DBI::MySQL\nSELECT ?";
-
-  Test($state or ($sth = $dbh->prepare($q)));
-  Test($state or ($sth->execute(42)));
-  Test($state or ($sth->{ParamValues}));
-  Test($state or ($sth->finish));
-
-  #
-  # Close the database connection
-  Test($state or ($dbh->disconnect() or 1));
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "ERROR: $@. Can't continue test";
 }
 
+my %tests = (
+  questionmark => " -- Does the question mark at the end confuse DBI::MySQL?\nselect ?",
+  quote        => " -- 'Tis the quote that confuses DBI::MySQL\nSELECT ?"
+);
+
+for my $test ( sort keys %tests ) {
+
+  my $sth = $dbh->prepare($tests{$test});
+  ok($sth, 'created statement hande');
+  ok($sth->execute(), 'executing');
+  ok($sth->{ParamValues}, 'values');
+  ok($sth->finish(), 'finish');
+
+}
+
+ok ($dbh->disconnect(), 'disconnecting from dbh');
+done_testing;
