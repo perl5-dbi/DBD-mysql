@@ -1,4 +1,5 @@
 2013-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.026)
+* t/29warnings.t fails on MySQL Server 5.1.something - Reported by RT91202, Gisle Aas.
 * README.pod misses proper NAME heading - RT90101 - Damyan Ivanov, Debian Perl Group
 
 2013-11-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
