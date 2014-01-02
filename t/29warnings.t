@@ -23,7 +23,12 @@ if ( !MinimumVersion($dbh, '4.1') ) {
     plan skip_all => "Servers < 4.1 do not report warnings";
 }
 
-plan tests => 13;
+my $expected_warnings = 1;
+if ( MinimumVersion($dbh, '5.5') ) {
+    $expected_warnings = 2;
+}
+
+plan tests => 14;
 
 ok(defined $dbh, "Connected to database");
 
@@ -58,6 +63,6 @@ if ( $str =~ /Warnings:\s(\d+)$/ ) {
 
 # this test passes on mysql 5.5.x and fails on 5.1.x
 # but I'm not sure which versions, so I'll just disable it for now
-# is($numwarn, 2 );
+is($numwarn, $expected_warnings);
 
 ok($dbh->disconnect);
