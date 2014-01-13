@@ -1040,6 +1040,10 @@ If your DSN contains the option "mysql_init_command=##", then
 this SQL statement is executed when connecting to the MySQL server.
 It is automatically re-executed if reconnection occurs.
 
+=item mysql_skip_secure_auth
+
+This option is for older mysql databases that don't have secure auth set
+
 =item mysql_read_default_file
 
 =item mysql_read_default_group
