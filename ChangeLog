@@ -1,7 +1,8 @@
-2013-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.026)
-* t/29warnings.t fails on MySQL Server 5.1.something - Reported by RT91202, Gisle Aas.
+2014-01-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.026)
+* t/29warnings.t fails on MySQL Server 5.1.something - Reported by RT91202, Gisle Aas. Now is handled depending on version.
 * README.pod misses proper NAME heading - RT90101 - Damyan Ivanov, Debian Perl Group
 * Added fix and test for RT91715
+* Added feature from Jacob Gelbman (cPanel) mysql_skip_secure_auth
 
 2013-11-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
 * Set with parentheses and column_info - RT50304 - reported and fixed by Kevin Bosak.
