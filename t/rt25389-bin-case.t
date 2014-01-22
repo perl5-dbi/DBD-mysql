@@ -8,11 +8,17 @@ use DBI;
 use vars qw($test_dsn $test_user $test_password);
 require "t/lib.pl";
 
-use Test::More tests => 8;
+use Test::More;
 
-my $dbh =
-  DBI->connect( $test_dsn, $test_user, $test_password,
-    { "mysql_enable_utf8" => 1 } )  or die $DBI::errstr;
+my $dbh;
+eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password,
+    { "mysql_enable_utf8" => 1 } );};
+
+unless($dbh) {
+    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+}
+
+plan tests => 8;
 
 my ( $sth, $i );
 my @test = qw(AA Aa aa aA);

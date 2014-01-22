@@ -7,10 +7,16 @@ use DBI;
 use vars qw($test_dsn $test_user $test_password $state);
 require "t/lib.pl";
 
-use Test::More tests => 7;
+use Test::More;
 
-my $dbh = DBI->connect( $test_dsn, $test_user, $test_password)
-  || die $DBI::errstr;
+my $dbh;
+eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password);};
+
+unless($dbh) {
+    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+}
+
+plan tests => 7;
 
 my $create = <<EOC;
 CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
