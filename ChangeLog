@@ -1,3 +1,6 @@
+2014-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.027)
+* metacpan.org and search.cpan.org didn't display module POD, caused by fix for RT90101. Reported by Oleg, RT92350.
+
 2014-01-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.026)
 * t/29warnings.t fails on MySQL Server 5.1.something - Reported by RT91202, Gisle Aas. Now is handled depending on version.
 * README.pod misses proper NAME heading - RT90101 - Damyan Ivanov, Debian Perl Group
