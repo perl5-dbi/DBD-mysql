@@ -66,6 +66,7 @@ sub _OdbcParse($$$) {
 	if ($dsn =~ /([^:;]*\[.*]|[^:;]*)[:;](.*)/) {
 	    $val = $1;
 	    $dsn = $2;
+	    $val =~ s/\[|]//g; # Remove [] if present, the rest of the code prefers plain IPv6 addresses
 	} else {
 	    $val = $dsn;
 	    $dsn = '';
