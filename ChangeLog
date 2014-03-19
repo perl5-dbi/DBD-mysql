@@ -1,4 +1,5 @@
 2014-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.027)
+* Added more OS X notes and fixed compiler warnings
 * Skip tests if test database is not present-RT92330 (zefram <zefram at fysh dot org> 
 * metacpan.org and search.cpan.org didn't display module POD, caused by fix for RT90101. Reported by Oleg, RT92350.
 
