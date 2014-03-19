@@ -3675,7 +3675,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tmysql_to_perl_type returned %d\n",
                       col_type);
       buffer->length= &(fbh->length);
-      buffer->is_null= &(fbh->is_null);
+      buffer->is_null= (char*) &(fbh->is_null);
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:

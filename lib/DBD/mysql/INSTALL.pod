@@ -534,6 +534,19 @@ to be more intelligent about using build flags that work. It is very difficult a
 not a driver problem per se but a problem in how one builds DBD::mysql with a binary client lib
 built on a different compiler than the one the user is using.
 
+Quite simply, using the binary MySQL installation from Oracle, you will need to first run:
+
+  perl Makefile.PL --mysql_config=/usr/local/mysql-5.6.16-osx10.7-x86_64/bin/mysql_config
+
+There are some runtime issues you may encounter with OS X. Upon 
+running make test, you might encounter the error:
+
+  Error:  Can't load '/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle' for module DBD::mysql: dlopen(/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle, 2): Library not loaded: libmysqlclient.18.dylib
+
+To solve this issue, you need to set the library path, similar to LD_LIBRARY_PATH on other Unix variants, buit on OS X you need to do the following (this is for a binary install of MySQL from Oracle)
+
+  export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/mysql-5.6.16-osx10.7-x86_64/lib/
+
 
 =head2 Cygwin
 
@@ -798,6 +811,7 @@ library, for example
 The use of a statically linked library is described in the
 previous section on linker flags. L</Configuration>.
 L</Linker flags>.
+
 
 =back
 
