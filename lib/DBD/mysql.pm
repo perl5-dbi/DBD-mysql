@@ -58,7 +58,7 @@ sub _OdbcParse($$$) {
 	return;
     }
     while (length($dsn)) {
-	if ($dsn =~ /([^:;]*)[:;](.*)/) {
+	if ($dsn =~ /([^:;]*\[.*]|[^:;]*)[:;](.*)/) {
 	    $val = $1;
 	    $dsn = $2;
 	} else {
