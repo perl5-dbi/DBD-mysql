@@ -793,6 +793,8 @@ DEATH
 	my $bindir = File::Spec->catdir($basedir, 'bin');
 	my $pkglibdir= File::Spec->catdir($basedir, 'lib', 'opt');
 	my $pkgincludedir = File::Spec->catdir($basedir, 'include');
+	$pkgincludedir = File::Spec->catdir($basedir, 'include', 'mysql')
+	  if -e File::Spec->catfile($basedir, 'include', 'mysql', 'mysql.h');
 	my $ldflags = '';
 	my $client_libs = $Config{'cc'} eq 'gcc' ? '-lmysql -lzlib' : '-lmysqlclient -lzlib';
 
