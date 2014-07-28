@@ -3314,7 +3314,8 @@ my_ulonglong mysql_st_internal_execute(
   }
 #endif
 
-  Safefree(salloc);
+  if (salloc)
+    Safefree(salloc);
 
   if(rows == -2) {
     do_error(h, mysql_errno(svsock), mysql_error(svsock), 
