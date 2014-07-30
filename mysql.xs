@@ -930,7 +930,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 #endif
             break;
     	default:
- 		croak("Unknown SQL Info type: %i", (int) dbh);
+ 		croak("Unknown SQL Info type: %i", mysql_errno(imp_dbh->pmysql));
     }
     ST(0) = sv_2mortal(retsv);
 

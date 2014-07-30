@@ -13,6 +13,12 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
+eval { use Test::Deep };
+SKIP: {
+    if ($!) {
+        skip "Test::Deep is not installed!";
+    }
+}
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
