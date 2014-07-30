@@ -41,4 +41,19 @@ if (not $ok) {
     eval { $sth->finish(); } if defined $sth;
     eval { $dbh->disconnect(); } if defined $dbh;
 }
+
+# different testcase with killing the service
+system(qw(sudo service mysql start));
+use DBI;
+my $dbh = DBI->connect("DBI:mysql:database=test:port=3306");
+$dbh->do(q{CREATE TABLE IF NOT EXISTS foo (something varchar(10) );}); 
+$dbh->do(q{DELETE FROM foo;}); 
+my $insert = sub { $dbh->do(q{INSERT INTO foo VALUES (?)}, undef, "hello$_") for 1 .. 10; }; 
+$insert->(); 
+system qw(sudo service mysql stop); 
+$insert->();
+ok(1, "dbh did not crash on closed connection");
+system(qw(sudo service mysql start));
+#mysql -e 'select * from test.foo'
+
 done_testing();
