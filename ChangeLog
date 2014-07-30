@@ -1,8 +1,15 @@
-2014-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.027)
+2014-08-01 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.028)
+* Fixed bug in mysql.xs where dbh was being used as error code
+* RT #97570: fix wrong salloc free in mysql_st_internal_execute - (Reini Urban, cPanel)
+* Fix RT #97625 use-after-free in mysql_dr_error, and #86153 - (Reini Urban, cPanel)
+* find mysql.h for MariaDB on Win32 (Graham Ollis)
+* Update mysql.pm to work with ipv6 and ipv4 addresses (katyavoid)
+
+2014-03-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.027)
 * Added more OS X notes and fixed compiler warnings
 * Skip tests if test database is not present-RT92330 (zefram <zefram at fysh dot org> 
 * metacpan.org and search.cpan.org didn't display module POD, caused by fix for RT90101. Reported by Oleg, RT92350.
-
+  
 2014-01-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.026)
 * t/29warnings.t fails on MySQL Server 5.1.something - Reported by RT91202, Gisle Aas. Now is handled depending on version.
 * README.pod misses proper NAME heading - RT90101 - Damyan Ivanov, Debian Perl Group
