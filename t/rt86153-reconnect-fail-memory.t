@@ -63,6 +63,7 @@ for (my $i = 0;  $i < $COUNT_CONNECT;  $i++) {
                 $ok++;
             }
             else {
+                diag "$prev_size => $size" if $ENV{TEST_VERBOSE};
                 $not_ok++;
             }
         }
