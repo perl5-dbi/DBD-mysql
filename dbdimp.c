@@ -1996,6 +1996,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   char* password;
   char* mysql_socket;
   int   result;
+  int fresh = 0;
   D_imp_xxh(dbh);
 
   /* TODO- resolve this so that it is set only if DBI is 1.607 */
@@ -2044,12 +2045,15 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
 		  port ? port : "NULL");
 
   if (!imp_dbh->pmysql) {
+     fresh = 1;
      Newz(908, imp_dbh->pmysql, 1, MYSQL);
   }
   result = mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
-  if (!result)
+  if (fresh && !result) {
+      /* Prevent leaks, but do not free in case of a reconnect. See #97625 */
       Safefree(imp_dbh->pmysql);
+  }
   return result;
 }
 
