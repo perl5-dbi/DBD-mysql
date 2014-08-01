@@ -1952,8 +1952,13 @@ MYSQL *mysql_dr_connect(
       /* 
          sock was allocated with mysql_init() 
          fixes: https://rt.cpan.org/Ticket/Display.html?id=86153
-      */
+
       Safefree(sock);
+
+         rurban: No, we still need this handle later in mysql_dr_error().
+         RT #97625. It will be freed as imp_dbh->pmysql in dbd_db_destroy(),
+         which is called by the DESTROY handler.
+      */
     }
     return result;
   }
@@ -1990,6 +1995,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   char* user;
   char* password;
   char* mysql_socket;
+  int   result;
   D_imp_xxh(dbh);
 
   /* TODO- resolve this so that it is set only if DBI is 1.607 */
@@ -2040,8 +2046,11 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   if (!imp_dbh->pmysql) {
      Newz(908, imp_dbh->pmysql, 1, MYSQL);
   }
-  return mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
+  result = mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
+  if (!result)
+      Safefree(imp_dbh->pmysql);
+  return result;
 }
 
 
@@ -3314,7 +3323,8 @@ my_ulonglong mysql_st_internal_execute(
   }
 #endif
 
-  Safefree(salloc);
+  if (salloc)
+    Safefree(salloc);
 
   if(rows == -2) {
     do_error(h, mysql_errno(svsock), mysql_error(svsock), 
