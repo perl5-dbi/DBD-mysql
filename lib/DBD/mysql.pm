@@ -10,7 +10,7 @@ use DBI;
 use DynaLoader();
 use Carp;
 our @ISA = qw(DynaLoader);
-our $VERSION = '4.028';
+our $VERSION = '4.029';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -739,6 +739,68 @@ EOF
     return $sth;
 }
 
+sub statistics_info {
+    my ($dbh,
+        $catalog, $schema, $table,
+        $unique_only, $quick,
+       ) = @_;
+
+    return unless $dbh->func('_async_check');
+
+    # INFORMATION_SCHEMA.KEY_COLUMN_USAGE was added in 5.0.6
+    # no one is going to be running 5.0.6, taking out the check for $point > .6
+    my ($maj, $min, $point) = _version($dbh);
+    return if $maj < 5 ;
+
+    my $sql = <<'EOF';
+SELECT TABLE_CATALOG AS TABLE_CAT,
+       TABLE_SCHEMA AS TABLE_SCHEM,
+       TABLE_NAME AS TABLE_NAME,
+       NON_UNIQUE AS NON_UNIQUE,
+       NULL AS INDEX_QUALIFIER,
+       INDEX_NAME AS INDEX_NAME,
+       LCASE(INDEX_TYPE) AS TYPE,
+       SEQ_IN_INDEX AS ORDINAL_POSITION,
+       COLUMN_NAME AS COLUMN_NAME,
+       COLLATION AS ASC_OR_DESC,
+       CARDINALITY AS CARDINALITY,
+       NULL AS PAGES,
+       NULL AS FILTER_CONDITION
+  FROM INFORMATION_SCHEMA.STATISTICS
+EOF
+
+    my @where;
+    my @bind;
+
+    # catalogs are not yet supported by MySQL
+
+#    if (defined $catalog) {
+#        push @where, 'TABLE_CATALOG = ?';
+#        push @bind, $catalog;
+#    }
+
+    if (defined $schema) {
+        push @where, 'TABLE_SCHEMA = ?';
+        push @bind, $schema;
+    }
+
+    if (defined $table) {
+        push @where, 'TABLE_NAME = ?';
+        push @bind, $table;
+    }
+
+    if (@where) {
+        $sql .= ' WHERE ';
+        $sql .= join ' AND ', @where;
+    }
+    $sql .= " ORDER BY TABLE_SCHEMA, TABLE_NAME, ORDINAL_POSITION";
+
+    local $dbh->{FetchHashKeyName} = 'NAME_uc';
+    my $sth = $dbh->prepare($sql);
+    $sth->execute(@bind);
+
+    return $sth;
+}
 
 sub _version {
     my $dbh = shift;
@@ -764,7 +826,7 @@ sub get_info {
 }
 
 BEGIN {
-    my @needs_async_check = qw/data_sources statistics_info quote_identifier begin_work/;
+    my @needs_async_check = qw/data_sources quote_identifier begin_work/;
 
     foreach my $method (@needs_async_check) {
         no strict 'refs';
