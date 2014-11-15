@@ -1996,7 +1996,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   char* password;
   char* mysql_socket;
   int   result;
-  int	fresh = 0;
+  int fresh = 0;
   D_imp_xxh(dbh);
 
   /* TODO- resolve this so that it is set only if DBI is 1.607 */
@@ -2052,10 +2052,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
   if (fresh && !result) {
       /* Prevent leaks, but do not free in case of a reconnect. See #97625 */
-      do_error(dbh, mysql_errno(imp_dbh->pmysql),
-              mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
       Safefree(imp_dbh->pmysql);
-      imp_dbh->pmysql = NULL;
   }
   return result;
 }
