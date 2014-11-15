@@ -41,4 +41,21 @@ if (not $ok) {
     eval { $sth->finish(); } if defined $sth;
     eval { $dbh->disconnect(); } if defined $dbh;
 }
+
+if (0) {
+  # This causes the use=after-free crash in RT #97625.
+  # different testcase by killing the service. which is of course
+  # not doable in a general testscript and highly system dependent.
+  system(qw(sudo service mysql start));
+  use DBI;
+  my $dbh = DBI->connect("DBI:mysql:database=test:port=3306");
+  $dbh->{mysql_auto_reconnect} = 1; # without this is works
+  my $select = sub { $dbh->do(q{SELECT 1}) for 1 .. 10; };
+  $select->();
+  system qw(sudo service mysql stop);
+  $select->();
+  ok(1, "dbh did not crash on closed connection");
+  system(qw(sudo service mysql start));
+}
+
 done_testing();
