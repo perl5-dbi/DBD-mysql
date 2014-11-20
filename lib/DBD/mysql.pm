@@ -1665,7 +1665,7 @@ The methods
     $dbh->rollback();
     $dbh->commit();
 
-will issue the commands COMMIT and ROLLBACK, respectively. A
+will issue the commands ROLLBACK and COMMIT, respectively. A
 ROLLBACK will also be issued if AutoCommit mode is off and the
 database handles DESTROY method is called. Again, this is following
 the DBI specifications.
