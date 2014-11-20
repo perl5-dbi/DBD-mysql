@@ -105,7 +105,7 @@ In short: If you are using
     Install the packages
 
       mysql-client mysql-server mysql-doc mysql-common
-      libdbi-perl lidbd-mysql-perl
+      libdbi-perl libdbd-mysql-perl
 
     No idea how one does install these under Debian, but I am
     sure you know. :-)      
