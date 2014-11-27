@@ -2360,7 +2360,7 @@ dbd_db_STORE_attrib(
   char *key = SvPV(keysv, kl);
   SV *cachesv = Nullsv;
   int cacheit = FALSE;
-  bool bool_value = SvTRUE(valuesv);
+  const bool bool_value = SvTRUE(valuesv);
 
   if (kl==10 && strEQ(key, "AutoCommit"))
   {
@@ -2413,13 +2413,13 @@ dbd_db_STORE_attrib(
   else if (kl == 20 && strEQ(key,"mysql_auto_reconnect"))
     imp_dbh->auto_reconnect = bool_value;
   else if (kl == 20 && strEQ(key, "mysql_server_prepare"))
-    imp_dbh->use_server_side_prepare=SvTRUE(valuesv);
+    imp_dbh->use_server_side_prepare = bool_value;
   else if (kl == 23 && strEQ(key,"mysql_no_autocommit_cmd"))
-    imp_dbh->no_autocommit_cmd= SvTRUE(valuesv);
+    imp_dbh->no_autocommit_cmd = bool_value;
   else if (kl == 24 && strEQ(key,"mysql_bind_type_guessing"))
-    imp_dbh->bind_type_guessing = SvTRUE(valuesv);
+    imp_dbh->bind_type_guessing = bool_value;
   else if (kl == 31 && strEQ(key,"mysql_bind_comment_placeholders"))
-    imp_dbh->bind_type_guessing = SvTRUE(valuesv);
+    imp_dbh->bind_type_guessing = bool_value;
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
