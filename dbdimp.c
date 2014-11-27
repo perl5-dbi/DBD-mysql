@@ -1796,7 +1796,17 @@ MYSQL *mysql_dr_connect(
                           "imp_dbh->no_autocommit_cmd: %d\n",
                           imp_dbh->no_autocommit_cmd);
         }
-
+#if FABRIC_SUPPORT
+        if ((svp = hv_fetch(hv, "mysql_use_fabric", 16, FALSE)) &&
+            *svp && SvTRUE(*svp))
+        {
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                          "imp_dbh->use_fabric: Enabling use of" \
+                          " MySQL Fabric.\n");
+          mysql_options(sock, MYSQL_OPT_USE_FABRIC, NULL);
+        }
+#endif
 
 #if defined(CLIENT_MULTI_STATEMENTS)
 	if ((svp = hv_fetch(hv, "mysql_multi_statements", 22, FALSE)) && *svp)
@@ -2423,6 +2433,37 @@ dbd_db_STORE_attrib(
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
+#endif
+#if FABRIC_SUPPORT
+  else if (kl == 22 && strEQ(key, "mysql_fabric_opt_group"))
+    mysql_options(imp_dbh->pmysql, FABRIC_OPT_GROUP, (void *)SvPVbyte_nolen(valuesv));
+  else if (kl == 29 && strEQ(key, "mysql_fabric_opt_default_mode"))
+  {
+    if (SvOK(valuesv)) {
+      STRLEN len;
+      const char *str = SvPVbyte(valuesv, len);
+      if ( len == 0 || ( len == 2 && (strnEQ(str, "ro", 3) || strnEQ(str, "rw", 3)) ) )
+        mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, len == 0 ? NULL : str);
+      else
+        croak("Valid settings for FABRIC_OPT_DEFAULT_MODE are 'ro', 'rw', or undef/empty string");
+    }
+    else {
+      mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, NULL);
+    }
+  }
+  else if (kl == 21 && strEQ(key, "mysql_fabric_opt_mode"))
+  {
+    STRLEN len;
+    const char *str = SvPVbyte(valuesv, len);
+    if (len != 2 || (strnNE(str, "ro", 3) && strnNE(str, "rw", 3)))
+      croak("Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'");
+
+    mysql_options(imp_dbh->pmysql, FABRIC_OPT_MODE, str);
+  }
+  else if (kl == 34 && strEQ(key, "mysql_fabric_opt_group_credentials"))
+  {
+    croak("'fabric_opt_group_credentials' is not supported");
+  }
 #endif
   else
     return FALSE;				/* Unknown key */
