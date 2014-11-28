@@ -54,6 +54,21 @@
 #define mysql_sqlstate(svsock) (NULL)
 #endif
 
+/*
+ * This is the version of libmysql that starts to support
+ * MySQL Fabric.
+*/
+#define LIBMYSQL_FABRIC_VERSION 60200
+
+#if LIBMYSQL_VERSION_ID >= LIBMYSQL_FABRIC_VERSION
+#define FABRIC_SUPPORT 1
+#else
+#define FABRIC_SUPPORT 0
+#endif
+
+#if MYSQL_VERSION_ID < WARNING_COUNT_VERSION
+#define mysql_warning_count(svsock) 0
+#endif
 
 #if MYSQL_VERSION_ID < WARNING_COUNT_VERSION
 #define mysql_warning_count(svsock) 0
