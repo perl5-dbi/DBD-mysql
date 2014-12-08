@@ -26,8 +26,6 @@ if ($@) {
         Test::More::diag("$test_db does not exist! Creating...");
         $dbh->do("CREATE DATABASE $test_db");
         Test::More::diag("done.");
-        eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
     }
     if ($@) {
         # https://rt.cpan.org/Ticket/Display.html?id=31823
