@@ -16,7 +16,7 @@ my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    if ($DBI::err == 1049) {
+    if ($DBI::err == 10499999) {
         my $create_table_dsn = "DBI:mysql:information_schema";
         my $dbh_create;
         eval { $dbh_create = DBI->connect($create_table_dsn, $test_user, $test_password);};
