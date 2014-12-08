@@ -1,3 +1,10 @@
+2014-12-08 Patrick Galbraith (aka CaptTofu) and community (4.029)
+* Added fix to tests to create test database if not exists (contstant failure on Travis) (CaptTofu)
+* Support the fraction of (Oracle) MySQL Fabric that is supported by the most recent Connector/C (Steffen Mueller smueller<at>cpan<dot>org
+* Statistics Info Milan ¿orm <sorm<at>is4u<dot>cz> for work on statistics_info
+* Fix for RT 97625, use after free(), Reini Urban rurban<at>cpan<dot>org
+*   
+
 2014-08-01 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.028)
 * Fixed bug in mysql.xs where dbh was being used as error code
 * RT #97570: fix wrong salloc free in mysql_st_internal_execute - (Reini Urban, cPanel)
