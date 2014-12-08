@@ -16,22 +16,18 @@ my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
-    if ($DBI::err == 10499999) {
+    if ($DBI::err == 1049) {
         my $create_table_dsn = "DBI:mysql:information_schema";
-        my $dbh_create;
-        eval { $dbh_create = DBI->connect($create_table_dsn, $test_user, $test_password);};
+        eval { $dbh = DBI->connect($create_table_dsn, $test_user, $test_password);};
         if ($@) {
             Test::More::BAIL_OUT("ERROR: $DBI::errstr\nUnable to create missing db $test_db!");
             plan skip_all => "ERROR: $DBI::errstr $DBI::err Can't continue test";
         }
         Test::More::diag("$test_db does not exist! Creating...");
-        $dbh_create->do("CREATE DATABASE $test_db");
+        $dbh->do("CREATE DATABASE $test_db");
         Test::More::diag("done.");
         eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-        unless ($@) {
-            $dbh_create->disconnect();
-        }
     }
     if ($@) {
         # https://rt.cpan.org/Ticket/Display.html?id=31823
