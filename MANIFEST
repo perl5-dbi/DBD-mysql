@@ -30,6 +30,7 @@ myld
 mysql.xs
 README.pod
 t/00base.t
+t/05dbcreate.t
 t/10connect.t
 t/15reconnect.t
 t/20createdrop.t
