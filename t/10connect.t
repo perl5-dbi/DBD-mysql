@@ -30,7 +30,7 @@ if ($@) {
         eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
         unless ($@) {
-            ok $dbh_create->disconnect();
+            $dbh_create->disconnect();
         }
     }
     if ($@) {
