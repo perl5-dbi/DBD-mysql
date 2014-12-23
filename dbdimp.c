@@ -2819,7 +2819,7 @@ dbd_st_prepare(
           isspace(*(str_ptr + 6)))
       {
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP, "LIMIT set limit flag to 1\n");
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "LIMIT set limit flag to 1\n");
         limit_flag= 1;
       }
 #endif
@@ -2834,7 +2834,7 @@ dbd_st_prepare(
            isspace(*(str_ptr + 4)))
       {
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBILOGFP, "Disable PS mode for CALL()\n");
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Disable PS mode for CALL()\n");
         imp_sth->use_server_side_prepare= 0;
         break;
       }
