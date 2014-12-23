@@ -17,9 +17,9 @@ if ($@) {
     plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
-plan tests => 36;
+plan tests => 36 * 2;
 
-for my $mysql_server_prepare (0) {
+for my $mysql_server_prepare (0, 1) {
 eval {$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 
