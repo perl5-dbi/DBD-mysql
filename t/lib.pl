@@ -207,6 +207,7 @@ sub DbiError ($$) {
     my ($rc, $err) = @_;
     $rc ||= 0;
     $err ||= '';
+    $::numTests ||= 0;
     print "Test $::numTests: DBI error $rc, $err\n";
 }
 
