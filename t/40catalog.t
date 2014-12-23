@@ -35,11 +35,26 @@ my $sth;
 #
 SKIP: {
   skip "Server is too old to support INFORMATION_SCHEMA for foreign keys", 16
-if !MinimumVersion($dbh, '5.0');
+    if !MinimumVersion($dbh, '5.0');
 
-  my ($dummy,$have_innodb)=
-    $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
-    or DbiError($dbh->err, $dbh->errstr);
+  my $have_innodb;
+  if (!MinimumVersion($dbh, '5.6')) {
+    my $dummy;
+    ($dummy,$have_innodb)=
+      $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
+      or DbiError($dbh->err, $dbh->errstr);
+  } else {
+    my $engines = $dbh->selectall_arrayref('SHOW ENGINES');
+    if (!$engines) {
+      DbiError($dbh->err, $dbh->errstr);
+    } else {
+       foreach my $engine (@$engines) {
+         if (lc($engine->[0]) eq 'innodb') {
+           $have_innodb = 'YES';
+         }
+       }
+    }
+  }
   skip "Server doesn't support InnoDB, needed for testing foreign keys", 16
     unless defined $have_innodb && $have_innodb eq "YES";
 
