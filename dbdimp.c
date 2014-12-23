@@ -3738,7 +3738,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tmysql_to_perl_type returned %d\n",
                       col_type);
       buffer->length= &(fbh->length);
-      buffer->is_null= (char*) &(fbh->is_null);
+      buffer->is_null= (my_bool*) &(fbh->is_null);
+      buffer->error= (my_bool*) &(fbh->error);
 
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
@@ -3876,9 +3877,11 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
                 mysql_stmt_sqlstate(imp_sth->stmt));
 
 #if MYSQL_VERSION_ID >= MYSQL_VERSION_5_0 
-      if (rc == MYSQL_DATA_TRUNCATED)
+      if (rc == MYSQL_DATA_TRUNCATED) {
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tdbd_st_fetch data truncated\n");
+        goto process;
+      }
 #endif
 
       if (rc == MYSQL_NO_DATA)
@@ -3895,6 +3898,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       return Nullav;
     }
 
+process:
     imp_sth->currow++;
 
     av= DBIc_DBISTATE(imp_sth)->get_fbav(imp_sth);
@@ -3928,23 +3932,44 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
            in dbd_describe() for data. Here we know real size of field
            so we should increase buffer size and refetch column value
         */
-        if (fbh->length > buffer->buffer_length)
+        if (fbh->length > buffer->buffer_length || fbh->error)
         {
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tRefetch BLOB/TEXT column: %d\n", i);
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+              "\t\tRefetch BLOB/TEXT column: %d, length: %lu, error: %d\n",
+              i, fbh->length, fbh->error);
 
           Renew(fbh->data, fbh->length, char);
           buffer->buffer_length= fbh->length;
           buffer->buffer= (char *) fbh->data;
 
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tbuffer->buffer: %s\n", (char *) buffer->buffer);
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tbefore buffer->buffer: ");
+            int j;
+            int m = MIN(*buffer->length, buffer->buffer_length);
+            char *ptr = (char*)buffer->buffer;
+            for (j = 0; j < m; j++) {
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%c", *ptr++);
+            }
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\n");
+          }
 
           /*TODO: Use offset instead of 0 to fetch only remain part of data*/
           if (mysql_stmt_fetch_column(imp_sth->stmt, buffer , i, 0))
             do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                      mysql_stmt_error(imp_sth->stmt),
                      mysql_stmt_sqlstate(imp_sth->stmt));
+
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tafter buffer->buffer: ");
+            int j;
+            int m = MIN(*buffer->length, buffer->buffer_length);
+            char *ptr = (char*)buffer->buffer;
+            for (j = 0; j < m; j++) {
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%c", *ptr++);
+            }
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\n");
+          }
         }
 
         /* This does look a lot like Georg's PHP driver doesn't it?  --Brian */
