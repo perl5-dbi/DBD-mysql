@@ -2063,6 +2063,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   if (fresh && !result) {
       /* Prevent leaks, but do not free in case of a reconnect. See #97625 */
       Safefree(imp_dbh->pmysql);
+      imp_dbh->pmysql = NULL;
   }
   return result;
 }
@@ -4953,9 +4954,11 @@ int mysql_db_reconnect(SV* h)
    */
   if (!dbd_db_disconnect(h, imp_dbh) || !my_login(aTHX_ h, imp_dbh))
   {
-    do_error(h, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
+    if(!imp_dbh->pmysql) {
+    	do_error(h, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql),
              mysql_sqlstate(imp_dbh->pmysql));
-    memcpy (imp_dbh->pmysql, &save_socket, sizeof(save_socket));
+    	memcpy (imp_dbh->pmysql, &save_socket, sizeof(save_socket));
+    }
     ++imp_dbh->stats.auto_reconnects_failed;
     return FALSE;
   }
