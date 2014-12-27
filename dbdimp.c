@@ -2061,6 +2061,8 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   result = mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
   if (fresh && !result) {
+      do_error(dbh, mysql_errno(imp_dbh->pmysql),
+              mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
       /* Prevent leaks, but do not free in case of a reconnect. See #97625 */
       Safefree(imp_dbh->pmysql);
       imp_dbh->pmysql = NULL;
