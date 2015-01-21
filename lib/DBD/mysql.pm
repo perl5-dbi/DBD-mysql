@@ -926,7 +926,8 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
   #!/usr/bin/perl
 
   use strict;
-  use DBI();
+  use warnings;
+  use DBI;
 
   # Connect to the database.
   my $dbh = DBI->connect("DBI:mysql:database=test;host=localhost",
