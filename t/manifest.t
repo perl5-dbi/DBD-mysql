@@ -1,5 +1,3 @@
-#!/usr/bin/perl
-
 BEGIN {
   unless ($ENV{RELEASE_TESTING}) {
     require Test::More;

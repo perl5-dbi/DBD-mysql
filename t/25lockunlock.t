@@ -1,15 +1,11 @@
-#!/usr/bin/perl
-
 use strict;
 use warnings;
+
 use Test::More;
 use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
-#
-#   Make -w happy
-#
 use vars qw($table $test_dsn $test_user $test_password);
 
 my $dbh;

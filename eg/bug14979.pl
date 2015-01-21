@@ -1,7 +1,9 @@
-#! /usr/bin/perl -wT
+#! /usr/bin/perl
 
 use strict;
-use DBI();
+use warnings;
+
+use DBI;
 
 MAIN: {
 	$ENV{'DBI_DSN'} ||= 'dbi:mysql:dbname=mysql:mysql_server_prepare=1';

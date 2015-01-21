@@ -1,12 +1,14 @@
-#!/usr/bin/perl
-$| = 1;
-
 use strict;
+use warnings;
+
+use Test::More;
 use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
 use Test::More;
+
+$| = 1;
 
 use vars qw($test_dsn $test_user $test_password);
 

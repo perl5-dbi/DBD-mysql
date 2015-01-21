@@ -1,10 +1,8 @@
-#!/usr/bin/perl
-
 use strict;
 use warnings;
 
 use Test::More;
-use DBI ();
+use DBI;
 use vars qw($table $test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';

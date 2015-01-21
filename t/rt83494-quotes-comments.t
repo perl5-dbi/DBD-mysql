@@ -1,5 +1,3 @@
-#!/usr/bin/perl
-
 # Test special characters inside comments
 # http://bugs.debian.org/311040
 # http://bugs.mysql.com/27625
