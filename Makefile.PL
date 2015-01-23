@@ -363,7 +363,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         IRC         => 'irc://irc.perl.org/#dbi',
       },
     },
-    BUILD_REQUIRES => { 'Test::More' => 0,
+    BUILD_REQUIRES => { 'Test::Simple' => '0.90',
                         'Test::Deep' => 0,
     },
     CONFIGURE_REQUIRES => { 'DBI' => 1.08,
