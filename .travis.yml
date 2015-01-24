@@ -12,4 +12,4 @@ before_install:
  - perlbrew install-cpanm -f
 install:
   - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
-script: "export EXTENDED_TESTING=1 && export RELEASE_TESTING=1 && perl Makefile.PL && make disttest"
+script: "export RELEASE_TESTING=1 && perl Makefile.PL && make disttest"
