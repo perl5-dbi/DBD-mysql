@@ -19,23 +19,9 @@ our $opt = { "help" => \&Usage, };
 Getopt::Long::GetOptions(
     $opt,
     "help",
-    "testdb=s",
-    "testhost=s",
-    "testport=s",
-    "testuser=s",
-    "testpassword=s",
-    "testsocket=s",
     "cflags=s",
     "libs=s",
-    "verbose",
-    "ps-protocol",
-    "bind-type-guessing",
-    "nocatchstderr",
-    "ssl!",
-    "nofoundrows!",
-    "embedded=s",
     "mysql_config=s",
-    "force-embedded",
 	"with-mysql=s"
     ) || die Usage();
 
@@ -78,9 +64,7 @@ MSG
     $opt->{'mysql_config'} = "mysql_config";
   }
 
-for my $key (qw/testdb testhost testuser testpassword testsocket testport
-                    cflags embedded libs nocatchstderr ssl nofoundrows
-                    ps-protocol bind-type-guessing force-embedded/)
+for my $key (qw/cflags embedded libs/)
 {
   Configure($opt, $source, $key);
 }
@@ -174,15 +158,6 @@ for my $key (sort { $a cmp $b} keys %$opt)
   printf("  %-" . $keylen . "s (%-" . $slen . "s) = %s\n",
 	 $key, $source->{$key}, $opt->{$key})
 }
-
-print <<"MSG";
-
-To change these settings, see 'perl Makefile.PL --help' and
-'perldoc DBD::mysql::INSTALL'.
-
-MSG
-
-sleep 5;
 
 eval { require File::Spec };
 my $dsn= '';
@@ -434,7 +409,6 @@ it can be found):
   mysql_config --cflags
   mysql_config --libs
   mysql_config --embedded
-  mysql_config --testdb
 
 and so on. See DBD::mysql::INSTALL for details.
 USAGE
@@ -471,6 +445,7 @@ sub Configure {
     }
 
 # First try to get options values from mysql_config
+
     my $command = $opt->{'mysql_config'} . " --$param";
     eval
     {
