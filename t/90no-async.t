@@ -9,14 +9,13 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
-
-unless($dbh) {
-    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "no database connection";
 }
+
 if($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support was built into this version of DBD::mysql";
 }

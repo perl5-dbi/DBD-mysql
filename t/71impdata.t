@@ -13,9 +13,11 @@ $| = 1;
 use vars qw($test_dsn $test_user $test_password);
 
 my $dbh;
-eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password);};
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
+
 if ($@) {
-    plan skip_all => "$@. Can't continue test";
+  plan skip_all => "no database connection";
 }
 
 my $drh    = $dbh->{Driver};

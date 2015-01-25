@@ -3,6 +3,7 @@ use warnings;
 
 use Test::More ;
 use DBI;
+use DBI::Const::GetInfoType;
 use vars qw($mdriver);
 $|= 1;
 
@@ -13,29 +14,21 @@ require 'lib.pl';
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+
 if ($@) {
-    # for some odd reason, this causes memory leak test to fail
-    #if ($DBI::err == 1049) {
-    #    my $create_table_dsn = "DBI:mysql:information_schema";
-    #    eval { $dbh = DBI->connect($create_table_dsn, $test_user, $test_password);};
-    #    if ($@) {
-    #        Test::More::BAIL_OUT("ERROR: $DBI::errstr\nUnable to create missing db $test_db!");
-    #        plan skip_all => "ERROR: $DBI::errstr $DBI::err Can't continue test";
-    ##    }
-    #    Test::More::diag("$test_db does not exist! Creating...");
-    #    $dbh->do("CREATE DATABASE $test_db");
-    #    Test::More::diag("done.");
-    #}
-    #if ($@) {
-    # https://rt.cpan.org/Ticket/Display.html?id=31823
-    if ($DBI::err == 1045) {
-        Test::More::BAIL_OUT("ERROR: $DBI::errstr\nAborting remaining tests!"); 
-    }
-    plan skip_all => "ERROR: $DBI::errstr $DBI::err Can't continue test";
-    #}
+  plan skip_all => "no database connection";
 }
-plan tests => 2;
 
-ok defined $dbh, "Connected to database";
+ok(defined $dbh, "Connected to database");
 
-ok $dbh->disconnect();
+for my $attribute ( qw(mysql_clientinfo mysql_clientversion mysql_serverversion) ) {
+  ok($dbh->{$attribute}, "Value of '$attribute'");
+  diag "$attribute is: ", $dbh->{$attribute};
+}
+
+my $v= $dbh->get_info($GetInfoType{SQL_DBMS_VER});
+diag "SQL_DBMS_VER: $v";
+
+ok($dbh->disconnect(), 'Disconnected');
+
+done_testing;

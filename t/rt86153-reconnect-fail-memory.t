@@ -13,12 +13,12 @@ my $COUNT_CONNECT = 4000;   # Number of connect/disconnect iterations
 my $have_storable;
 
 if (!$ENV{EXTENDED_TESTING}) {
-    plan skip_all => "Skip \$ENV{EXTENDED_TESTING} is not set\n";
+    plan skip_all => "\$ENV{EXTENDED_TESTING} is not set\n";
 }
 
 eval { require Proc::ProcessTable; };
 if ($@) {
-    plan skip_all => "Skip Proc::ProcessTable not installed \n";
+    plan skip_all => "module Proc::ProcessTable not installed \n";
 }
 
 eval { require Storable };

@@ -12,9 +12,8 @@ require 'lib.pl';
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
-
-unless($dbh) {
-    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+if (!$dbh) {
+    plan skip_all => "no database connection";
 }
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     my $mode = $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'});

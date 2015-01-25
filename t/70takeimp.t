@@ -20,7 +20,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 })};
 
 if ($@) {
-    plan skip_all => "Can't connect to database ERROR: $@. Can't continue test";
+    plan skip_all => "no database connection";
 }
 unless ($DBI::VERSION ge '1.607') {
     plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";

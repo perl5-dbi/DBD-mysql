@@ -19,7 +19,7 @@ if (!$ENV{EXTENDED_TESTING}) {
 
 eval { require Proc::ProcessTable; };
 if ($@) {
-        plan skip_all => "Skip Proc::ProcessTable not installed \n";
+        plan skip_all => "module Proc::ProcessTable not installed \n";
 }
 
 eval { require Storable };
@@ -30,7 +30,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                                             { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
         plan skip_all =>
-                "ERROR: $@. Can't continue test";
+                "no database connection";
 }
 plan tests => 21;
 

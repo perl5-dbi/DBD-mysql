@@ -10,13 +10,13 @@ my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
 if ($@) {
-    plan skip_all => "ERROR: $@. Can't continue test";
+    plan skip_all => "no database connection";
 }
 my $sth;
 my $ok = eval {
-    print "Connecting...\n";
+    note "Connecting...\n";
     ok( $sth = $dbh->do('SET wait_timeout = 5'), 'set wait_timeout');
-    print "Sleeping...\n";
+    note "Sleeping...\n";
     sleep 7;
     my $sql = 'SELECT 1';
     if (1) {
@@ -28,7 +28,7 @@ my $ok = eval {
         $sth = undef;
     }
     else {
-        print "Selecting...\n";
+        note "Selecting...\n";
         my @res = $dbh->selectrow_array($sql);
     }
     $dbh->disconnect();

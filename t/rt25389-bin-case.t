@@ -9,11 +9,10 @@ require "t/lib.pl";
 use Test::More;
 
 my $dbh;
-eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password,
-    { "mysql_enable_utf8" => 1 } );};
-
-unless($dbh) {
-    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 1 });};
+if ($@) {
+    plan skip_all => "no database connection";
 }
 
 plan tests => 8;

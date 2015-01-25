@@ -27,4 +27,4 @@ ok $drh, 'Install driver';
 cmp_ok ref $drh, 'eq', 'DBI::dr', 'DBI::dr set';
 
 ok $drh->{Version}, "Version $drh->{Version}";
-print "Driver version is ", $drh->{Version}, "\n";
+diag "Driver version is ", $drh->{Version}, "\n";

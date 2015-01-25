@@ -16,7 +16,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 print "err perl $@\n";
 if ($@) {
     plan skip_all =>
-        "ERROR: $DBI::errstr. Can't continue test";
+        "no database connection";
 }
 plan tests => 20;
 

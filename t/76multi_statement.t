@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use DBI;
-use DBI::Const::GetInfoType;
 use lib 't', '.';
 require 'lib.pl';
 $|= 1;
@@ -16,7 +15,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                         mysql_multi_statements => 1 });};
 
 if ($@) {
-    plan skip_all => "ERROR: $@. Can't continue test";
+    plan skip_all => "no database connection";
 }
 plan tests => 25;
 
@@ -25,8 +24,6 @@ ok (defined $dbh, "Connected to database with multi statement support");
 $dbh->{mysql_server_prepare}= 0;
 
 SKIP: {
-  my $v= $dbh->get_info($GetInfoType{SQL_DBMS_VER});
-  diag "Testing multicall against SQL_DBMS_VER: $v";
   skip "Server doesn't support multi statements", 24
   if !MinimumVersion($dbh, '4.1');
 

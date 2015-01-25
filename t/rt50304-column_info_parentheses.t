@@ -9,13 +9,11 @@ require "t/lib.pl";
 use Test::More;
 
 my $dbh;
-eval {$dbh= DBI->connect( $test_dsn, $test_user, $test_password);};
-
-unless($dbh) {
-    plan skip_all => "ERROR: $DBI::errstr Can't continue test";
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "no database connection";
 }
-
-plan tests => 7;
 
 my $create = <<EOC;
 CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
@@ -29,10 +27,8 @@ EOC
 
 ok $dbh->do($create), "create temporary table dbd_mysql_rt50304_column_info";
 
-my $info;
-
 my $sth = $dbh->column_info(undef, undef, 'dbd_mysql_rt50304_column_info', 'problem_column');
-$info = $sth->fetchall_arrayref({});
+my $info = $sth->fetchall_arrayref({});
 is ( scalar @{$info->[0]->{mysql_values}}, 2, 'problem_column values');
 is ( $info->[0]->{mysql_values}->[0], '', 'problem_column first value');
 is ( $info->[0]->{mysql_values}->[1], '(Some Text)', 'problem_column second value');
@@ -42,3 +38,5 @@ $info = $sth->fetchall_arrayref({});
 is ( scalar @{$info->[0]->{mysql_values}}, 2, 'regular_column values');
 is ( $info->[0]->{mysql_values}->[0], '', 'regular_column first value');
 is ( $info->[0]->{mysql_values}->[1], 'Some Text', 'regular_column second value');
+ok($dbh->disconnect());
+done_testing;

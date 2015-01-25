@@ -9,11 +9,12 @@ use vars qw($table $test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my ($dbh, $row);
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+my $dbh;
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
+
 if ($@) {
-    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
+  plan skip_all => "no database connection";
 }
 plan tests => 25;
 
@@ -59,7 +60,7 @@ ok ($sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
 
 ok $sth->execute, "select from $table";
 
-ok ($row = $sth->fetchrow_arrayref);
+ok (my $row = $sth->fetchrow_arrayref);
 
 is @$row, 2, "two rows fetched";
 

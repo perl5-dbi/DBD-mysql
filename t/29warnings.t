@@ -14,7 +14,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0});};
 
 if ($@) {
-    plan skip_all => "ERROR: $@. Can't continue test";
+    plan skip_all => "no database connection";
 }
 
 if ( !MinimumVersion($dbh, '4.1') ) {

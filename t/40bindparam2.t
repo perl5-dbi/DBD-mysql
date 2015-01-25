@@ -12,7 +12,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1}) or ServerError();};
 
 if ($@) {
-    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
+    plan skip_all => "no database connection";
 }
 plan tests => 13;
 
