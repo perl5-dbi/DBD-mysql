@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use Carp qw(croak);
 use DBI;
 use Test::More;
@@ -19,34 +19,34 @@ if ($@) {
 }
 plan tests => 12;
 
-ok $dbh->do("DROP TABLE IF EXISTS $table");
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t75supported");
 
 my $create = <<EOT;
-CREATE TABLE $table (
+CREATE TABLE dbd_mysql_t75supported (
   id INT(4),
   name VARCHAR(32)
   )
 EOT
 
-ok $dbh->do($create),"create $table";
+ok $dbh->do($create),"create dbd_mysql_t75supported";
 
 my $sth;
-ok ($sth= $dbh->prepare("SHOW TABLES LIKE '$table'"));
+ok ($sth= $dbh->prepare("SHOW TABLES LIKE 'dbd_mysql_t75supported'"));
 
 ok $sth->execute();
 
 ok ($row= $sth->fetchrow_arrayref);
 
-cmp_ok $row->[0], 'eq', $table, "\$row->[0] eq $table";
+cmp_ok $row->[0], 'eq', 'dbd_mysql_t75supported', "\$row->[0] eq dbd_mysql_t75supported";
 
 ok $sth->finish;
 
-ok $dbh->do("DROP TABLE $table"), "drop $table";
+ok $dbh->do("DROP TABLE dbd_mysql_t75supported"), "drop dbd_mysql_t75supported";
 
-ok $dbh->do("CREATE TABLE $table (a int)"), "creating $table again with 1 col";
+ok $dbh->do("CREATE TABLE dbd_mysql_t75supported (a int)"), "creating dbd_mysql_t75supported again with 1 col";
 
-ok $dbh->do("ALTER TABLE $table ADD COLUMN b varchar(31)"), "alter $table ADD COLUMN";
+ok $dbh->do("ALTER TABLE dbd_mysql_t75supported ADD COLUMN b varchar(31)"), "alter dbd_mysql_t75supported ADD COLUMN";
 
-ok $dbh->do("DROP TABLE $table"), "drop $table";
+ok $dbh->do("DROP TABLE dbd_mysql_t75supported"), "drop dbd_mysql_t75supported";
 
 ok $dbh->disconnect;

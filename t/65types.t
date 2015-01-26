@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use Test::More;
 use DBI;
 use Carp qw(croak);
@@ -16,10 +16,10 @@ if ($@) {
 }
 plan tests => 19;
 
-ok $dbh->do("drop table if exists $table");
+ok $dbh->do("drop table if exists dbd_mysql_65types");
 
 my $create= <<EOT;
-create table $table (
+create table dbd_mysql_65types (
     a int,
     primary key (a)
 )
@@ -28,7 +28,7 @@ EOT
 ok $dbh->do($create);
 
 my $sth;
-eval {$sth= $dbh->prepare("insert into $table values (?)")};
+eval {$sth= $dbh->prepare("insert into dbd_mysql_65types values (?)")};
 
 ok ! $@, "prepare: $@";
 
@@ -40,11 +40,11 @@ ok $sth->bind_param(1,10001,DBI::SQL_INTEGER);
 
 ok $sth->execute();
 
-ok $dbh->do("DROP TABLE $table");
+ok $dbh->do("DROP TABLE dbd_mysql_65types");
 
-ok $dbh->do("create table $table (a int, b double, primary key (a))");
+ok $dbh->do("create table dbd_mysql_65types (a int, b double, primary key (a))");
 
-eval { $sth= $dbh->prepare("insert into $table values (?, ?)")};
+eval { $sth= $dbh->prepare("insert into dbd_mysql_65types values (?, ?)")};
 
 ok ! $@, "prepare: $@";
 
@@ -62,6 +62,6 @@ ok $sth->execute();
 
 ok $sth->finish;
 
-ok $dbh->do("DROP TABLE $table");
+ok $dbh->do("DROP TABLE dbd_mysql_65types");
 
 ok $dbh->disconnect;

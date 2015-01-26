@@ -1,7 +1,7 @@
 use strict;
 use warnings;
 
-use vars qw($table $test_dsn $test_user $test_password $mdriver);
+use vars qw($test_dsn $test_user $test_password $mdriver);
 use Test::More;
 use DBI;
 use Carp qw(croak);
@@ -17,10 +17,10 @@ if ($@) {
 
 plan tests => 12;
 
-ok $dbh->do("drop table if exists $table");
+ok $dbh->do("drop table if exists dbd_mysql_t42bindparams");
 
 my $create= <<EOT;
-create table $table (
+create table dbd_mysql_t42bindparams (
     a int not null,
     b double,
     primary key (a))
@@ -28,7 +28,7 @@ EOT
 
 ok $dbh->do($create);
 
-ok (my $sth= $dbh->prepare("insert into $table values (?, ?)"));
+ok (my $sth= $dbh->prepare("insert into dbd_mysql_t42bindparams values (?, ?)"));
 
 ok $sth->bind_param(1,"10000 ",DBI::SQL_INTEGER);
 
@@ -42,7 +42,7 @@ ok $sth->bind_param(2,.3333333,DBI::SQL_DOUBLE);
 
 ok $sth->execute();
 
-ok $dbh->do("DROP TABLE $table");
+ok $dbh->do("DROP TABLE dbd_mysql_t42bindparams");
 
 ok $sth->finish;
 

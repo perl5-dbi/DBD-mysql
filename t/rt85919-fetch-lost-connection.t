@@ -3,7 +3,7 @@ use warnings;
 use DBI;
 use Test::More;
 use lib 't', '.';
-use vars qw($table $test_dsn $test_user $test_password $mdriver);
+use vars qw($test_dsn $test_user $test_password $mdriver);
 require 'lib.pl';
 
 my $dbh;

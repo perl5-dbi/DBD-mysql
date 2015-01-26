@@ -5,8 +5,7 @@ use lib 't', '.';
 require 'lib.pl';
 use DBI;
 use Test::More;
-use Carp qw(croak);
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 
 my ($row, $vers, $test_procs, $dbh, $sth);
 eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
@@ -38,15 +37,15 @@ $dbh->disconnect();
 ok ($dbh = DBI->connect($test_dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1}));
 
-ok $dbh->do("DROP TABLE IF EXISTS $table");
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t80procs");
 
-my $drop_proc= "DROP PROCEDURE IF EXISTS testproc";
+my $drop_proc= "DROP PROCEDURE IF EXISTS dbd_mysql_t80testproc";
 
 ok ($dbh->do($drop_proc), "DROP PROCEDURE") or diag "errstr=$DBI::errstr, err=$DBI::err";
 
 
 my $proc_create = <<EOPROC;
-create procedure testproc() deterministic
+create procedure dbd_mysql_t80testproc() deterministic
   begin
     declare a,b,c,d int;
     set a=1;
@@ -62,7 +61,7 @@ EOPROC
 
 ok $dbh->do($proc_create);
 
-my $proc_call = 'CALL testproc()';
+my $proc_call = 'CALL dbd_mysql_t80testproc()';
 
 ok $dbh->do($proc_call);
 
@@ -73,7 +72,7 @@ ok $sth->execute();
 
 ok $sth->finish;
 
-ok $dbh->do("DROP PROCEDURE testproc");
+ok $dbh->do("DROP PROCEDURE dbd_mysql_t80testproc");
 
 ok $dbh->do("drop procedure if exists test_multi_sets");
 

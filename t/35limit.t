@@ -9,7 +9,7 @@ $|= 1;
 my $rows = 0;
 my $sth;
 my $testInsertVals;
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
@@ -23,11 +23,11 @@ plan tests => 111;
 
 ok(defined $dbh, "Connected to database");
 
-ok($dbh->do("DROP TABLE IF EXISTS $table"), "making slate clean");
+ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_t35"), "making slate clean");
 
-ok($dbh->do("CREATE TABLE $table (id INT(4), name VARCHAR(64))"), "creating table");
+ok($dbh->do("CREATE TABLE dbd_mysql_t35 (id INT(4), name VARCHAR(64))"), "creating table");
 
-ok(($sth = $dbh->prepare("INSERT INTO $table VALUES (?,?)")));
+ok(($sth = $dbh->prepare("INSERT INTO dbd_mysql_t35 VALUES (?,?)")));
 
 print "PERL testing insertion of values from previous prepare of insert statement:\n";
 for (my $i = 0 ; $i < 100; $i++) {
@@ -40,7 +40,7 @@ for (my $i = 0 ; $i < 100; $i++) {
 print "PERL rows : " . $rows . "\n";
 
 print "PERL testing prepare of select statement with LIMIT placeholders:\n";
-ok($sth = $dbh->prepare("SELECT * FROM $table LIMIT ?, ?"));
+ok($sth = $dbh->prepare("SELECT * FROM dbd_mysql_t35 LIMIT ?, ?"));
 
 print "PERL testing exec of bind vars for LIMIT\n";
 ok($sth->execute(20, 50));
@@ -53,6 +53,6 @@ ok(@$array_ref == 50);
 
 ok($sth->finish);
 
-ok($dbh->do("DROP TABLE $table"));
+ok($dbh->do("DROP TABLE dbd_mysql_t35"));
 
 ok($dbh->disconnect);

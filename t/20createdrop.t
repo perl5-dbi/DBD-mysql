@@ -5,7 +5,7 @@ use Test::More;
 use DBI;
 $|= 1;
 
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
@@ -20,10 +20,10 @@ plan tests => 4;
 
 ok(defined $dbh, "Connected to database");
 
-ok($dbh->do("DROP TABLE IF EXISTS $table"), "making slate clean");
+ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_t20createdrop"), "making slate clean");
 
-ok($dbh->do("CREATE TABLE $table (id INT(4), name VARCHAR(64))"), "creating $table");
+ok($dbh->do("CREATE TABLE dbd_mysql_t20createdrop (id INT(4), name VARCHAR(64))"), "creating dbd_mysql_t20createdrop");
 
-ok($dbh->do("DROP TABLE $table"), "dropping created $table");
+ok($dbh->do("DROP TABLE dbd_mysql_t20createdrop"), "dropping created dbd_mysql_t20createdrop");
 
 $dbh->disconnect();

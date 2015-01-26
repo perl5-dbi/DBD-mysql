@@ -4,7 +4,7 @@ use warnings;
 use DBI;
 use Test::More;
 use Carp qw(croak);
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
@@ -39,9 +39,8 @@ sub size {
 }
 
 
-my ($size, $prev_size, $ok, $not_ok, $dbh2, $msg);
-print "Testing memory leaks in connect/disconnect\n";
-$msg = "Possible memory leak in connect/disconnect detected";
+my ($size, $prev_size, $ok, $not_ok, $dbh2);
+note "Testing memory leaks in connect/disconnect\n";
 
 $ok = 0;
 $not_ok = 0;

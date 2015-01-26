@@ -5,7 +5,7 @@ use DBI;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
@@ -22,10 +22,10 @@ if (!MinimumVersion($dbh, '4.1')) {
 
 plan tests => 41;
 
-ok ($dbh->do("DROP TABLE IF EXISTS $table"));
+ok ($dbh->do("DROP TABLE IF EXISTS dbd_mysql_t40bindparam"));
 
 my $create = <<EOT;
-CREATE TABLE $table (
+CREATE TABLE dbd_mysql_t40bindparam (
         id int(4) NOT NULL default 0,
         name varchar(64) default ''
         )
@@ -33,7 +33,7 @@ EOT
 
 ok ($dbh->do($create));
 
-ok (my $sth = $dbh->prepare("INSERT INTO $table VALUES (?, ?)"));
+ok (my $sth = $dbh->prepare("INSERT INTO dbd_mysql_t40bindparam VALUES (?, ?)"));
 
 # Automatic type detection
 my $numericVal = 1;
@@ -67,15 +67,15 @@ ok ($sth->bind_param(2, undef));
 
 ok ($sth->execute(-1, "abc"));
 
-ok ($dbh->do("INSERT INTO $table VALUES (6, '?')"));
+ok ($dbh->do("INSERT INTO dbd_mysql_t40bindparam VALUES (6, '?')"));
 
 ok ($dbh->do('SET @old_sql_mode = @@sql_mode, @@sql_mode = \'\''));
 
-ok ($dbh->do("INSERT INTO $table VALUES (7, \"?\")"));
+ok ($dbh->do("INSERT INTO dbd_mysql_t40bindparam VALUES (7, \"?\")"));
 
 ok ($dbh->do('SET @@sql_mode = @old_sql_mode'));
 
-ok ($sth = $dbh->prepare("SELECT * FROM $table ORDER BY id"));
+ok ($sth = $dbh->prepare("SELECT * FROM dbd_mysql_t40bindparam ORDER BY id"));
 
 ok($sth->execute);
 
@@ -117,7 +117,7 @@ $ref = $sth->fetch;
 is $id, 7, '$id set to 7';
 cmp_ok $name, 'eq', '?', "\$name set to '?'";
 
-ok ($dbh->do("DROP TABLE $table"));
+ok ($dbh->do("DROP TABLE dbd_mysql_t40bindparam"));
 
 ok $sth->finish;
 

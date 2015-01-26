@@ -5,7 +5,7 @@ use DBI;
 use Test::More;
 use Carp qw(croak);
 use Data::Dumper;
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
@@ -18,19 +18,19 @@ if ($@) {
 }
 plan tests => 10;
 
-ok $dbh->do("DROP TABLE IF EXISTS $table"), "DROP TABLE IF EXISTS $table";
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t40nulls"), "DROP TABLE IF EXISTS dbd_mysql_t40nulls";
 
 my $create= <<EOT;
-CREATE TABLE $table (
+CREATE TABLE dbd_mysql_t40nulls (
   id INT(4),
   name VARCHAR(64)
   )
 EOT
 ok $dbh->do($create), "create table $create";
 
-ok $dbh->do("INSERT INTO $table VALUES ( NULL, 'NULL-valued id' )"), "inserting nulls";
+ok $dbh->do("INSERT INTO dbd_mysql_t40nulls VALUES ( NULL, 'NULL-valued id' )"), "inserting nulls";
 
-ok ($sth = $dbh->prepare("SELECT * FROM $table WHERE id IS NULL"));
+ok ($sth = $dbh->prepare("SELECT * FROM dbd_mysql_t40nulls WHERE id IS NULL"));
 
 do $sth->execute;
 
@@ -42,6 +42,6 @@ ok defined($$aref[1]);
 
 ok $sth->finish;
 
-ok $dbh->do("DROP TABLE $table");
+ok $dbh->do("DROP TABLE dbd_mysql_t40nulls");
 
 ok $dbh->disconnect;

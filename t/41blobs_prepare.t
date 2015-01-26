@@ -5,7 +5,7 @@ use DBI;
 use Test::More;
 
 my $update_blob;
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
@@ -37,16 +37,16 @@ sub ShowBlob($) {
 }
 
 my $create = <<EOT;
-CREATE TABLE $table (
+CREATE TABLE dbd_mysql_41blobs_prepare (
   id int(4),
   name text)
 EOT
 
-ok $dbh->do("DROP TABLE IF EXISTS $table"), "drop table if exists $table";
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_41blobs_prepare"), "drop table if exists dbd_mysql_41blobs_prepare";
 
-ok $dbh->do($create), "create table $table";
+ok $dbh->do($create), "create table dbd_mysql_41blobs_prepare";
 
-my $query = "INSERT INTO $table VALUES(?, ?)";
+my $query = "INSERT INTO dbd_mysql_41blobs_prepare VALUES(?, ?)";
 my $sth;
 ok ($sth= $dbh->prepare($query));
 
@@ -56,9 +56,9 @@ ok $sth->execute(1, $blob1), "inserting \$blob1";
 
 ok $sth->finish;
 
-ok ($sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
+ok ($sth= $dbh->prepare("SELECT * FROM dbd_mysql_41blobs_prepare WHERE id = 1"));
 
-ok $sth->execute, "select from $table";
+ok $sth->execute, "select from dbd_mysql_41blobs_prepare";
 
 ok (my $row = $sth->fetchrow_arrayref);
 
@@ -70,13 +70,13 @@ cmp_ok $$row[1], 'eq', $blob1, ShowBlob($blob1);
 
 ok $sth->finish;
 
-ok ($sth= $dbh->prepare("UPDATE $table SET name = ? WHERE id = 1"));
+ok ($sth= $dbh->prepare("UPDATE dbd_mysql_41blobs_prepare SET name = ? WHERE id = 1"));
 
 ok $sth->execute($blob2), 'inserting $blob2';
 
 ok ($sth->finish);
 
-ok ($sth= $dbh->prepare("SELECT * FROM $table WHERE id = 1"));
+ok ($sth= $dbh->prepare("SELECT * FROM dbd_mysql_41blobs_prepare WHERE id = 1"));
 
 ok ($sth->execute);
 
@@ -90,6 +90,6 @@ cmp_ok $$row[1], 'eq', $blob2, ShowBlob($blob2);
 
 ok ($sth->finish);
 
-ok $dbh->do("DROP TABLE $table"), "drop $table";
+ok $dbh->do("DROP TABLE dbd_mysql_41blobs_prepare"), "drop dbd_mysql_41blobs_prepare";
 
 ok $dbh->disconnect;

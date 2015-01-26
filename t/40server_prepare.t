@@ -5,7 +5,7 @@ use Test::More;
 use DBI;
 use lib 't', '.';
 require 'lib.pl';
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 
 $|= 1;
 
@@ -22,18 +22,18 @@ plan tests => 27;
 
 ok(defined $dbh, "connecting");
 
-ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
+ok($dbh->do(qq{DROP TABLE IF EXISTS dbd_mysql_t40serverprepare1}), "making slate clean");
 
 #
 # Bug #20559: Program crashes when using server-side prepare
 #
-ok($dbh->do(qq{CREATE TABLE t1 (id INT, num DOUBLE)}), "creating table");
+ok($dbh->do(qq{CREATE TABLE dbd_mysql_t40serverprepare1 (id INT, num DOUBLE)}), "creating table");
 
 my $sth;
-ok($sth= $dbh->prepare(qq{INSERT INTO t1 VALUES (?,?),(?,?)}), "loading data");
+ok($sth= $dbh->prepare(qq{INSERT INTO dbd_mysql_t40serverprepare1 VALUES (?,?),(?,?)}), "loading data");
 ok($sth->execute(1, 3.0, 2, -4.5));
 
-ok ($sth= $dbh->prepare("SELECT num FROM t1 WHERE id = ? FOR UPDATE"));
+ok ($sth= $dbh->prepare("SELECT num FROM dbd_mysql_t40serverprepare1 WHERE id = ? FOR UPDATE"));
 
 ok ($sth->bind_param(1, 1), "binding parameter");
 
@@ -43,17 +43,17 @@ is_deeply($sth->fetchall_arrayref({}), [ { 'num' => '3' } ]);
 
 ok ($sth->finish);
 
-ok ($dbh->do(qq{DROP TABLE t1}), "cleaning up");
+ok ($dbh->do(qq{DROP TABLE dbd_mysql_t40serverprepare1}), "cleaning up");
 
 #
 # Bug #42723: Binding server side integer parameters results in corrupt data
 #
-ok($dbh->do(qq{DROP TABLE IF EXISTS t2}), "making slate clean");
+ok($dbh->do(qq{DROP TABLE IF EXISTS dbd_mysql_t40serverprepare2}), "making slate clean");
 
-ok($dbh->do(q{CREATE TABLE `t2` (`i` int,`si` smallint,`ti` tinyint,`bi` bigint)}), "creating test table");
+ok($dbh->do(q{CREATE TABLE `dbd_mysql_t40serverprepare2` (`i` int,`si` smallint,`ti` tinyint,`bi` bigint)}), "creating test table");
 
 my $sth2;
-ok($sth2 = $dbh->prepare('INSERT INTO t2 VALUES (?,?,?,?)'));
+ok($sth2 = $dbh->prepare('INSERT INTO dbd_mysql_t40serverprepare2 VALUES (?,?,?,?)'));
 
 #bind test values
 ok($sth2->bind_param(1, 101, DBI::SQL_INTEGER), "binding int");
@@ -63,9 +63,9 @@ ok($sth2->bind_param(4, 104, DBI::SQL_INTEGER), "binding bigint");
 
 ok($sth2->execute(), "inserting data");
 
-is_deeply($dbh->selectall_arrayref('SELECT * FROM t2'), [[101, 102, 103, 104]]);
+is_deeply($dbh->selectall_arrayref('SELECT * FROM dbd_mysql_t40serverprepare2'), [[101, 102, 103, 104]]);
 
-ok ($dbh->do(qq{DROP TABLE t2}), "cleaning up");
+ok ($dbh->do(qq{DROP TABLE dbd_mysql_t40serverprepare2}), "cleaning up");
 
 #
 # Bug LONGBLOB wants 4GB memory

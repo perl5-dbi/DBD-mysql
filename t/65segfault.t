@@ -8,7 +8,7 @@ use lib 't', '.';
 require 'lib.pl';
 $|= 1;
 
-use vars qw($table $test_dsn $test_user $test_password);
+use vars qw($test_dsn $test_user $test_password);
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
