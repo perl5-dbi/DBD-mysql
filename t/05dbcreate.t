@@ -6,12 +6,12 @@ use DBI;
 use vars qw($mdriver);
 $|= 1;
 
-use vars qw($test_user $test_password $test_db);
+use vars qw($test_user $test_password $test_db $test_dsn);
 use lib 't', '.';
 require 'lib.pl';
 
 my $dbh;
-eval {$dbh= DBI->connect('DBI:mysql:information_schema', $test_user, $test_password,
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
     plan skip_all => "no database connection";
