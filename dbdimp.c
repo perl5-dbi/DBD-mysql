@@ -24,6 +24,10 @@
 typedef short WORD;
 #endif
 
+#ifdef WIN32
+#define MIN min
+#endif
+
 #if MYSQL_ASYNC
 #  include <poll.h>
 #  define ASYNC_CHECK_RETURN(h, value)\
@@ -2711,7 +2715,9 @@ dbd_st_prepare(
   SV **svp;
   dTHX;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+#if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
   char *str_ptr, *str_last_ptr;
+#endif
   int col_type, prepare_retval, limit_flag=0;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
@@ -3944,10 +3950,10 @@ process:
           buffer->buffer= (char *) fbh->data;
 
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tbefore buffer->buffer: ");
             int j;
             int m = MIN(*buffer->length, buffer->buffer_length);
             char *ptr = (char*)buffer->buffer;
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tbefore buffer->buffer: ");
             for (j = 0; j < m; j++) {
               PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%c", *ptr++);
             }
@@ -3961,10 +3967,10 @@ process:
                      mysql_stmt_sqlstate(imp_sth->stmt));
 
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tafter buffer->buffer: ");
             int j;
             int m = MIN(*buffer->length, buffer->buffer_length);
             char *ptr = (char*)buffer->buffer;
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\tafter buffer->buffer: ");
             for (j = 0; j < m; j++) {
               PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%c", *ptr++);
             }
