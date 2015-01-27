@@ -10,7 +10,7 @@ use DBI;
 use DynaLoader();
 use Carp;
 our @ISA = qw(DynaLoader);
-our $VERSION = '4.029';
+our $VERSION = '4.030_01';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -530,7 +530,7 @@ sub column_info {
 	    }
 	    $info->{"mysql_values"} = \@type_params;
     }
-    elsif ($basetype =~ /int/)
+    elsif ($basetype =~ /int/ || $basetype eq 'bit' )
     {
       # big/medium/small/tiny etc + unsigned?
 	    $info->{DATA_TYPE} = SQL_INTEGER();

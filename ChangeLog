@@ -1,4 +1,4 @@
-2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030)
+2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_01)
 * Test suite can now be run in parallel. Fixes RT98994 reported by DOHERTY.
 * Fixes for MySQL 5.6+ and for prepared statement handling (stevenh on github).
 * Fix for RT100792, New test t/05dbcreate.t fails if user has no permissions. 
