@@ -1,12 +1,13 @@
 # -*- cperl -*-
 
-use 5.008_001;
-use Config;
 use strict;
 use warnings;
-use Getopt::Long();
-use ExtUtils::MakeMaker();
-use Data::Dumper ();
+
+use 5.008_001;
+use Config;
+use Getopt::Long;
+use ExtUtils::MakeMaker;
+use Data::Dumper;
 use File::Path;
 use File::Copy;
 use File::Basename;
@@ -36,7 +37,7 @@ Getopt::Long::GetOptions(
     "embedded=s",
     "mysql_config=s",
     "force-embedded",
-	"with-mysql=s"
+    "with-mysql=s"
     ) || die Usage();
 
 my $source = {};
@@ -456,7 +457,6 @@ USAGE
 
 sub Configure {
     my($opt, $source, $param) = @_;
-
     if ($param eq 'bind-type-guessing') {
         $source->{$param}= ($opt->{$param}) ? "User's choice" : 'default';
         return;
@@ -470,49 +470,54 @@ sub Configure {
         return;
     }
 
-# First try to get options values from mysql_config
-    my $command = $opt->{'mysql_config'} . " --$param";
-    eval
-    {
-        open(PIPE, "$command |") or die "Can't find mysql_config.";
-    };
+    # First try to get options values from mysql_config
+    my @mysql_config_options = qw(
+      cflags include libs libs_r plugindir socket port version libmysqld-libs
+    );
+    if ( grep {$_ eq $param} @mysql_config_options ) {
+        my $command = $opt->{'mysql_config'} . " --$param";
+        eval
+        {
+            open(PIPE, "$command |") or die "Can't find mysql_config.";
+        };
 
-    if (!$@) {
-        my $str = "";
-        while (defined(my $line = <PIPE>)) { $str .= $line; }
+        if (!$@) {
+            my $str = "";
+            while (defined(my $line = <PIPE>)) { $str .= $line; }
 
-        if ($str ne ""  &&  $str !~ /Options:/) {
-            $str =~ s/\s+$//s;
-            $str =~ s/^\s+//s;
+            if ($str ne ""  &&  $str !~ /Options:/) {
+                $str =~ s/\s+$//s;
+                $str =~ s/^\s+//s;
 
-            # Unfortunately ExtUtils::MakeMaker doesn't deal very well
-            # with -L'...'
-            $str =~ s/\-L\'(.*?)\'/-L$1/sg;
-            $str =~ s/\-L\"(.*?)\"/-L$1/sg;
+                # Unfortunately ExtUtils::MakeMaker doesn't deal very well
+                # with -L'...'
+                $str =~ s/\-L\'(.*?)\'/-L$1/sg;
+                $str =~ s/\-L\"(.*?)\"/-L$1/sg;
 
-            # Separate libs from ldflags
-            if ($param eq 'libs') {
-                my (@libs, @ldflags);
-                for (split ' ', $str) {
-                    if (/^-[Ll]/) { push @libs, $_ }
-                    else          { push @ldflags, $_ }
+                # Separate libs from ldflags
+                if ($param eq 'libs') {
+                    my (@libs, @ldflags);
+                    for (split ' ', $str) {
+                        if (/^-[Ll]/) { push @libs, $_ }
+                        else          { push @ldflags, $_ }
+                    }
+                    $str = "@libs";
+                    $opt->{ldflags} = "@ldflags";
+                    $source->{ldflags} = "mysql_config";
                 }
-                $str = "@libs";
-                $opt->{ldflags} = "@ldflags";
-                $source->{ldflags} = "mysql_config";
-            }
 
-            $opt->{$param} = $str;
-            $source->{$param} = "mysql_config";
-            return;
+                $opt->{$param} = $str;
+                $source->{$param} = "mysql_config";
+                return;
+            }
+        }
+        else {
+            print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
         }
     }
-    else {
-        print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
-    }
 
-# Ok, mysql_config doesn't work. We need to do our best
-# First check environment variables
+    # Ok, mysql_config doesn't work. We need to do our best
+    # First check environment variables
     if (defined($ENV{'DBD_MYSQL_'.uc($param)})) {
         $opt->{$param} = $ENV{'DBD_MYSQL_'.uc($param)};
         $source->{$param} = 'environment';
