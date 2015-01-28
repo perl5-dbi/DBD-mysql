@@ -53,6 +53,7 @@ t/40numrows.t
 t/40server_prepare.t
 t/40server_prepare_error.t
 t/40types.t
+t/40bit.t
 t/41bindparam.t
 t/41blobs_prepare.t
 t/42bindparam.t

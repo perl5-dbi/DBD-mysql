@@ -1,7 +1,9 @@
-2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_01)
+2015-01-27 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_01)
+* Correct attribution to David Dick #86030: PATCH: adding statistics_info support
 * Test suite can now be run in parallel. Fixes RT98994 reported by DOHERTY.
 * Fixes for MySQL 5.6+ and for prepared statement handling (stevenh on github).
 * Fix for RT100792, New test t/05dbcreate.t fails if user has no permissions. 
+* Fix for bit test (RT68374, BJDEAN@cpan.org) CaptTofu added 40bit.t to test.
 
 2014-12-08 Patrick Galbraith (aka CaptTofu) and community (4.029)
 * Added fix to tests to create test database if not exists (contstant failure on Travis) (CaptTofu)

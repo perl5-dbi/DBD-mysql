@@ -738,7 +738,8 @@ EOF
 
     return $sth;
 }
-
+# #86030: PATCH: adding statistics_info support
+# Thank you to David Dick http://search.cpan.org/~ddick/
 sub statistics_info {
     my ($dbh,
         $catalog, $schema, $table,
