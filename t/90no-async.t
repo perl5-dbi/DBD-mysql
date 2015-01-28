@@ -11,15 +11,14 @@ require 'lib.pl';
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
-if ($@) {
+                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
+if (!$dbh) {
     plan skip_all => "no database connection";
 }
 
 if($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support was built into this version of DBD::mysql";
 }
-plan tests => 14;
 
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 0;
 
@@ -44,4 +43,6 @@ ok $dbh->errstr;
 ok !$sth->mysql_async_ready;
 ok $dbh->errstr;
 
-$dbh->disconnect;
+ok $dbh->disconnect;
+
+done_testing;
