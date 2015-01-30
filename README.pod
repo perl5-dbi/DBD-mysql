@@ -1,3 +1,5 @@
+=for HTML <a href="https://travis-ci.org/perl5-dbi/DBD-mysql"><img src="https://travis-ci.org/perl5-dbi/DBD-mysql.svg?branch=master"></a>
+
 =head1 DBD::mysql - database driver for Perl
 
 This is the Perl L<DBI> driver for access to MySQL databases.
