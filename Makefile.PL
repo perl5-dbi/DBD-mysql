@@ -98,7 +98,6 @@ if ( $opt->{testport} && !$opt->{testhost} ) {
 #since MakeMaker will find it and will try to execute it.
 if (-f "mysqlEmb/Makefile.PL")
 {
-  eval { require File::Copy };
   move ("mysqlEmb/Makefile.PL", "mysqlEmb/Makefile.PL.old");
 }
 
