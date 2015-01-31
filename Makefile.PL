@@ -11,6 +11,7 @@ use Data::Dumper;
 use File::Path;
 use File::Copy;
 use File::Basename;
+use File::Spec;
 require DBI::DBD;
 
 my $TESTDB = "test";
@@ -184,9 +185,8 @@ To change these settings, see 'perl Makefile.PL --help' and
 
 MSG
 
-sleep 5;
+sleep 1;
 
-eval { require File::Spec };
 my $dsn= '';
 if (exists $opt->{'ps-protocol'}) {
   $dsn = "\$::test_dsn .= \";mysql_server_prepare=1\";\n";
@@ -631,28 +631,21 @@ MSG
   }
 }
 
-my $haveFileSpec;
 my $fineDir;
 sub SearchFor {
   my($subdir, @files) = @_;
-  $haveFileSpec = eval { require File::Spec } unless defined($haveFileSpec);
 
-  my @dirs = ($^O =~ /mswin32/i) ? qw(C:) : qw(/usr/local /usr /opt);
+  my @dirs = ($^O eq 'MSWin32') ? qw(C:) : qw(/usr/local /usr /opt);
   unshift(@dirs, $fineDir) if defined($fineDir);
 
   for my $f (@files) {
     for my $dir (@dirs) {
-      my $try1 = $haveFileSpec ?
-	File::Spec->catdir($dir, $subdir) : "$dir/$subdir";
-      my $try2 = $haveFileSpec ?
-	File::Spec->catdir($dir, "mysql") : "$dir/mysql";
-      my $try3 = $haveFileSpec ?
-	File::Spec->catdir($try1, "mysql") : "$try1/mysql";
-      my $try4 = $haveFileSpec ?
-	File::Spec->catdir($try2, $subdir) : "$try2/$subdir";
+      my $try1 = File::Spec->catdir($dir, $subdir);
+      my $try2 = File::Spec->catdir($dir, "mysql");
+      my $try3 = File::Spec->catdir($try1, "mysql");
+      my $try4 = File::Spec->catdir($try2, $subdir);
       for my $path ($try3, $try4, $try2, $try1, $dir) {
-	my $file = $haveFileSpec ?
-	  File::Spec->catfile($path, $f) : "$path/$f";
+	my $file = File::Spec->catfile($path, $f);
 	if (-f $file) {
 	  $fineDir = $dir;
 	  return $path;
@@ -669,8 +662,7 @@ sub SearchFor2 {
   {
     for my $dir (@{$dirs})
     {
-      my $file = $haveFileSpec ?  File::Spec->catfile($dir, $f) : "$dir/$f";
-      if (-f $file)
+      if (-f File::Spec->catfile($dir, $f))
       {
         $fineDir = $dir;
         return $dir;
