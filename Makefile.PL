@@ -768,37 +768,6 @@ sub create_makefile
   close(LOG);
 }
 
-sub path_ext {
-  my @path_ext;
-
-  if ($ENV{PATHEXT}) {
-    push @path_ext, split ';', $ENV{PATHEXT};
-    for my $ext (@path_ext) {
-      $ext =~ s/^\.*(.+)$/$1/;
-    }
-  }
-  else {
-    #Win9X: doesn't have PATHEXT
-    push @path_ext, qw(com exe bat);
-  }
-
-  return @path_ext;
-}
-
-sub which {
-  my $program = shift;
-  my @path_ext = @_;
-  return unless $program;
-  my @a = map {File::Spec->catfile($_, $program) } File::Spec->path();
-  for my $base (@a) {
-    return $base if -x $base;
-    for my $ext (@path_ext) {
-      return "$base.$ext" if -x "$base.$ext";
-    }
-  }
-  return;
-}
-
 package MY;
 
 sub libscan {
