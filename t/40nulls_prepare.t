@@ -3,7 +3,6 @@ use warnings;
 
 use Test::More;
 use DBI;
-use Carp qw(croak);
 use lib 't', '.';
 require 'lib.pl';
 

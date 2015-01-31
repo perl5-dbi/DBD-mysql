@@ -29,21 +29,19 @@ ok($dbh->do("CREATE TABLE dbd_mysql_t35 (id INT(4), name VARCHAR(64))"), "creati
 
 ok(($sth = $dbh->prepare("INSERT INTO dbd_mysql_t35 VALUES (?,?)")));
 
-print "PERL testing insertion of values from previous prepare of insert statement:\n";
-for (my $i = 0 ; $i < 100; $i++) {
+for my $i (0..99) {
   my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';
   my $random_chars = join '', map { $chars[rand @chars] } 0 .. 16;
-# save these values for later testing
+
+  # save these values for later testing
   $testInsertVals->{$i} = $random_chars;
   ok(($rows = $sth->execute($i, $random_chars)));
 }
-print "PERL rows : " . $rows . "\n";
 
-print "PERL testing prepare of select statement with LIMIT placeholders:\n";
-ok($sth = $dbh->prepare("SELECT * FROM dbd_mysql_t35 LIMIT ?, ?"));
+ok($sth = $dbh->prepare("SELECT * FROM dbd_mysql_t35 LIMIT ?, ?"),
+  'testing prepare of select statement with LIMIT placeholders');
 
-print "PERL testing exec of bind vars for LIMIT\n";
-ok($sth->execute(20, 50));
+ok($sth->execute(20, 50), 'testing exec of bind vars for limit');
 
 my ($row, $errstr, $array_ref);
 ok( (defined($array_ref = $sth->fetchall_arrayref) &&

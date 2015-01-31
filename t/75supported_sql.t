@@ -2,7 +2,6 @@ use strict;
 use warnings;
 
 use vars qw($test_dsn $test_user $test_password);
-use Carp qw(croak);
 use DBI;
 use Test::More;
 use lib 't', '.';

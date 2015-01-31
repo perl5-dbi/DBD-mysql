@@ -32,7 +32,7 @@ sub ShowBlob($) {
     else {
       $b = "";
     }
-    printf("%08lx %s\n", $i*32, unpack("H64", $b));
+    note sprintf("%08lx %s\n", $i*32, unpack("H64", $b));
   }
 }
 

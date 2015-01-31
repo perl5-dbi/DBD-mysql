@@ -3,8 +3,6 @@ use warnings;
 
 use Test::More;
 use DBI;
-use Carp qw(croak);
-use Data::Dumper;
 use lib 't', '.';
 require 'lib.pl';
 
@@ -86,7 +84,7 @@ ok($rows = $sth->execute(1,2),
 ok($ret_ref = $sth->fetchall_arrayref(),
   "Testing fetchall_arrayref (should be four rows)");
 
-print "RETREF " . scalar @$ret_ref . "\n";
+note "RETREF " . scalar @$ret_ref . "\n";
 ok(@{$ret_ref} == 4 , "\$ret_ref should contain four rows in result set");
 
 ok($sth= $dbh->prepare("DROP TABLE IF EXISTS dbd_mysql_t35prepare"),

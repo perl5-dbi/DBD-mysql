@@ -2,7 +2,6 @@ use strict;
 use warnings;
 
 use DBI;
-use Carp qw(croak);
 use Test::More;
 use vars qw($test_dsn $test_user $test_password);
 use vars qw($COL_NULLABLE $COL_KEY);

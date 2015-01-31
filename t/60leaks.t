@@ -3,7 +3,6 @@ use warnings;
 
 use DBI;
 use Test::More;
-use Carp qw(croak);
 use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
@@ -58,7 +57,7 @@ EOT
 ok $dbh->do($create);
 
 my ($size, $prev_size, $ok, $not_ok, $dbh2, $msg);
-print "Testing memory leaks in connect/disconnect\n";
+note "Testing memory leaks in connect/disconnect\n";
 $msg = "Possible memory leak in connect/disconnect detected";
 
 $ok = 0;
@@ -98,7 +97,7 @@ ok $ok, "\$ok $ok";
 ok !$not_ok, "\$not_ok $not_ok";
 cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
-print "Testing memory leaks in prepare/execute/finish\n";
+note "Testing memory leaks in prepare/execute/finish\n";
 $msg = "Possible memory leak in prepare/execute/finish detected";
 
 $ok = 0;
@@ -133,7 +132,7 @@ ok $ok;
 ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
 cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
-print "Testing memory leaks in fetchrow_arrayref\n";
+note "Testing memory leaks in fetchrow_arrayref\n";
 $msg= "Possible memory leak in fetchrow_arrayref detected";
 
 $sth= $dbh->prepare("INSERT INTO dbd_mysql_t60leaks VALUES (?, ?)") ;
@@ -184,7 +183,7 @@ ok $ok;
 ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
 cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
-print "Testing memory leaks in fetchrow_hashref\n";
+note "Testing memory leaks in fetchrow_hashref\n";
 $msg = "Possible memory leak in fetchrow_hashref detected";
 
 $ok = 0;

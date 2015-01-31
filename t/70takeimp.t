@@ -68,14 +68,12 @@ is $drh->{Kids}, 0,
     is $warn, 4, 'we should have received 4 warnings';
 }
 
-print "here\n";
 my $dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
     { dbi_imp_data => $imp_data });
-print "there\n";
 
 # XXX: how can we test that the same connection is used?
 my $id2 = connection_id($dbh2);
-print "Overridden connection: $id2\n";
+note "Overridden connection: $id2\n";
 
 cmp_ok $id,'==', $id2, "the same connection: $id => $id2\n";
 

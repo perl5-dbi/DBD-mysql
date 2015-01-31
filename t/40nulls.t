@@ -3,8 +3,6 @@ use warnings;
 
 use DBI;
 use Test::More;
-use Carp qw(croak);
-use Data::Dumper;
 use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';

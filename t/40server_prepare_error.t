@@ -38,5 +38,5 @@ $dbh->{PrintWarn} = 1;
 ok defined($DBI::errstr);
 cmp_ok $DBI::errstr, 'ne', '';
 
-print "errstr $DBI::errstr\n" if $DBI::errstr;
+note "errstr $DBI::errstr\n" if $DBI::errstr;
 ok $dbh->disconnect();

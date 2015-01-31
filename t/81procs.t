@@ -5,7 +5,6 @@ use lib 't', '.';
 require 'lib.pl';
 use DBI;
 use Test::More;
-use Carp qw(croak);
 use vars qw($test_dsn $test_user $test_password);
 
 my ($row, $vers, $test_procs, $dbh, $sth);
