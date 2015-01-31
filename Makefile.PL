@@ -43,16 +43,20 @@ Getopt::Long::GetOptions(
 my $source = {};
 
   #Check for mysql_config first
-  $source->{'mysql_config'}="guessed";
+  $source->{'mysql_config'} = "guessed";
+
+  if ($opt->{'mysql_config'}) {
+    $source->{'mysql_config'} = 'Users choice';
+  }
+  if (!$opt->{'mysql_config'} && $ENV{DBD_MYSQL_CONFIG}) {
+     $opt->{'mysql_config'} = $ENV{DBD_MYSQL_CONFIG};
+     $source->{'mysql_config'} = 'environment';
+  }
   if ($opt->{'mysql_config'})
   {
-	$opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
+    $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
-    if (-f $opt->{'mysql_config'})
-    {
-      $source->{'mysql_config'} = "Users choice";
-    }
-    else
+    if (!-f $opt->{'mysql_config'})
     {
       print <<"MSG";
 
