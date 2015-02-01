@@ -1,3 +1,8 @@
+2015-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_02)
+* Locate mysql_config in path on MSWin32 (RT94838, reported by CHORNY).
+* Environment variable DBD_MYSQL_CONFIG actually works now.
+* Makefile.PL now correcly handles MariaDB's mysql_config.
+
 2015-01-27 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_01)
 * Correct attribution to David Dick #86030: PATCH: adding statistics_info support
 * Test suite can now be run in parallel. Fixes RT98994 reported by DOHERTY.
