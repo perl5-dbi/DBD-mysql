@@ -15,6 +15,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 
 if ($@) {
+  diag $@;
   plan skip_all => "no database connection";
 }
 
@@ -25,8 +26,18 @@ for my $attribute ( qw(mysql_clientinfo mysql_clientversion mysql_serverversion)
   diag "$attribute is: ", $dbh->{$attribute};
 }
 
-my $v= $dbh->get_info($GetInfoType{SQL_DBMS_VER});
-diag "SQL_DBMS_VER: $v";
+my $sql_dbms_ver = $dbh->get_info($GetInfoType{SQL_DBMS_VER});
+ok($sql_dbms_ver, 'get_info SQL_DBMS_VER');
+diag "SQL_DBMS_VER is $sql_dbms_ver";
+
+my $driver_ver = $dbh->get_info($GetInfoType{SQL_DRIVER_VER});
+like(
+  $driver_ver,
+  qr/^\d{2}\.\d{2}\.\d{4}$/,
+  'get_info SQL_DRIVER_VER like dd.dd.dddd'
+);
+
+like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
 
 ok($dbh->disconnect(), 'Disconnected');
 

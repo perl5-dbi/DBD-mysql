@@ -9,17 +9,20 @@ package DBD::mysql::GetInfo;
 # $Date$
 
 use strict;
+use warnings;
+
 use DBD::mysql;
 # Beware: not officially documented interfaces...
 # use DBI::Const::GetInfoType qw(%GetInfoType);
 # use DBI::Const::GetInfoReturn qw(%GetInfoReturnTypes %GetInfoReturnValues);
 
 my $sql_driver = 'mysql';
-my $sql_ver_fmt = '%02d.%02d.%04d';   # ODBC version string: ##.##.#####
-my $sql_driver_ver = do {
-    no warnings;
-    sprintf $sql_ver_fmt, split (/./, $DBD::mysql::VERSION);
-};
+
+# SQL_DRIVER_VER should be formatted as dd.dd.dddd
+my $dbdversion = $DBD::mysql::VERSION;
+$dbdversion .= '_00' if $dbdversion =~ /^\d+\.\d+$/;
+my $sql_driver_ver = sprintf("%02d.%02d.%04d", split(/[\._]/,$dbdversion));
+
 
 my @Keywords = qw(
 
