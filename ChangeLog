@@ -1,4 +1,6 @@
 2015-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_02)
+* Allow use of bracketed IPv6 addresses in connection string (RT70640),
+   fix by Tim Mullin @ cPanel).
 * Locate mysql_config in path on MSWin32 (RT94838, reported by CHORNY).
 * Environment variable DBD_MYSQL_CONFIG actually works now.
 * Makefile.PL now correcly handles MariaDB's mysql_config.
