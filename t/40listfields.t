@@ -84,20 +84,6 @@ if (!$sth) {
 if (!$sth->execute) {
     die "Error:" . $sth->errstr . "\n";
 }
-my $names = $sth->{'NAME'};
-use Data::Dumper; warn Dumper($names);
-my $numFields = $sth->{'NUM_OF_FIELDS'} - 1;
-for my $i ( 0..$numFields ) {
-    warn $i;
-    warn sprintf("%s%s", $i ? "," : "", $$names[$i]);
-}
-print "------\n";
-while (my $ref = $sth->fetchrow_arrayref) {
-    for my $i ( 0..$numFields ) {
-        printf("%s%s", $i ? "," : "", $$ref[$i]);
-    }
-    print "\n";
-}
 
 ok ($sth= $dbh->prepare("DROP TABLE dbd_mysql_40listfields"));
 
