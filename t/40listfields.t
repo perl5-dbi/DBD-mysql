@@ -77,6 +77,28 @@ cmp_ok $ref->[0], 'eq', DBI::SQL_INTEGER(), "SQL_INTEGER";
 
 cmp_ok $ref->[1], 'eq', DBI::SQL_VARCHAR(), "SQL_VARCHAR";
 
+$sth = $dbh->prepare("SELECT * FROM dbd_mysql_40listfields");
+if (!$sth) {
+    die "Error:" . $dbh->errstr . "\n";
+}
+if (!$sth->execute) {
+    die "Error:" . $sth->errstr . "\n";
+}
+my $names = $sth->{'NAME'};
+use Data::Dumper; warn Dumper($names);
+my $numFields = $sth->{'NUM_OF_FIELDS'} - 1;
+for my $i ( 0..$numFields ) {
+    warn $i;
+    warn sprintf("%s%s", $i ? "," : "", $$names[$i]);
+}
+print "------\n";
+while (my $ref = $sth->fetchrow_arrayref) {
+    for my $i ( 0..$numFields ) {
+        printf("%s%s", $i ? "," : "", $$ref[$i]);
+    }
+    print "\n";
+}
+
 ok ($sth= $dbh->prepare("DROP TABLE dbd_mysql_40listfields"));
 
 ok($sth->execute);
@@ -94,6 +116,5 @@ $quoted = eval { $dbh->quote('abc', DBI::SQL_VARCHAR()) };
 ok (!$@);
 
 cmp_ok $quoted, 'eq', "\'abc\'", "equals 'abc'";
-
 
 ok($dbh->disconnect());

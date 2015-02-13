@@ -519,6 +519,25 @@ you may also try to link without gzip libraries.
 
 =back
 
+=head1 MARIADB NATIVE CLIENT INSTALLATION
+
+The MariaDB native client is another option for connecting to a MySQL·
+database licensed LGPL 2.1. To build DBD::mysql against this client, you
+will first need to build the client. Generally, this is done with
+the following:
+
+  cd path/to/src/mariadb-native-client
+  cmake -G "Unix Makefiles'
+  make
+  sudo make install
+
+Once the client is built and installed, you can build DBD::mysql against
+it:
+
+  perl Makefile.PL --testuser=xxx --testpassword=xxx --testsocket=/path/to//mysqld.sock --mysql_config=/usr/local/bin/mariadb_config·
+  make
+  make test
+  make install
 
 =head1 SPECIAL SYSTEMS
 
@@ -576,51 +595,16 @@ excellent job to deliver optimized binaries for the mainstream
 operating systems, and it is told, that the server compiled under Cygwin is
 unstable.
 
-Install MySQL (if you haven't already)
+Install a MySQL server for testing against. You can install the regular
+Windows MySQL server package on your Windows machine, or you can also
+test against a MySQL server on a remote host.
 
-=over
+=head3 Build MySQL clients under Cygwin:
 
-=item -
-
-download the MySQL Windows Binaries from
-http://www.mysql.com/downloads/index.html
-
-=item -
-
-unzip mysql-<version>-win.zip into some temporary location
-
-=item -
-
-start the setup.exe there and follow the instructions
-
-=item -
-
-start the server
-
-=item -
-
-alternatively download, install and start the server on a remote
-server, on what supported OS ever
-
-=back
-
-
-Build MySQL clients under Cygwin:
-
-=over
-
-=item -
-
-download the MySQL LINUX source from
-http://www.mysql.com/downloads/index.html
-
-=item -
-
-unpack mysql-<version>.tar.gz into some tmp location
-
-=item -
-
-cd into the unpacked dir mysql-<version>
+download the MySQL LINUX source from 
+L<http://www.mysql.com/downloads/index.html>,
+unpack mysql-<version>.tar.gz into some tmp location and from this directory
+run configure:
 
   ./configure --prefix=/usr/local/mysql --without-server
 
@@ -631,14 +615,10 @@ normally in your PATH, so that you continue to use already installed
 Windows binaries. The --without-server parameter tells configure to
 only build the clients.
 
-=item -
-
   make
 
 This builds all MySQL client parts ... be patient. It should finish
 finally without any error.
-
-=item -
 
   make install
 
@@ -648,8 +628,6 @@ Remember, you don't need anything except the library under
 
 Essentially you are now done with this part. If you want, you may try
 your compiled binaries shortly; for that, do:
-
-=item -
 
   cd /usr/local/mysql/bin
   ./mysql -h 127.0.0.1
@@ -661,8 +639,6 @@ doesn't work between Cygwin and Windows (as far as I know).
 
 If you have your MySQL server running on some other box, then please
 substitute '127.0.0.1' with the name or IP-number of that box.
-
-=back
 
 Please note, in my environment the 'mysql' client did not accept a
 simple RETURN, I had to use CTRL-RETURN to send commands
@@ -679,25 +655,12 @@ At the 'mysql>' prompt do a quick check:
 
 You are now ready to build DBD::mysql!
 
+=head3 compile DBD::mysql
 
-Build DBD::mysql:
-
-=over
-
-=item -
-
-download DBD-mysql-<version>.tar.gz from CPAN
-
-=item -
-
-unpack DBD-mysql-<version>.tar.gz
-
-=item -
+download and extract DBD-mysql-<version>.tar.gz from CPAN
 
 cd into unpacked dir DBD-mysql-<version>
 you probably did that already, if you are reading this!
-
-=item -
 
   cp /usr/local/mysql/bin/mysql_config .
 
@@ -706,37 +669,25 @@ from your just built Cywin/MySQL client directory; it knows about
 your Cygwin installation, especially about the right libraries to link
 with.
 
-=item -
-
   perl Makefile.PL --testhost=127.0.0.1
 
 The --testhost=127.0.0.1 parameter again forces a TCP/IP connection
 to the MySQL server on the local host instead of a pipe/socket
 connection for the 'make test' phase.
 
-=item -
-
   make
 
 This should run without error
 
-=item -
-
   make test
-
-=item -
-
   make install
 
 This installs DBD::mysql into the Perl hierarchy.
 
-=back
 
 =head1 KNOWN PROBLEMS
 
-=over
-
-=item 1.)
+=head2 no gzip on your system
 
 Some Linux distributions don't come with a gzip library by default.
 Running "make" terminates with an error message like
@@ -754,7 +705,7 @@ If this is the case for you, install an RPM archive like
 libz-devel, libgz-devel, zlib-devel or gzlib-devel or something
 similar.
 
-=item 2.)
+=head2 different compiler for mysql and perl
 
 If Perl was compiled with gcc or egcs, but MySQL was compiled
 with another compiler or on another system, an error message like
@@ -783,38 +734,6 @@ to determine the directory. If you know the directory, add a
   -L<directory> -lgcc
 
 to the list of C compiler flags. L</Configuration>. L</Linker flags>.
-
-=item 3.)
-
-There are known problems with shared versions of libmysqlclient,
-at least on some Linux boxes. If you receive an error message
-similar to
-
-  install_driver(mysql) failed: Can't load
-  '/usr/lib/perl5/site_perl/i586-linux/auto/DBD/mysql/mysql.so'
-  for module DBD::mysql: File not found at
-  /usr/lib/perl5/i586-linux/5.00404/DynaLoader.pm line 166
-
-then this error message can be misleading: It's not mysql.so
-that fails being loaded, but libmysqlclient.so! The usual
-problem is that this file is located in a directory like
-
-  /usr/lib/mysql
-
-where the linker doesn't look for it.
-
-The best workaround is using a statically linked mysqlclient
-library, for example
-
-  /usr/lib/mysql/libmysqlclient.a
-
-The use of a statically linked library is described in the
-previous section on linker flags. L</Configuration>.
-L</Linker flags>.
-
-
-=back
-
 
 =head1 SUPPORT
 

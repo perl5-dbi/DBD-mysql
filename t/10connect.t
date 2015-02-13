@@ -21,7 +21,15 @@ if ($@) {
 
 ok(defined $dbh, "Connected to database");
 
-for my $attribute ( qw(mysql_clientinfo mysql_clientversion mysql_serverversion) ) {
+for my $attribute ( qw(
+  mysql_clientinfo
+  mysql_clientversion
+  mysql_serverversion
+  mysql_hostinfo
+  mysql_serverinfo
+  mysql_stat
+  mysql_protoinfo
+) ) {
   ok($dbh->{$attribute}, "Value of '$attribute'");
   diag "$attribute is: ", $dbh->{$attribute};
 }
@@ -38,6 +46,9 @@ like(
 );
 
 like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
+
+my $info_hashref = $dbh->{mysql_dbd_stats};
+use Data::Dumper; warn Dumper ($info_hashref);
 
 ok($dbh->disconnect(), 'Disconnected');
 
