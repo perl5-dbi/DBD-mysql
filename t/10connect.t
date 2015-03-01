@@ -31,7 +31,7 @@ for my $attribute ( qw(
   mysql_protoinfo
 ) ) {
   ok($dbh->{$attribute}, "Value of '$attribute'");
-  diag "$attribute is: ", $dbh->{$attribute};
+  diag "$attribute is: ". $dbh->{$attribute};
 }
 
 my $sql_dbms_ver = $dbh->get_info($GetInfoType{SQL_DBMS_VER});
@@ -48,7 +48,6 @@ like(
 like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
 
 my $info_hashref = $dbh->{mysql_dbd_stats};
-use Data::Dumper; warn Dumper ($info_hashref);
 
 ok($dbh->disconnect(), 'Disconnected');
 

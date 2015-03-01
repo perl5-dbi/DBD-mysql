@@ -1,7 +1,6 @@
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Test::More;
 use DBI;
 use lib '.', 't';
