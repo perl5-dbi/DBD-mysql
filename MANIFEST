@@ -20,6 +20,7 @@ lib/Bundle/DBD/mysql.pm
 lib/DBD/mysql.pm
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
+LICENSE
 Makefile.PL
 Makefile.PL.embedded
 MANIFEST
