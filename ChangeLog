@@ -1,3 +1,6 @@
+2015-03-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.031)
+* Added LICENSE
+
 2015-03-02 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.030_02)
 * Reworked installation documentation in POD.
 * Allow use of bracketed IPv6 addresses in connection string (RT70640),
