@@ -33,7 +33,7 @@ ok $dbh->do($create),"create table for $scenario";
 
 ok $dbh->do("INSERT INTO `dbd_mysql_rt88006_bit_prep` (`id_binary_test`, `flags`) VALUES (2, b'10'), (1, b'1')");
 
-my $sth = $dbh->prepare("SELECT id_binary_test,flags FROM dbd_mysql_rt88006_bit_prep");
+my $sth = $dbh->prepare("SELECT id_binary_test,flags FROM dbd_mysql_rt88006_bit_prep ORDER BY id_binary_test ASC");
 ok $sth->execute() or die("Execute failed: ".$DBI::errstr);
 ok (my $r = $sth->fetchrow_hashref(), "fetchrow_hashref for $scenario");
 is ($r->{id_binary_test}, 1, 'id_binary test contents');
@@ -43,7 +43,7 @@ TODO: {
 }
 ok $sth->finish;
 
-ok $sth = $dbh->prepare("SELECT id_binary_test,BIN(flags) FROM dbd_mysql_rt88006_bit_prep");
+ok $sth = $dbh->prepare("SELECT id_binary_test,BIN(flags) FROM dbd_mysql_rt88006_bit_prep ORDER BY id_binary_test ASC");
 ok $sth->execute() or die("Execute failed: ".$DBI::errstr);
 ok ($r = $sth->fetchrow_hashref(), "fetchrow_hashref for $scenario with BIN()");
 is ($r->{id_binary_test}, 1, 'id_binary test contents');
