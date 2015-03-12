@@ -47,6 +47,10 @@ like(
 
 like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
 
+my $result = $dbh->selectall_arrayref('select @@storage_engine');
+my $storage_engine = $result->[0]->[0] || 'unknown';
+diag "Default storage engine is: $storage_engine";
+
 my $info_hashref = $dbh->{mysql_dbd_stats};
 
 ok($dbh->disconnect(), 'Disconnected');

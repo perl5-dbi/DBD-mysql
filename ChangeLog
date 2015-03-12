@@ -1,3 +1,7 @@
+2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_01)
+* Fixed test rt88006-bit-prepare on MyISAM storage
+   (Reported both in RT102657 and by Scimon on github)
+
 2015-03-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.031)
 * Added LICENSE
 * Reworked installation documentation in POD.
