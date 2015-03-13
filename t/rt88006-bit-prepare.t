@@ -22,31 +22,31 @@ if ($@) {
 
 my $create = <<EOT;
 CREATE TEMPORARY TABLE `dbd_mysql_rt88006_bit_prep` (
-  `id_binary_test` bigint(20) NOT NULL auto_increment,
+  `id` bigint(20) NOT NULL auto_increment,
   `flags` bit(32) NOT NULL,
-  PRIMARY KEY  (`id_binary_test`),
+  PRIMARY KEY  (`id`),
   KEY `flags` (`flags`)
 )
 EOT
 
 ok $dbh->do($create),"create table for $scenario";
 
-ok $dbh->do("INSERT INTO `dbd_mysql_rt88006_bit_prep` (`flags`) VALUES (b'10'), (b'1')");
+ok $dbh->do("INSERT INTO dbd_mysql_rt88006_bit_prep (id, flags) VALUES (1, b'10'), (2, b'1')");
 
-my $sth = $dbh->prepare("SELECT id_binary_test,flags FROM dbd_mysql_rt88006_bit_prep");
+my $sth = $dbh->prepare("SELECT id,flags FROM dbd_mysql_rt88006_bit_prep WHERE id = 1");
 ok $sth->execute() or die("Execute failed: ".$DBI::errstr);
 ok (my $r = $sth->fetchrow_hashref(), "fetchrow_hashref for $scenario");
-is ($r->{id_binary_test}, 1, 'id_binary test contents');
+is ($r->{id}, 1, 'id test contents');
 TODO: {
   local $TODO = "rt88006" if $scenario eq 'prepare';
   ok ($r->{flags}, 'flags has contents');
 }
 ok $sth->finish;
 
-ok $sth = $dbh->prepare("SELECT id_binary_test,BIN(flags) FROM dbd_mysql_rt88006_bit_prep");
+ok $sth = $dbh->prepare("SELECT id,BIN(flags) FROM dbd_mysql_rt88006_bit_prep WHERE ID =1");
 ok $sth->execute() or die("Execute failed: ".$DBI::errstr);
 ok ($r = $sth->fetchrow_hashref(), "fetchrow_hashref for $scenario with BIN()");
-is ($r->{id_binary_test}, 1, 'id_binary test contents');
+is ($r->{id}, 1, 'id test contents');
 ok ($r->{'BIN(flags)'}, 'flags has contents');
 
 ok $sth->finish;
