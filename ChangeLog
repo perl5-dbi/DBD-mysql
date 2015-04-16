@@ -1,6 +1,11 @@
-2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_01)
+2015-04-16 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_01)
 * Fixed test rt88006-bit-prepare on MyISAM storage
    (Reported both in RT102657 and by Scimon on github)
+* Fix for https://rt.cpan.org/Public/Bug/Display.html?id=102717 "Fritz" Friedrich Haubensak (hsk AT fli-leibniz DOT de)
+Vielen Danken!
+* Corrected name ofINSTALL.pm in POD David Farrell <davidnmfarrell AT gmail DOT com>
+
+    Corrected name of INSTALL.pm in POD
 
 2015-03-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.031)
 * Added LICENSE

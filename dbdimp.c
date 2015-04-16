@@ -26,6 +26,10 @@ typedef short WORD;
 
 #ifdef WIN32
 #define MIN min
+#else
+#ifndef MIN
+#define MIN(a, b)       ((a) < (b) ? (a) : (b))
+#endif
 #endif
 
 #if MYSQL_ASYNC
