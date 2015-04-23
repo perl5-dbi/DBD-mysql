@@ -1747,6 +1747,18 @@ MYSQL *mysql_dr_connect(
 
           mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
         }
+        if ((svp = hv_fetch(hv, "mysql_conn_attrs", 16, FALSE)) && *svp) {
+            HV* attrs = (HV*) SvRV(*svp);
+            HE* entry = NULL;
+            hv_iterinit(attrs);
+            while ((entry = hv_iternext(attrs))) {
+                I32 *retlen;
+                char *attr_name = hv_iterkey(entry, retlen);
+                SV *sv_attr_val = hv_iterval(attrs, entry);
+                char *attr_val  = SvPV(sv_attr_val, lna);
+                mysql_options4(sock, MYSQL_OPT_CONNECT_ATTR_ADD, attr_name, attr_val);
+            }
+        }
         if ((svp = hv_fetch(hv, "mysql_client_found_rows", 23, FALSE)) && *svp)
         {
           if (SvTRUE(*svp))
