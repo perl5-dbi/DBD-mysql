@@ -25,9 +25,15 @@ if ($@) {
     plan skip_all =>
         "ERROR: $DBI::errstr. Can't continue test";
 }
+
+my ($pfenabled) = $dbh->selectrow_array('select @@performance_schema');
+if (!$pfenabled) {
+  plan skip_all => 'performance schema not enabled';
+}
+
 plan tests => 9;
 
-ok $dbh->do("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()"), 'get connattrs for current session';;
+ok $dbh->do("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()"), 'get connattrs for current session';
 
 my $rows = $dbh->selectall_hashref("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()", "ATTR_NAME");
 
