@@ -1747,7 +1747,7 @@ MYSQL *mysql_dr_connect(
 
           mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
         }
-        if (mysql_get_client_version() >= 50606) {
+        #if (MYSQL_VERSION_ID >= 50606)
           if ((svp = hv_fetch(hv, "mysql_conn_attrs", 16, FALSE)) && *svp) {
               HV* attrs = (HV*) SvRV(*svp);
               HE* entry = NULL;
@@ -1760,7 +1760,7 @@ MYSQL *mysql_dr_connect(
                   mysql_options4(sock, MYSQL_OPT_CONNECT_ATTR_ADD, attr_name, attr_val);
               }
           }
-        }
+        #endif
         if ((svp = hv_fetch(hv, "mysql_client_found_rows", 23, FALSE)) && *svp)
         {
           if (SvTRUE(*svp))
