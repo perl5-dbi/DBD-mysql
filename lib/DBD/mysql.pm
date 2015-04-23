@@ -1178,6 +1178,79 @@ Example:
 
 $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
 
+=item mysql_conn_attrs
+
+The option <mysql_conn_attrs> is a hash of attribute names and values which can be
+used to send custom connection attributes to the server.
+
+ node1$ cat ./foo.pl
+ #!/usr/bin/perl
+
+ use DBI;
+ use Data::Dumper;
+
+ my ($test_dsn, $test_user, $test_password) = ($ARGV[0], $ARGV[1], $ARGV[2]);
+
+ my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
+     { AutoCommit => 0,
+       mysql_conn_attrs => { foo => 'bar', wiz => 'bang' },
+     });
+
+ my $results = $dbh->selectall_hashref('SELECT * FROM performance_schema.session_connect_attrs', 'ATTR_NAME');
+ print Dumper($results);
+
+ $dbh->disconnect();
+ node1$ perl ./foo.pl 'DBI:mysql:test;hostname=127.0.0.1;port=5624' msandbox msandbox
+ $VAR1 = {
+           'program_name' => {
+                               'ATTR_VALUE' => './foo.pl',
+                               'PROCESSLIST_ID' => '3',
+                               'ATTR_NAME' => 'program_name',
+                               'ORDINAL_POSITION' => '5'
+                             },
+           '_os' => {
+                      'ATTR_VALUE' => 'osx10.8',
+                      'PROCESSLIST_ID' => '3',
+                      'ATTR_NAME' => '_os',
+                      'ORDINAL_POSITION' => '0'
+                    },
+           'wiz' => {
+                      'ATTR_VALUE' => 'bang',
+                      'PROCESSLIST_ID' => '3',
+                      'ATTR_NAME' => 'wiz',
+                      'ORDINAL_POSITION' => '3'
+                    },
+           '_platform' => {
+                            'ATTR_VALUE' => 'x86_64',
+                            'PROCESSLIST_ID' => '3',
+                            'ATTR_NAME' => '_platform',
+                            'ORDINAL_POSITION' => '4'
+                          },
+           '_client_name' => {
+                               'ATTR_VALUE' => 'libmysql',
+                               'PROCESSLIST_ID' => '3',
+                               'ATTR_NAME' => '_client_name',
+                               'ORDINAL_POSITION' => '1'
+                             },
+           '_pid' => {
+                       'ATTR_VALUE' => '59860',
+                       'PROCESSLIST_ID' => '3',
+                       'ATTR_NAME' => '_pid',
+                       'ORDINAL_POSITION' => '2'
+                     },
+           'foo' => {
+                      'ATTR_VALUE' => 'bar',
+                      'PROCESSLIST_ID' => '3',
+                      'ATTR_NAME' => 'foo',
+                      'ORDINAL_POSITION' => '6'
+                    },
+           '_client_version' => {
+                                  'ATTR_VALUE' => '5.6.24',
+                                  'PROCESSLIST_ID' => '3',
+                                  'ATTR_NAME' => '_client_version',
+                                  'ORDINAL_POSITION' => '7'
+                                }
+         };
 
 =back
 
