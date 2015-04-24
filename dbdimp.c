@@ -1751,8 +1751,8 @@ MYSQL *mysql_dr_connect(
           if ((svp = hv_fetch(hv, "mysql_conn_attrs", 16, FALSE)) && *svp) {
               HV* attrs = (HV*) SvRV(*svp);
               HE* entry = NULL;
-              hv_iterinit(attrs);
-              while ((entry = hv_iternext(attrs))) {
+              I32 num_entries = hv_iterinit(attrs);
+              while (num_entries && (entry = hv_iternext(attrs))) {
                   I32 retlen = 0;
                   char *attr_name = hv_iterkey(entry, &retlen);
                   SV *sv_attr_val = hv_iterval(attrs, entry);
