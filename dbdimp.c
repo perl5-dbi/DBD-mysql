@@ -1753,8 +1753,8 @@ MYSQL *mysql_dr_connect(
               HE* entry = NULL;
               hv_iterinit(attrs);
               while ((entry = hv_iternext(attrs))) {
-                  I32 *retlen;
-                  char *attr_name = hv_iterkey(entry, retlen);
+                  I32 retlen = 0;
+                  char *attr_name = hv_iterkey(entry, &retlen);
                   SV *sv_attr_val = hv_iterval(attrs, entry);
                   char *attr_val  = SvPV(sv_attr_val, lna);
                   mysql_options4(sock, MYSQL_OPT_CONNECT_ATTR_ADD, attr_name, attr_val);
