@@ -187,6 +187,7 @@ struct imp_dbh_st {
 #endif
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
     bool enable_utf8;
+    bool enable_utf8mb4;
 #endif
     struct {
 	    unsigned int auto_reconnects_ok;

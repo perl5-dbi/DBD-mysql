@@ -1556,6 +1556,11 @@ need to issue the command C<SET NAMES utf8> to get the same effect.
 
 This option is experimental and may change in future versions.
 
+=item mysql_enable_utf8mb4
+
+This is similar to mysql_enable_utf8, but is capable of handling 4-byte
+UTF-8 characters.
+
 =item mysql_bind_type_guessing
 
 This attribute causes the driver (emulated prepare statements)
