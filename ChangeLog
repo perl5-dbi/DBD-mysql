@@ -1,3 +1,8 @@
+2015-05-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_02)
+* Added support for utf8mb4 by Daniël van Eeden and Eric Herman (Booking.com)
+* Added patch for connection attributes in MySQL 5.6.6+, by Daniël van Eeden
+   and Eric Herman (Booking.com).
+
 2015-04-16 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_01)
 * Fixed test rt88006-bit-prepare on MyISAM storage
    (Reported both in RT102657 and by Scimon on github)
