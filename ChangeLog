@@ -1,3 +1,6 @@
+2015-07-20 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032)
+* Full-release to include 02 and 01.
+
 2015-06-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_02)
 * Added support for utf8mb4 by Daniël van Eeden and Eric Herman (Booking.com)
 * Added patch for connection attributes in MySQL 5.6.6+, by Daniël van Eeden
