@@ -47,7 +47,7 @@ SKIP: {
     } else {
        foreach my $engine (@$engines) {
          if (lc($engine->[0]) eq 'innodb') {
-           $have_innodb = 'YES';
+           $have_innodb = $engine->[1];
          }
        }
     }
