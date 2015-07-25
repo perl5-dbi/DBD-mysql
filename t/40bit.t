@@ -29,11 +29,7 @@ if (!MinimumVersion($dbh, '4.1')) {
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_b1"), "Drop table if exists dbd_mysql_b1";
 
-my $create = <<EOT;
-create table dbd_mysql_b1 (b bit(8)) engine=innodb;
-EOT
-
-ok ($dbh->do($create));
+ok( $dbh->do('CREATE TABLE dbd_mysql_b1 (b BIT(8))') );
 
 ok ($dbh->do("insert into dbd_mysql_b1 set b = b'11111111'"));
 ok ($dbh->do("insert into dbd_mysql_b1 set b = b'1010'"));
