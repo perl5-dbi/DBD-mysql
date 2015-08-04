@@ -872,6 +872,9 @@ dbd_mysql_get_info(dbh, sql_info_type)
     IV type = 0;
     SV* retsv=NULL;
     bool using_322=0;
+#if MYSQL_VERSION_ID >= 50709
+    IV net_buffer_length;
+#endif
 
     if (SvMAGICAL(sql_info_type))
         mg_get(sql_info_type);
@@ -903,6 +906,9 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
+#if MYSQL_VERSION_ID >= 50709
+        mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_length);
+#endif
 	    retsv = newSViv(net_buffer_length);
 	    break;
 	case SQL_MAXIMUM_TABLES_IN_SELECT:
