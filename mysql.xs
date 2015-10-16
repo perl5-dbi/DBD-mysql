@@ -871,7 +871,6 @@ dbd_mysql_get_info(dbh, sql_info_type)
     D_imp_dbh(dbh);
     IV type = 0;
     SV* retsv=NULL;
-    bool using_322=0;
 
     if (SvMAGICAL(sql_info_type))
         mg_get(sql_info_type);
@@ -897,10 +896,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    );
 	    break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
-	    /*XXX What about a DB started in ANSI mode? */
-	    /* Swiped from MyODBC's get_info.c */
-	    using_322 = ((strncmp(mysql_get_server_info(imp_dbh->pmysql),"3.22",4) == 0) ? 1 : 0 );
-	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
+	    retsv = newSVpv("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
 	    retsv = newSViv(net_buffer_length);
