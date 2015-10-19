@@ -1261,76 +1261,84 @@ $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,commo
 =item mysql_conn_attrs
 
 The option <mysql_conn_attrs> is a hash of attribute names and values which can be
-used to send custom connection attributes to the server.
+used to send custom connection attributes to the server. Some attributes like
+'_os', '_platform', '_client_name' and '_client_version' are added by libmysqlclient
+and 'program_name' is added by DBD::mysql.
 
- node1$ cat ./foo.pl
- #!/usr/bin/perl
+You can then later read these attributes from the performance schema tables which
+can be quite helpful for profiling your database or creating statistics.
+You'll have to use a MySQL 5.6 server and libmysqlclient or newer to leverage this
+feature.
 
- use DBI;
- use Data::Dumper;
+  my $dbh= DBI->connect($dsn, $user, $password,
+    { AutoCommit => 0,
+      mysql_conn_attrs => {
+        foo => 'bar',
+        wiz => 'bang'
+      },
+    });
 
- my ($test_dsn, $test_user, $test_password) = ($ARGV[0], $ARGV[1], $ARGV[2]);
+Now you can select the results from the performance schema tables. You can do this
+in the same session, but also afterwards. It can be very useful to answer questions
+like 'which script sent this query?'.
 
- my $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-     { AutoCommit => 0,
-       mysql_conn_attrs => { foo => 'bar', wiz => 'bang' },
-     });
+  my $results = $dbh->selectall_hashref(
+    'SELECT * FROM performance_schema.session_connect_attrs',
+    'ATTR_NAME'
+  );
 
- my $results = $dbh->selectall_hashref('SELECT * FROM performance_schema.session_connect_attrs', 'ATTR_NAME');
- print Dumper($results);
+This returns:
 
- $dbh->disconnect();
- node1$ perl ./foo.pl 'DBI:mysql:test;hostname=127.0.0.1;port=5624' msandbox msandbox
- $VAR1 = {
-           'program_name' => {
-                               'ATTR_VALUE' => './foo.pl',
-                               'PROCESSLIST_ID' => '3',
-                               'ATTR_NAME' => 'program_name',
-                               'ORDINAL_POSITION' => '5'
-                             },
-           '_os' => {
-                      'ATTR_VALUE' => 'osx10.8',
-                      'PROCESSLIST_ID' => '3',
-                      'ATTR_NAME' => '_os',
-                      'ORDINAL_POSITION' => '0'
-                    },
-           'wiz' => {
-                      'ATTR_VALUE' => 'bang',
-                      'PROCESSLIST_ID' => '3',
-                      'ATTR_NAME' => 'wiz',
-                      'ORDINAL_POSITION' => '3'
-                    },
-           '_platform' => {
-                            'ATTR_VALUE' => 'x86_64',
-                            'PROCESSLIST_ID' => '3',
-                            'ATTR_NAME' => '_platform',
-                            'ORDINAL_POSITION' => '4'
-                          },
-           '_client_name' => {
-                               'ATTR_VALUE' => 'libmysql',
-                               'PROCESSLIST_ID' => '3',
-                               'ATTR_NAME' => '_client_name',
-                               'ORDINAL_POSITION' => '1'
-                             },
-           '_pid' => {
-                       'ATTR_VALUE' => '59860',
-                       'PROCESSLIST_ID' => '3',
-                       'ATTR_NAME' => '_pid',
-                       'ORDINAL_POSITION' => '2'
-                     },
-           'foo' => {
-                      'ATTR_VALUE' => 'bar',
-                      'PROCESSLIST_ID' => '3',
-                      'ATTR_NAME' => 'foo',
-                      'ORDINAL_POSITION' => '6'
-                    },
-           '_client_version' => {
-                                  'ATTR_VALUE' => '5.6.24',
-                                  'PROCESSLIST_ID' => '3',
-                                  'ATTR_NAME' => '_client_version',
-                                  'ORDINAL_POSITION' => '7'
-                                }
-         };
+  $result = {
+    'foo' => {
+        'ATTR_VALUE'       => 'bar',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => 'foo',
+        'ORDINAL_POSITION' => '6'
+    },
+    'wiz' => {
+        'ATTR_VALUE'       => 'bang',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => 'wiz',
+        'ORDINAL_POSITION' => '3'
+    },
+    'program_name' => {
+        'ATTR_VALUE'       => './foo.pl',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => 'program_name',
+        'ORDINAL_POSITION' => '5'
+    },
+    '_client_name' => {
+        'ATTR_VALUE'       => 'libmysql',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => '_client_name',
+        'ORDINAL_POSITION' => '1'
+    },
+    '_client_version' => {
+        'ATTR_VALUE'       => '5.6.24',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => '_client_version',
+        'ORDINAL_POSITION' => '7'
+    },
+    '_os' => {
+        'ATTR_VALUE'       => 'osx10.8',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => '_os',
+        'ORDINAL_POSITION' => '0'
+    },
+    '_pid' => {
+        'ATTR_VALUE'       => '59860',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => '_pid',
+        'ORDINAL_POSITION' => '2'
+    },
+    '_platform' => {
+        'ATTR_VALUE'       => 'x86_64',
+        'PROCESSLIST_ID'   => '3',
+        'ATTR_NAME'        => '_platform',
+        'ORDINAL_POSITION' => '4'
+    }
+  };
 
 =back
 
@@ -1591,7 +1599,7 @@ use the index:
              rows: 1
             Extra: Using index condition
     1 row in set (0.00 sec)
-    
+
     MariaDB [test]> explain select * from test where value0 = 3
         -> \G
     *************************** 1. row ***************************
@@ -1944,7 +1952,7 @@ DBD::mysql code snippets will be added in the future.
 =head2 Issues with multiple result sets
 
 Please be aware ther could be issues if your result sets are "jagged",
-meaning the number of columns of your results vary. Varying numbers of 
+meaning the number of columns of your results vary. Varying numbers of
 columns could result in your script crashing.
 
 
@@ -2018,7 +2026,7 @@ support).
 For the past nine years DBD::mysql has been maintained by
 Patrick Galbraith (I<patg@patg.net>), and recently with the great help of
 Michiel Beijen (I<michiel.beijen@gmail.com>),  along with the entire community
-of Perl developers who keep sending patches to help continue improving DBD::mysql 
+of Perl developers who keep sending patches to help continue improving DBD::mysql
 
 
 =head1 CONTRIBUTIONS
