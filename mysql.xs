@@ -872,9 +872,11 @@ dbd_mysql_get_info(dbh, sql_info_type)
     IV type = 0;
     SV* retsv=NULL;
     bool using_322=0;
-#if MYSQL_VERSION_ID >= 50709
+#if !defined(net_buffer_length)
+    /* From MySQL 5.7.9 net_buffer_length is no longer a macro that
+       can be used. Instead we declare a local variable. */
     IV net_buffer_length;
-#endif
+#endif 
 
     if (SvMAGICAL(sql_info_type))
         mg_get(sql_info_type);
@@ -906,9 +908,12 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
-#if MYSQL_VERSION_ID >= 50709
+#if !defined(net_buffer_length)
+        /* From MySQL 5.7.9 net_buffer_length is no longer a macro
+           that can be used. Instead we use mysql_get_option to retrieve the
+           value into a local varaible. */
         mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_length);
-#endif
+#endif 
 	    retsv = newSViv(net_buffer_length);
 	    break;
 	case SQL_MAXIMUM_TABLES_IN_SELECT:
