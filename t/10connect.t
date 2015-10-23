@@ -47,9 +47,16 @@ like(
 
 like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
 
-my $result = $dbh->selectall_arrayref('select @@storage_engine');
-my $storage_engine = $result->[0]->[0] || 'unknown';
-diag "Default storage engine is: $storage_engine";
+# storage engine function is @@storage_engine in up to 5.5.03
+# at that version, @@default_storage_engine is introduced
+# http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_storage_engine
+# in MySQL Server 5.7.5 the old option is removed
+# http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_storage_engine
+
+my $storage_engine = $dbh->{mysql_serverversion} >= 50503 ? '@@default_storage_engine' : '@@storage_engine';
+my $result = $dbh->selectall_arrayref('select ' . $storage_engine);
+my $default_storage_engine = $result->[0]->[0] || 'unknown';
+diag "Default storage engine is: $default_storage_engine";
 
 my $info_hashref = $dbh->{mysql_dbd_stats};
 

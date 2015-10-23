@@ -902,10 +902,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    );
 	    break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
-	    /*XXX What about a DB started in ANSI mode? */
-	    /* Swiped from MyODBC's get_info.c */
-	    using_322 = ((strncmp(mysql_get_server_info(imp_dbh->pmysql),"3.22",4) == 0) ? 1 : 0 );
-	    retsv = newSVpv(!using_322 ? "`" : " ", 1);
+	    retsv = newSVpv("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
 #if !defined(net_buffer_length)

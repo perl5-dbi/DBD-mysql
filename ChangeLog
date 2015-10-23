@@ -1,3 +1,10 @@
+2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.03?)
+* Fix mysql_conn_attrs test when run against MySQL 5.1 server.
+* Fix for memory leak to $sth->{ParamValues} , RT83051
+    https://rt.cpan.org/Public/Bug/Display.html?id=83051
+* Fixes for running test suite on MySQL 5.7.
+* Fix running test suite with InnoDB disabled, reported by bor.
+
 2015-07-20 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032)
 * Full-release to include 02 and 01.
 

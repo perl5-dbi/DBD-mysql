@@ -5,7 +5,6 @@ use warnings;
 
 use DBI;
 use DBI::Const::GetInfoType;
-use Data::Dumper;
 use Test::More;
 use lib 't', '.';
 require 'lib.pl';
@@ -26,8 +25,11 @@ if ($@) {
         "ERROR: $DBI::errstr. Can't continue test";
 }
 
-my ($pfenabled) = $dbh->selectrow_array('select @@performance_schema');
-if (!$pfenabled) {
+my @pfenabled = $dbh->selectrow_array("show variables like 'performance_schema'");
+if (!@pfenabled) {
+  plan skip_all => 'performance schema not available';
+}
+if ($pfenabled[1] ne 'ON') {
   plan skip_all => 'performance schema not enabled';
 }
 

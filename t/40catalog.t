@@ -34,7 +34,7 @@ SKIP: {
   skip "Server is too old to support INFORMATION_SCHEMA for foreign keys", 16
     if !MinimumVersion($dbh, '5.0');
 
-  my $have_innodb;
+  my $have_innodb = 0;
   if (!MinimumVersion($dbh, '5.6')) {
     my $dummy;
     ($dummy,$have_innodb)=
@@ -45,15 +45,16 @@ SKIP: {
     if (!$engines) {
       DbiError($dbh->err, $dbh->errstr);
     } else {
-       foreach my $engine (@$engines) {
-         if (lc($engine->[0]) eq 'innodb') {
-           $have_innodb = 'YES';
-         }
+       STORAGE_ENGINE:
+       for my $engine (@$engines) {
+         next STORAGE_ENGINE if lc $engine->[0] ne 'innodb';
+         next STORAGE_ENGINE if lc $engine->[1] eq 'no';
+         $have_innodb = 1;
        }
     }
   }
   skip "Server doesn't support InnoDB, needed for testing foreign keys", 16
-    unless defined $have_innodb && $have_innodb eq "YES";
+    if !$have_innodb;
 
   ok($dbh->do(qq{DROP TABLE IF EXISTS child, parent}), "cleaning up");
 

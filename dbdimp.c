@@ -4629,7 +4629,7 @@ dbd_st_FETCH_internal(
                          keylen, newSVsv(imp_sth->params[n].value), 0);
             }
         }
-        retsv= newRV_noinc((SV*)pvhv);
+        retsv= sv_2mortal(newRV_noinc((SV*)pvhv));
     }
     break;
   case 'S':
