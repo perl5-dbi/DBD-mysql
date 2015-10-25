@@ -1,4 +1,7 @@
-2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.03?)
+2015-10-25 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_03)
+* Use mysql_get_option to read net_buffer_length and mysql_get_parameter
+   where available, needed for MySQL 5.7.9. Patch from berntm @ Oracle.
+   https://github.com/perl5-dbi/DBD-mysql/pull/42 
 * Fix mysql_conn_attrs test when run against MySQL 5.1 server.
 * Fix for memory leak to $sth->{ParamValues} , RT83051
     https://rt.cpan.org/Public/Bug/Display.html?id=83051
