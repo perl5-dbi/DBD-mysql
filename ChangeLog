@@ -1,3 +1,6 @@
+2015-10-26 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033)
+* Full-release to include 03.
+
 2015-10-25 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_03)
 * Use mysql_get_option to read net_buffer_length and mysql_get_parameter
    where available, needed for MySQL 5.7.9. Patch from berntm @ Oracle.
