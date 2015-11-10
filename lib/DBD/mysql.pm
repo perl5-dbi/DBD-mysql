@@ -1069,6 +1069,12 @@ separated by a colon ( C<:> ) character or by using the  C<port> argument.
 To connect to a MySQL server on localhost using TCP/IP, you must specify the
 hostname as 127.0.0.1 (with the optional port).
 
+When connecting to a MySQL Server with IPv6, a bracketed IPv6 address should be used.
+Example DSN:
+
+  my $dsn = "DBI:mysql:;host=[1a12:2800:6f2:85::f20:8cf];port=3306";
+
+
 =item mysql_client_found_rows
 
 Enables (TRUE value) or disables (FALSE value) the flag CLIENT_FOUND_ROWS
