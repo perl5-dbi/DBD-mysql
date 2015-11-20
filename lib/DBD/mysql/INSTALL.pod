@@ -519,6 +519,26 @@ you may also try to link without gzip libraries.
 
 =back
 
+=head1 ENABLE ENCRYPTED CONNECTIONS
+
+Connecting to your servers over an encrypted connection (SSL) is easily
+accomplished by ensuring the C<--ssl> option is provided.
+
+Create an environment variable, C<DBD_MYSQL_SSL> and give it a true value.
+
+Attempting to connect to a server that requires an encrypted connection without
+first having L<DBD::mysql> installed with the C<--ssl> option will result in
+an error that makes things appear as if your password is incorrect.
+
+  export DBD_MYSQL_SSL=1
+  cpan DBD::mysql
+
+The environment variable is also honored on Windows systems.  Create the proper
+environment variable before opening your command line window and then install
+L<DBD::mysql>.
+
+  cpan DBD::mysql
+
 =head1 MARIADB NATIVE CLIENT INSTALLATION
 
 The MariaDB native client is another option for connecting to a MySQL·
