@@ -11,7 +11,7 @@ require 'lib.pl';
 
 my $dbh;
 eval {$dbh= DBI->connect('DBI:mysql:', $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+                      { RaiseError => 0, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
     diag $@;
     plan skip_all => "no database connection";
