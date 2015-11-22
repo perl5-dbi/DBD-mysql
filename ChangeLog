@@ -1,4 +1,6 @@
 2015-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_01)
+* Add explicit documentation for how to enable SSL at build time,
+  provided by genio.
 * Improve test suite to make it more robust using mixed versions of client and
   server.
 
