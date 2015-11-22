@@ -2,8 +2,8 @@ package Bundle::DBD::mysql;
 
 use strict;
 use warnings;
-
-our $VERSION = '4.033';
+use DBD::mysql;
+our $VERSION = $DBD::mysql::VERSION;
 
 1;
 
