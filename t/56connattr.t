@@ -33,6 +33,10 @@ if ($pfenabled[1] ne 'ON') {
   plan skip_all => 'performance schema not enabled';
 }
 
+if ($dbh->{mysql_clientversion} < 50606) {
+  plan skip_all => 'client version should be 5.6.6 or later';
+}
+
 plan tests => 9;
 
 ok $dbh->do("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()"), 'get connattrs for current session';
