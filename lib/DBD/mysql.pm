@@ -1214,23 +1214,15 @@ problems if server-side prepared statements are also enabled.
 
 =item Prepared statement support (server side prepare)
 
-As of 3.0002_1, server side prepare statements were on by default (if your
-server was >= 4.1.3). As of 3.0009, they were off by default again due to
-issues with the prepared statement API (all other mysql connectors are
-set this way until C API issues are resolved). The requirement to use
-prepared statements still remains that you have a server >= 4.1.3
-
 To use server side prepared statements, all you need to do is set the variable
 mysql_server_prepare in the connect:
 
-$dbh = DBI->connect(
-                    "DBI:mysql:database=test;host=localhost;mysql_server_prepare=1",
-                    "",
-                    "",
-                    { RaiseError => 1, AutoCommit => 1 }
-                    );
-
-* Note: delimiter for this param is ';'
+  $dbh = DBI->connect(
+    "DBI:mysql:database=test;host=localhost;mysql_server_prepare=1",
+    "",
+    "",
+    { RaiseError => 1, AutoCommit => 1 }
+  );
 
 There are many benefits to using server side prepare statements, mostly if you are
 performing many inserts because of that fact that a single statement is prepared
@@ -1239,7 +1231,7 @@ to accept multiple insert values.
 To make sure that the 'make test' step tests whether server prepare works, you just
 need to export the env variable MYSQL_SERVER_PREPARE:
 
-export MYSQL_SERVER_PREPARE=1
+  export MYSQL_SERVER_PREPARE=1
 
 
 =item mysql_embedded_options
@@ -1249,9 +1241,9 @@ options to embedded server.
 
 Example:
 
-use DBI;
-$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
-$dbh = DBI->connect($testdsn,"a","b");
+  use DBI;
+  $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
+  $dbh = DBI->connect($testdsn,"a","b");
 
 This would cause the command line help to the embedded MySQL server library
 to be printed.
@@ -1265,7 +1257,7 @@ If not specified [server] and [embedded] groups will be used.
 
 Example:
 
-$testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
+  $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
 
 =item mysql_conn_attrs
 
