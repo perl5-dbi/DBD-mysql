@@ -350,7 +350,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'AUTHOR'} = 'Patrick Galbraith <patg@patg.net>';
   $o{'ABSTRACT'} =
     'A MySQL driver for the Perl5 Database Interface (DBI)';
-  $o{'PREREQ_PM'} = { 'DBI' => 1.08 };
+  $o{'PREREQ_PM'} = { 'DBI' => 1.609 };
   %o=(%o,
     LICENSE => 'perl',
     MIN_PERL_VERSION => '5.008001',
@@ -366,9 +366,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     TEST_REQUIRES => { 'Test::Simple' => '0.90',
                        'Test::Deep'   => 0,
     },
-    CONFIGURE_REQUIRES => {'DBI'          => 1.08,
-                           'Data::Dumper' => 0,
-    },
+    CONFIGURE_REQUIRES => {'Data::Dumper' => 0},
   );
 }
 
