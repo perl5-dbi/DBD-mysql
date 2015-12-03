@@ -23,8 +23,8 @@
 * Full-release to include 02 and 01.
 
 2015-06-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_02)
-* Added support for utf8mb4 by Daniël van Eeden and Eric Herman (Booking.com)
-* Added patch for connection attributes in MySQL 5.6.6+, by Daniël van Eeden
+* Added support for utf8mb4 by DaniÃ«l van Eeden and Eric Herman (Booking.com)
+* Added patch for connection attributes in MySQL 5.6.6+, by DaniÃ«l van Eeden
    and Eric Herman (Booking.com).
 
 2015-04-16 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.032_01)
@@ -69,7 +69,7 @@ Vielen Danken!
 2014-12-08 Patrick Galbraith (aka CaptTofu) and community (4.029)
 * Added fix to tests to create test database if not exists (contstant failure on Travis) (CaptTofu)
 * Support the fraction of (Oracle) MySQL Fabric that is supported by the most recent Connector/C (Steffen Mueller smueller<at>cpan<dot>org
-* Statistics Info Milan ¿orm <sorm<at>is4u<dot>cz> for work on statistics_info
+* Statistics Info Milan Â¿orm <sorm<at>is4u<dot>cz> for work on statistics_info
 * Fix for RT 97625, use after free(), Reini Urban rurban<at>cpan<dot>org
 
 2014-08-01 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.028)
@@ -92,7 +92,7 @@ Vielen Danken!
 
 2013-11-05 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.025)
 * Set with parentheses and column_info - RT50304 - reported and fixed by Kevin Bosak.
-* Fix method redefinition warnings in threads on Perl >= 5.16 - Dagfinn Ilmari Mannsåker
+* Fix method redefinition warnings in threads on Perl >= 5.16 - Dagfinn Ilmari MannsÃ¥ker
 * use strict and warnings everywhere.
 * Minimum perl version is now 5.8.1, just as for DBI.
 * Improved database version check so tests run correctly on MariaDB 10.
@@ -119,7 +119,7 @@ Vielen Danken!
 
 2013-04-12 Patrick Galbraith et open source community <patg at patg dot net> (4.023)
     Fix memory leak if mysql_server_prepare is enabled.
-* Fix primary_key_info result ordering - https://github.com/CaptTofu/DBD-mysql/pull/39 - Dagfinn Ilmari Mannsåker
+* Fix primary_key_info result ordering - https://github.com/CaptTofu/DBD-mysql/pull/39 - Dagfinn Ilmari MannsÃ¥ker
 * allow compilation with msvc - https://github.com/CaptTofu/DBD-mysql/pull/37 - Walde Christian
 * just to set MYSQL_OPT_WRITE_TIMEOUT and MYSQL_OPT_READ_TIMEOUT by dsn - https://github.com/CaptTofu/DBD-mysql/pull/36 - Naosuke Yokoe 
 * just remove unnecessary "my" - https://github.com/CaptTofu/DBD-mysql/pull/34 - Shoichi Kaji
@@ -143,7 +143,7 @@ Vielen Danken!
 * Fix to enable PERL_NO_GET_CONTEXT to spee up DBD on thread Perls 
 (Dave Mitchell <davem at iabyn dot com>) Thank you!
 * Fix to is_prefix not being exported by mysql Aran Deltax <bluefeet at gmail dot com> Thank you!
-* Eliminate DBIS usage Dagfinn Ilmari Mannsåker <ilmari at ilmari dot org> Thank you!
+* Eliminate DBIS usage Dagfinn Ilmari MannsÃ¥ker <ilmari at ilmari dot org> Thank you!
 * Enhanced / Fixed server side prepared statement checks (Steven Hartland) Thank you!
 * Fix missprint in doc of DBD::mysql of mysql_bind_type_guessing (Perlover http://blog.perloever.com) Thank you!
 * Misprint in lib/DBD/mysql.pm (Perlover) Thank you!
@@ -934,7 +934,7 @@ Tokuhiro Matsuno!
 1999-01-05  Jochen Wiedmann  <joe@ispsoft.de> (1.21_13)
 
 	* nodbd/nodbd.pm.in (query): Now setting $db_errstr
-	  (Andreas König, andreas.koenig@anima.de).
+	  (Andreas KÃ¶nig, andreas.koenig@anima.de).
 	* dbd/dbdimp.c (dbd_db_quote): Giving up to use "NULL" as a
 	  static string. :-( My thanks to David Foo (dfoo@web.fairfax.com.au)
 	  and Christian Schwarz (schwarz@monet.m.isar.de) for convincing
@@ -957,7 +957,7 @@ Tokuhiro Matsuno!
 	* INSTALL: Updated the WIN32 INSTALLATION section.
 	* nodbd/statement.pm.in (fetchrow): Enhanced compatibility to
 	  previous Msql versions by returning the first column now in
-	  scalar context. (Andreas König, andreas.koenig@anima.de)
+	  scalar context. (Andreas KÃ¶nig, andreas.koenig@anima.de)
 	* Makefile.PL (Init): Default of installing Msql, Mysql and Msql1
 	  is now "no", unless you already have the Mysql emulation layer
 	  installed.
@@ -1017,7 +1017,7 @@ Tokuhiro Matsuno!
 
 	* INSTALL: Added a hint for Remote_Access in msql.conf
 	* nodbd/nodbd.pm.in (quote): Made quote a class method; Andreas
-	  König <koenig@anna.mind.de>.
+	  KÃ¶nig <koenig@anna.mind.de>.
 	* dbd/myMsql.h (MyReconnect): Fixed $dbh->ping() for MySQL.
 	  My thanks to Nikki Chumakov (nikki@paranoia.ru).
 	* dbd/dbimon.in: Added dump mode.
@@ -1417,7 +1417,7 @@ DBD::mysql for DBI - Written by Jochen Wiedmann <joe@ispsoft.de>
 97.08.27  Removed use of TEXT_TYPE from pmysql and Mysql/Statement.pm.
 
 97.08.16  Modified mysql.xs, dbdimp.h and dbdimp.c for use in DBD::mSQL.
-	  Now using Andreas König´s Makefile.PL from the DBD::mSQL
+	  Now using Andreas KÃ¶nigÂ´s Makefile.PL from the DBD::mSQL
 	  distribution.
 	  Added check for disabled '-lgcc' on Linux; this leads to a
 	  missing __moddi3 symbol in libmysqlclient.a, when running
