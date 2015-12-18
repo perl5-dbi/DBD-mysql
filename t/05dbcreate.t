@@ -16,11 +16,14 @@ if ($@) {
     diag $@;
     plan skip_all => "no database connection";
 }
-plan tests => 3;
+plan tests => 2;
 
 ok defined $dbh, "Connected to database";
 eval{ $dbh->do("CREATE DATABASE IF NOT EXISTS $test_db") };
-ok(!$@, 'CREATE DATABASE IF NOT EXISTS');
-diag $@ if $@;
+if($@) {
+    diag "No permission to '$test_db' database on '$test_dsn' for user '$test_user'";
+} else {
+    diag "Database '$test_db' accessible";
+}
 
 ok $dbh->disconnect();

@@ -20,9 +20,7 @@ if ($@) {
 
 ok(defined $dbh, "Connected to database");
 
-ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_t30"), "making slate clean");
-
-ok($dbh->do("CREATE TABLE dbd_mysql_t30 (id INT(4), name VARCHAR(64))"), "creating table");
+ok($dbh->do("CREATE TEMPORARY TABLE dbd_mysql_t30 (id INT(4), name VARCHAR(64))"), "creating table");
 
 ok($dbh->do("
   INSERT INTO dbd_mysql_t30

@@ -21,8 +21,7 @@ eval { $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                         );
      };
 if ($@) {
-    plan skip_all =>
-        "ERROR: $DBI::errstr. Can't continue test";
+    plan skip_all => "no database connection";
 }
 
 my @pfenabled = $dbh->selectrow_array("show variables like 'performance_schema'");

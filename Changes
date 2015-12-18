@@ -1,3 +1,6 @@
+2015-12-18 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_02)
+* Made tests more robust after CPAN Testers failures.
+
 2015-12-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_01)
 * Raise minimum DBI version to 1.609 (from 2009!) in order to make
   tests pass on RHEL5.
