@@ -226,7 +226,7 @@ export them by putting them in your .bashrc or the like:
     export DBD_MYSQL_CONFIG=mysql_config
     export DBD_MYSQL_NOCATCHSTDERR=0
     export DBD_MYSQL_NOFOUNDROWS=0
-    export DBD_MYSQL_SSL=
+    export DBD_MYSQL_NOSSL=
     export DBD_MYSQL_TESTDB=test
     export DBD_MYSQL_TESTHOST=localhost
     export DBD_MYSQL_TESTPASSWORD=s3kr1+
@@ -519,27 +519,21 @@ you may also try to link without gzip libraries.
 
 =back
 
-=head1 ENABLE ENCRYPTED CONNECTIONS via SSL
+=head1 ENCRYPTED CONNECTIONS via SSL
 
 Connecting to your servers over an encrypted connection (SSL) is only possible
-if you enabled this setting at build time. This is easily
-accomplished by providing the C<--ssl> option to Makefile.PL.
-Alternatively, you can also set an environment variable for this:
-
-Create an environment variable, C<DBD_MYSQL_SSL> and give it a true value.
+if you enabled this setting at build time. Since version 4.034, this is the
+default.
 
 Attempting to connect to a server that requires an encrypted connection without
-first having L<DBD::mysql> installed with the C<--ssl> option will result in
+first having L<DBD::mysql> compiled with the C<--ssl> option will result in
 an error that makes things appear as if your password is incorrect.
 
-  export DBD_MYSQL_SSL=1
-  cpan DBD::mysql
+If you want to compile L<DBD::mysql> without SSL support, which you might
+probably only want if you for some reason can't install libssl headers, you
+can do this by passing the C<--nossl> option to Makefile.PL or by setting the
+DBD_MYSQL_NOSSL environment variable to '1'.
 
-The environment variable is also honored on Windows systems.  Set the proper
-environment variable and then install L<DBD::mysql>.
-
-  SET DBD_MYSQL_SQL=1
-  cpan DBD::mysql
 
 =head1 MARIADB NATIVE CLIENT INSTALLATION
 

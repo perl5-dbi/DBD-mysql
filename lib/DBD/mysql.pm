@@ -1179,7 +1179,8 @@ database:
 This means that your communication with the server will be encrypted.
 
 Please note that this can only work if you enabled SSL when compiling
-DBD::mysql. See L<DBD::mysql::INSTALL> for more details.
+DBD::mysql; this is the default starting version 4.034.
+See L<DBD::mysql::INSTALL> for more details.
 
 If you turn mysql_ssl on, you might also wish to use the following
 flags:

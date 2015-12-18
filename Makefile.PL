@@ -34,7 +34,8 @@ Getopt::Long::GetOptions(
     "ps-protocol",
     "bind-type-guessing",
     "nocatchstderr",
-    "ssl!",
+    "ssl",
+    "nossl",
     "nofoundrows!",
     "embedded=s",
     "mysql_config=s",
@@ -83,7 +84,7 @@ MSG
   }
 
 for my $key (qw/testdb testhost testuser testpassword testsocket testport
-                    cflags embedded libs nocatchstderr ssl nofoundrows
+                    cflags embedded libs nocatchstderr nossl nofoundrows
                     ps-protocol bind-type-guessing force-embedded/)
 {
   Configure($opt, $source, $key);
@@ -161,6 +162,7 @@ I will use the following settings for compiling and testing:
 MSG
 
 delete $opt->{'help'};
+delete $opt->{'ssl'};
 my $keylen = 0;
 for my $key (keys %$opt)
 {
@@ -217,7 +219,7 @@ my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 if ($^O eq 'VMS') {
   $cflags = "\$(DBI_INSTARCH_DIR),$opt->{'cflags'}";
 }
-$cflags .= " -DDBD_MYSQL_WITH_SSL" if $opt->{'ssl'};
+$cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
 $cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
@@ -475,7 +477,7 @@ Possible options are:
                          This feature makes it so driver-emulated prepared statements
                          try to "guess" if a value being bound is numeric, in which
                          case, quotes will not be put around the value.
-  --ssl			         Enable SSL support
+  --nossl                Disable SSL support
   --help                 Print this message and exit
 
 All options may be configured on the command line. If they are
@@ -670,9 +672,12 @@ section "Linker flags" or type
   perl Makefile.PL --help
 MSG
     }
-    elsif ($param eq "ssl") {
+    elsif ($param eq "nossl") {
       $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
-      $source->{$param} = "guessed";
+      $source->{$param} = $opt->{$param} ? "choice" : "default";
+    }
+    elsif ($param eq "ssl") {
+        # default, for legacy reasons
     }
     else {
       die "Unknown configuration parameter: $param";

@@ -1,4 +1,8 @@
 2015-12-18 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_02)
+* Compile against libssl by default. This allows to connect against remote
+  MySQL servers using SSL. Previously this was only achieved with an explicit
+  switch provided to Makefile.PL - if for some reason you can't or don't want
+  to link against libssl, you can use the new --nossl switch to Makefile.PL.
 * Made tests more robust after CPAN Testers failures.
 
 2015-12-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_01)
