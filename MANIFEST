@@ -3,20 +3,6 @@ Changes
 constants.h
 dbdimp.c
 dbdimp.h
-eg/bigint_quotes.pl
-eg/bug14979.pl
-eg/bug21028.pl
-eg/bug30033.pl
-eg/bug30033pg.pl
-eg/decimal_test.pl
-eg/issue21946.pl
-eg/prepare_memory_usage.pl
-eg/proc_example1.pl
-eg/proc_example2.pl
-eg/proc_example2a.pl
-eg/proc_example2b.pl
-eg/proc_example3.pl
-eg/proc_example4.pl
 lib/Bundle/DBD/mysql.pm
 lib/DBD/mysql.pm
 lib/DBD/mysql/GetInfo.pm
@@ -97,4 +83,3 @@ t/rt86153-reconnect-fail-memory.t
 t/rt88006-bit-prepare.t
 t/rt91715.t
 t/version.t
-TODO

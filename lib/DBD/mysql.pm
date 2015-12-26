@@ -1948,9 +1948,6 @@ An example would be:
     }
   } until (!$sth->more_results)
 
-For more examples, please see the eg/ directory. This is where helpful
-DBD::mysql code snippets will be added in the future.
-
 =head2 Issues with multiple result sets
 
 Please be aware ther could be issues if your result sets are "jagged",
