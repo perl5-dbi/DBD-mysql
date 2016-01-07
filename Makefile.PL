@@ -815,34 +815,9 @@ sub create_makefile
 }
 
 package MY;
-
-sub libscan {
-    my($self, $path) = @_;
-    return '' if $path =~ /\B\.svn\b|~#|\BSCCS\b/;
-    $path;
-}
-
-sub macro {
-  "\n" . DBI::DBD::dbd_postamble(@_) . <<"POSTAMBLE";
-
-installhtml: lib/DBD/mysql/INSTALL.pod
-\tpod2html --infile=lib/DBD/mysql/INSTALL.pod --outfile=INSTALL.html
-
-POSTAMBLE
-};
-
-sub dynamic_lib {
-  my $self = shift;
-  my $result = $self->SUPER::dynamic_lib(@_);
-  if (!$::opt->{nocatchstderr}  &&  $result =~ /\$\(LD\)/) {
-    $result =~ s/(\$\(LD\))/\$\(PERL\) myld \$(LD)/sg;
-  }
-  return $result;
-}
+sub postamble { return DBI::DBD::dbd_postamble(@_); }
 
 package main;
-
-
 
 sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-upgrade.
   my %params=@_;
