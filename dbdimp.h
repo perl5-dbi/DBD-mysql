@@ -22,6 +22,7 @@
 #include <mysqld_error.h>  /* Comes MySQL */
 
 #include <errmsg.h> /* Comes with MySQL-devel */
+#include <stdint.h> /* For int32_t */
 
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
@@ -212,7 +213,7 @@ typedef struct imp_sth_ph_st {
 typedef struct imp_sth_phb_st {
     union
     {
-      long lval;
+      int32_t lval;
       double dval;
     } numeric_val;
     unsigned long   length;
@@ -233,7 +234,7 @@ typedef struct imp_sth_fbh_st {
     char           *data;
     int            charsetnr;
     double         ddata;
-    long           ldata;
+    int32_t        ldata;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
     unsigned int   flags;
 #endif

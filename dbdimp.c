@@ -18,6 +18,7 @@
 #endif
 
 #include "dbdimp.h"
+#include <inttypes.h> /* for PRId32 */
 
 #if defined(WIN32)  &&  defined(WORD)
 #undef WORD
@@ -3752,8 +3753,8 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       {
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\ti %d col_type %d fbh->length %d\n",
-                      i, col_type, (int) fbh->length);
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\ti %d col_type %d fbh->length %lu\n",
+                      i, col_type, fbh->length);
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tfields[i].length %lu fields[i].max_length %lu fields[i].type %d fields[i].charsetnr %d\n",
                       (long unsigned int) fields[i].length, (long unsigned int) fields[i].max_length, fields[i].type,
@@ -4014,8 +4015,8 @@ process:
 
         case MYSQL_TYPE_LONG:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %d, unsigned? %d\n",
-                          (int) fbh->ldata, buffer->is_unsigned);
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %"PRId32", unsigned? %d\n",
+                          fbh->ldata, buffer->is_unsigned);
           if (buffer->is_unsigned)
             sv_setuv(sv, fbh->ldata);
           else
@@ -4786,6 +4787,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   int buffer_is_null= 0;
   int buffer_length= slen;
   unsigned int buffer_type= 0;
+  IV tmp;
 #endif
 
   D_imp_dbh_from_sth;
@@ -4873,12 +4875,16 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           if (!SvIOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
           buffer_length = sizeof imp_sth->fbind[idx].numeric_val.lval;
-          imp_sth->fbind[idx].numeric_val.lval= SvIV(imp_sth->params[idx].value);
+
+          tmp = SvIV(imp_sth->params[idx].value);
+          if (tmp > INT32_MAX)
+	        croak("Could not bind %ld: Integer too large for MYSQL_TYPE_LONG", tmp);
+          imp_sth->fbind[idx].numeric_val.lval= tmp;
           buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %d ->%ld<- IS A INT NUMBER\n",
-                          (int) sql_type, (long) (*buffer));
+                          "   SCALAR type %d ->%"PRId32"<- IS A INT NUMBER\n",
+                          (int) sql_type, *(int32_t *)buffer);
           break;
 
         case MYSQL_TYPE_DOUBLE:
