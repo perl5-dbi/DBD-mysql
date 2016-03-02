@@ -419,6 +419,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     },
     TEST_REQUIRES => { 'Test::Simple' => '0.90',
                        'Test::Deep'   => 0,
+                       'Time::HiRes'  => 0,
     },
     CONFIGURE_REQUIRES => {'Data::Dumper' => 0},
   );
