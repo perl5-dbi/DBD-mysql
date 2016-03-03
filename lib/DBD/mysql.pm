@@ -1048,7 +1048,13 @@ But now for a more formal approach:
 
     $dbh = DBI->connect($dsn, $user, $password);
 
-A C<database> must always be specified.
+The C<database> is not a required attribute, but please note that MySQL
+has no such thing as a default database. If you don't specify the database
+at connection time your active database will be null and you'd need to prefix
+your tables with the database name; i.e. 'SELECT * FROM mydb.mytable'.
+
+This is similar to the behavior of the mysql command line client. Also,
+'SELECT DATABASE()' will return the current database active for the handle.
 
 =over
 

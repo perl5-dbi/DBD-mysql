@@ -1,3 +1,7 @@
+2016-03-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_03)
+* Improve documentation on current database, suggested by Vladimir Marek.
+   (https://rt.cpan.org/Ticket/Display.html?id=112587)
+
 2015-12-18 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_02)
 * Compile against libssl by default. This allows to connect against remote
   MySQL servers using SSL. Previously this was only achieved with an explicit
