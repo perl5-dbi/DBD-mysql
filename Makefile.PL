@@ -462,11 +462,11 @@ Possible options are:
   --testhost=<host>      Use <host> as a database server for running the
                          test suite; defaults to localhost.
   --testport=<port>      Use <port> as the port number of the database;
-                         by default the port number is choosen from the
+                         by default the port number is chosen from the
                          mysqlclient library
   --mysql_config=<path>  Specify <path> for mysql_config script
   --with-mysql=<path>    Specify <path> for the root of the MySQL installation.
-  --nocatchstderr        Supress using the "myld" script that redirects
+  --nocatchstderr        Suppress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavior of \$sth->rows() so that it
   			 returns the number of rows physically modified

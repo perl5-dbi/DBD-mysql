@@ -1956,7 +1956,7 @@ An example would be:
 
 =head2 Issues with multiple result sets
 
-Please be aware ther could be issues if your result sets are "jagged",
+Please be aware there could be issues if your result sets are "jagged",
 meaning the number of columns of your results vary. Varying numbers of
 columns could result in your script crashing.
 

@@ -178,7 +178,7 @@ count_params(imp_xxh_t *imp_xxh, pTHX_ char *statement, bool bind_comment_placeh
                   }
                   /*
                     if the end of the comment was never found, we have
-                    to backtrack to whereever we first started skipping
+                    to backtrack to wherever we first started skipping
                     over the possible comment.
                     This means we will pass the statement to the database
                     to see its own fate and issue the error
@@ -428,7 +428,7 @@ int count_embedded_options(char *st)
 }
 
 /*
-  Free embbedded options
+  Free embedded options
 */
 int free_embedded_options(char ** options_list, int options_count)
 {
@@ -445,7 +445,7 @@ int free_embedded_options(char ** options_list, int options_count)
 }
 
 /*
- Print out embbedded option settings
+ Print out embedded option settings
 
 */
 int print_embedded_options(char ** options_list, int options_count)
@@ -758,7 +758,7 @@ static char *parse_params(
             if ( parse_number(valbuf, vallen, &end) != 0 && is_num)
             {
               if (bind_type_guessing) {
-                /* .. not a number, so apparerently we guessed wrong */
+                /* .. not a number, so apparently we guessed wrong */
                 is_num = 0;
                 ph->type = SQL_VARCHAR;
               }
@@ -2101,7 +2101,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
  *           dbname - the database we want to log into; may be like
  *               "dbname:host" or "dbname:host:port"
  *           user - user name to connect as
- *           password - passwort to connect with
+ *           password - password to connect with
  *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
  *           been called in the latter case
@@ -2167,7 +2167,7 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
  *
  *  Purpose: You guess what they should do. 
  *
- *  Input:   dbh - database handle being commited or rolled back
+ *  Input:   dbh - database handle being committed or rolled back
  *           imp_dbh - drivers private database handle data
  *
  *  Returns: TRUE for success, FALSE otherwise; do_error has already
@@ -2511,7 +2511,7 @@ dbd_db_STORE_attrib(
  *           imp_dbh - drivers private database handle data
  *           keysv - the attribute name
  *
- *  Returns: An SV*, if sucessfull; NULL otherwise
+ *  Returns: An SV*, if successful; NULL otherwise
  *
  *  Notes:   Do not forget to call sv_2mortal in the former case!
  *
@@ -2812,7 +2812,7 @@ dbd_st_prepare(
       1. LIMIT < 5.0.7
       2. CALL < 5.5.3 (Added support for out & inout parameters)
       In these cases we have to disable server side prepared statements
-      NOTE: These checks could cause a false possitive on statements which
+      NOTE: These checks could cause a false positive on statements which
       include columns / table names that match "call " or " limit "
     */ 
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3669,7 +3669,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   {
     /* 
       PerlIO_printf doesn't always handle imp_sth->row_num %llu 
-      consistantly!!
+      consistently!!
     */
     sprintf(actual_row_num, "%llu", imp_sth->row_num);
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -4187,7 +4187,7 @@ process:
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /*
   We have to fetch all data from stmt
-  There is may be usefull for 2 cases:
+  There is may be useful for 2 cases:
   1. st_finish when we have undef statement
   2. call st_execute again when we have some unfetched data in stmt
  */
@@ -4372,7 +4372,7 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
  *           keysv - attribute name
  *           valuesv - attribute value
  *
- *  Returns: TRUE for success, FALSE otrherwise; do_error will
+ *  Returns: TRUE for success, FALSE otherwise; do_error will
  *           be called in the latter case
  *
  **************************************************************************/
@@ -4725,7 +4725,7 @@ dbd_st_FETCH_internal(
  *           destrv - RV* that tells us where to store
  *           destoffset - destination offset
  *
- *  Returns: TRUE for success, FALSE otrherwise; do_error will
+ *  Returns: TRUE for success, FALSE otherwise; do_error will
  *           be called in the latter case
  *
  **************************************************************************/
@@ -4807,7 +4807,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   }
 
   /*
-     This fixes the bug whereby no warning was issued upone binding a
+     This fixes the bug whereby no warning was issued upon binding a
      defined non-numeric as numeric
    */
   if (SvOK(value) &&

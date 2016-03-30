@@ -50,7 +50,7 @@ ok ($sth->execute($numericVal, $charVal));
 # Now try the explicit type settings
 ok ($sth->bind_param(1, " 4", SQL_INTEGER()));
 
-# umlaut equivelant is vowel followed by 'e'
+# umlaut equivalent is vowel followed by 'e'
 ok ($sth->bind_param(2, 'Andreas Koenig'));
 ok ($sth->execute);
 
