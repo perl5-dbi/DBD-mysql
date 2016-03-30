@@ -44,13 +44,13 @@ for my $ref (@$rows) {
         ok $sth->execute($id, $name), "insert into dbd_mysql_t50chopblanks values ($id, '$name')";
 	ok $sth2->execute($id), "select id, name from dbd_mysql_t50chopblanks where id = $id";
 
-	# First try to retreive without chopping blanks.
+	# First try to retrieve without chopping blanks.
 	$sth2->{'ChopBlanks'} = 0;
         my $ret_ref = [];
 	ok ($ret_ref = $sth2->fetchrow_arrayref);
 	cmp_ok $ret_ref->[1], 'eq', $name, "\$name should not have blanks chopped";
 
-	# Now try to retreive with chopping blanks.
+	# Now try to retrieve with chopping blanks.
 	$sth2->{'ChopBlanks'} = 1;
 
 	ok $sth2->execute($id);
