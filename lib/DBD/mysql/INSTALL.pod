@@ -578,7 +578,7 @@ running make test, you might encounter the error:
 
   Error:  Can't load '/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle' for module DBD::mysql: dlopen(/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle, 2): Library not loaded: libmysqlclient.18.dylib
 
-To solve this issue, you need to set the library path, similar to LD_LIBRARY_PATH on other Unix variants, buit on OS X you need to do the following (this is for a binary install of MySQL from Oracle)
+To solve this issue, you need to set the library path, similar to LD_LIBRARY_PATH on other Unix variants, built on OS X you need to do the following (this is for a binary install of MySQL from Oracle)
 
   export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/mysql-5.6.16-osx10.7-x86_64/lib/
 
