@@ -1,4 +1,6 @@
 2016-03-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_03)
+* Fix reference to MySQL manual, chapter Character Set Support, suggested
+  by Slaven Rezić (https://rt.cpan.org/Public/Bug/Display.html?id=114148)
 * Improve documentation on current database, suggested by Vladimir Marek.
    (https://rt.cpan.org/Ticket/Display.html?id=112587)
 

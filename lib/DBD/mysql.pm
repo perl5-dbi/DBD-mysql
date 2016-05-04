@@ -1562,15 +1562,14 @@ stored in the database are utf8.  This feature defaults to off.
 When set, a data retrieved from a textual column type (char, varchar,
 etc) will have the UTF-8 flag turned on if necessary.  This enables
 character semantics on that string.  You will also need to ensure that
-your database / table / column is configured to use UTF8.  See Chapter
-10 of the mysql manual for details.
+your database / table / column is configured to use UTF8. See for more
+information the chapter on character set support in the MySQL manual:
+L<http://dev.mysql.com/doc/refman/5.7/en/charset.html>
 
 Additionally, turning on this flag tells MySQL that incoming data should
 be treated as UTF-8.  This will only take effect if used as part of the
 call to connect().  If you turn the flag on after connecting, you will
 need to issue the command C<SET NAMES utf8> to get the same effect.
-
-This option is experimental and may change in future versions.
 
 =item mysql_enable_utf8mb4
 
