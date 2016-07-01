@@ -3396,13 +3396,15 @@ my_ulonglong mysql_st_internal_execute(
             mysql_use_result(svsock) : mysql_store_result(svsock);
 
           if (mysql_errno(svsock))
-            do_error(h, mysql_errno(svsock), mysql_error(svsock)
-                     ,mysql_sqlstate(svsock));
-
-          if (!*result)
-            rows= mysql_affected_rows(svsock);
-          else
-            rows= mysql_num_rows(*result);
+            rows = -2;
+          else if (*result)
+            rows = mysql_num_rows(*result);
+          else {
+            rows = mysql_affected_rows(svsock);
+            /* mysql_affected_rows(): -1 indicates that the query returned an error */
+            if (rows == (my_ulonglong)-1)
+              rows = -2;
+          }
       }
 #if MYSQL_ASYNC
   }
@@ -3416,7 +3418,6 @@ my_ulonglong mysql_st_internal_execute(
              mysql_sqlstate(svsock));
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "IGNORING ERROR errno %d\n", errno);
-    rows = -2;
   }
   return(rows);
 }
@@ -3504,6 +3505,10 @@ my_ulonglong mysql_st_internal_execute41(
       goto error;
 
     rows= mysql_stmt_affected_rows(stmt);
+
+    /* mysql_stmt_affected_rows(): -1 indicates that the query returned an error */
+    if (rows == (my_ulonglong)-1)
+      goto error;
   }
   /*
     This statement returns a result set (SELECT...)
