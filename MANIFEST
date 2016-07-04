@@ -77,6 +77,7 @@ t/mysql.mtest
 t/pod.t
 t/rt25389-bin-case.t
 t/rt50304-column_info_parentheses.t
+t/rt75353-innodb-lock-timeout.t
 t/rt83494-quotes-comments.t
 t/rt85919-fetch-lost-connection.t
 t/rt86153-reconnect-fail-memory.t
