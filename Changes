@@ -1,3 +1,6 @@
+2016-07-06 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.034)
+* Full version, to include all changes since 4.033.
+
 2016-07-04 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.033_03)
 * Check for errors after calling mysql_affected_rows(), by Pali.
    (https://rt.cpan.org/Public/Bug/Display.html?id=75353)
