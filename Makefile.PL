@@ -424,7 +424,9 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
                        'Test::Deep'   => 0,
                        'Time::HiRes'  => 0,
     },
-    CONFIGURE_REQUIRES => {'Data::Dumper' => 0},
+    CONFIGURE_REQUIRES => { 'DBI' => 1.609,
+                            'Data::Dumper' => 0,
+    },
   );
 }
 
