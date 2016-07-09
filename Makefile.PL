@@ -413,6 +413,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Steffen Mueller <smueller@cpan.org>',
         'Steven Hartland <steven.hartland@multiplay.co.uk>',
         'Taro Kobayashi <9re.3000@gmail.com>',
+        'Tatsuhiko Miyagawa <miyagawa@bulknews.net>',
         'Tim Mullin <tim@cpanel.net>',
         'katyavoid <katyavoid@gmail.com>',
         'tokuhirom <tokuhirom@gmail.com>',
