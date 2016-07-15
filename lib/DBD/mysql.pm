@@ -1434,6 +1434,12 @@ important if you modify access privileges or create new users.
 
 =back
 
+=item ping
+
+This can be used to send a ping to the server.
+
+    $rc = $dbh->ping();
+
 =back
 
 
