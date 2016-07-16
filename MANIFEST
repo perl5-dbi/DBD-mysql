@@ -14,7 +14,7 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 myld
 mysql.xs
-README.pod
+README.md
 t/00base.t
 t/05dbcreate.t
 t/10connect.t

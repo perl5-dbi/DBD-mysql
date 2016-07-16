@@ -1,3 +1,8 @@
+2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_01)
+* Converted README.pod to README.md because of installation failures on
+  FreeBSD, reported by Don Randolph.
+  (https://rt.cpan.org/Public/Bug/Display.html?id=114177)
+
 2016-07-09 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035)
 *  Add DBI back to configure_requires, fix by miyagawa.
 
