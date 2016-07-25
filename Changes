@@ -1,4 +1,5 @@
 2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_01)
+* Removed appveyor.yml and mysql.mtest from CPAN releases.
 * Converted README.pod to README.md because of installation failures on
   FreeBSD, reported by Don Randolph.
   (https://rt.cpan.org/Public/Bug/Display.html?id=114177)

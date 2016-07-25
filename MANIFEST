@@ -1,4 +1,3 @@
-appveyor.yml
 Changes
 constants.h
 dbdimp.c
@@ -73,7 +72,6 @@ t/99_bug_server_prepare_blob_null.t
 t/lib.pl
 t/manifest.t
 t/mysql.dbtest
-t/mysql.mtest
 t/pod.t
 t/rt25389-bin-case.t
 t/rt50304-column_info_parentheses.t

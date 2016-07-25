@@ -8,9 +8,11 @@ pm_to_blib
 \.bak$
 \.tmp$
 \.o$
+t/mysql.mtest
 ^MYMETA
 mysql.c
 mysql.xsi
 mysql.bs
+appveyor.yml
 .mailmap
 .travis.yml
