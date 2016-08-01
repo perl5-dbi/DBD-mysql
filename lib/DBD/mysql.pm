@@ -1733,10 +1733,14 @@ have impact on the I<max_length> attribute.
 
 =item mysql_insertid
 
-MySQL has the ability to choose unique key values automatically. If this
-happened, the new ID will be stored in this attribute. An alternative
-way for accessing this attribute is via $dbh->{'mysql_insertid'}.
-(Note we are using the $dbh in this case!)
+If the statement you executed performs an INSERT, and there is an AUTO_INCREMENT
+column in the table you inserted in, this attribute holds the value stored into
+the AUTO_INCREMENT column, if that value is automatically generated, by
+storing NULL or 0 or was specified as an explicit value.
+
+Typically, you'd access the value via $sth->{mysql_insertid}. The value can
+also be accessed via $dbh->{mysql_insertid} but this can easily
+produce incorrect results in case one database handle is shared.
 
 =item mysql_is_blob
 

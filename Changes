@@ -1,4 +1,9 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_01)
+2016-08-01 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_01)
+* Apparently, on t/31insertid.t, there is one test that fails when compiled
+  against libmysqlclient 5.7 or up; issuing a SELECT statement on the same
+  database handle that previously executed an INSERT clears
+  $dbh->{mysql_insertid}, while previously this was retained.
+  (https://rt.cpan.org/Ticket/Display.html?id=108000)
 * Removed appveyor.yml and mysql.mtest from CPAN releases.
 * Converted README.pod to README.md because of installation failures on
   FreeBSD, reported by Don Randolph.

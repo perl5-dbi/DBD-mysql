@@ -16,7 +16,7 @@ if ($@) {
     plan skip_all =>
         "no database connection";
 }
-plan tests => 18;
+plan tests => 19;
 
 ok $dbh->do('SET @@auto_increment_offset = 1');
 ok $dbh->do('SET @@auto_increment_increment = 1');
@@ -38,7 +38,8 @@ ok defined $sth;
 
 ok $sth->execute("Jochen");
 
-is $dbh->{'mysql_insertid'}, 1, "insert id == $dbh->{mysql_insertid}";
+is $sth->{mysql_insertid}, 1, "insert id == $sth->{mysql_insertid}";
+is $dbh->{mysql_insertid}, 1, "insert id == $dbh->{mysql_insertid}";
 
 ok $sth->execute("Patrick");
 
@@ -53,12 +54,15 @@ ok ($max_id= $sth2->fetch());
 
 ok defined $max_id;
 
-cmp_ok $sth->{'mysql_insertid'}, '==', $max_id->[0], "sth insert id $sth->{'mysql_insertid'} == max(id) $max_id->[0]  in dbd_mysql_t31";
-
-cmp_ok $dbh->{'mysql_insertid'}, '==', $max_id->[0], "dbh insert id $dbh->{'mysql_insertid'} == max(id) $max_id->[0] in dbd_mysql_t31";
+SKIP: {
+  skip 'using libmysqlclient 5.7 or up we now have an empty dbh insertid',
+    1, if $dbh->{mysql_clientversion} >= 50700;
+  cmp_ok $dbh->{mysql_insertid}, '==', $max_id->[0],
+    "dbh insert id $dbh->{'mysql_insertid'} == max(id) $max_id->[0] in dbd_mysql_t31";
+}
+cmp_ok $sth->{mysql_insertid}, '==', $max_id->[0],
+  "sth insert id $sth->{'mysql_insertid'} == max(id) $max_id->[0]  in dbd_mysql_t31";
 
 ok $sth->finish();
-
 ok $sth2->finish();
-
 ok $dbh->disconnect();
