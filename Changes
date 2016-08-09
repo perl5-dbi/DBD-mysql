@@ -1,3 +1,7 @@
+2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_02)
+* Test rt25389-bin-case.t does not work on MySQL Server < 5.1, reported by
+  GAAS.
+
 2016-08-01 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_01)
 * Apparently, on t/31insertid.t, there is one test that fails when compiled
   against libmysqlclient 5.7 or up; issuing a SELECT statement on the same

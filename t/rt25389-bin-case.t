@@ -15,6 +15,11 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
+if (!MinimumVersion($dbh, '5.1')) {
+    plan skip_all =>
+        "You must have MySQL version 5.1 or greater for this test"
+}
+
 plan tests => 8;
 
 my ( $sth, $i );
