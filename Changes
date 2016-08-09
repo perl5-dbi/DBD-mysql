@@ -1,4 +1,14 @@
 2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_02)
+* In 4.033_03 we added a patch from Petr Písař @ Red Hat for a problem on
+  64-bit big-endian systems. The patch was applied but the unit test was not,
+  also, there was no entry in the change log.
+  Unit test provided by Vladimir Marek.
+  t/40server_prepare.t test failed on s390x platform. Server-prepared
+  values of types int, smallint, and tinyint are passed to application
+  as 32-bit integer. The same buffer was interpreted as long integer
+  by DBD::MySQL. This caused misaligned read/write and bogus
+  interpretation of the values.
+   (https://rt.cpan.org/Public/Bug/Display.html?id=57266)
 * Remove dropdb, createdb, reload and shutdown admin functions from perldoc.
   These are deprecated by the C API.
   Use 'CREATE DATABASE..', 'DROP DATABASE...' and other SQL commands instead.

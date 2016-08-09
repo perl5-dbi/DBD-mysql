@@ -42,6 +42,7 @@ t/40server_prepare_error.t
 t/40types.t
 t/41bindparam.t
 t/41blobs_prepare.t
+t/41int_min_max.t
 t/42bindparam.t
 t/43count_params.t
 t/50chopblanks.t
