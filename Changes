@@ -1,4 +1,6 @@
 2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_02)
+* Test rt75353-innodb-lock-timeout.t fails on MySQL Server 5.1 and earlier
+  because innodb_lock_wait_timeout is not modifyable per session.
 * Test rt25389-bin-case.t does not work on MySQL Server < 5.1, reported by
   GAAS.
 

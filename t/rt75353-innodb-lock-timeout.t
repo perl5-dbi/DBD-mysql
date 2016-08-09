@@ -41,10 +41,15 @@ if (!$have_innodb) {
   plan skip_all => "Server doesn't support InnoDB, needed for testing innodb_lock_wait_timeout";
 }
 
+eval {$dbh2->do("SET innodb_lock_wait_timeout=1");};
+if ($@) {
+  $dbh1->disconnect();
+  $dbh2->disconnect();
+  plan skip_all => "innodb_lock_wait_timeout is not modifyable on this version of MySQL";
+}
+
 ok $dbh1->do("DROP TABLE IF EXISTS dbd_mysql_rt75353_innodb_lock_timeout"), "drop table if exists dbd_mysql_rt75353_innodb_lock_timeout";
 ok $dbh1->do("CREATE TABLE dbd_mysql_rt75353_innodb_lock_timeout(id INT PRIMARY KEY) ENGINE=INNODB"), "create table dbd_mysql_rt75353_innodb_lock_timeout";
-
-ok $dbh2->do("SET innodb_lock_wait_timeout=1"), "dbh2: set innodb_lock_wait_timeout to one second";
 
 ok $dbh1->do("INSERT INTO dbd_mysql_rt75353_innodb_lock_timeout VALUES(1)"), "dbh1: acquire a row lock on table dbd_mysql_rt75353_innodb_lock_timeout";
 
