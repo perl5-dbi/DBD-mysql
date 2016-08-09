@@ -899,15 +899,8 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
     use DBI;
 
     $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
-
     $dbh = DBI->connect($dsn, $user, $password);
 
-
-    $drh = DBI->install_driver("mysql");
-    @databases = DBI->data_sources("mysql");
-       or
-    @databases = DBI->data_sources("mysql",
-      {"host" => $host, "port" => $port, "user" => $user, password => $pass});
 
     $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
        or
@@ -918,16 +911,6 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
     $numRows = $sth->rows;
     $numFields = $sth->{'NUM_OF_FIELDS'};
     $sth->finish;
-
-    $rc = $drh->func('createdb', $database, $host, $user, $password, 'admin');
-    $rc = $drh->func('dropdb', $database, $host, $user, $password, 'admin');
-    $rc = $drh->func('shutdown', $host, $user, $password, 'admin');
-    $rc = $drh->func('reload', $host, $user, $password, 'admin');
-
-    $rc = $dbh->func('createdb', $database, 'admin');
-    $rc = $dbh->func('dropdb', $database, 'admin');
-    $rc = $dbh->func('shutdown', 'admin');
-    $rc = $dbh->func('reload', 'admin');
 
 
 =head1 EXAMPLE
@@ -1373,76 +1356,6 @@ method.  Instead, you should use the portable method
 =back
 
 
-=head2 Server Administration
-
-=over
-
-=item admin
-
-    $rc = $drh->func("createdb", $dbname, [host, user, password,], 'admin');
-    $rc = $drh->func("dropdb", $dbname, [host, user, password,], 'admin');
-    $rc = $drh->func("shutdown", [host, user, password,], 'admin');
-    $rc = $drh->func("reload", [host, user, password,], 'admin');
-
-      or
-
-    $rc = $dbh->func("createdb", $dbname, 'admin');
-    $rc = $dbh->func("dropdb", $dbname, 'admin');
-    $rc = $dbh->func("shutdown", 'admin');
-    $rc = $dbh->func("reload", 'admin');
-
-For server administration you need a server connection. For obtaining
-this connection you have two options: Either use a driver handle (drh)
-and supply the appropriate arguments (host, defaults localhost, user,
-defaults to '' and password, defaults to ''). A driver handle can be
-obtained with
-
-    $drh = DBI->install_driver('mysql');
-
-Otherwise reuse the existing connection of a database handle (dbh).
-
-There's only one function available for administrative purposes, comparable
-to the mysqladmin programs. The command being execute depends on the
-first argument:
-
-=over
-
-=item createdb
-
-Creates the database $dbname. Equivalent to "mysqladmin create $dbname".
-
-=item dropdb
-
-Drops the database $dbname. Equivalent to "mysqladmin drop $dbname".
-
-It should be noted that database deletion is
-I<not prompted for> in any way.  Nor is it undo-able from DBI.
-
-    Once you issue the dropDB() method, the database will be gone!
-
-These method should be used at your own risk.
-
-=item shutdown
-
-Silently shuts down the database engine. (Without prompting!)
-Equivalent to "mysqladmin shutdown".
-
-=item reload
-
-Reloads the servers configuration files and/or tables. This can be particularly
-important if you modify access privileges or create new users.
-
-=back
-
-=item ping
-
-This can be used to send a ping to the server.
-
-    $rc = $dbh->ping();
-
-=back
-
-
 =head1 DATABASE HANDLES
 
 The DBD::mysql driver supports the following attributes of database
@@ -1670,7 +1583,14 @@ or using an existing database handle:
 
   $dbh->{mysql_no_autocommit_cmd} = 1;
 
+=item ping
+
+This can be used to send a ping to the server.
+
+  $rc = $dbh->ping();
+
 =back
+
 
 =head1 STATEMENT HANDLES
 
