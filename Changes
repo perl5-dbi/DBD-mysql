@@ -1,4 +1,8 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_02)
+2016-08-11 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_02)
+* Test 56connattr.t failed when run when performance schema is enabled, but
+  tests were run as a user with limited permissions.
+  Reported by Jérôme Étévé.
+  (https://rt.cpan.org/Public/Bug/Display.html?id=115980)
 * In 4.033_03 we added a patch from Petr Písař @ Red Hat for a problem on
   64-bit big-endian systems. The patch was applied but the unit test was not,
   also, there was no entry in the change log.

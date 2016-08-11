@@ -14,7 +14,7 @@ use vars qw($test_dsn $test_user $test_password $table);
 my $dbh;
 eval { $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1,
-                        PrintError => 1,
+                        PrintError => 0,
                         AutoCommit => 0,
                         mysql_conn_attrs => { foo => 'bar' },
                         }
@@ -36,9 +36,13 @@ if ($dbh->{mysql_clientversion} < 50606) {
   plan skip_all => 'client version should be 5.6.6 or later';
 }
 
-plan tests => 9;
+eval {$dbh->do("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()");};
+if ($@) {
+  $dbh->disconnect();
+  plan skip_all => "no permission on performance_schema tables";
+}
 
-ok $dbh->do("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()"), 'get connattrs for current session';
+plan tests => 8;
 
 my $rows = $dbh->selectall_hashref("select * from performance_schema.session_connect_attrs where processlist_id=connection_id()", "ATTR_NAME");
 
