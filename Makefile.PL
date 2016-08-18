@@ -680,8 +680,8 @@ section "Linker flags" or type
 MSG
     }
     elsif ($param eq "nossl") {
-      $opt->{$param} = ($opt->{"libs"} =~ /ssl/) ? 1 : 0;
-      $source->{$param} = $opt->{$param} ? "choice" : "default";
+      $source->{$param} = $opt->{$param} ? "User's choice" : "default";
+      $opt->{$param} = $opt->{$param} || 0;
     }
     elsif ($param eq "ssl") {
         # default, for legacy reasons
