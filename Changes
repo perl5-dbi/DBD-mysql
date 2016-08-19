@@ -1,4 +1,4 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_03)
+2016-08-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.035_03)
 * By mistake, when DBD::mysql was compiled against libmariadb, it
   did not compile in SSL support.
   Reported by Jitka Plesnikova @ Red Hat
