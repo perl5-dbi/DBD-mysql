@@ -898,18 +898,17 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
 
     use DBI;
 
-    $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
-    $dbh = DBI->connect($dsn, $user, $password);
+    my $dsn = "DBI:mysql:database=$database;host=$hostname;port=$port";
+    my $dbh = DBI->connect($dsn, $user, $password);
 
-
-    $sth = $dbh->prepare("SELECT * FROM foo WHERE bla");
-       or
-    $sth = $dbh->prepare("LISTFIELDS $table");
-       or
-    $sth = $dbh->prepare("LISTINDEX $table $index");
-    $sth->execute;
-    $numRows = $sth->rows;
-    $numFields = $sth->{'NUM_OF_FIELDS'};
+    my $sth = $dbh->prepare(
+        'SELECT id, first_name, last_name FROM authors WHERE last_name = ?')
+        or die "prepare statement failed: $dbh->errstr()";
+    $sth->execute('Eggers') or die "execution failed: $dbh->errstr()";
+    print $sth->rows . " rows found.\n";
+    while (my $ref = $sth->fetchrow_hashref()) {
+        print "Found a row: id = $ref->{'id'}, fn = $ref->{'first_name'}\n";
+    }
     $sth->finish;
 
 
