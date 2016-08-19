@@ -9,8 +9,11 @@ use vars qw($test_user $test_password $test_db $test_dsn);
 use lib 't', '.';
 require 'lib.pl';
 
+# remove database from DSN
+$test_dsn =~ s/^DBI:mysql:([^:]+):/DBI:mysql::/;
+
 my $dbh;
-eval {$dbh= DBI->connect('DBI:mysql:', $test_user, $test_password,
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
 if ($@) {
     diag $@;
