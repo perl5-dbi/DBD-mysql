@@ -1,3 +1,9 @@
+2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.036_01)
+* Newest versions of libmysqlclient and the MariaDB C connector no longer
+  export the __WIN__ macro. If this macro is not present we would not
+  compile in the poll.h-based async-support. Changed to use the _WIN32
+  macro instead. Thanks to Sergei Golubchik for suggesting the fix.
+
 2016-08-23 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.036)
 Stable version, to include all changes since 4.035.
 

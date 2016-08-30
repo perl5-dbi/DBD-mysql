@@ -27,7 +27,7 @@
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
  * we're talking to */
-#if defined(__WIN__)
+#if defined(_WIN32)
 #define MYSQL_ASYNC 0
 #else
 #define MYSQL_ASYNC 1
@@ -235,7 +235,7 @@ typedef struct imp_sth_fbh_st {
     int            charsetnr;
     double         ddata;
     int32_t        ldata;
-#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
+#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
     unsigned int   flags;
 #endif
 } imp_sth_fbh_t;
