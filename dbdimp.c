@@ -1901,7 +1901,7 @@ MYSQL *mysql_dr_connect(
 	    char *ca_path = NULL;
 	    char *cipher = NULL;
 	    STRLEN lna;
-#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION
+#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION
             /*
               New code to utilise MySQLs new feature that verifies that the
               server's hostname that the client connects to matches that of
@@ -1932,7 +1932,7 @@ MYSQL *mysql_dr_connect(
 
 	    mysql_ssl_set(sock, client_key, client_cert, ca_file,
 			  ca_path, cipher);
-#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION
+#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION
 	    mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify_true);
 #endif
 	    client_flag |= CLIENT_SSL;
