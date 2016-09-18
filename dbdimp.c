@@ -359,11 +359,14 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_LONG:
   case MYSQL_TYPE_INT24:
   case MYSQL_TYPE_YEAR:
-#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
-  case MYSQL_TYPE_BIT:
-#endif
     enum_type= MYSQL_TYPE_LONG;
     break;
+
+#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+  case MYSQL_TYPE_BIT:
+    enum_type= MYSQL_TYPE_BIT;
+    break;
+#endif
 
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
   case MYSQL_TYPE_NEWDECIMAL:
@@ -3517,7 +3520,7 @@ my_ulonglong mysql_st_internal_execute41(
   {
     for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i) {
         enum_type = mysql_to_perl_type(stmt->fields[i].type);
-        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG)
+        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_BIT)
         {
             /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
             my_bool on = 1;
@@ -3790,6 +3793,12 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
+      case MYSQL_TYPE_BIT:
+        buffer->buffer_length= 8;
+        Newz(908, fbh->data, buffer->buffer_length, char);
+        buffer->buffer= (char *) fbh->data;
+        break;
+
       default:
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
@@ -3846,6 +3855,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   MYSQL_BIND *buffer;
 #endif
   MYSQL_FIELD *fields;
+  const char *data;
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t-> dbd_st_fetch\n");
 
@@ -4026,6 +4036,28 @@ process:
             sv_setuv(sv, fbh->ldata);
           else
             sv_setiv(sv, fbh->ldata);
+
+          break;
+
+        case MYSQL_TYPE_BIT:
+          data = fbh->data;
+          len= fbh->length;
+          if (len <= 4)
+          {
+            /* If there are max 32 bits store it as UV */
+            int i;
+            UV bits = 0;
+            for (i=0; i<len; ++i) {
+              bits <<= 8;
+              bits |= data[i];
+            }
+            sv_setuv(sv, bits);
+          }
+          else
+          {
+            /* otherwise store it as raw string */
+            sv_setpvn(sv, data, len);
+          }
 
           break;
 
