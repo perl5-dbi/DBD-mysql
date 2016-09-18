@@ -336,7 +336,6 @@ free_param(pTHX_ imp_sth_ph_t *params, int num_params)
   }
 }
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /* 
   Convert a MySQL type to a type that perl can handle
 
@@ -407,7 +406,6 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   }
   return(enum_type);
 }
-#endif
 
 #if defined(DBD_MYSQL_EMBEDDED)
 /* 
@@ -4182,7 +4180,38 @@ process:
           while (len && col[len-1] == ' ')
           {	--len; }
         }
+
+        /* Set string value returned from mysql server */
         sv_setpvn(sv, col, len);
+
+        switch (mysql_to_perl_type(fields[i].type)) {
+        case MYSQL_TYPE_DOUBLE:
+          /* Coerce to dobule and set scalar as NV */
+          (void) SvNV(sv);
+          SvNOK_only(sv);
+          break;
+
+        case MYSQL_TYPE_LONG:
+          /* Coerce to integer and set scalar as UV resp. IV */
+          if (fields[i].flags & UNSIGNED_FLAG)
+          {
+            (void) SvUV(sv);
+            SvIOK_only_UV(sv);
+          }
+          else
+          {
+            (void) SvIV(sv);
+            SvIOK_only(sv);
+          }
+          break;
+
+#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+        case MYSQL_TYPE_BIT:
+          /* Let it as binary string */
+          break;
+#endif
+
+        default:
 	/* UTF8 */
         /*HELMUT*/
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
@@ -4192,6 +4221,8 @@ process:
 	  sv_utf8_decode(sv);
 #endif
 	/* END OF UTF8 */
+          break;
+        }
       }
       else
         (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
