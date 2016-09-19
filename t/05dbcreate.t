@@ -10,7 +10,7 @@ use lib 't', '.';
 require 'lib.pl';
 
 # remove database from DSN
-$test_dsn =~ s/^DBI:mysql:([^:]+):/DBI:mysql::/;
+$test_dsn =~ s/^DBI:mysql:([^:]+)(:?)/DBI:mysql:$2/;
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
