@@ -358,6 +358,9 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_LONG:
   case MYSQL_TYPE_INT24:
   case MYSQL_TYPE_YEAR:
+#if IVSIZE >= 8
+  case MYSQL_TYPE_LONGLONG:
+#endif
     enum_type= MYSQL_TYPE_LONG;
     break;
 
@@ -374,7 +377,9 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
     enum_type= MYSQL_TYPE_DECIMAL;
     break;
 
+#if IVSIZE < 8
   case MYSQL_TYPE_LONGLONG:			/* No longlong in perl */
+#endif
   case MYSQL_TYPE_DATE:
   case MYSQL_TYPE_TIME:
   case MYSQL_TYPE_DATETIME:
@@ -4028,7 +4033,7 @@ process:
 
         case MYSQL_TYPE_LONG:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %"PRId32", unsigned? %d\n",
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %"IVdf", unsigned? %d\n",
                           fbh->ldata, buffer->is_unsigned);
           if (buffer->is_unsigned)
             sv_setuv(sv, fbh->ldata);
@@ -4040,9 +4045,11 @@ process:
         case MYSQL_TYPE_BIT:
           data = fbh->data;
           len= fbh->length;
-          if (len <= 4)
+#if UVSIZE < 8
+          if (len <= UVSIZE)
+#endif
           {
-            /* If there are max 32 bits store it as UV */
+            /* If it is possible store it as UV */
             int i;
             UV bits = 0;
             for (i=0; i<len; ++i) {
@@ -4051,11 +4058,13 @@ process:
             }
             sv_setuv(sv, bits);
           }
+#if UVSIZE < 8
           else
           {
             /* otherwise store it as raw string */
             sv_setpvn(sv, data, len);
           }
+#endif
 
           break;
 
@@ -4221,9 +4230,11 @@ process:
 
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
         case MYSQL_TYPE_BIT:
-          if (len <= 4)
+#if UVSIZE < 8
+          if (len <= UVSIZE)
+#endif
           {
-            /* If there are max 32 bits coerce to UV */
+            /* If it is possible coerce to UV */
             int i;
             UV bits = 0;
             for (i=0; i<len; ++i) {
