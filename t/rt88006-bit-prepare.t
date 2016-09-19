@@ -23,7 +23,7 @@ if ($@) {
 my $create = <<EOT;
 CREATE TEMPORARY TABLE `dbd_mysql_rt88006_bit_prep` (
   `id` bigint(20) NOT NULL auto_increment,
-  `flags` bit(32) NOT NULL,
+  `flags` bit(40) NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `flags` (`flags`)
 )

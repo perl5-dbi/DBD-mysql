@@ -1,4 +1,16 @@
 2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.036_01)
+* Add support for fetching columns of BIT type
+  MySQL BIT type store max 64bits, but perl's UV can handle max 32bits. So
+  based on size it is stored to perl scalar as UV or string.
+  Fix provided by Pali.
+   (https://rt.cpan.org/Public/Bug/Display.html?id=88006)
+* Correctly coerce fetched scalar values when mysql_server_prepare is not used
+  Currently without mysql_server_prepare all fetched scalars are returned as
+  strings which totally ignores MySQL column types. With this patch returned
+  string values are coerced to perl's UV/IV/NV/PV based on column type.
+  So MySQL value of type INT will be returned as integer scalar, not string
+  scalar like with mysql_server_prepare=1.
+  Fix provided by Pali.
 * Newest versions of libmysqlclient and the MariaDB C connector no longer
   export the __WIN__ macro. If this macro is not present we would not
   compile in the poll.h-based async-support. Changed to use the _WIN32
