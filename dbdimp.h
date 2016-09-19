@@ -234,7 +234,7 @@ typedef struct imp_sth_fbh_st {
     char           *data;
     int            charsetnr;
     double         ddata;
-    int32_t        ldata;
+    IVTYPE         ldata;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
     unsigned int   flags;
 #endif
