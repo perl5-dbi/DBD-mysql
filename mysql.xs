@@ -96,6 +96,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   MYSQL mysql;
   int retval;
   MYSQL* sock;
+  const char *shutdown = "SHUTDOWN";
 
   /*
    *  Connect to the database, if required.
@@ -119,7 +120,11 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
 #if MYSQL_VERSION_ID < 40103
     retval = mysql_shutdown(sock);
 #else
+#if MYSQL_VERSION_ID < 50709
     retval = mysql_shutdown(sock, SHUTDOWN_DEFAULT);
+#else
+    retval = mysql_real_query(sock, shutdown, strlen(shutdown));
+#endif
 #endif
   else if (strEQ(command, "reload"))
     retval = mysql_reload(sock);
