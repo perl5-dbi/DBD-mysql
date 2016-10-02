@@ -4783,7 +4783,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   int rc;
   int param_num= SvIV(param);
   int idx= param_num - 1;
-  char err_msg[64];
+  char *err_msg;
   D_imp_xxh(sth);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
@@ -4826,9 +4826,9 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   {
     if (! looks_like_number(value))
     {
-      sprintf(err_msg,
+      err_msg = SvPVX(sv_2mortal(newSVpvf(
               "Binding non-numeric field %d, value %s as a numeric!",
-              param_num, neatsvpv(value,0));
+              param_num, neatsvpv(value,0))));
       do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg, NULL);
     }
   }
