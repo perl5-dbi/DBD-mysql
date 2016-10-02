@@ -1,3 +1,10 @@
+2016-10-03 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.037)
+* Security release to patch possible buffer overflow in prepared
+  statements. Reported and fixed by Pali Rohár. This vulnerability
+  is present in all releases at least back to versions 3.0 of the
+  driver, which were released in 2005.
+  The CVE identifier for this vulnerability is CVE-2016-1246.
+
 2016-08-23 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.036)
 Stable version, to include all changes since 4.035.
 
