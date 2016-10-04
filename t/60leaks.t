@@ -32,7 +32,8 @@ if ($@) {
         plan skip_all =>
                 "no database connection";
 }
-plan tests => 27;
+$dbh->disconnect;
+plan tests => 27 * 2;
 
 sub size {
     my($p, $pt);
@@ -45,6 +46,13 @@ sub size {
     die "Cannot find my own process?!?\n";
     exit 0;
 }
+
+for my $mysql_server_prepare (0, 1) {
+
+note "Testing memory leaks with mysql_server_prepare=$mysql_server_prepare\n";
+
+$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                   { RaiseError => 1, PrintError => 1, AutoCommit => 0, mysql_server_prepare => $mysql_server_prepare });
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t60leaks");
 
@@ -69,7 +77,9 @@ for (my $i = 0;    $i < $COUNT_CONNECT;    $i++) {
     eval {$dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
                                { RaiseError => 1, 
                                  PrintError => 1,
-                                 AutoCommit => 0 });};
+                                 AutoCommit => 0,
+                                 mysql_server_prepare => $mysql_server_prepare,
+                               });};
     if ($@) {
         $not_ok++;
         last;
@@ -301,3 +311,5 @@ cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 ok $dbh->do("DROP TABLE dbd_mysql_t60leaks");
 ok $dbh->disconnect;
+
+}
