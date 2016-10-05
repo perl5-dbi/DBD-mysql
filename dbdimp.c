@@ -4941,10 +4941,6 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
     /* Type of column was changed. Force to rebind */
     if (imp_sth->bind[idx].buffer_type != buffer_type) {
-      /* Note: this looks like being another bug:
-       * if type of parameter N changes, then a bind is triggered
-       * with an only partially filled bind structure ??
-       */
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                         "   FORCE REBIND: buffer type changed from %d to %d, sql-type=%d\n",
@@ -4952,18 +4948,17 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       imp_sth->has_been_bound = 0;
     }
 
-    /* prepare has not been called */
-    if (imp_sth->has_been_bound == 0)
-    {
-      imp_sth->bind[idx].buffer_type= buffer_type;
-      imp_sth->bind[idx].buffer= buffer;
-      imp_sth->bind[idx].buffer_length= buffer_length;
-    }
-    else /* prepare has been called */
+    /* prepare has been called */
+    if (imp_sth->has_been_bound)
     {
       imp_sth->stmt->params[idx].buffer= buffer;
       imp_sth->stmt->params[idx].buffer_length= buffer_length;
     }
+
+    imp_sth->bind[idx].buffer_type= buffer_type;
+    imp_sth->bind[idx].buffer= buffer;
+    imp_sth->bind[idx].buffer_length= buffer_length;
+
     imp_sth->fbind[idx].length= buffer_length;
     imp_sth->fbind[idx].is_null= buffer_is_null;
   }
