@@ -3,7 +3,7 @@ package Bundle::DBD::mysql;
 use strict;
 use warnings;
 
-our $VERSION = '4.037';
+our $VERSION = '4.037_01';
 
 1;
 

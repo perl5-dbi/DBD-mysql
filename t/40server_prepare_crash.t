@@ -12,7 +12,7 @@ plan skip_all => "no database connection" if $@ or not $dbh;
 
 plan tests => 13;
 
-ok $dbh->do("CREATE TEMPORARY TABLE t (i INTEGER NOT NULL, n VARCHAR(10000000))");
+ok $dbh->do("CREATE TEMPORARY TABLE t (i INTEGER NOT NULL, n TEXT)");
 
 ok my $sth = $dbh->prepare("SELECT * FROM t WHERE i=? AND n=?");
 
