@@ -444,10 +444,15 @@ do(dbh, statement, attr=Nullsv, ...)
             break;
 
           case MYSQL_TYPE_LONGLONG:
+#if IVSIZE < 8
             /* perl handles long long as double
              * so we'll set this to string */
             buffer_type= MYSQL_TYPE_STRING;
             param_type= SQL_VARCHAR;
+#else
+            buffer_type= MYSQL_TYPE_LONG;
+            param_type= SQL_BIGINT;
+#endif
             break;
 
           case MYSQL_TYPE_NEWDATE:
