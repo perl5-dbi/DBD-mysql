@@ -877,10 +877,8 @@ dbd_mysql_get_info(dbh, sql_info_type)
     IV type = 0;
     SV* retsv=NULL;
     bool using_322=0;
-#if !defined(net_buffer_length)
-    /* From MySQL 5.7.9 net_buffer_length is no longer a macro that
-       can be used. Instead we declare a local variable. */
-    IV net_buffer_length;
+#if MYSQL_VERSION_ID >= 50709
+    IV buffer_len;
 #endif 
 
     if (SvMAGICAL(sql_info_type))
@@ -910,13 +908,15 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpv("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
-#if !defined(net_buffer_length)
-        /* From MySQL 5.7.9 net_buffer_length is no longer a macro
-           that can be used. Instead we use mysql_get_option to retrieve the
-           value into a local varaible. */
-        mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &net_buffer_length);
-#endif 
+#if MYSQL_VERSION_ID >= 50709
+	    /* mysql_get_option() was added in mysql 5.7.3 */
+	    /* MYSQL_OPT_NET_BUFFER_LENGTH was added in mysql 5.7.9 */
+	    mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &buffer_len);
+	    retsv = newSViv(buffer_len);
+#else
+	    /* before mysql 5.7.9 use net_buffer_length macro */
 	    retsv = newSViv(net_buffer_length);
+#endif
 	    break;
 	case SQL_MAXIMUM_TABLES_IN_SELECT:
 	    /* newSViv((sizeof(int) > 32) ? sizeof(int)-1 : 31 ); in general? */
