@@ -2669,7 +2669,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     else if (kl == 13 && strEQ(key, "serverversion"))
       result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
-      result= sv_2mortal(newSViv((IV) imp_dbh->pmysql));
+      result= sv_2mortal(newSViv(PTR2IV(imp_dbh->pmysql)));
     else if (strEQ(key, "sockfd"))
       result= sv_2mortal(newSViv((IV) imp_dbh->pmysql->net.fd));
     else if (strEQ(key, "stat"))
@@ -4663,7 +4663,7 @@ dbd_st_FETCH_internal(
       else if (strEQ(key, "mysql_length"))
         retsv= ST_FETCH_AV(AV_ATTRIB_LENGTH);
       else if (strEQ(key, "mysql_result"))
-        retsv= sv_2mortal(newSViv((IV) imp_sth->result));
+        retsv= sv_2mortal(newSViv(PTR2IV(imp_sth->result)));
       break;
     case 13:
       if (strEQ(key, "mysql_is_blob"))
