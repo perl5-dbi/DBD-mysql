@@ -3537,8 +3537,8 @@ my_ulonglong mysql_st_internal_execute41(
   }
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "\t<- mysql_internal_execute_41 returning %d rows\n",
-                  (int) rows);
+                  "\t<- mysql_internal_execute_41 returning %llu rows\n",
+                  rows);
   return(rows);
 
 error:
@@ -3766,7 +3766,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
                       i, col_type, fbh->length);
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tfields[i].length %lu fields[i].max_length %lu fields[i].type %d fields[i].charsetnr %d\n",
-                      (long unsigned int) fields[i].length, (long unsigned int) fields[i].max_length, fields[i].type,
+                      fields[i].length, fields[i].max_length, fields[i].type,
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
@@ -4086,8 +4086,8 @@ process:
     {
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tdbd_st_fetch result set details\n");
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\timp_sth->result=%p\n", imp_sth->result);
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_fields=%llu\n",
-                    (long long unsigned int) mysql_num_fields(imp_sth->result));
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_fields=%u\n",
+                    mysql_num_fields(imp_sth->result));
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_rows=%llu\n",
                     mysql_num_rows(imp_sth->result));
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_affected_rows=%llu\n",
@@ -4678,7 +4678,7 @@ dbd_st_FETCH_internal(
       {
         /* We cannot return an IV, because the insertid is a long.  */
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %d\n", (int) imp_sth->insertid);
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %llu\n", imp_sth->insertid);
 
         return sv_2mortal(my_ulonglong2str(aTHX_ imp_sth->insertid));
       }
@@ -4887,8 +4887,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %d ->%"IVdf"<- IS A INT NUMBER\n",
-                          (int) sql_type, *(IV *)buffer);
+                          "   SCALAR type %"IVdf" ->%"IVdf"<- IS A INT NUMBER\n",
+                          sql_type, *(IV *)buffer);
           break;
 
         case MYSQL_TYPE_DOUBLE:
@@ -4899,8 +4899,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %d ->%f<- IS A FLOAT NUMBER\n",
-                          (int) sql_type, (double)(*buffer));
+                          "   SCALAR type %"IVdf" ->%f<- IS A FLOAT NUMBER\n",
+                          sql_type, (double)(*buffer));
           break;
 
         case MYSQL_TYPE_BLOB:
@@ -4912,7 +4912,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         case MYSQL_TYPE_STRING:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type STRING %d, buffertype=%d\n", (int) sql_type, buffer_type);
+                          "   SCALAR type STRING %"IVdf", buffertype=%d\n", sql_type, buffer_type);
           break;
 
         default:
@@ -4925,8 +4925,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         buffer_length= slen;
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                        " SCALAR type %d ->length %d<- IS A STRING or BLOB\n",
-                        (int) sql_type, buffer_length);
+                        " SCALAR type %"IVdf" ->length %d<- IS A STRING or BLOB\n",
+                        sql_type, buffer_length);
       }
     }
     else
@@ -4942,8 +4942,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     if (imp_sth->bind[idx].buffer_type != buffer_type) {
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                        "   FORCE REBIND: buffer type changed from %d to %d, sql-type=%d\n",
-                        (int) imp_sth->bind[idx].buffer_type, buffer_type, (int) sql_type);
+                        "   FORCE REBIND: buffer type changed from %d to %d, sql-type="IVdf"\n",
+                        (int) imp_sth->bind[idx].buffer_type, buffer_type, sql_type);
       imp_sth->has_been_bound = 0;
     }
 
