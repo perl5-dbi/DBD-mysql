@@ -34,6 +34,7 @@ typedef short WORD;
 
 #if MYSQL_ASYNC
 #  include <poll.h>
+#  include <errno.h>
 #  define ASYNC_CHECK_RETURN(h, value)\
     if(imp_dbh->async_query_in_flight) {\
         do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
