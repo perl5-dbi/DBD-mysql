@@ -16,11 +16,11 @@ ok $dbh->do("CREATE TEMPORARY TABLE t (i INTEGER NOT NULL, n TEXT)");
 
 ok my $sth = $dbh->prepare("SELECT * FROM t WHERE i=? AND n=?");
 
-ok $sth->bind_param(2, "x" x 10000000);
+ok $sth->bind_param(2, "x" x 5000000);
 ok $sth->bind_param(1, "abcx", 12);
 ok $sth->execute();
 
-ok $sth->bind_param(2, "a" x 10000000);
+ok $sth->bind_param(2, "a" x 5000000);
 ok $sth->bind_param(1, 1, 3);
 ok $sth->execute();
 
