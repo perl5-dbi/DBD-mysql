@@ -2259,8 +2259,8 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
   /* since most errors imply already disconnected.    */
   DBIc_ACTIVE_off(imp_dbh);
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-    PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %lx\n",
-		              (long) imp_dbh->pmysql);
+    PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %p\n",
+		              imp_dbh->pmysql);
   mysql_close(imp_dbh->pmysql );
 
   /* We don't free imp_dbh since a reference still exists    */
@@ -3591,7 +3591,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-      " -> dbd_st_execute for %08lx\n", (u_long) sth);
+      " -> dbd_st_execute for %p\n", sth);
 
   if (!SvROK(sth)  ||  SvTYPE(SvRV(sth)) != SVt_PVHV)
     croak("Expected hash array");
@@ -3887,8 +3887,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "\t\tdbd_st_fetch for %08lx, chopblanks %d\n",
-                  (u_long) sth, ChopBlanks);
+                  "\t\tdbd_st_fetch for %p, chopblanks %d\n",
+                  sth, ChopBlanks);
 
   if (!imp_sth->result)
   {
@@ -4080,15 +4080,15 @@ process:
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     {
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tdbd_st_fetch result set details\n");
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\timp_sth->result=%08lx\n",(long unsigned int) imp_sth->result);
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\timp_sth->result=%p\n", imp_sth->result);
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_fields=%llu\n",
                     (long long unsigned int) mysql_num_fields(imp_sth->result));
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_rows=%llu\n",
                     mysql_num_rows(imp_sth->result));
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_affected_rows=%llu\n",
                     mysql_affected_rows(imp_dbh->pmysql));
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tdbd_st_fetch for %08lx, currow= %d\n",
-                    (u_long) sth,imp_sth->currow);
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tdbd_st_fetch for %p, currow= %d\n",
+                    sth,imp_sth->currow);
     }
 
     if (!(cols= mysql_fetch_row(imp_sth->result)))
@@ -4396,8 +4396,8 @@ dbd_st_STORE_attrib(
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "\t\t-> dbd_st_STORE_attrib for %08lx, key %s\n",
-                  (u_long) sth, key);
+                  "\t\t-> dbd_st_STORE_attrib for %p, key %s\n",
+                  sth, key);
 
   if (strEQ(key, "mysql_use_result"))
   {
@@ -4406,8 +4406,8 @@ dbd_st_STORE_attrib(
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "\t\t<- dbd_st_STORE_attrib for %08lx, result %d\n",
-                  (u_long) sth, retval);
+                  "\t\t<- dbd_st_STORE_attrib for %p, result %d\n",
+                  sth, retval);
 
   return retval;
 }
@@ -4605,8 +4605,8 @@ dbd_st_FETCH_internal(
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "    -> dbd_st_FETCH_attrib for %08lx, key %s\n",
-                  (u_long) sth, key);
+                  "    -> dbd_st_FETCH_attrib for %p, key %s\n",
+                  sth, key);
 
   switch (*key) {
   case 'N':
