@@ -1,3 +1,14 @@
+2016-10-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.037_2)
+* Version 4.037_1 had fixes for MySQL 8.0 provided
+  Bernt Johnsen @ Oracle that were not in the Changelogs
+  (https://github.com/perl5-dbi/DBD-mysql/pull/56)
+* Fixes for compiling against newer libmysqlclient on Windows (kmx)
+* Fix unit test for 40server_prepare_crash on Windows (pali)
+* Perl's IV in scalar can store 64bit integer when perl was compiled
+  with 64 bit support (default on 64bit linux with gcc). Use this
+  feature and stores MYSQL_TYPE_LONGLONG as integers instead of strings
+  when possible. (pali, https://github.com/perl5-dbi/DBD-mysql/pull/57)
+
 2016-10-14 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.037_01)
 * Newest versions of libmysqlclient and the MariaDB C connector no longer
   export the __WIN__ macro. If this macro is not present we would not
