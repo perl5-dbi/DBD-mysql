@@ -3258,7 +3258,6 @@ my_ulonglong mysql_st_internal_execute(
   char *table;
   char *salloc;
   int htype;
-  int errno;
 #if MYSQL_ASYNC
   bool async = FALSE;
 #endif
@@ -3417,7 +3416,7 @@ my_ulonglong mysql_st_internal_execute(
     do_error(h, mysql_errno(svsock), mysql_error(svsock), 
              mysql_sqlstate(svsock));
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "IGNORING ERROR errno %d\n", errno);
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "IGNORING ERROR errno %d\n", mysql_errno(svsock));
   }
   return(rows);
 }
