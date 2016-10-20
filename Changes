@@ -1,4 +1,4 @@
-2016-10-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.037_2)
+2016-10-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038)
 * Version 4.037_1 had fixes for MySQL 8.0 provided
   Bernt Johnsen @ Oracle that were not in the Changelogs
   (https://github.com/perl5-dbi/DBD-mysql/pull/56)
