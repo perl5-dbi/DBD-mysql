@@ -8,7 +8,8 @@ use lib 't', '.';
 require 'lib.pl';
 
 my $COUNT_CONNECT = 4000;     # Number of connect/disconnect iterations
-my $COUNT_PREPARE = 10000;    # Number of prepare/execute/finish iterations
+my $COUNT_PREPARE = 30000;    # Number of prepare/execute/finish iterations
+my $COUNT_BIND    = 10000;    # Number of bind_param iterations
 
 my $have_storable;
 
@@ -31,7 +32,8 @@ if ($@) {
         plan skip_all =>
                 "no database connection";
 }
-plan tests => 21;
+$dbh->disconnect;
+plan tests => 27 * 2;
 
 sub size {
     my($p, $pt);
@@ -44,6 +46,13 @@ sub size {
     die "Cannot find my own process?!?\n";
     exit 0;
 }
+
+for my $mysql_server_prepare (0, 1) {
+
+note "Testing memory leaks with mysql_server_prepare=$mysql_server_prepare\n";
+
+$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                   { RaiseError => 1, PrintError => 1, AutoCommit => 0, mysql_server_prepare => $mysql_server_prepare });
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t60leaks");
 
@@ -68,7 +77,9 @@ for (my $i = 0;    $i < $COUNT_CONNECT;    $i++) {
     eval {$dbh2 = DBI->connect($test_dsn, $test_user, $test_password,
                                { RaiseError => 1, 
                                  PrintError => 1,
-                                 AutoCommit => 0 });};
+                                 AutoCommit => 0,
+                                 mysql_server_prepare => $mysql_server_prepare,
+                               });};
     if ($@) {
         $not_ok++;
         last;
@@ -125,6 +136,83 @@ for (my $i = 0; $i < $COUNT_PREPARE; $i++) {
             $size = size();
         }
         $prev_size = $size;
+    }
+}
+
+ok $ok;
+ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
+
+note "Testing memory leaks in execute/finish\n";
+$msg = "Possible memory leak in execute/finish detected";
+
+$ok = 0;
+$not_ok = 0;
+undef $prev_size;
+
+{
+    my $sth = $dbh->prepare("SELECT * FROM dbd_mysql_t60leaks");
+
+    for (my $i = 0; $i < $COUNT_PREPARE; $i++) {
+        $sth->execute();
+        $sth->finish();
+
+        if ($i % 100 == 99) {
+            $size = size();
+            if (defined($prev_size))
+            {
+                if ($size == $prev_size) {
+                    $ok++;
+                }
+                else {
+                    $not_ok++;
+                }
+            }
+            else {
+                $prev_size = $size;
+                $size = size();
+            }
+            $prev_size = $size;
+        }
+    }
+}
+
+ok $ok;
+ok !$not_ok, "\$ok $ok \$not_ok $not_ok";
+cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
+
+note "Testing memory leaks in bind_param\n";
+$msg = "Possible memory leak in bind_param detected";
+
+$ok = 0;
+$not_ok = 0;
+undef $prev_size;
+
+{
+    my $sth = $dbh->prepare("SELECT * FROM dbd_mysql_t60leaks WHERE id = ? AND name = ?");
+
+    for (my $i = 0; $i < $COUNT_BIND; $i++) {
+        $sth->bind_param(1, 0);
+        my $val = "x" x 1000000;
+        $sth->bind_param(2, $val);
+
+        if ($i % 100 == 99) {
+            $size = size();
+            if (defined($prev_size))
+            {
+                if ($size == $prev_size) {
+                    $ok++;
+                }
+                else {
+                    $not_ok++;
+                }
+            }
+            else {
+                $prev_size = $size;
+                $size = size();
+            }
+            $prev_size = $size;
+        }
     }
 }
 
@@ -223,3 +311,5 @@ cmp_ok $ok, '>', $not_ok, "\$ok $ok \$not_ok $not_ok";
 
 ok $dbh->do("DROP TABLE dbd_mysql_t60leaks");
 ok $dbh->disconnect;
+
+}
