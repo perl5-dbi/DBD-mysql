@@ -2529,7 +2529,7 @@ my_ulonglong2str(pTHX_ my_ulonglong val)
   char *ptr = buf + sizeof(buf) - 1;
 
   if (val == 0)
-    return newSVpv("0", 1);
+    return newSVpvn("0", 1);
 
   *ptr = '\0';
   while (val > 0)
@@ -2537,7 +2537,7 @@ my_ulonglong2str(pTHX_ my_ulonglong val)
     *(--ptr) = ('0' + (val % 10));
     val = val / 10;
   }
-  return newSVpv(ptr, (buf+ sizeof(buf) - 1) - ptr);
+  return newSVpvn(ptr, (buf+ sizeof(buf) - 1) - ptr);
 }
 
 SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
@@ -2589,7 +2589,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* clientinfo = mysql_get_client_info();
       result= clientinfo ?
-        sv_2mortal(newSVpv(clientinfo, strlen(clientinfo))) : &PL_sv_undef;
+        sv_2mortal(newSVpvn(clientinfo, strlen(clientinfo))) : &PL_sv_undef;
     }
     else if (kl == 13 && strEQ(key, "clientversion"))
     {
@@ -2603,7 +2603,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
     /* Note that errmsg is obsolete, as of 2.09! */
       const char* msg = mysql_error(imp_dbh->pmysql);
-      result= sv_2mortal(newSVpv(msg, strlen(msg)));
+      result= sv_2mortal(newSVpvn(msg, strlen(msg)));
     }
     /* HELMUT */
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
@@ -2641,7 +2641,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* hostinfo = mysql_get_host_info(imp_dbh->pmysql);
       result= hostinfo ?
-        sv_2mortal(newSVpv(hostinfo, strlen(hostinfo))) : &PL_sv_undef;
+        sv_2mortal(newSVpvn(hostinfo, strlen(hostinfo))) : &PL_sv_undef;
     }
     break;
 
@@ -2649,7 +2649,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (strEQ(key, "info"))
     {
       const char* info = mysql_info(imp_dbh->pmysql);
-      result= info ? sv_2mortal(newSVpv(info, strlen(info))) : &PL_sv_undef;
+      result= info ? sv_2mortal(newSVpvn(info, strlen(info))) : &PL_sv_undef;
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
@@ -2670,7 +2670,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (kl == 10 && strEQ(key, "serverinfo")) {
       const char* serverinfo = mysql_get_server_info(imp_dbh->pmysql);
       result= serverinfo ?
-        sv_2mortal(newSVpv(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
+        sv_2mortal(newSVpvn(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     } 
     else if (kl == 13 && strEQ(key, "serverversion"))
       result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
@@ -2682,14 +2682,14 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     {
       const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
-        sv_2mortal(newSVpv(stats, strlen(stats))) : &PL_sv_undef;
+        sv_2mortal(newSVpvn(stats, strlen(stats))) : &PL_sv_undef;
     }
     else if (strEQ(key, "stats"))
     {
       /* Obsolete, as of 2.09 */
       const char* stats = mysql_stat(imp_dbh->pmysql);
       result= stats ?
-        sv_2mortal(newSVpv(stats, strlen(stats))) : &PL_sv_undef;
+        sv_2mortal(newSVpvn(stats, strlen(stats))) : &PL_sv_undef;
     }
     else if (kl == 14 && strEQ(key,"server_prepare"))
         result= sv_2mortal(newSViv((IV) imp_dbh->use_server_side_prepare));
@@ -4531,11 +4531,11 @@ dbd_st_FETCH_internal(
 
       switch(what) {
       case AV_ATTRIB_NAME:
-        sv= newSVpv(curField->name, strlen(curField->name));
+        sv= newSVpvn(curField->name, strlen(curField->name));
         break;
 
       case AV_ATTRIB_TABLE:
-        sv= newSVpv(curField->table, strlen(curField->table));
+        sv= newSVpvn(curField->table, strlen(curField->table));
         break;
 
       case AV_ATTRIB_TYPE:
@@ -5205,7 +5205,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
     mg_get(str);
 
   if (!SvOK(str))
-    result= newSVpv("NULL", 4);
+    result= newSVpvn("NULL", 4);
   else
   {
     char *ptr, *sptr;
