@@ -417,6 +417,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Tim Mullin <tim@cpanel.net>',
         'Vladimir Marek <vlmarek@volny.cz>',
         'katyavoid <katyavoid@gmail.com>',
+        'kmx <kmx@cpan.org>',
         'tokuhirom <tokuhirom@gmail.com>',
         'zefram <zefram@fysh.org>',
         'zentooo <ankerasoy@gmail.com>',
