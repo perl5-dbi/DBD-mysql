@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 
+use B qw(svref_2object SVf_IOK SVf_NOK SVf_POK SVf_IVisUV);
 use Test::More;
 use DBI;
 use DBI::Const::GetInfoType;
@@ -17,15 +18,39 @@ if ($@) {
     plan skip_all =>
         "no database connection";
 }
-plan tests => 20;
+plan tests => 40;
 
 ok(defined $dbh, "Connected to database");
 
-SKIP: {
-skip "New Data types not supported by server", 19
-if !MinimumVersion($dbh, '5.0');
-
 ok($dbh->do(qq{DROP TABLE IF EXISTS t1}), "making slate clean");
+
+ok($dbh->do(qq{CREATE TABLE t1 (num INT)}), "creating table");
+ok($dbh->do(qq{INSERT INTO t1 VALUES (100)}), "loading data");
+
+my ($val) = $dbh->selectrow_array("SELECT * FROM t1");
+is($val, 100);
+
+my $sv = svref_2object(\$val);
+ok($sv->FLAGS & SVf_IOK, "scalar is integer");
+ok(!($sv->FLAGS & (SVf_IVisUV|SVf_NOK|SVf_POK)), "scalar is not unsigned intger or double or string");
+
+ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
+
+ok($dbh->do(qq{CREATE TABLE t1 (num VARCHAR(10))}), "creating table");
+ok($dbh->do(qq{INSERT INTO t1 VALUES ('string')}), "loading data");
+
+($val) = $dbh->selectrow_array("SELECT * FROM t1");
+is($val, "string");
+
+$sv = svref_2object(\$val);
+ok($sv->FLAGS & SVf_POK, "scalar is string");
+ok(!($sv->FLAGS & (SVf_IOK|SVf_NOK)), "scalar is not intger or double");
+
+ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
+
+SKIP: {
+skip "New Data types not supported by server", 26
+if !MinimumVersion($dbh, '5.0');
 
 ok($dbh->do(qq{CREATE TABLE t1 (d DECIMAL(5,2))}), "creating table");
 
@@ -52,7 +77,16 @@ ok($sth->bind_param(1, -1, DBI::SQL_DOUBLE), "binding parameter");
 ok($sth->execute(), "inserting data");
 ok($sth->finish);
 
-is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"), [ ['2.1'],  ['-1'] ]);
+my $ret = $dbh->selectall_arrayref("SELECT * FROM t1");
+is_deeply($ret, [ [2.1],  [-1] ]);
+
+$sv = svref_2object(\$ret->[0]->[0]);
+ok($sv->FLAGS & SVf_NOK, "scalar is double");
+ok(!($sv->FLAGS & (SVf_IOK|SVf_POK)), "scalar is not integer or string");
+
+$sv = svref_2object(\$ret->[1]->[0]);
+ok($sv->FLAGS & SVf_NOK, "scalar is double");
+ok(!($sv->FLAGS & (SVf_IOK|SVf_POK)), "scalar is not integer or string");
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 
@@ -62,8 +96,16 @@ ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 ok($dbh->do(qq{CREATE TABLE t1 (num INT UNSIGNED)}), "creating table");
 ok($dbh->do(qq{INSERT INTO t1 VALUES (0),(4294967295)}), "loading data");
 
-is_deeply($dbh->selectall_arrayref("SELECT * FROM t1"),
-          [ ['0'],  ['4294967295'] ]);
+$ret = $dbh->selectall_arrayref("SELECT * FROM t1");
+is_deeply($ret, [ [0],  [4294967295] ]);
+
+$sv = svref_2object(\$ret->[0]->[0]);
+ok($sv->FLAGS & (SVf_IOK|SVf_IVisUV), "scalar is unsigned integer");
+ok(!($sv->FLAGS & (SVf_NOK|SVf_POK)), "scalar is not double or string");
+
+$sv = svref_2object(\$ret->[1]->[0]);
+ok($sv->FLAGS & (SVf_IOK|SVf_IVisUV), "scalar is unsigned integer");
+ok(!($sv->FLAGS & (SVf_NOK|SVf_POK)), "scalar is not double or string");
 
 ok($dbh->do(qq{DROP TABLE t1}), "cleaning up");
 };

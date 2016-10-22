@@ -336,7 +336,6 @@ free_param(pTHX_ imp_sth_ph_t *params, int num_params)
   }
 }
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /* 
   Convert a MySQL type to a type that perl can handle
 
@@ -362,11 +361,14 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 #if IVSIZE >= 8
   case MYSQL_TYPE_LONGLONG:
 #endif
-#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
-  case MYSQL_TYPE_BIT:
-#endif
     enum_type= MYSQL_TYPE_LONG;
     break;
+
+#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+  case MYSQL_TYPE_BIT:
+    enum_type= MYSQL_TYPE_BIT;
+    break;
+#endif
 
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
   case MYSQL_TYPE_NEWDECIMAL:
@@ -404,7 +406,6 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   }
   return(enum_type);
 }
-#endif
 
 #if defined(DBD_MYSQL_EMBEDDED)
 /* 
@@ -3521,7 +3522,7 @@ my_ulonglong mysql_st_internal_execute41(
   {
     for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i) {
         enum_type = mysql_to_perl_type(stmt->fields[i].type);
-        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG)
+        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_BIT)
         {
             /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
             my_bool on = 1;
@@ -3794,6 +3795,12 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
         break;
 
+      case MYSQL_TYPE_BIT:
+        buffer->buffer_length= 8;
+        Newz(908, fbh->data, buffer->buffer_length, char);
+        buffer->buffer= (char *) fbh->data;
+        break;
+
       default:
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
@@ -4033,6 +4040,11 @@ process:
 
           break;
 
+        case MYSQL_TYPE_BIT:
+          sv_setpvn(sv, fbh->data, fbh->length);
+
+          break;
+
         default:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tERROR IN st_fetch_string");
@@ -4168,7 +4180,38 @@ process:
           while (len && col[len-1] == ' ')
           {	--len; }
         }
+
+        /* Set string value returned from mysql server */
         sv_setpvn(sv, col, len);
+
+        switch (mysql_to_perl_type(fields[i].type)) {
+        case MYSQL_TYPE_DOUBLE:
+          /* Coerce to dobule and set scalar as NV */
+          (void) SvNV(sv);
+          SvNOK_only(sv);
+          break;
+
+        case MYSQL_TYPE_LONG:
+          /* Coerce to integer and set scalar as UV resp. IV */
+          if (fields[i].flags & UNSIGNED_FLAG)
+          {
+            (void) SvUV(sv);
+            SvIOK_only_UV(sv);
+          }
+          else
+          {
+            (void) SvIV(sv);
+            SvIOK_only(sv);
+          }
+          break;
+
+#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
+        case MYSQL_TYPE_BIT:
+          /* Let it as binary string */
+          break;
+#endif
+
+        default:
 	/* UTF8 */
         /*HELMUT*/
 #if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
@@ -4178,6 +4221,8 @@ process:
 	  sv_utf8_decode(sv);
 #endif
 	/* END OF UTF8 */
+          break;
+        }
       }
       else
         (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
