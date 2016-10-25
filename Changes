@@ -18,12 +18,12 @@
   export the __WIN__ macro. If this macro is not present we would not
   compile in the poll.h-based async-support. Changed to use the _WIN32
   macro instead. Thanks to Sergei Golubchik for suggesting the fix.
-* Fix from Pali Rohár to not use unsafe sprintf with variable lengt,
-  changes to bind logic, and added test 40server_prepare_crash. 
+* Fix from Pali Rohár for use-after-free in prepared statements,
+  changes to bind logic, and added test 40server_prepare_crash.
 
 2016-10-03 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.037)
-* Security release to patch possible buffer overflow in prepared
-  statements. Reported and fixed by Pali Rohár. This vulnerability
+* Security release to patch possible buffer overflow in unsafe sprintf with
+  variable length. Reported and fixed by Pali Rohár. This vulnerability
   is present in all releases at least back to versions 3.0 of the
   driver, which were released in 2005.
   The CVE identifier for this vulnerability is CVE-2016-1246.
