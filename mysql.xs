@@ -882,7 +882,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
     IV type = 0;
     SV* retsv=NULL;
     bool using_322=0;
-#if MYSQL_VERSION_ID >= 50709
+#ifdef MYSQL_OPT_NET_BUFFER_LENGTH
     IV buffer_len;
 #endif 
 
@@ -913,7 +913,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpv("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
-#if MYSQL_VERSION_ID >= 50709
+#ifdef MYSQL_OPT_NET_BUFFER_LENGTH
 	    /* mysql_get_option() was added in mysql 5.7.3 */
 	    /* MYSQL_OPT_NET_BUFFER_LENGTH was added in mysql 5.7.9 */
 	    mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &buffer_len);
