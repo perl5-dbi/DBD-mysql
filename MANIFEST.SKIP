@@ -9,6 +9,7 @@ pm_to_blib
 \.tmp$
 \.o$
 t/mysql.mtest
+^mysqlEmb\/
 ^MYMETA
 mysql.c
 mysql.xsi

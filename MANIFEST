@@ -38,6 +38,7 @@ t/40nulls.t
 t/40nulls_prepare.t
 t/40numrows.t
 t/40server_prepare.t
+t/40server_prepare_crash.t
 t/40server_prepare_error.t
 t/40types.t
 t/41bindparam.t
