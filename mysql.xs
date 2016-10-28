@@ -96,7 +96,9 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   MYSQL mysql;
   int retval;
   MYSQL* sock;
+#if MYSQL_VERSION_ID >= 50709
   const char *shutdown = "SHUTDOWN";
+#endif
 
   /*
    *  Connect to the database, if required.

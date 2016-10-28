@@ -2745,8 +2745,11 @@ dbd_st_prepare(
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 #if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
   char *str_ptr, *str_last_ptr;
+#if MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION
+  int limit_flag=0;
 #endif
-  int col_type, prepare_retval, limit_flag=0;
+#endif
+  int col_type, prepare_retval;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
 #endif
