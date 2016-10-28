@@ -313,7 +313,7 @@ do(dbh, statement, attr=Nullsv, ...)
                   "mysql.xs do() use_server_side_prepare %d, async %d\n",
                   use_server_side_prepare, SvTRUE(async));
 
-  hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
+  (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
 
   if(SvTRUE(async)) {
 #if MYSQL_ASYNC

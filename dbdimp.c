@@ -2501,7 +2501,7 @@ dbd_db_STORE_attrib(
     return FALSE;				/* Unknown key */
 
   if (cacheit) /* cache value for later DBI 'quick' fetch? */
-    hv_store((HV*)SvRV(dbh), key, kl, cachesv, 0);
+    (void)hv_store((HV*)SvRV(dbh), key, kl, cachesv, 0);
   return TRUE;
 }
 
@@ -2614,14 +2614,14 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     if (strEQ(key, "dbd_stats"))
     {
       HV* hv = newHV();
-      hv_store(
+      (void)hv_store(
                hv,
                "auto_reconnects_ok",
                strlen("auto_reconnects_ok"),
                newSViv(imp_dbh->stats.auto_reconnects_ok),
                0
               );
-      hv_store(
+      (void)hv_store(
                hv,
                "auto_reconnects_failed",
                strlen("auto_reconnects_failed"),
@@ -3192,24 +3192,24 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
       /* delete cached handle attributes */
       /* XXX should be driven by a list to ease maintenance */
-      hv_delete((HV*)SvRV(sth), "NAME", 4, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "NULLABLE", 8, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "PRECISION", 9, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "SCALE", 5, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "TYPE", 4, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_insertid", 14, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_is_auto_increment", 23, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_is_blob", 13, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_is_key", 12, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_is_num", 12, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_is_pri_key", 16, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_length", 12, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_max_length", 16, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_table", 11, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_type", 10, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_type_name", 15, G_DISCARD);
-      hv_delete((HV*)SvRV(sth), "mysql_warning_count", 20, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "NAME", 4, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "NULLABLE", 8, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "NUM_OF_FIELDS", 13, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "PRECISION", 9, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "SCALE", 5, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "TYPE", 4, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_insertid", 14, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_is_auto_increment", 23, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_is_blob", 13, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_is_key", 12, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_is_num", 12, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_is_pri_key", 16, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_length", 12, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_max_length", 16, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_table", 11, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_type", 10, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_type_name", 15, G_DISCARD);
+      (void)hv_delete((HV*)SvRV(sth), "mysql_warning_count", 20, G_DISCARD);
 
       /* Adjust NUM_OF_FIELDS - which also adjusts the row buffer size */
       DBIc_NUM_FIELDS(imp_sth)= 0; /* for DBI <= 1.53 */
@@ -4678,7 +4678,7 @@ dbd_st_FETCH_internal(
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
             {
                 keylen= sprintf(key, "%d", n);
-                hv_store(pvhv, key,
+                (void)hv_store(pvhv, key,
                          keylen, newSVsv(imp_sth->params[n].value), 0);
             }
         }
