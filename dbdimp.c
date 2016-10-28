@@ -2038,7 +2038,6 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
   char* password;
   char* mysql_socket;
   int   result;
-  int fresh = 0;
   D_imp_xxh(dbh);
 
   /* TODO- resolve this so that it is set only if DBI is 1.607 */
@@ -2087,7 +2086,6 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
 		  port ? port : "NULL");
 
   if (!imp_dbh->pmysql) {
-     fresh = 1;
      Newz(908, imp_dbh->pmysql, 1, MYSQL);
   }
   result = mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
@@ -2545,7 +2543,6 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   dTHX;
   STRLEN kl;
   char *key = SvPV(keysv, kl);
-  char* fine_key = NULL;
   SV* result = NULL;
   dbh= dbh;
 
@@ -2561,7 +2558,6 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       break;
   }
   if (strncmp(key, "mysql_", 6) == 0) {
-    fine_key = key;
     key = key+6;
     kl = kl-6;
   }

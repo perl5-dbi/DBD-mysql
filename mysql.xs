@@ -262,7 +262,7 @@ do(dbh, statement, attr=Nullsv, ...)
 #endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
-  char            *str_ptr, *statement_ptr, *buffer;
+  char            *str_ptr, *buffer;
   int             has_binded;
   int             col_type= MYSQL_TYPE_STRING;
   int             buffer_is_null= 0;
@@ -698,7 +698,6 @@ more_results(sth)
 {
 #if (MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION)
   D_imp_sth(sth);
-  int retval;
   if (dbd_st_more_results(sth, imp_sth))
   {
     RETVAL=1;
@@ -881,7 +880,6 @@ dbd_mysql_get_info(dbh, sql_info_type)
     D_imp_dbh(dbh);
     IV type = 0;
     SV* retsv=NULL;
-    bool using_322=0;
 #if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50709
 /* MariaDB 10 is not MySQL source level compatible so this only applies to MySQL*/
     IV buffer_len;
