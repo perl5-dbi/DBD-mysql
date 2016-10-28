@@ -4987,7 +4987,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     if (imp_sth->bind[idx].buffer_type != buffer_type) {
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                        "   FORCE REBIND: buffer type changed from %d to %d, sql-type="IVdf"\n",
+                        "   FORCE REBIND: buffer type changed from %d to %d, sql-type=%"IVdf"\n",
                         (int) imp_sth->bind[idx].buffer_type, buffer_type, sql_type);
       imp_sth->has_been_bound = 0;
     }

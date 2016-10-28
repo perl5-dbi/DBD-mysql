@@ -1,4 +1,4 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038_01)
+2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038_01
 * Include errno.h for MYSQL_ASYNC becase it uses errno variable (pali)
 * Travis: also test on perl 5.22 and 5.24.
 
