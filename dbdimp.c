@@ -3417,7 +3417,7 @@ my_ulonglong mysql_st_internal_execute(
   if (salloc)
     Safefree(salloc);
 
-  if(rows == -2) {
+  if(rows == (my_ulonglong)-2) {
     do_error(h, mysql_errno(svsock), mysql_error(svsock), 
              mysql_sqlstate(svsock));
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -5324,7 +5324,7 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
       D_imp_sth(h);
       D_imp_dbh_from_sth;
 
-      if(retval+1 != (my_ulonglong)-1) {
+      if((my_ulonglong)retval+1 != (my_ulonglong)-1) {
         if(! *resp) {
           imp_sth->insertid= mysql_insert_id(svsock);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
