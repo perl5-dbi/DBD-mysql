@@ -72,7 +72,7 @@ _ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL)
 	EXTEND(sp, mysql_num_rows(res));
 	while ((cur = mysql_fetch_row(res)))
         {
-	  PUSHs(sv_2mortal((SV*)newSVpv(cur[0], strlen(cur[0]))));
+	  PUSHs(sv_2mortal((SV*)newSVpvn(cur[0], strlen(cur[0]))));
 	}
 	mysql_free_result(res);
       }
@@ -239,7 +239,7 @@ else
   EXTEND(sp, mysql_num_rows(res));
   while ((cur = mysql_fetch_row(res)))
   {
-    PUSHs(sv_2mortal((SV*)newSVpv(cur[0], strlen(cur[0]))));
+    PUSHs(sv_2mortal((SV*)newSVpvn(cur[0], strlen(cur[0]))));
   }
   mysql_free_result(res);
 }
@@ -898,20 +898,20 @@ dbd_mysql_get_info(dbh, sql_info_type)
     switch(type) {
     	case SQL_CATALOG_NAME_SEPARATOR:
 	    /* (dbc->flag & FLAG_NO_CATALOG) ? WTF is in flag ? */
-	    retsv = newSVpv(".",1);
+	    retsv = newSVpvn(".",1);
 	    break;
 	case SQL_CATALOG_TERM:
 	    /* (dbc->flag & FLAG_NO_CATALOG) ? WTF is in flag ? */
-	    retsv = newSVpv("database",8);
+	    retsv = newSVpvn("database",8);
 	    break;
 	case SQL_DBMS_VER:
-	    retsv = newSVpv(
+	    retsv = newSVpvn(
 	        imp_dbh->pmysql->server_version,
 		strlen(imp_dbh->pmysql->server_version)
 	    );
 	    break;
 	case SQL_IDENTIFIER_QUOTE_CHAR:
-	    retsv = newSVpv("`", 1);
+	    retsv = newSVpvn("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
 #if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50709
@@ -934,7 +934,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv= newSViv(NAME_LEN);
 	    break;
 	case SQL_SERVER_NAME:
-	    retsv= newSVpv(imp_dbh->pmysql->host_info,strlen(imp_dbh->pmysql->host_info));
+	    retsv= newSVpvn(imp_dbh->pmysql->host_info,strlen(imp_dbh->pmysql->host_info));
 	    break;
         case SQL_ASYNC_MODE:
 #if MYSQL_ASYNC
