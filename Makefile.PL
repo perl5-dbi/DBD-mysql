@@ -406,6 +406,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'David Steinbrunner <dsteinbrunner@pobox.com>',
         'Giovanni Bechis <giovanni@bigio.snb.it>',
         'Graham Ollis <plicease@cpan.org>',
+        'H.Merijn Brand <h.m.brand@xs4all.nl>',
         'Hanno <hanno@gentoo.org>',
         'James McCoy <jamessan@jamessan.com>',
         'Jim Winstead <jimw@trainedmonkey.com>',
