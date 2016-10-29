@@ -282,7 +282,7 @@ if ($opt->{'embedded'})
                        't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
                                              makedir => 'mysqlEmb/t',
                                              replace =>  { 'DBI:mysql'=> 'DBI:mysqlEmb',
-                                                            'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb,--skip-bdb";'
+                                                            'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb";'
                                                          }
                                            },
                        't/lib.pl' => { filename => 'mysqlEmb/t/lib.pl',
