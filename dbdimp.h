@@ -361,7 +361,7 @@ int mysql_st_next_results(SV*, imp_sth_t*);
 
 #if defined(DBD_MYSQL_EMBEDDED)
 int count_embedded_options(char *);
-char ** fill_out_embedded_options(char *, int , int , int );
+char ** fill_out_embedded_options(PerlIO *, char *, int , int , int);
 int free_embedded_options(char **, int);
 /* We have to define dbd_discon_all method for mysqlEmb driver at least
    to be able to stop embedded server properly */

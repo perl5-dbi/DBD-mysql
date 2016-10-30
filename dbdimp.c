@@ -454,14 +454,14 @@ int free_embedded_options(char ** options_list, int options_count)
  Print out embedded option settings
 
 */
-int print_embedded_options(char ** options_list, int options_count)
+int print_embedded_options(PerlIO *stream, char ** options_list, int options_count)
 {
   int i;
 
   for (i=0; i<options_count; i++)
   {
     if (options_list[i])
-        PerlIO_printf(DBILOGFP,
+        PerlIO_printf(stream,
                       "Embedded server, parameter[%d]=%s\n",
                       i, options_list[i]);
   }
@@ -471,7 +471,8 @@ int print_embedded_options(char ** options_list, int options_count)
 /*
 
 */
-char **fill_out_embedded_options(char *options,
+char **fill_out_embedded_options(PerlIO *stream,
+                                 char *options,
                                  int options_type,
                                  int slen, int cnt)
 {
@@ -482,7 +483,7 @@ char **fill_out_embedded_options(char *options,
 
   if (!(options_list= (char **) calloc(cnt, sizeof(char *))))
   {
-    PerlIO_printf(DBILOGFP,
+    PerlIO_printf(stream,
                   "Initialize embedded server. Out of memory \n");
     return NULL;
   }
@@ -1602,7 +1603,7 @@ MYSQL *mysql_dr_connect(
             if ((server_groups_cnt=count_embedded_options(options)))
             {
               /* number of server_groups always server_groups+1 */
-              server_groups=fill_out_embedded_options(options, 0, 
+              server_groups=fill_out_embedded_options(DBIc_LOGPIO(imp_xxh), options, 0, 
                                                       (int)lna, ++server_groups_cnt);
               if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
               {
@@ -1622,7 +1623,7 @@ MYSQL *mysql_dr_connect(
             if ((server_args_cnt=count_embedded_options(options)))
             {
               /* number of server_options always server_options+1 */
-              server_args=fill_out_embedded_options(options, 1, (int)lna, ++server_args_cnt);
+              server_args=fill_out_embedded_options(DBIc_LOGPIO(imp_xxh), options, 1, (int)lna, ++server_args_cnt);
               if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
               {
                 PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Server options passed to embedded server:\n");

@@ -20,14 +20,15 @@ my $TESTDB = "test";
 our $opt = { "help" => \&Usage, };
 
 {
-local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db);
-eval { require "t/mysql.mtest"; 1; } and do {
+local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded);
+eval { require "t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
 $opt->{'testuser'} = $::test_user;
 $opt->{'testsocket'} = $::test_socket;
 $opt->{'testpassword'} = $::test_password;
 $opt->{'testdb'} = $::test_db;
+$opt->{'force-embedded'} = $::test_force_embedded if $::test_force_embedded;
 }
 }
 
@@ -116,7 +117,11 @@ if (-f "mysqlEmb/Makefile.PL")
 }
 
 #Disable of building of dbd::mysqlEmb driver by default
-$opt->{'embedded'}="" if !$opt->{'force-embedded'};
+if (!$opt->{'force-embedded'})
+{
+  $opt->{'embedded'} = '';
+  $source->{ldflags} = 'guessed';
+}
 
 if ($opt->{'embedded'})
 {
@@ -222,6 +227,7 @@ my $fileName = $@ ?
 	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
+	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
@@ -276,7 +282,7 @@ if ($opt->{'embedded'})
                        't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
                                              makedir => 'mysqlEmb/t',
                                              replace =>  { 'DBI:mysql'=> 'DBI:mysqlEmb',
-                                                            'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb,--skip-bdb";'
+                                                            'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb";'
                                                          }
                                            },
                        't/lib.pl' => { filename => 'mysqlEmb/t/lib.pl',
@@ -545,7 +551,7 @@ sub Configure {
 
     # First try to get options values from mysql_config
     my @mysql_config_options = qw(
-      cflags include libs libs_r plugindir socket port version libmysqld-libs
+      cflags include libs libs_r plugindir socket port version libmysqld-libs embedded
     );
     if ( grep {$_ eq $param} @mysql_config_options ) {
         my $command = $opt->{'mysql_config'} . " --$param";
