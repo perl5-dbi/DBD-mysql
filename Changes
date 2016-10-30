@@ -1,12 +1,14 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038_01
+2016-10-30 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038_01)
+* Fix compilation of embedded server (pali)
+  (https://github.com/perl5-dbi/DBD-mysql/pull/68)
 * Fix compilation against libmariadbclient. First version by
-    H.Merijn Brandt, improved by Bernt Johnsen @ Oracle.
+  H.Merijn Brandt, improved by Bernt Johnsen @ Oracle.
 * For efficiency use newSVpvn() instead newSVpv() where possible (pali)
 * Correctly coerce fetched scalar values when mysql_server_prepare is
-   not used (pali)
+  not used (pali)
 * Add support for fetching columns of BIT type with
-   mysql_server_prepare = 1 (pali)
-   Fixes https://rt.cpan.org/Public/Bug/Display.html?id=88006
+  mysql_server_prepare = 1 (pali)
+  Fixes https://rt.cpan.org/Public/Bug/Display.html?id=88006
 * Use correct format in printf instead of casting variable types (pali)
 * Include errno.h for MYSQL_ASYNC because it uses errno variable (pali)
 * Travis: also test on perl 5.22 and 5.24.
