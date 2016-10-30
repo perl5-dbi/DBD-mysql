@@ -2,7 +2,7 @@
 * Fix compilation of embedded server (pali)
   (https://github.com/perl5-dbi/DBD-mysql/pull/68)
 * Fix compilation against libmariadbclient. First version by
-  H.Merijn Brandt, improved by Bernt Johnsen @ Oracle.
+  H.Merijn Brand, improved by Bernt Johnsen @ Oracle.
 * For efficiency use newSVpvn() instead newSVpv() where possible (pali)
 * Correctly coerce fetched scalar values when mysql_server_prepare is
   not used (pali)
