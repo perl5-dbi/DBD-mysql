@@ -1720,6 +1720,7 @@ MYSQL *mysql_dr_connect(
           mysql_options(sock, MYSQL_OPT_CONNECT_TIMEOUT,
                         (const char *)&to);
         }
+#if (MYSQL_VERSION_ID >= 40101)
         if ((svp = hv_fetch(hv, "mysql_write_timeout", 19, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
         {
@@ -1752,6 +1753,7 @@ MYSQL *mysql_dr_connect(
                           " secure auth\n");
           mysql_options(sock, MYSQL_SECURE_AUTH, &secauth);
         }
+#endif
         if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {
@@ -3650,7 +3652,9 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
         return 0;
     }
 #endif
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   }
+#endif
 
   if (imp_sth->row_num+1 != (my_ulonglong)-1)
   {
@@ -3667,8 +3671,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       /** Store the result in the current statement handle */
       DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
       DBIc_ACTIVE_on(imp_sth);
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
       if (!imp_sth->use_server_side_prepare)
         imp_sth->done_desc= 0;
+#endif
       imp_sth->fetch_done= 0;
     }
   }
