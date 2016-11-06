@@ -9,7 +9,7 @@ use vars qw($test_dsn $test_user $test_password);
 
 $|= 1;
 
-$test_dsn.= ";mysql_server_prepare=1";
+$test_dsn.= ";mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1";
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,

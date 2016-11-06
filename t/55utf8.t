@@ -25,7 +25,7 @@ if (!MinimumVersion($dbh, '5.0')) {
 plan tests => 16 * 2;
 
 for my $mysql_server_prepare (0, 1) {
-$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
+$dbh= DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
                       { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t55utf8");
