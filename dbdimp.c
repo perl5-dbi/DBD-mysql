@@ -3592,6 +3592,9 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 #if defined (dTHR)
   dTHR;
 #endif
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+  int use_server_side_prepare = imp_sth->use_server_side_prepare;
+#endif
 
   ASYNC_CHECK_RETURN(sth, -2);
 
@@ -3620,20 +3623,37 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   mysql_st_free_result_sets (sth, imp_sth);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-
-  if (imp_sth->use_server_side_prepare && ! imp_sth->use_mysql_use_result)
+  if (use_server_side_prepare)
   {
-    imp_sth->row_num= mysql_st_internal_execute41(
-                                                  sth,
-                                                  DBIc_NUM_PARAMS(imp_sth),
-                                                  &imp_sth->result,
-                                                  imp_sth->stmt,
-                                                  imp_sth->bind,
-                                                  &imp_sth->has_been_bound
-                                                 );
+    if (imp_sth->use_mysql_use_result)
+    {
+      use_server_side_prepare = 0;
+    }
+
+    if (use_server_side_prepare)
+    {
+      imp_sth->row_num= mysql_st_internal_execute41(
+                                                    sth,
+                                                    DBIc_NUM_PARAMS(imp_sth),
+                                                    &imp_sth->result,
+                                                    imp_sth->stmt,
+                                                    imp_sth->bind,
+                                                    &imp_sth->has_been_bound
+                                                   );
+      if (imp_sth->row_num == (my_ulonglong)-2) /* -2 means error */
+      {
+        SV *err = DBIc_ERR(imp_xxh);
+        if (SvIV(err) == ER_UNSUPPORTED_PS)
+        {
+          use_server_side_prepare = 0;
+        }
+      }
+    }
   }
-  else {
+
+  if (!use_server_side_prepare)
 #endif
+  {
     imp_sth->row_num= mysql_st_internal_execute(
                                                 sth,
                                                 *statement,
@@ -3667,7 +3687,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       /** Store the result in the current statement handle */
       DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
       DBIc_ACTIVE_on(imp_sth);
-      if (!imp_sth->use_server_side_prepare)
+      if (!use_server_side_prepare)
         imp_sth->done_desc= 0;
       imp_sth->fetch_done= 0;
     }

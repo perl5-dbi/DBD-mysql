@@ -522,6 +522,15 @@ do(dbh, statement, attr=Nullsv, ...)
         fprintf(stderr, "\n failed while closing the statement");
         fprintf(stderr, "\n %s", mysql_stmt_error(stmt));
       }
+
+      if (retval == -2) /* -2 means error */
+      {
+        SV *err = DBIc_ERR(imp_dbh);
+        if (SvIV(err) == ER_UNSUPPORTED_PS)
+        {
+          use_server_side_prepare = 0;
+        }
+      }
     }
   }
 
