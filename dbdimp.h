@@ -183,6 +183,7 @@ struct imp_dbh_st {
                                * mysql_store_result
                                */
     bool use_server_side_prepare;
+    bool disable_fallback_for_server_prepare;
 #if MYSQL_ASYNC
     void* async_query_in_flight;
 #endif
@@ -268,6 +269,7 @@ struct imp_sth_st {
     imp_sth_fbh_t    *fbh;
     int              has_been_bound;
     int use_server_side_prepare;  /* server side prepare statements? */
+    int disable_fallback_for_server_prepare;
 #endif
 
     MYSQL_RES* result;       /* result                                 */

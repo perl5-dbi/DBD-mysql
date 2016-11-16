@@ -9,7 +9,7 @@ use vars qw($test_dsn $test_user $test_password);
 
 $|= 1;
 
-$test_dsn.= ";mysql_server_prepare=1";
+$test_dsn.= ";mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1";
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
@@ -18,7 +18,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-plan tests => 27;
+plan tests => 31;
 
 ok(defined $dbh, "connecting");
 
@@ -77,6 +77,21 @@ ok($sth3 = $dbh->prepare(q{INSERT INTO t3 VALUES (?,?)}));
 ok($sth3->execute(1, 2), "insert t3");
 
 is_deeply($dbh->selectall_arrayref('SELECT id, mydata FROM t3'), [[1, 2]]);
+
+my $dbname = $dbh->selectrow_arrayref("SELECT DATABASE()")->[0];
+
+$dbh->{mysql_server_prepare_disable_fallback} = 1;
+my $error_handler_called = 0;
+$dbh->{HandleError} = sub { $error_handler_called = 1; die $_[0]; };
+eval { $dbh->prepare("USE $dbname") };
+$dbh->{HandleError} = undef;
+ok($error_handler_called, 'USE is not supported with mysql_server_prepare_disable_fallback=1');
+
+$dbh->{mysql_server_prepare_disable_fallback} = 0;
+my $sth4;
+ok($sth4 = $dbh->prepare("USE $dbname"), 'USE is supported with mysql_server_prepare_disable_fallback=0');
+ok($sth4->execute());
+ok($sth4->finish());
 
 ok ($dbh->do(qq{DROP TABLE t3}), "cleaning up");
 

@@ -13,7 +13,7 @@ my $dbh;
 my $sth;
 
 my $dsn = $test_dsn;
-$dsn .= ';mysql_server_prepare=1;' if $scenario eq 'prepare';
+$dsn .= ';mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1' if $scenario eq 'prepare';
 eval {$dbh = DBI->connect($dsn, $test_user, $test_password,
   { RaiseError => 1, AutoCommit => 1})};
 

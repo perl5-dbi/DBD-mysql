@@ -269,6 +269,7 @@ do(dbh, statement, attr=Nullsv, ...)
   int             buffer_length= slen;
   int             buffer_type= 0;
   int             use_server_side_prepare= 0;
+  int             disable_fallback_for_server_prepare= 0;
   MYSQL_STMT      *stmt= NULL;
   MYSQL_BIND      *bind= NULL;
 #endif
@@ -301,6 +302,10 @@ do(dbh, statement, attr=Nullsv, ...)
     use_server_side_prepare = (svp) ?
       SvTRUE(*svp) : imp_dbh->use_server_side_prepare;
 
+    svp = DBD_ATTRIB_GET_SVP(attr, "mysql_server_prepare_disable_fallback", 37);
+    disable_fallback_for_server_prepare = (svp) ?
+      SvTRUE(*svp) : imp_dbh->disable_fallback_for_server_prepare;
+
     svp   = DBD_ATTRIB_GET_SVP(attr, "async", 5);
     async = (svp) ? *svp : &PL_sv_no;
   }
@@ -313,6 +318,12 @@ do(dbh, statement, attr=Nullsv, ...)
 
   if(SvTRUE(async)) {
 #if MYSQL_ASYNC
+    if (disable_fallback_for_server_prepare)
+    {
+      do_error(dbh, ER_UNSUPPORTED_PS,
+               "Async option not supported with server side prepare", "HY000");
+      XSRETURN_UNDEF;
+    }
     use_server_side_prepare = FALSE; /* for now */
     imp_dbh->async_query_in_flight = imp_dbh;
 #else
@@ -336,7 +347,7 @@ do(dbh, statement, attr=Nullsv, ...)
         For commands that are not supported by server side prepared
         statement mechanism lets try to pass them through regular API
       */
-      if (mysql_stmt_errno(stmt) == ER_UNSUPPORTED_PS)
+      if (!disable_fallback_for_server_prepare && mysql_stmt_errno(stmt) == ER_UNSUPPORTED_PS)
       {
         use_server_side_prepare= 0;
       }
@@ -409,6 +420,15 @@ do(dbh, statement, attr=Nullsv, ...)
       {
         fprintf(stderr, "\n failed while closing the statement");
         fprintf(stderr, "\n %s", mysql_stmt_error(stmt));
+      }
+
+      if (retval == -2) /* -2 means error */
+      {
+        SV *err = DBIc_ERR(imp_dbh);
+        if (!disable_fallback_for_server_prepare && SvIV(err) == ER_UNSUPPORTED_PS)
+        {
+          use_server_side_prepare = 0;
+        }
       }
     }
   }

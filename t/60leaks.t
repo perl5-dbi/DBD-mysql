@@ -52,7 +52,7 @@ for my $mysql_server_prepare (0, 1) {
 note "Testing memory leaks with mysql_server_prepare=$mysql_server_prepare\n";
 
 $dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                   { RaiseError => 1, PrintError => 1, AutoCommit => 0, mysql_server_prepare => $mysql_server_prepare });
+                   { RaiseError => 1, PrintError => 1, AutoCommit => 0, mysql_server_prepare => $mysql_server_prepare, mysql_server_prepare_disable_fallback => 1 });
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t60leaks");
 

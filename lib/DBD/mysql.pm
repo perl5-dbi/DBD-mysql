@@ -1201,7 +1201,9 @@ Support for multiple statements separated by a semicolon
 (;) may be enabled by using this option. Enabling this option may cause
 problems if server-side prepared statements are also enabled.
 
-=item Prepared statement support (server side prepare)
+=item mysql_server_prepare
+
+This option is used to enable server side prepared statements.
 
 To use server side prepared statements, all you need to do is set the variable
 mysql_server_prepare in the connect:
@@ -1213,6 +1215,15 @@ mysql_server_prepare in the connect:
     { RaiseError => 1, AutoCommit => 1 }
   );
 
+or:
+
+  $dbh = DBI->connect(
+    "DBI:mysql:database=test;host=localhost",
+    "",
+    "",
+    { RaiseError => 1, AutoCommit => 1, mysql_server_prepare => 1 }
+  );
+
 There are many benefits to using server side prepare statements, mostly if you are
 performing many inserts because of that fact that a single statement is prepared
 to accept multiple insert values.
@@ -1222,6 +1233,17 @@ need to export the env variable MYSQL_SERVER_PREPARE:
 
   export MYSQL_SERVER_PREPARE=1
 
+Please note that mysql server cannot prepare or execute some prepared statements.
+In this case DBD::mysql fallbacks to normal non-prepared statement and tries again.
+
+=item mysql_server_prepare_disable_fallback
+
+This option disable fallback to normal non-prepared statement when mysql server
+does not support execution of current statement as prepared.
+
+Useful when you want to be sure that statement is going to be executed as
+server side prepared. Error message and code in case of failure is propagated
+back to DBI.
 
 =item mysql_embedded_options
 

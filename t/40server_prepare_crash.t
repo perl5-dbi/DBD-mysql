@@ -7,7 +7,7 @@ use DBI;
 use vars qw($test_dsn $test_user $test_password);
 require "t/lib.pl";
 
-my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1, AutoCommit => 0, mysql_server_prepare => 1 }) };
+my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1, AutoCommit => 0, mysql_server_prepare => 1, mysql_server_prepare_disable_fallback => 1 }) };
 plan skip_all => "no database connection" if $@ or not $dbh;
 
 plan tests => 17;
