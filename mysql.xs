@@ -266,15 +266,11 @@ do(dbh, statement, attr=Nullsv, ...)
   STRLEN slen;
   char            *str_ptr, *buffer;
   int             has_binded;
-  int             col_type= MYSQL_TYPE_STRING;
-  int             buffer_is_null= 0;
   int             buffer_length= slen;
   int             buffer_type= 0;
-  int             param_type= SQL_VARCHAR;
   int             use_server_side_prepare= 0;
   MYSQL_STMT      *stmt= NULL;
   MYSQL_BIND      *bind= NULL;
-  imp_sth_phb_t   *fbind= NULL;
 #endif
     ASYNC_CHECK_XS(dbh);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
@@ -367,142 +363,36 @@ do(dbh, statement, attr=Nullsv, ...)
         */
         int i;
         num_params= items - 3;
-        /*num_params = mysql_stmt_param_count(stmt);*/
-        Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
         Newz(0, bind, (unsigned int) num_params, MYSQL_BIND);
-        Newz(0, fbind, (unsigned int) num_params, imp_sth_phb_t);
 
         for (i = 0; i < num_params; i++)
         {
           int defined= 0;
-          params[i].value= ST(i+3);
+          SV *param= ST(i+3);
 
-          if (params[i].value)
+          if (param)
           {
-            if (SvMAGICAL(params[i].value))
-              mg_get(params[i].value);
-            if (SvOK(params[i].value))
+            if (SvMAGICAL(param))
+              mg_get(param);
+            if (SvOK(param))
               defined= 1;
           }
           if (defined)
           {
-            buffer= SvPV(params[i].value, slen);
-            buffer_is_null= 0;
+            buffer= SvPV(param, slen);
             buffer_length= slen;
+            buffer_type= MYSQL_TYPE_STRING;
           }
           else
           {
             buffer= NULL;
-            buffer_is_null= 1;
             buffer_length= 0;
-          }
-
-          /*
-            if this statement has a result set, field types will be
-            correctly identified. If there is no result set, such as
-            with an INSERT, fields will not be defined, and all
-            buffer_type will default to MYSQL_TYPE_VAR_STRING
-          */
-          col_type= (stmt->fields) ? stmt->fields[i].type : MYSQL_TYPE_STRING;
-
-          switch (col_type) {
-#if MYSQL_VERSION_ID > 50003
-          case MYSQL_TYPE_NEWDECIMAL:
-#endif
-          case MYSQL_TYPE_DECIMAL:
-            param_type= SQL_DECIMAL;
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            break;
-
-          case MYSQL_TYPE_DOUBLE:
-            param_type= SQL_DOUBLE;
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            break;
-
-          case MYSQL_TYPE_FLOAT:
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            param_type= SQL_FLOAT;
-            break;
-
-          case MYSQL_TYPE_SHORT:
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            param_type= SQL_FLOAT;
-            break;
-
-          case MYSQL_TYPE_TINY:
-            buffer_type= MYSQL_TYPE_DOUBLE;
-            param_type= SQL_FLOAT;
-            break;
-
-          case MYSQL_TYPE_LONG:
-            buffer_type= MYSQL_TYPE_LONG;
-            param_type= SQL_BIGINT;
-            break;
-
-          case MYSQL_TYPE_INT24:
-          case MYSQL_TYPE_YEAR:
-            buffer_type= MYSQL_TYPE_LONG;
-            param_type= SQL_INTEGER; 
-            break;
-
-          case MYSQL_TYPE_LONGLONG:
-#if IVSIZE < 8
-            /* perl handles long long as double
-             * so we'll set this to string */
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_VARCHAR;
-#else
-            buffer_type= MYSQL_TYPE_LONG;
-            param_type= SQL_BIGINT;
-#endif
-            break;
-
-          case MYSQL_TYPE_NEWDATE:
-          case MYSQL_TYPE_DATE:
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_DATE;
-            break;
-
-          case MYSQL_TYPE_TIME:
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_TIME;
-            break;
-
-          case MYSQL_TYPE_TIMESTAMP:
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_TIMESTAMP;
-            break;
-
-          case MYSQL_TYPE_VAR_STRING:
-          case MYSQL_TYPE_STRING:
-          case MYSQL_TYPE_DATETIME:
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_VARCHAR;
-            break;
-
-          case MYSQL_TYPE_BLOB:
-            buffer_type= MYSQL_TYPE_BLOB;
-            param_type= SQL_BINARY;
-            break;
-
-          case MYSQL_TYPE_GEOMETRY:
-            buffer_type= MYSQL_TYPE_BLOB;
-            param_type= SQL_BINARY;
-            break;
-
-
-          default:
-            buffer_type= MYSQL_TYPE_STRING;
-            param_type= SQL_VARCHAR;
-            break;
+            buffer_type= MYSQL_TYPE_NULL;
           }
 
           bind[i].buffer_type = buffer_type;
           bind[i].buffer_length= buffer_length;
           bind[i].buffer= buffer;
-          fbind[i].length= buffer_length;
-          fbind[i].is_null= buffer_is_null;
-          params[i].type= param_type;
         }
         has_binded= 0;
       }
@@ -514,8 +404,6 @@ do(dbh, statement, attr=Nullsv, ...)
                                            &has_binded);
       if (bind)
         Safefree(bind);
-      if (fbind)
-        Safefree(fbind);
 
       if(mysql_stmt_close(stmt))
       {

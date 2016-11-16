@@ -2750,7 +2750,7 @@ dbd_st_prepare(
   int limit_flag=0;
 #endif
 #endif
-  int col_type, prepare_retval;
+  int prepare_retval;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
 #endif
@@ -2946,7 +2946,6 @@ dbd_st_prepare(
 
       if (DBIc_NUM_PARAMS(imp_sth) > 0)
       {
-        int has_statement_fields= imp_sth->stmt->fields != 0;
         /* Allocate memory for bind variables */
         imp_sth->bind=            alloc_bind(DBIc_NUM_PARAMS(imp_sth));
         imp_sth->fbind=           alloc_fbind(DBIc_NUM_PARAMS(imp_sth));
@@ -2960,20 +2959,7 @@ dbd_st_prepare(
              bind < bind_end ;
              bind++, fbind++, i++ )
         {
-          /*
-            if this statement has a result set, field types will be
-            correctly identified. If there is no result set, such as
-            with an INSERT, fields will not be defined, and all buffer_type
-            will default to MYSQL_TYPE_VAR_STRING
-          */
-          col_type= (has_statement_fields ?
-                     imp_sth->stmt->fields[i].type : MYSQL_TYPE_STRING);
-
-          bind->buffer_type=  mysql_to_perl_type(col_type);
-
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tmysql_to_perl_type returned %d\n", col_type);
-
+          bind->buffer_type=  MYSQL_TYPE_STRING;
           bind->buffer=       NULL;
           bind->length=       &(fbind->length);
           bind->is_null=      (char*) &(fbind->is_null);

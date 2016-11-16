@@ -1,3 +1,6 @@
+2016-11-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.039)
+* Fix for security issue Out-of-bounds read by DBD::mysql CVE-2016-1249 (pali)
+
 2016-10-30 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.038_01)
 * Fix compilation of embedded server (pali)
   (https://github.com/perl5-dbi/DBD-mysql/pull/68)
