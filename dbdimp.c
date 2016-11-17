@@ -1424,6 +1424,7 @@ void dbd_init(dbistate_t* dbistate)
 {
     dTHX;
     DBISTATE_INIT;
+    PERL_UNUSED_ARG(dbistate);
 }
 
 
@@ -2300,7 +2301,11 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
   dTHR;
 #endif
   dTHX;
+#if defined(DBD_MYSQL_EMBEDDED)
   D_imp_xxh(drh);
+#else
+  PERL_UNUSED_ARG(drh);
+#endif
 
 #if defined(DBD_MYSQL_EMBEDDED)
   if (imp_drh->embedded.state)
