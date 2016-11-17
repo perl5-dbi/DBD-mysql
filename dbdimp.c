@@ -4906,7 +4906,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   STRLEN slen;
   char *buffer= NULL;
   int buffer_is_null= 0;
-  int buffer_length= slen;
+  int buffer_length= 0;
   unsigned int buffer_type= 0;
 #endif
 
