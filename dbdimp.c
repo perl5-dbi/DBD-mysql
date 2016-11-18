@@ -4050,6 +4050,8 @@ process:
           Renew(fbh->data, fbh->length, char);
           buffer->buffer_length= fbh->length;
           buffer->buffer= (char *) fbh->data;
+          imp_sth->stmt->bind[i].buffer_length = fbh->length;
+          imp_sth->stmt->bind[i].buffer = (char *)fbh->data;
 
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
             int j;
