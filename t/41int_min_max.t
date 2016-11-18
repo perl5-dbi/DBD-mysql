@@ -22,7 +22,7 @@ if (!MinimumVersion($dbh, '4.1')) {
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
 # nostrict tests + strict tests + init/tear down commands
-plan tests => 19*8 + 17*8 + 4;
+plan tests => (19*8 + 17*8 + 4) * 2;
 
 my $table = 'dbd_mysql_t41minmax'; # name of the table we will be using
 my $mode; # 'strict' or 'nostrict' corresponds to strict SQL mode
@@ -117,6 +117,12 @@ sub test_int_type ($$$$) {
     };
 }
 
+$dbh->disconnect;
+
+for my $mysql_server_prepare (0, 1) {
+$dbh= DBI->connect($test_dsn . ';mysql_server_prepare=' . $mysql_server_prepare, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+
 # Set strict SQL mode
 ok($dbh->do("SET SQL_MODE='STRICT_ALL_TABLES'"),"Enter strict SQL mode.");
 $mode = 'strict';
@@ -146,3 +152,4 @@ test_int_type(DBI::SQL_BIGINT,   'bigint unsigned',        0, 2**64-1);
 ok ($dbh->do("DROP TABLE $table"));
 
 ok $dbh->disconnect;
+}
