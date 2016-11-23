@@ -59,11 +59,11 @@ ok($sth2 = $dbh->prepare('INSERT INTO dbd_mysql_t40serverprepare2 VALUES (?,?,?,
 ok($sth2->bind_param(1, 101, DBI::SQL_INTEGER), "binding int");
 ok($sth2->bind_param(2, 102, DBI::SQL_SMALLINT), "binding smallint");
 ok($sth2->bind_param(3, 103, DBI::SQL_TINYINT), "binding tinyint");
-ok($sth2->bind_param(4, 104, DBI::SQL_INTEGER), "binding bigint");
+ok($sth2->bind_param(4, '8589934697', DBI::SQL_BIGINT), "binding bigint");
 
 ok($sth2->execute(), "inserting data");
 
-is_deeply($dbh->selectall_arrayref('SELECT * FROM dbd_mysql_t40serverprepare2'), [[101, 102, 103, 104]]);
+is_deeply($dbh->selectall_arrayref('SELECT * FROM dbd_mysql_t40serverprepare2'), [[101, 102, 103, '8589934697']]);
 
 ok ($dbh->do(qq{DROP TABLE dbd_mysql_t40serverprepare2}), "cleaning up");
 

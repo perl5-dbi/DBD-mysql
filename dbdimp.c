@@ -360,8 +360,10 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_YEAR:
 #if IVSIZE >= 8
   case MYSQL_TYPE_LONGLONG:
-#endif
+    enum_type= MYSQL_TYPE_LONGLONG;
+#else
     enum_type= MYSQL_TYPE_LONG;
+#endif
     break;
 
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
@@ -3551,7 +3553,7 @@ my_ulonglong mysql_st_internal_execute41(
   {
     for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i) {
         enum_type = mysql_to_perl_type(stmt->fields[i].type);
-        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_BIT)
+        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_LONGLONG && enum_type != MYSQL_TYPE_BIT)
         {
             /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
             my_bool on = 1;
@@ -3847,6 +3849,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         break;
 
       case MYSQL_TYPE_LONG:
+      case MYSQL_TYPE_LONGLONG:
         buffer->buffer_length= sizeof(fbh->ldata);
         buffer->buffer= (char*) &fbh->ldata;
         buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
@@ -4087,6 +4090,7 @@ process:
           break;
 
         case MYSQL_TYPE_LONG:
+        case MYSQL_TYPE_LONGLONG:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %"IVdf", unsigned? %d\n",
                           fbh->ldata, buffer->is_unsigned);
@@ -4249,6 +4253,7 @@ process:
           break;
 
         case MYSQL_TYPE_LONG:
+        case MYSQL_TYPE_LONGLONG:
           /* Coerce to integer and set scalar as UV resp. IV */
           if (fields[i].flags & UNSIGNED_FLAG)
           {
@@ -4904,6 +4909,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   STRLEN slen;
   char *buffer= NULL;
   int buffer_is_null= 0;
+  int buffer_is_unsigned= 0;
   int buffer_length= 0;
   unsigned int buffer_type= 0;
 #endif
@@ -4961,9 +4967,13 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       case SQL_NUMERIC:
       case SQL_INTEGER:
       case SQL_SMALLINT:
-      case SQL_BIGINT:
       case SQL_TINYINT:
+#if IVSIZE >= 8
+      case SQL_BIGINT:
+          buffer_type= MYSQL_TYPE_LONGLONG;
+#else
           buffer_type= MYSQL_TYPE_LONG;
+#endif
           break;
       case SQL_DOUBLE:
       case SQL_DECIMAL: 
@@ -4989,12 +4999,24 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     if (! buffer_is_null) {
       switch(buffer_type) {
         case MYSQL_TYPE_LONG:
+        case MYSQL_TYPE_LONGLONG:
           /* INT */
           if (!SvIOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
           buffer_length = sizeof imp_sth->fbind[idx].numeric_val.lval;
           imp_sth->fbind[idx].numeric_val.lval= SvIV(imp_sth->params[idx].value);
           buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
+          if (!SvIOK(imp_sth->params[idx].value))
+          {
+            if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                            "   Conversion to INT NUMBER was not successful -> '%s' --> (unsigned) '%"UVuf"' / (signed) '%"IVdf"' <- fallback to STRING\n",
+                            SvPV_nolen(imp_sth->params[idx].value), imp_sth->fbind[idx].numeric_val.lval, imp_sth->fbind[idx].numeric_val.lval);
+            buffer_type = MYSQL_TYPE_STRING;
+            break;
+          }
+          if (SvIsUV(imp_sth->params[idx].value))
+            buffer_is_unsigned= 1;
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "   SCALAR type %"IVdf" ->%"IVdf"<- IS A INT NUMBER\n",
@@ -5049,7 +5071,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     }
 
     /* Type of column was changed. Force to rebind */
-    if (imp_sth->bind[idx].buffer_type != buffer_type) {
+    if (imp_sth->bind[idx].buffer_type != buffer_type || imp_sth->bind[idx].is_unsigned != buffer_is_unsigned) {
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                         "   FORCE REBIND: buffer type changed from %d to %d, sql-type=%"IVdf"\n",
@@ -5067,6 +5089,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     imp_sth->bind[idx].buffer_type= buffer_type;
     imp_sth->bind[idx].buffer= buffer;
     imp_sth->bind[idx].buffer_length= buffer_length;
+    imp_sth->bind[idx].is_unsigned= buffer_is_unsigned;
 
     imp_sth->fbind[idx].length= buffer_length;
     imp_sth->fbind[idx].is_null= buffer_is_null;

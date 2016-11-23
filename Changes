@@ -1,3 +1,23 @@
+2016-11-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.040)
+* Since 4.038 we had problems compiling on big-endian architectures, such
+  as MIPS, s390 and Sparc. Thanks to Salvatore Bonaccorso @ Debian project
+  (https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=844538)
+  and Vladimir Marek (https://rt.cpan.org/Public/Bug/Display.html?id=118835)
+  for reporting the issues. Fix by Pali Rohár.
+
+  Fix integer types when server side prepare statements are enabled
+  Fixed problems:
+  * SQL_BIGINT was incorrectly handled as 32bit MYSQL_TYPE_LONG type instead
+    64bit MYSQL_TYPE_LONGLONG which led to integer overflow/underflow
+  * 32bit MYSQL_TYPE_LONG was used for perl's IV storage when IV was 64bit
+    and 64bit MYSQL_TYPE_LONGLONG was used when IV was 32bit
+  * All unsigned types were handled as signed, so all high positive values
+    were treated as negative
+  * Numeric conversions in perl which led to overflow/underflow was ignored
+    even when mysql strict mode was enabled
+  * Test t/41int_min_max.t was running only for normal non-prepared statements
+  * Test t/40server_prepare.t used incorrect SQL type for big (64bit) integers
+
 2016-11-15 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.039)
 * Fix for security issue Out-of-bounds read by DBD::mysql CVE-2016-1249 (pali)
 
