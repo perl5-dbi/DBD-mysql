@@ -36,8 +36,16 @@ my $ok = eval {
     1;
 };
 if (not $ok) {
-    is ( $DBI::err, 2006, 'Received error 2006' );
-    is ( $DBI::errstr, 'MySQL server has gone away', 'Received MySQL server has gone away');
+    # if we're connected via a local socket we receive error 2006
+    # (CR_SERVER_GONE_ERROR) but if we're connected using TCP/IP we get 
+    # 2013 (CR_SERVER_LOST)
+    if ($DBI::err == 2006) {
+       pass("received error 2006 (CR_SERVER_GONE_ERROR)");
+    } elsif ($DBI::err == 2013) {
+       pass("received error 2013 (CR_SERVER_LOST)");
+    } else {
+        fail('Should return error 2006 or 2013');
+    }
     eval { $sth->finish(); } if defined $sth;
     eval { $dbh->disconnect(); } if defined $dbh;
 }

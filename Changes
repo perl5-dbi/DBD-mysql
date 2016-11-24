@@ -1,3 +1,9 @@
+2016-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041)
+* auto_reconnect now also matches  CR_SERVER_LOST, previously this only
+  matched CR_SERVER_GONE.
+  Fixes http://bugs.mysql.com/bug.php?id=27613
+  Fix suggested by Wouter de Jong.
+
 2016-11-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.040)
 * Since 4.038 we had problems compiling on big-endian architectures, such
   as MIPS, s390 and Sparc. Thanks to Salvatore Bonaccorso @ Debian project

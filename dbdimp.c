@@ -5126,7 +5126,8 @@ int mysql_db_reconnect(SV* h)
   else
     imp_dbh= (imp_dbh_t*) imp_xxh;
 
-  if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR)
+  if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR &&
+          mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST)
     /* Other error */
     return FALSE;
 
