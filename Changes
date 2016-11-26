@@ -3,6 +3,7 @@
   matched CR_SERVER_GONE.
   Fixes http://bugs.mysql.com/bug.php?id=27613
   Fix suggested by Wouter de Jong.
+* Fix compilation fixes (Pali Rohár).
 
 2016-11-19 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.040)
 * Since 4.038 we had problems compiling on big-endian architectures, such
