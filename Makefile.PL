@@ -53,7 +53,8 @@ Getopt::Long::GetOptions(
     "embedded=s",
     "mysql_config=s",
     "force-embedded",
-    "with-mysql=s"
+    "with-mysql=s",
+    "bigintasastring"
     ) || die Usage();
 
 my $source = {};
@@ -98,7 +99,7 @@ MSG
 
 for my $key (qw/testdb testhost testuser testpassword testsocket testport
                     cflags embedded libs nocatchstderr nossl nofoundrows
-                    ps-protocol bind-type-guessing force-embedded/)
+                    ps-protocol bind-type-guessing force-embedded bigintasastring/)
 {
   Configure($opt, $source, $key);
 }
@@ -240,6 +241,7 @@ if ($^O eq 'VMS') {
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
 $cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
+$cflags .= " -DDBD_BIGINT_AS_A_STRING" if $opt->{'bigintasastring'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
 	  'INC' => $cflags,
@@ -627,7 +629,7 @@ perl Makefile.PL --testuser=username
       $opt->{$param} = $user;
 	  $source->{$param} = 'guessed';
     }
-    elsif ($param eq "nocatchstderr" || $param eq "nofoundrows") {
+    elsif ($param eq "nocatchstderr" || $param eq "nofoundrows" || $param eq 'bigintasastring') {
       $source->{$param} = "default";
       $opt->{$param} = 0;
     }

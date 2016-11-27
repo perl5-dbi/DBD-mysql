@@ -359,7 +359,6 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   case MYSQL_TYPE_INT24:
   case MYSQL_TYPE_YEAR:
 #if IVSIZE >= 8
-  case MYSQL_TYPE_LONGLONG:
     enum_type= MYSQL_TYPE_LONGLONG;
 #else
     enum_type= MYSQL_TYPE_LONG;
@@ -379,8 +378,10 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
     enum_type= MYSQL_TYPE_DECIMAL;
     break;
 
-#if IVSIZE < 8
   case MYSQL_TYPE_LONGLONG:
+#if IVSIZE >= 8 && !DBD_BIGINT_AS_A_STRING
+    enum_type= MYSQL_TYPE_LONGLONG;
+    break;
 #endif
   case MYSQL_TYPE_DATE:
   case MYSQL_TYPE_TIME:
@@ -4969,12 +4970,17 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
       case SQL_SMALLINT:
       case SQL_TINYINT:
 #if IVSIZE >= 8
-      case SQL_BIGINT:
           buffer_type= MYSQL_TYPE_LONGLONG;
 #else
           buffer_type= MYSQL_TYPE_LONG;
 #endif
           break;
+
+#if IVSIZE >= 8 && !DBD_BIGINT_AS_A_STRING
+      case SQL_BIGINT:
+          buffer_type= MYSQL_TYPE_LONGLONG;
+	  break;
+#endif
       case SQL_DOUBLE:
       case SQL_DECIMAL: 
       case SQL_FLOAT: 
