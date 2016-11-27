@@ -10,7 +10,7 @@ require "t/lib.pl";
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1, AutoCommit => 0, mysql_server_prepare => 1, mysql_server_prepare_disable_fallback => 1 });
 plan skip_all => "You must have MySQL version 4.1.3 and greater for this test to run" if $dbh->{mysql_clientversion} < 40103 or $dbh->{mysql_serverversion} < 40103;
 
-plan tests => 39;
+plan tests => 44;
 
 my $sth;
 
@@ -75,4 +75,21 @@ ok $sth->finish();
 
 ok $dbh->do("SELECT 1 FROM t WHERE i = ?" . (" OR i = ?" x 10000), {}, (1) x (10001));
 
+# $sth2 is statement that cannot be executed as mysql server side prepared statement, so fallback must be allowed
+ok my $dbname = $dbh->selectrow_arrayref("SELECT DATABASE()")->[0];
+ok my $sth2 = $dbh->prepare("USE $dbname", { mysql_server_prepare_disable_fallback => 0 });
+ok $sth2->execute();
+
+# disconnect from mysql server, free $dbh and internal libmysqlclient.so structures
 ok $dbh->disconnect();
+$dbh = undef;
+
+# check CVE 2017-3302 that libmysqlclient.so does not return to DBD::mysql dangling pointer to already freed libmysqlclient.so structures
+# "mysql_sock" sth attribute return values:
+# undef - attribute not supported by driver
+# 0     - NULL pointer, correct behavior
+# other - danging pointer exported
+my $sock1 = $sth->{mysql_sock};
+my $sock2 = $sth2->{mysql_sock};
+ok defined $sock1 && !$sock1 or diag "Your libmysqlclient.so is vulnerable to CVE 2017-3302 and can crash perl";
+ok defined $sock2 && !$sock2 or diag "Your libmysqlclient.so is vulnerable to CVE 2017-3302 and can crash perl";
