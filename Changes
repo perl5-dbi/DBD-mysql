@@ -1,4 +1,18 @@
-2016-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041)
+2016-11-28 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041)
+* Fix use-after-free for repeated fetchrow_arrayref calls when
+  mysql_server_prepare=1
+
+  Function dbd_st_fetch() via Renew() can reallocate output buffer for
+  mysql_stmt_fetch() call. But it does not update pointer to that buffer in
+  imp_sth->stmt structure initialized by mysql_stmt_bind_result() function.
+  That leads to use-after-free in any mysql function which access
+  imp_sth->stmt structure (e.g. mysql_stmt_fetch()).
+
+  This patch fix this problem and properly updates pointer in imp_sth->stmt
+  structure after Renew() call.
+  This is a medium level security issue to which the Debian security team
+  assigned identifier CVE-2016-1251. Discovered and fixed by Pali Rohár.
+
 * auto_reconnect now also matches  CR_SERVER_LOST, previously this only
   matched CR_SERVER_GONE.
   Fixes http://bugs.mysql.com/bug.php?id=27613
