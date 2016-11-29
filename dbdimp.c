@@ -3847,6 +3847,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->is_null= (my_bool*) &(fbh->is_null);
       buffer->error= (my_bool*) &(fbh->error);
 
+      if (fields[i].flags & ZEROFILL_FLAG)
+        buffer->buffer_type = MYSQL_TYPE_STRING;
+
       switch (buffer->buffer_type) {
       case MYSQL_TYPE_DOUBLE:
         buffer->buffer_length= sizeof(fbh->ddata);
@@ -4254,23 +4257,29 @@ process:
 
         switch (mysql_to_perl_type(fields[i].type)) {
         case MYSQL_TYPE_DOUBLE:
-          /* Coerce to dobule and set scalar as NV */
-          (void) SvNV(sv);
-          SvNOK_only(sv);
+          if (!(fields[i].flags & ZEROFILL_FLAG))
+          {
+            /* Coerce to dobule and set scalar as NV */
+            (void) SvNV(sv);
+            SvNOK_only(sv);
+          }
           break;
 
         case MYSQL_TYPE_LONG:
         case MYSQL_TYPE_LONGLONG:
-          /* Coerce to integer and set scalar as UV resp. IV */
-          if (fields[i].flags & UNSIGNED_FLAG)
+          if (!(fields[i].flags & ZEROFILL_FLAG))
           {
-            (void) SvUV(sv);
-            SvIOK_only_UV(sv);
-          }
-          else
-          {
-            (void) SvIV(sv);
-            SvIOK_only(sv);
+            /* Coerce to integer and set scalar as UV resp. IV */
+            if (fields[i].flags & UNSIGNED_FLAG)
+            {
+              (void) SvUV(sv);
+              SvIOK_only_UV(sv);
+            }
+            else
+            {
+              (void) SvIV(sv);
+              SvIOK_only(sv);
+            }
           }
           break;
 

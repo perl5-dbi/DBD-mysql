@@ -1,4 +1,6 @@
 2017-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043_01)
+* Return INTs with ZEROFILL as strings. Reported by Knarf, fix by Pali Rohár.
+   https://rt.cpan.org/Public/Bug/Display.html?id=118977
 * Correct require on relative path for perl 5.26. Fix by Grinnz.
    https://github.com/perl5-dbi/DBD-mysql/pull/136
 
