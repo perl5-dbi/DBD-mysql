@@ -1,3 +1,7 @@
+2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_)1)
+* Return INTs with ZEROFILL as strings. Reported by Knarf, fix by Pali Rohár.
+  (https://rt.cpan.org/Public/Bug/Display.html?id=118977)
+
 2016-11-28 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041)
 * Fix use-after-free for repeated fetchrow_arrayref calls when
   mysql_server_prepare=1
