@@ -2667,22 +2667,74 @@ dbd_db_STORE_attrib(
  *  Notes:   Do not forget to call sv_2mortal in the former case!
  *
  **************************************************************************/
-static SV*
-my_ulonglong2str(pTHX_ my_ulonglong val)
+
+#if IVSIZE < 8
+static char *
+my_ulonglong2str(my_ulonglong val, char *buf, STRLEN *len)
 {
-  char buf[64];
-  char *ptr = buf + sizeof(buf) - 1;
+  char *ptr = buf + *len - 1;
+
+  if (*len < 2)
+  {
+    *len = 0;
+    return NULL;
+  }
 
   if (val == 0)
-    return newSVpvn("0", 1);
+  {
+    buf[0] = '0';
+    buf[1] = '\0';
+    *len = 1;
+    return buf;
+  }
 
   *ptr = '\0';
   while (val > 0)
   {
+    if (ptr == buf)
+    {
+      *len = 0;
+      return NULL;
+    }
     *(--ptr) = ('0' + (val % 10));
     val = val / 10;
   }
-  return newSVpvn(ptr, (buf+ sizeof(buf) - 1) - ptr);
+
+  *len = (buf + *len - 1) - ptr;
+  return ptr;
+}
+
+static char*
+signed_my_ulonglong2str(my_ulonglong val, char *buf, STRLEN *len)
+{
+  char *ptr;
+
+  if (val <= LLONG_MAX)
+    return my_ulonglong2str(val, buf, len);
+
+  ptr = my_ulonglong2str(-val, buf, len);
+  if (!ptr || ptr == buf) {
+    *len = 0;
+    return NULL;
+  }
+
+  *(--ptr) = '-';
+  *len += 1;
+  return ptr;
+}
+#endif
+
+static SV*
+my_ulonglong2sv(pTHX_ my_ulonglong val)
+{
+#if IVSIZE >= 8
+  return newSVuv(val);
+#else
+  char buf[64];
+  STRLEN len = sizeof(buf);
+  char *ptr = my_ulonglong2str(val, buf, &len);
+  return newSVpvn(ptr, len);
+#endif
 }
 
 SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
@@ -2736,7 +2788,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 13 && strEQ(key, "clientversion"))
     {
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_client_version()));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_get_client_version()));
     }
     break;
   case 'e':
@@ -2796,7 +2848,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
     break;
   case 'n':
     if (kl == strlen("no_autocommit_cmd") &&
@@ -2816,7 +2868,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
         sv_2mortal(newSVpvn(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     } 
     else if (kl == 13 && strEQ(key, "serverversion"))
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv(PTR2IV(imp_dbh->pmysql)));
     else if (strEQ(key, "sockfd"))
@@ -4935,7 +4987,7 @@ dbd_st_FETCH_internal(
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %llu\n", imp_sth->insertid);
 
-        return sv_2mortal(my_ulonglong2str(aTHX_ imp_sth->insertid));
+        return sv_2mortal(my_ulonglong2sv(aTHX_ imp_sth->insertid));
       }
       break;
     case 15:
@@ -5502,7 +5554,7 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
   attr= attr;
 
   ASYNC_CHECK_RETURN(dbh, &PL_sv_undef);
-  return sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
+  return sv_2mortal(my_ulonglong2sv(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
 }
 
 #if MYSQL_ASYNC
