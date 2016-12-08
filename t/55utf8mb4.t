@@ -35,6 +35,18 @@ ok(my $ref = $sth->fetchrow_arrayref, 'fetch row');
 ok($sth->finish, 'close sth');
 cmp_ok $ref->[0], 'eq', "😈";
 cmp_ok $ref->[1], 'eq', "F09F9888";
+ok(!utf8::is_utf8($ref->[0]), "utf8 flag is not set without mysql_enable_utf8mb4");
+
+use utf8;
+$dbh->{mysql_enable_utf8mb4} = 1;
+$sth = $dbh->prepare($query) or die "$DBI::errstr";
+ok $sth->execute;
+ok($ref = $sth->fetchrow_arrayref, 'fetch row with mysql_enable_utf8mb4');
+ok($sth->finish, 'close sth');
+cmp_ok $ref->[0], 'eq', "😈", 'test U+1F608 with mysql_enable_utf8mb4 and utf8 pragma';
+cmp_ok $ref->[1], 'eq', "F09F9888";
+$dbh->{mysql_enable_utf8mb4} = 0;
+no utf8;
 
 $dbh->disconnect();
 done_testing;
