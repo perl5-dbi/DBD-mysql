@@ -264,10 +264,8 @@ do(dbh, statement, attr=Nullsv, ...)
 #endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
-  char            *str_ptr, *buffer;
+  char            *str_ptr;
   int             has_binded;
-  int             buffer_length= slen;
-  int             buffer_type= 0;
   int             use_server_side_prepare= 0;
   int             disable_fallback_for_server_prepare= 0;
   MYSQL_STMT      *stmt= NULL;
@@ -316,6 +314,8 @@ do(dbh, statement, attr=Nullsv, ...)
 
   (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
 
+  str_ptr = SvPV(statement, slen);
+
   if(SvTRUE(async)) {
 #if MYSQL_ASYNC
     if (disable_fallback_for_server_prepare)
@@ -335,13 +335,11 @@ do(dbh, statement, attr=Nullsv, ...)
 
   if (use_server_side_prepare)
   {
-    str_ptr= SvPV(statement, slen);
-
     stmt= mysql_stmt_init(imp_dbh->pmysql);
 
-    if ((mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))  &&
+    if ((mysql_stmt_prepare(stmt, str_ptr, slen))  &&
         (!mysql_db_reconnect(dbh) ||
-         (mysql_stmt_prepare(stmt, str_ptr, strlen(str_ptr)))))
+         (mysql_stmt_prepare(stmt, str_ptr, slen))))
     {
       /*
         For commands that are not supported by server side prepared
@@ -378,32 +376,21 @@ do(dbh, statement, attr=Nullsv, ...)
 
         for (i = 0; i < num_params; i++)
         {
-          int defined= 0;
           SV *param= ST(i+3);
-
-          if (param)
+          if (SvMAGICAL(param))
+            mg_get(param);
+          if (SvOK(param))
           {
-            if (SvMAGICAL(param))
-              mg_get(param);
-            if (SvOK(param))
-              defined= 1;
-          }
-          if (defined)
-          {
-            buffer= SvPV(param, slen);
-            buffer_length= slen;
-            buffer_type= MYSQL_TYPE_STRING;
+            bind[i].buffer= SvPV(param, slen);
+            bind[i].buffer_length= slen;
+            bind[i].buffer_type= MYSQL_TYPE_STRING;
           }
           else
           {
-            buffer= NULL;
-            buffer_length= 0;
-            buffer_type= MYSQL_TYPE_NULL;
+            bind[i].buffer= NULL;
+            bind[i].buffer_length= 0;
+            bind[i].buffer_type= MYSQL_TYPE_NULL;
           }
-
-          bind[i].buffer_type = buffer_type;
-          bind[i].buffer_length= buffer_length;
-          bind[i].buffer= buffer;
         }
         has_binded= 0;
       }
@@ -445,11 +432,17 @@ do(dbh, statement, attr=Nullsv, ...)
       Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
       for (i= 0;  i < num_params;  i++)
       {
-        params[i].value= ST(i+3);
+        SV *param= ST(i+3);
+        if (SvMAGICAL(param))
+          mg_get(param);
+        if (SvOK(param))
+          params[i].value= SvPV(param, params[i].len);
+        else
+          params[i].value= NULL;
         params[i].type= SQL_VARCHAR;
       }
     }
-    retval = mysql_st_internal_execute(dbh, statement, attr, num_params,
+    retval = mysql_st_internal_execute(dbh, str_ptr, slen, attr, num_params,
                                        params, &result, imp_dbh->pmysql, 0);
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   }

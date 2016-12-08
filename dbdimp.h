@@ -202,7 +202,8 @@ struct imp_dbh_st {
  *  parameters.
  */
 typedef struct imp_sth_ph_st {
-    SV* value;
+    char* value;
+    STRLEN len;
     int type;
 } imp_sth_ph_t;
 
@@ -263,6 +264,8 @@ typedef struct imp_sth_fbind_st {
  */
 struct imp_sth_st {
     dbih_stc_t com;       /* MUST be first element in structure     */
+    char *statement;
+    STRLEN statement_len;
 
 #if (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
     MYSQL_STMT       *stmt;
@@ -340,7 +343,8 @@ SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
 my_ulonglong mysql_st_internal_execute(SV *,
-                                       SV *,
+                                       char *,
+                                       STRLEN,
                                        SV *,
                                        int,
                                        imp_sth_ph_t *,

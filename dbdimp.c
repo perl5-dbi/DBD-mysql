@@ -341,10 +341,7 @@ free_param(pTHX_ imp_sth_ph_t *params, int num_params)
     {
       imp_sth_ph_t *ph= params+i;
       if (ph->value)
-      {
-        (void) SvREFCNT_dec(ph->value);
-        ph->value= NULL;
-      }
+        Safefree(ph->value);
     }
     Safefree(params);
   }
@@ -622,13 +619,12 @@ static char *parse_params(
 {
   bool comment_end= false;
   char *salloc, *statement_ptr;
-  char *statement_ptr_end, *ptr, *valbuf;
+  char *statement_ptr_end, *ptr;
   char *cp, *end;
   int alen, i;
   int slen= *slen_ptr;
   int limit_flag= 0;
   int comment_length=0;
-  STRLEN vallen;
   imp_sth_ph_t *ph;
 
   if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
@@ -648,30 +644,19 @@ static char *parse_params(
 
   for (i= 0, ph= params; i < num_params; i++, ph++)
   {
-    int defined= 0;
-    if (ph->value)
-    {
-      if (SvMAGICAL(ph->value))
-        mg_get(ph->value);
-      if (SvOK(ph->value))
-        defined=1;
-    }
-    if (!defined)
+    if (!ph->value)
       alen+= 3;  /* Erase '?', insert 'NULL' */
     else
     {
-      valbuf= SvPV(ph->value, vallen);
-      alen+= 2+vallen+1;
+      alen+= 2+ph->len+1;
       /* this will most likely not happen since line 214 */
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
         if (bind_type_guessing)
         {
-          valbuf= SvPV(ph->value, vallen);
           ph->type= SQL_INTEGER;
-
-          if (parse_number(valbuf, vallen, &end) != 0)
+          if (parse_number(ph->value, ph->len, &end) != 0)
           {
               ph->type= SQL_VARCHAR;
           }
@@ -812,7 +797,7 @@ static char *parse_params(
         }
 
         ph = params+ (i++);
-        if (!ph->value  ||  !SvOK(ph->value))
+        if (!ph->value)
         {
           *ptr++ = 'N';
           *ptr++ = 'U';
@@ -823,13 +808,12 @@ static char *parse_params(
         {
           int is_num = FALSE;
 
-          valbuf= SvPV(ph->value, vallen);
-          if (valbuf)
+          if (ph->value)
           {
             is_num = sql_type_is_numeric(ph->type);
 
             /* (note this sets *end, which we use if is_num) */
-            if ( parse_number(valbuf, vallen, &end) != 0 && is_num)
+            if ( parse_number(ph->value, ph->len, &end) != 0 && is_num)
             {
               if (bind_type_guessing) {
                 /* .. not a number, so apparently we guessed wrong */
@@ -847,12 +831,12 @@ static char *parse_params(
             if (!is_num)
             {
               *ptr++ = '\'';
-              ptr += mysql_real_escape_string(sock, ptr, valbuf, vallen);
+              ptr += mysql_real_escape_string(sock, ptr, ph->value, ph->len);
               *ptr++ = '\'';
             }
             else
             {
-              for (cp= valbuf; cp < end; cp++)
+              for (cp= ph->value; cp < end; cp++)
                   *ptr++= *cp;
             }
           }
@@ -878,22 +862,26 @@ static char *parse_params(
   return(salloc);
 }
 
-int bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
+static void bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
 {
   dTHX;
-  if (ph->value)
-  {
-    if (SvMAGICAL(ph->value))
-      mg_get(ph->value);
-    (void) SvREFCNT_dec(ph->value);
-  }
+  char *buf;
 
-  ph->value= newSVsv(value);
+  if (ph->value)
+    Safefree(ph->value);
+
+  if (SvOK(value))
+  {
+    buf = SvPV(value, ph->len);
+    ph->value = savepvn(buf, ph->len);
+  }
+  else
+  {
+    ph->value = NULL;
+  }
 
   if (sql_type)
     ph->type = sql_type;
-
-  return TRUE;
 }
 
 static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
@@ -2896,6 +2884,8 @@ dbd_st_prepare_sv(
   D_imp_dbh_from_sth;
 
   statement = SvPV(statement_sv, statement_len);
+  imp_sth->statement = savepvn(statement, statement_len);
+  imp_sth->statement_len = statement_len;
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -3402,7 +3392,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
 my_ulonglong mysql_st_internal_execute(
                                        SV *h, /* could be sth or dbh */
-                                       SV *statement,
+                                       char *sbuf,
+                                       STRLEN slen,
                                        SV *attribs,
                                        int num_params,
                                        imp_sth_ph_t *params,
@@ -3414,8 +3405,6 @@ my_ulonglong mysql_st_internal_execute(
   dTHX;
   bool bind_type_guessing= FALSE;
   bool bind_comment_placeholders= TRUE;
-  STRLEN slen;
-  char *sbuf = SvPV(statement, slen);
   char *table;
   char *salloc;
   int htype;
@@ -3739,7 +3728,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   dTHX;
   char actual_row_num[64];
   int i;
-  SV **statement;
   D_imp_dbh_from_sth;
   D_imp_xxh(sth);
 #if defined (dTHR)
@@ -3767,8 +3755,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
     imp_sth->av_attr[i]= Nullav;
   }
-
-  statement= hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
 
   /* 
      Clean-up previous result set(s) for sth to prevent
@@ -3817,7 +3803,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   {
     imp_sth->row_num= mysql_st_internal_execute(
                                                 sth,
-                                                *statement,
+                                                imp_sth->statement,
+                                                imp_sth->statement_len,
                                                 NULL,
                                                 DBIc_NUM_PARAMS(imp_sth),
                                                 imp_sth->params,
@@ -4646,6 +4633,9 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
   imp_sth_fbh_t *fbh;
   int n;
 
+  if (imp_sth->statement)
+    Safefree(imp_sth->statement);
+
   n= DBIc_NUM_PARAMS(imp_sth);
   if (n)
   {
@@ -4969,11 +4959,12 @@ dbd_st_FETCH_internal(
             int n;
             char key[100];
             I32 keylen;
+            SV *sv;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
             {
                 keylen= sprintf(key, "%d", n);
-                (void)hv_store(pvhv, key,
-                         keylen, newSVsv(imp_sth->params[n].value), 0);
+                sv= newSVpvn(imp_sth->params[n].value, imp_sth->params[n].len);
+                (void)hv_store(pvhv, key, keylen, sv, 0);
             }
         }
         retsv= sv_2mortal(newRV_noinc((SV*)pvhv));
@@ -5130,14 +5121,12 @@ int dbd_st_blob_read (
 int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
   dTHX;
-  int rc;
   int param_num= SvIV(param);
   int idx= param_num - 1;
   char *err_msg;
   D_imp_xxh(sth);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-  STRLEN slen;
   char *buffer= NULL;
   int buffer_is_null= 0;
   int buffer_is_unsigned= 0;
@@ -5184,12 +5173,12 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     return FALSE;
   }
 
-  rc = bind_param(&imp_sth->params[idx], value, sql_type);
+  bind_param(&imp_sth->params[idx], value, sql_type);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
-    buffer_is_null = !SvOK(imp_sth->params[idx].value);
+    buffer_is_null = !imp_sth->params[idx].value;
     if (!buffer_is_null) {
       buffer_type= sql_to_mysql_type(sql_type);
       switch (buffer_type) {
@@ -5199,10 +5188,10 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 #if IVSIZE >= 8
       case MYSQL_TYPE_LONGLONG:
 #endif
-        if (!SvIOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+        if (!SvIOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
-        int_val= SvIV(imp_sth->params[idx].value);
-        if (SvIsUV(imp_sth->params[idx].value))
+        int_val= SvIV(value);
+        if (SvIsUV(value))
           buffer_is_unsigned= 1;
 
         switch (buffer_type) {
@@ -5285,7 +5274,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN LONGLONG INT NUMBER FROM STRING\n");
 
-          buf= SvPV_nolen(imp_sth->params[idx].value);
+          buf= SvPV_nolen(value);
           val= strtoll(buf, NULL, 10);
           if (val == LLONG_MAX)
           {
@@ -5312,10 +5301,10 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 #endif
 
       case MYSQL_TYPE_FLOAT:
-        if (!SvNOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+        if (!SvNOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A FLOAT NUMBER\n");
         buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.fval);
-        imp_sth->fbind[idx].numeric_val.fval= SvNV(imp_sth->params[idx].value);
+        imp_sth->fbind[idx].numeric_val.fval= SvNV(value);
         buffer=(char*)&(imp_sth->fbind[idx].numeric_val.fval);
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -5324,13 +5313,13 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         break;
 
       case MYSQL_TYPE_DOUBLE:
-        if (!SvNOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+        if (!SvNOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A DOUBLE NUMBER\n");
         buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.dval);
 #if NVSIZE >= 8
-        imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
+        imp_sth->fbind[idx].numeric_val.dval= SvNV(value);
 #else
-        imp_sth->fbind[idx].numeric_val.dval= atof(SvPV_nolen(imp_sth->params[idx].value));
+        imp_sth->fbind[idx].numeric_val.dval= atof(SvPV_nolen(value));
 #endif
         buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -5349,8 +5338,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 #endif
 
       case MYSQL_TYPE_BLOB:
-        buffer= SvPV(imp_sth->params[idx].value, slen);
-        buffer_length= slen;
+        buffer= imp_sth->params[idx].value;
+        buffer_length= imp_sth->params[idx].len;
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                         "   SCALAR sql_type %"IVdf" ->length %d<- IS A BLOB\n", sql_type, buffer_length);
@@ -5358,8 +5347,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
       default:
         buffer_type= MYSQL_TYPE_STRING;
-        buffer= SvPV(imp_sth->params[idx].value, slen);
-        buffer_length= slen;
+        buffer= imp_sth->params[idx].value;
+        buffer_length= imp_sth->params[idx].len;
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                         "   SCALAR sql_type %"IVdf" ->%s<- IS A STRING\n", sql_type, buffer);
@@ -5401,7 +5390,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     imp_sth->fbind[idx].is_null= buffer_is_null;
   }
 #endif
-  return rc;
+  return TRUE;
 }
 
 
