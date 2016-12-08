@@ -22,6 +22,7 @@
 #include <mysqld_error.h>  /* Comes MySQL */
 
 #include <errmsg.h> /* Comes with MySQL-devel */
+#include <stdint.h> /* For uint32_t */
 
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
@@ -208,15 +209,23 @@ typedef struct imp_sth_ph_st {
 } imp_sth_ph_t;
 
 /*
+ *  Storage for numeric value in prepared statement
+ */
+typedef union numeric_val_u {
+    unsigned char tval;
+    unsigned short sval;
+    uint32_t lval;
+    my_ulonglong llval;
+    float fval;
+    double dval;
+} numeric_val_t;
+
+/*
  *  The bind_param method internally uses this structure for storing
  *  parameters.
  */
 typedef struct imp_sth_phb_st {
-    union
-    {
-      IV     lval;
-      double dval;
-    } numeric_val;
+    numeric_val_t   numeric_val;
     unsigned long   length;
     char            is_null;
 } imp_sth_phb_t;
@@ -224,9 +233,6 @@ typedef struct imp_sth_phb_st {
 /*
  *  The dbd_describe uses this structure for storing
  *  fields meta info.
- *  Added ddata, ldata, lldata for accomodate
- *  being able to use different data types
- *  12.02.20004 PMG
  */
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
@@ -234,8 +240,7 @@ typedef struct imp_sth_fbh_st {
     bool           error;
     char           *data;
     int            charsetnr;
-    double         ddata;
-    IV             ldata;
+    numeric_val_t  numeric_val;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
     unsigned int   flags;
 #endif
