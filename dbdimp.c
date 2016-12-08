@@ -2870,14 +2870,16 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
  *
  **************************************************************************/
 int
-dbd_st_prepare(
+dbd_st_prepare_sv(
   SV *sth,
   imp_sth_t *imp_sth,
-  char *statement,
+  SV *statement_sv,
   SV *attribs)
 {
   int i;
   SV **svp;
+  char *statement;
+  STRLEN statement_len;
   dTHX;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 #if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
@@ -2892,6 +2894,8 @@ dbd_st_prepare(
 #endif
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
+
+  statement = SvPV(statement_sv, statement_len);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -2975,7 +2979,7 @@ dbd_st_prepare(
 #else
                     "\t\tneed to test for restrictions\n");
 #endif
-    str_last_ptr = statement + strlen(statement);
+    str_last_ptr = statement + statement_len;
     for (str_ptr= statement; str_ptr < str_last_ptr; str_ptr++)
     {
 #if MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION
@@ -3071,7 +3075,7 @@ dbd_st_prepare(
 
     prepare_retval= mysql_stmt_prepare(imp_sth->stmt,
                                        statement,
-                                       strlen(statement));
+                                       statement_len);
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tmysql_stmt_prepare returned %d\n",
