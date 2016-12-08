@@ -44,6 +44,20 @@ typedef short WORD;
 #  define ASYNC_CHECK_RETURN(h, value)
 #endif
 
+#ifndef PERL_STATIC_INLINE
+#define PERL_STATIC_INLINE static
+#endif
+
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
+{
+  /* See mysql source code for all utf8 ids: grep -E '^(CHARSET_INFO|struct charset_info_st).*utf8' -A 2 -r strings | grep number | sed -E 's/^.*-  *([^,]+),.*$/\1/' | sort -n */
+  /* Some utf8 ids (selected at mysql compile time) can be retrieved by: SELECT ID FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME LIKE 'utf8%' ORDER BY ID */
+  return (id == 33 || id == 45 || id == 46 || id == 83 || (id >= 192 && id <= 215) || (id >= 223 && id <= 247) || (id >= 254 && id <= 277) || (id >= 576 && id <= 578)
+      || (id >= 608 && id <= 610) || id == 1057 || (id >= 1069 && id <= 1070) || id == 1107 || id == 1216 || id == 1283 || id == 1248 || id == 1270);
+}
+#endif
+
 static int parse_number(char *string, STRLEN len, char **end);
 
 DBISTATE_DECLARE;
@@ -4055,6 +4069,8 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   const char *int_type;
 #endif
   MYSQL_FIELD *fields;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
+
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t-> dbd_st_fetch\n");
 
@@ -4331,11 +4347,11 @@ process:
 	  /* ChopBlanks server-side prepared statement */
           if (ChopBlanks)
           {
-            /* 
-              see bottom of:
-              http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html
-            */
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
             if (fbh->charsetnr != 63)
+#else
+            if (!(fbh->flags & BINARY_FLAG))
+#endif
               while (len && fbh->data[len-1] == ' ') { --len; }
           }
 	  /* END OF ChopBlanks */
@@ -4343,12 +4359,11 @@ process:
           sv_setpvn(sv, fbh->data, len);
 
 #if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION 
-  /* SHOW COLLATION WHERE Id = 63; -- 63 == charset binary, collation binary */
-        if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fbh->charsetnr != 63)
+          if (enable_utf8 && charsetnr_is_utf8(fbh->charsetnr))
 #else
-	if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && !(fbh->flags & BINARY_FLAG))
+          if (enable_utf8 && !(fbh->flags & BINARY_FLAG))
 #endif
-	  sv_utf8_decode(sv);
+            sv_utf8_decode(sv);
           break;
         }
       }
@@ -4489,9 +4504,12 @@ process:
 
         default:
           /* TEXT columns can be returned as MYSQL_TYPE_BLOB, so always check for charset */
-  /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
-        if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fields[i].charsetnr != 63)
-	  sv_utf8_decode(sv);
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+          if (enable_utf8 && charsetnr_is_utf8(fields[i].charsetnr))
+#else
+          if (enable_utf8 && !(fields[i].flags & BINARY_FLAG))
+#endif
+            sv_utf8_decode(sv);
           break;
         }
       }
