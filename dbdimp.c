@@ -58,6 +58,80 @@ PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
 }
 #endif
 
+PERL_STATIC_INLINE bool str_is_nonascii(const char *str, STRLEN len)
+{
+  STRLEN i;
+  for (i = 0; i < len; ++i)
+    if (!UTF8_IS_INVARIANT(str[i]))
+      return true;
+  return false;
+}
+
+void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len)
+{
+  char *buf;
+  STRLEN len;
+  int is_utf8;
+
+  buf = SvPV(param, len);
+  is_utf8 = SvUTF8(param);
+  if (enable_utf8 && !is_binary && !is_utf8 && str_is_nonascii(buf, len))
+  {
+    param = sv_2mortal(newSVpvn(buf, len));
+    buf = SvPVutf8(param, len);
+  }
+  else if ((!enable_utf8 || is_binary) && is_utf8)
+  {
+    param = sv_2mortal(newSVpvn(buf, len));
+    SvUTF8_on(param);
+    buf = SvPVutf8(param, len);
+    if (!utf8_to_bytes((U8 *)buf, &len))
+    {
+      /* restore previous value of len because utf8_to_bytes set it to -1 */
+      len = SvCUR(param);
+      if (is_binary)
+        warn("Wide character in binary field %d", field);
+      else
+        warn("Wide character in field %d but mysql_enable_utf8 not set", field);
+      /* and use utf8 representation like print without :utf8 layer */
+    }
+  }
+
+  *out_buf = buf;
+  *out_len = len;
+}
+
+void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len)
+{
+  char *buf;
+  STRLEN len;
+  int is_utf8;
+
+  buf = SvPV(statement, len);
+  is_utf8 = SvUTF8(statement);
+  if (enable_utf8 && !is_utf8 && str_is_nonascii(buf, len))
+  {
+    statement = sv_2mortal(newSVpvn(buf, len));
+    buf = SvPVutf8(statement, len);
+  }
+  else if (!enable_utf8 && is_utf8)
+  {
+    statement = sv_2mortal(newSVpvn(buf, len));
+    SvUTF8_on(statement);
+    buf = SvPVutf8(statement, len);
+    if (!utf8_to_bytes((U8 *)buf, &len))
+    {
+      /* restore previous value of len because utf8_to_bytes set it to -1 */
+      len = SvCUR(statement);
+      warn("Wide character in statement but mysql_enable_utf8 not set");
+      /* and use utf8 representation like print without :utf8 layer */
+    }
+  }
+
+  *out_buf = buf;
+  *out_len = len;
+}
+
 static int parse_number(char *string, STRLEN len, char **end);
 
 DBISTATE_DECLARE;
@@ -462,6 +536,24 @@ static bool mysql_type_has_allocated_buffer(enum enum_field_types type)
 #endif
 
 /*
+  Returns true if DBI SQL type should be treated as binary sequence of octets, not UNICODE string
+*/
+static bool sql_type_is_binary(IV sql_type)
+{
+  switch (sql_type) {
+  case SQL_BIT:
+  case SQL_BLOB:
+  case SQL_BINARY:
+  case SQL_VARBINARY:
+  case SQL_LONGVARBINARY:
+    return true;
+
+  default:
+    return false;
+  }
+}
+
+/*
   Returns true if DBI SQL type represents numeric value (regardless of how is stored)
 */
 static bool sql_type_is_numeric(IV sql_type)
@@ -862,18 +954,21 @@ static char *parse_params(
   return(salloc);
 }
 
-static void bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
+static void bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type, int field, bool enable_utf8)
 {
   dTHX;
   char *buf;
+  bool is_binary;
 
   if (ph->value)
     Safefree(ph->value);
 
   if (SvOK(value))
   {
-    buf = SvPV(value, ph->len);
+    is_binary = sql_type_is_binary(sql_type);
+    get_param(aTHX_ value, field, enable_utf8, is_binary, &buf, &ph->len);
     ph->value = savepvn(buf, ph->len);
+    ph->utf8 = (enable_utf8 && !is_binary);
   }
   else
   {
@@ -2882,8 +2977,9 @@ dbd_st_prepare_sv(
 #endif
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
-  statement = SvPV(statement_sv, statement_len);
+  get_statement(aTHX_ statement_sv, enable_utf8, &statement, &statement_len);
   imp_sth->statement = savepvn(statement, statement_len);
   imp_sth->statement_len = statement_len;
 
@@ -4964,6 +5060,7 @@ dbd_st_FETCH_internal(
             {
                 keylen= sprintf(key, "%d", n);
                 sv= newSVpvn(imp_sth->params[n].value, imp_sth->params[n].len);
+                if (imp_sth->params[n].utf8) SvUTF8_on(sv);
                 (void)hv_store(pvhv, key, keylen, sv, 0);
             }
         }
@@ -5124,6 +5221,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   int param_num= SvIV(param);
   int idx= param_num - 1;
   char *err_msg;
+  bool enable_utf8;
   D_imp_xxh(sth);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
@@ -5138,6 +5236,8 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
   D_imp_dbh_from_sth;
   ASYNC_CHECK_RETURN(sth, FALSE);
+
+  enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -5173,7 +5273,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     return FALSE;
   }
 
-  bind_param(&imp_sth->params[idx], value, sql_type);
+  bind_param(&imp_sth->params[idx], value, sql_type, idx+1, enable_utf8);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)

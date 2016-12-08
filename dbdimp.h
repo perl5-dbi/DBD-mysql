@@ -205,6 +205,7 @@ typedef struct imp_sth_ph_st {
     char* value;
     STRLEN len;
     int type;
+    bool utf8;
 } imp_sth_ph_t;
 
 /*
@@ -388,3 +389,6 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
 #endif
+
+void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len);
+void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);

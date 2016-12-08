@@ -259,6 +259,7 @@ do(dbh, statement, attr=Nullsv, ...)
   struct imp_sth_ph_st* params= NULL;
   MYSQL_RES* result= NULL;
   SV* async = NULL;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
   int next_result_rc;
 #endif
@@ -270,6 +271,7 @@ do(dbh, statement, attr=Nullsv, ...)
   int             disable_fallback_for_server_prepare= 0;
   MYSQL_STMT      *stmt= NULL;
   MYSQL_BIND      *bind= NULL;
+  STRLEN          blen;
 #endif
     ASYNC_CHECK_XS(dbh);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
@@ -314,7 +316,7 @@ do(dbh, statement, attr=Nullsv, ...)
 
   (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
 
-  str_ptr = SvPV(statement, slen);
+  get_statement(aTHX_ statement, enable_utf8, &str_ptr, &slen);
 
   if(SvTRUE(async)) {
 #if MYSQL_ASYNC
@@ -381,8 +383,8 @@ do(dbh, statement, attr=Nullsv, ...)
             mg_get(param);
           if (SvOK(param))
           {
-            bind[i].buffer= SvPV(param, slen);
-            bind[i].buffer_length= slen;
+            get_param(aTHX_ param, i+1, enable_utf8, false, (char **)&bind[i].buffer, &blen);
+            bind[i].buffer_length= blen;
             bind[i].buffer_type= MYSQL_TYPE_STRING;
           }
           else
@@ -436,10 +438,11 @@ do(dbh, statement, attr=Nullsv, ...)
         if (SvMAGICAL(param))
           mg_get(param);
         if (SvOK(param))
-          params[i].value= SvPV(param, params[i].len);
+          get_param(aTHX_ param, i+1, enable_utf8, false, &params[i].value, &params[i].len);
         else
           params[i].value= NULL;
         params[i].type= SQL_VARCHAR;
+        params[i].utf8= enable_utf8;
       }
     }
     retval = mysql_st_internal_execute(dbh, str_ptr, slen, attr, num_params,
