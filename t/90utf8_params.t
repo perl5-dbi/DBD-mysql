@@ -29,13 +29,21 @@ utf8::upgrade($nasty_utf8);
 
 is($nasty_bytes, $nasty_utf8, "Perl's internal form does not matter");
 
-foreach my $enable_utf8 (0, 1) {
-    my $enable_str = "mysql_enable_utf8=$enable_utf8";
+foreach my $enable_utf8 (0, 1) { foreach my $server_prepare (0, 1) {
+    my $enable_str = "mysql_enable_utf8=$enable_utf8 / mysql_server_prepare=$server_prepare";
+    my $enable_hash = { mysql_enable_utf8 => $enable_utf8, mysql_server_prepare => $server_prepare, mysql_server_prepare_disable_fallback => 1 };
 
-    $dbh = DBI->connect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => $enable_utf8 }) or die DBI->errstr;
+    $dbh = DBI->connect($test_dsn, $test_user, $test_password, $enable_hash) or die DBI->errstr;
 
+    foreach my $name ("latin1", "utf8") {
+
+        $dbh->do("SET NAMES $name") or die $dbh->errstr;
 
     foreach my $charset ("latin1", "utf8") {
+
+        # This configuration cannot work because MySQL server expect Latin1 strings, but mysql_enable_utf8=1 cause automatic encoding to UTF-8
+        next if $enable_utf8 and $name eq "latin1";
+
         $dbh->do("DROP TABLE IF EXISTS utf8_test");
         $dbh->do(qq{
             CREATE TABLE utf8_test (
@@ -46,7 +54,8 @@ foreach my $enable_utf8 (0, 1) {
 
 
         my $nasty_utf8_param = $nasty_utf8;
-        utf8::downgrade($nasty_utf8_param) unless $enable_utf8; # Needs to convert Unicode string to Latin1 when MySQL server expect Latin1 strings
+        utf8::encode($nasty_utf8_param) if $name eq "utf8" and not $enable_utf8; # Needs to manually UTF-8 encode when mysql_enable_utf8=0
+        utf8::downgrade($nasty_utf8_param) if $name eq "latin1"; # Needs to convert Unicode string to Latin1 when MySQL server expect Latin1 strings
 
 
         $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (1, ?), (2, ?)", {}, $nasty_bytes, $nasty_utf8_param);
@@ -69,11 +78,52 @@ foreach my $enable_utf8 (0, 1) {
         $sth->bind_param(2, $nasty_utf8_param);
         $sth->execute;
 
+        {
+            my $sql = "INSERT INTO utf8_test (id, payload) VALUES (?, ?)";
+            $sth = $dbh->prepare($sql);
+        }
+        $sth->execute(9, $nasty_bytes);
+        $sth->execute(10, $nasty_utf8_param);
+
+        {
+            my $sql = "INSERT INTO utf8_test (id, payload) VALUES (?, ?)";
+            $sth = $dbh->prepare($sql);
+        }
+        {
+            my $param = 1;
+            my $val = 11;
+            $sth->bind_param($param, $val);
+        }
+        {
+            my $param = 2;
+            my $val = $nasty_bytes;
+            $sth->bind_param($param, $val);
+        }
+        $sth->execute;
+
+        {
+            my $sql = "INSERT INTO utf8_test (id, payload) VALUES (?, ?)";
+            $sth = $dbh->prepare($sql);
+        }
+        {
+            my $param = 1;
+            my $val = 12;
+            $sth->bind_param($param, $val);
+        }
+        {
+            my $param = 2;
+            my $val = $nasty_utf8_param;
+            $sth->bind_param($param, $val);
+        }
+        $sth->execute;
+
         my @trials = (
             'do with supplied params',
             'do with interpolated string',
             'prepare then execute',
-            'prepare, bind, execute'
+            'prepare, bind, execute',
+            'prepare (free param) then execute',
+            'prepare (free param), bind (free param), execute',
         );
 
         for (my $i = 0; $i<@trials; $i++) {
@@ -84,11 +134,13 @@ foreach my $enable_utf8 (0, 1) {
             is($out, chr(0xc3).chr(0xbf), "$trials[$i] / utf8 unset / $charset / $enable_str");
 
             ($out) = $dbh->selectrow_array("SELECT payload FROM utf8_test WHERE id = $utf8s");
+            utf8::decode($out) if $name eq "utf8" and not $enable_utf8; # Needs to manually UTF-8 decode when mysql_enable_utf8=0
             is($out, chr(0xc3).chr(0xbf), "$trials[$i] / utf8 set / $charset / $enable_str");
         }
 
         $dbh->do("DROP TABLE IF EXISTS utf8_test");
     }
-}
+    }
+} }
 
 done_testing();
