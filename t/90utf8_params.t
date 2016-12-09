@@ -5,6 +5,7 @@
 #
 
 use strict;
+use warnings FATAL => 'all';
 use DBI;
 use DBI::Const::GetInfoType;
 use Carp qw(croak);
@@ -13,6 +14,13 @@ use vars qw($table $test_dsn $test_user $test_password);
 use vars qw($COL_NULLABLE $COL_KEY);
 use lib 't', '.';
 require 'lib.pl';
+
+my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1 }) } or
+    plan skip_all => "no database connection";
+
+if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
+    plan skip_all => "You must have MySQL version 5.0 and greater for this test to run";
+}
 
 my $nasty_bytes = chr(0xc3).chr(0xbf); # looks like character 0xff, if you accidentally utf8 decode
 utf8::downgrade($nasty_bytes);
@@ -24,12 +32,7 @@ is($nasty_bytes, $nasty_utf8, "Perl's internal form does not matter");
 foreach my $enable_utf8 (0, 1) {
     my $enable_str = "mysql_enable_utf8=$enable_utf8";
 
-    my $dbh = DBI->connect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => $enable_utf8 }) or die DBI->errstr;
-    
-    if ($dbh->get_info($GetInfoType{SQL_DBMS_VER}) lt "5.0") {
-        plan skip_all => 
-            "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
-    }
+    $dbh = DBI->connect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => $enable_utf8 }) or die DBI->errstr;
 
 
     foreach my $charset ("latin1", "utf8") {
@@ -42,15 +45,19 @@ foreach my $enable_utf8 (0, 1) {
         }) or die $dbh->errstr;
 
 
-        $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (1, ?), (2, ?)", {}, $nasty_bytes, $nasty_utf8);
+        my $nasty_utf8_param = $nasty_utf8;
+        utf8::downgrade($nasty_utf8_param) unless $enable_utf8; # Needs to convert Unicode string to Latin1 when MySQL server expect Latin1 strings
+
+
+        $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (1, ?), (2, ?)", {}, $nasty_bytes, $nasty_utf8_param);
 
 
         $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (3, '$nasty_bytes')");
-        $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (4, '$nasty_utf8')");
+        $dbh->do("INSERT INTO utf8_test (id, payload) VALUES (4, '$nasty_utf8_param')");
 
         my $sth = $dbh->prepare("INSERT INTO utf8_test (id, payload) VALUES (?, ?)");
         $sth->execute(5, $nasty_bytes);
-        $sth->execute(6, $nasty_utf8);
+        $sth->execute(6, $nasty_utf8_param);
 
         $sth = $dbh->prepare("INSERT INTO utf8_test (id, payload) VALUES (?, ?)");
         $sth->bind_param(1, 7);
@@ -59,7 +66,7 @@ foreach my $enable_utf8 (0, 1) {
 
         $sth = $dbh->prepare("INSERT INTO utf8_test (id, payload) VALUES (?, ?)");
         $sth->bind_param(1, 8);
-        $sth->bind_param(2, $nasty_utf8);
+        $sth->bind_param(2, $nasty_utf8_param);
         $sth->execute;
 
         my @trials = (
@@ -79,6 +86,8 @@ foreach my $enable_utf8 (0, 1) {
             ($out) = $dbh->selectrow_array("SELECT payload FROM utf8_test WHERE id = $utf8s");
             is($out, chr(0xc3).chr(0xbf), "$trials[$i] / utf8 set / $charset / $enable_str");
         }
+
+        $dbh->do("DROP TABLE IF EXISTS utf8_test");
     }
 }
 
