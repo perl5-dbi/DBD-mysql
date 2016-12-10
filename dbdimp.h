@@ -22,6 +22,7 @@
 #include <mysqld_error.h>  /* Comes MySQL */
 
 #include <errmsg.h> /* Comes with MySQL-devel */
+#include <stdint.h> /* For uint32_t */
 
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
@@ -187,10 +188,8 @@ struct imp_dbh_st {
 #if MYSQL_ASYNC
     void* async_query_in_flight;
 #endif
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
     bool enable_utf8;
     bool enable_utf8mb4;
-#endif
     struct {
 	    unsigned int auto_reconnects_ok;
 	    unsigned int auto_reconnects_failed;
@@ -203,20 +202,30 @@ struct imp_dbh_st {
  *  parameters.
  */
 typedef struct imp_sth_ph_st {
-    SV* value;
+    char* value;
+    STRLEN len;
     int type;
+    bool utf8;
 } imp_sth_ph_t;
+
+/*
+ *  Storage for numeric value in prepared statement
+ */
+typedef union numeric_val_u {
+    unsigned char tval;
+    unsigned short sval;
+    uint32_t lval;
+    my_ulonglong llval;
+    float fval;
+    double dval;
+} numeric_val_t;
 
 /*
  *  The bind_param method internally uses this structure for storing
  *  parameters.
  */
 typedef struct imp_sth_phb_st {
-    union
-    {
-      IV     lval;
-      double dval;
-    } numeric_val;
+    numeric_val_t   numeric_val;
     unsigned long   length;
     char            is_null;
 } imp_sth_phb_t;
@@ -224,9 +233,6 @@ typedef struct imp_sth_phb_st {
 /*
  *  The dbd_describe uses this structure for storing
  *  fields meta info.
- *  Added ddata, ldata, lldata for accomodate
- *  being able to use different data types
- *  12.02.20004 PMG
  */
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
@@ -234,8 +240,7 @@ typedef struct imp_sth_fbh_st {
     bool           error;
     char           *data;
     int            charsetnr;
-    double         ddata;
-    IV             ldata;
+    numeric_val_t  numeric_val;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
     unsigned int   flags;
 #endif
@@ -260,6 +265,8 @@ typedef struct imp_sth_fbind_st {
  */
 struct imp_sth_st {
     dbih_stc_t com;       /* MUST be first element in structure     */
+    char *statement;
+    STRLEN statement_len;
 
 #if (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
     MYSQL_STMT       *stmt;
@@ -307,7 +314,7 @@ struct imp_sth_st {
 #define dbd_db_destroy		mysql_db_destroy
 #define dbd_db_STORE_attrib	mysql_db_STORE_attrib
 #define dbd_db_FETCH_attrib	mysql_db_FETCH_attrib
-#define dbd_st_prepare		mysql_st_prepare
+#define dbd_st_prepare_sv	mysql_st_prepare_sv
 #define dbd_st_execute		mysql_st_execute
 #define dbd_st_fetch		mysql_st_fetch
 #define dbd_st_more_results     mysql_st_next_results
@@ -337,7 +344,8 @@ SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
 my_ulonglong mysql_st_internal_execute(SV *,
-                                       SV *,
+                                       char *,
+                                       STRLEN,
                                        SV *,
                                        int,
                                        imp_sth_ph_t *,
@@ -381,3 +389,6 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
 #endif
+
+void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len);
+void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);

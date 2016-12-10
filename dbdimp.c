@@ -44,6 +44,94 @@ typedef short WORD;
 #  define ASYNC_CHECK_RETURN(h, value)
 #endif
 
+#ifndef PERL_STATIC_INLINE
+#define PERL_STATIC_INLINE static
+#endif
+
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
+{
+  /* See mysql source code for all utf8 ids: grep -E '^(CHARSET_INFO|struct charset_info_st).*utf8' -A 2 -r strings | grep number | sed -E 's/^.*-  *([^,]+),.*$/\1/' | sort -n */
+  /* Some utf8 ids (selected at mysql compile time) can be retrieved by: SELECT ID FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME LIKE 'utf8%' ORDER BY ID */
+  return (id == 33 || id == 45 || id == 46 || id == 83 || (id >= 192 && id <= 215) || (id >= 223 && id <= 247) || (id >= 254 && id <= 277) || (id >= 576 && id <= 578)
+      || (id >= 608 && id <= 610) || id == 1057 || (id >= 1069 && id <= 1070) || id == 1107 || id == 1216 || id == 1283 || id == 1248 || id == 1270);
+}
+#endif
+
+PERL_STATIC_INLINE bool str_is_nonascii(const char *str, STRLEN len)
+{
+  STRLEN i;
+  for (i = 0; i < len; ++i)
+    if (!UTF8_IS_INVARIANT(str[i]))
+      return true;
+  return false;
+}
+
+void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len)
+{
+  char *buf;
+  STRLEN len;
+  int is_utf8;
+
+  buf = SvPV(param, len);
+  is_utf8 = SvUTF8(param);
+  if (enable_utf8 && !is_binary && !is_utf8 && str_is_nonascii(buf, len))
+  {
+    param = sv_2mortal(newSVpvn(buf, len));
+    buf = SvPVutf8(param, len);
+  }
+  else if ((!enable_utf8 || is_binary) && is_utf8)
+  {
+    param = sv_2mortal(newSVpvn(buf, len));
+    SvUTF8_on(param);
+    buf = SvPVutf8(param, len);
+    if (!utf8_to_bytes((U8 *)buf, &len))
+    {
+      /* restore previous value of len because utf8_to_bytes set it to -1 */
+      len = SvCUR(param);
+      if (is_binary)
+        warn("Wide character in binary field %d", field);
+      else
+        warn("Wide character in field %d but mysql_enable_utf8 not set", field);
+      /* and use utf8 representation like print without :utf8 layer */
+    }
+  }
+
+  *out_buf = buf;
+  *out_len = len;
+}
+
+void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len)
+{
+  char *buf;
+  STRLEN len;
+  int is_utf8;
+
+  buf = SvPV(statement, len);
+  is_utf8 = SvUTF8(statement);
+  if (enable_utf8 && !is_utf8 && str_is_nonascii(buf, len))
+  {
+    statement = sv_2mortal(newSVpvn(buf, len));
+    buf = SvPVutf8(statement, len);
+  }
+  else if (!enable_utf8 && is_utf8)
+  {
+    statement = sv_2mortal(newSVpvn(buf, len));
+    SvUTF8_on(statement);
+    buf = SvPVutf8(statement, len);
+    if (!utf8_to_bytes((U8 *)buf, &len))
+    {
+      /* restore previous value of len because utf8_to_bytes set it to -1 */
+      len = SvCUR(statement);
+      warn("Wide character in statement but mysql_enable_utf8 not set");
+      /* and use utf8 representation like print without :utf8 layer */
+    }
+  }
+
+  *out_buf = buf;
+  *out_len = len;
+}
+
 static int parse_number(char *string, STRLEN len, char **end);
 
 DBISTATE_DECLARE;
@@ -327,86 +415,165 @@ free_param(pTHX_ imp_sth_ph_t *params, int num_params)
     {
       imp_sth_ph_t *ph= params+i;
       if (ph->value)
-      {
-        (void) SvREFCNT_dec(ph->value);
-        ph->value= NULL;
-      }
+        Safefree(ph->value);
     }
     Safefree(params);
   }
 }
 
+enum perl_type {
+  PERL_TYPE_UNDEF,
+  PERL_TYPE_INTEGER,
+  PERL_TYPE_NUMERIC,
+  PERL_TYPE_BINARY,
+  PERL_TYPE_STRING
+};
+
 /* 
   Convert a MySQL type to a type that perl can handle
-
-  NOTE: In the future we may want to return a struct with a lot of
-  information for each type
 */
-
-static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
+static enum perl_type mysql_to_perl_type(enum enum_field_types type)
 {
-  static enum enum_field_types enum_type;
-
   switch (type) {
-  case MYSQL_TYPE_DOUBLE:
-  case MYSQL_TYPE_FLOAT:
-    enum_type= MYSQL_TYPE_DOUBLE;
-    break;
+  case MYSQL_TYPE_NULL:
+    return PERL_TYPE_UNDEF;
 
-  case MYSQL_TYPE_SHORT:
   case MYSQL_TYPE_TINY:
-  case MYSQL_TYPE_LONG:
+  case MYSQL_TYPE_SHORT:
   case MYSQL_TYPE_INT24:
-  case MYSQL_TYPE_YEAR:
+  case MYSQL_TYPE_LONG:
 #if IVSIZE >= 8
   case MYSQL_TYPE_LONGLONG:
-    enum_type= MYSQL_TYPE_LONGLONG;
-#else
-    enum_type= MYSQL_TYPE_LONG;
 #endif
-    break;
+  case MYSQL_TYPE_YEAR:
+    return PERL_TYPE_INTEGER;
+
+  case MYSQL_TYPE_FLOAT:
+#if NVSIZE >= 8
+  case MYSQL_TYPE_DOUBLE:
+#endif
+    return PERL_TYPE_NUMERIC;
 
 #if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
   case MYSQL_TYPE_BIT:
-    enum_type= MYSQL_TYPE_BIT;
-    break;
 #endif
-
-#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
-  case MYSQL_TYPE_NEWDECIMAL:
-#endif
-  case MYSQL_TYPE_DECIMAL:
-    enum_type= MYSQL_TYPE_DECIMAL;
-    break;
-
-#if IVSIZE < 8
-  case MYSQL_TYPE_LONGLONG:
-#endif
-  case MYSQL_TYPE_DATE:
-  case MYSQL_TYPE_TIME:
-  case MYSQL_TYPE_DATETIME:
-  case MYSQL_TYPE_NEWDATE:
-  case MYSQL_TYPE_TIMESTAMP:
-  case MYSQL_TYPE_VAR_STRING:
-#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
-  case MYSQL_TYPE_VARCHAR:
-#endif
-  case MYSQL_TYPE_STRING:
-    enum_type= MYSQL_TYPE_STRING;
-    break;
-
 #if MYSQL_VERSION_ID > GEO_DATATYPE_VERSION
   case MYSQL_TYPE_GEOMETRY:
 #endif
-  case MYSQL_TYPE_BLOB:
   case MYSQL_TYPE_TINY_BLOB:
-    enum_type= MYSQL_TYPE_BLOB;
-    break;
+  case MYSQL_TYPE_BLOB:
+  case MYSQL_TYPE_MEDIUM_BLOB:
+  case MYSQL_TYPE_LONG_BLOB:
+    return PERL_TYPE_BINARY;
 
   default:
-    enum_type= MYSQL_TYPE_STRING;    /* MySQL can handle all types as strings */
+    return PERL_TYPE_STRING;
   }
-  return(enum_type);
+}
+
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+/*
+  Convert a DBI SQL type to a MySQL type for prepared statement storage
+  See: http://dev.mysql.com/doc/refman/5.7/en/c-api-prepared-statement-type-codes.html
+*/
+static enum enum_field_types sql_to_mysql_type(IV sql_type)
+{
+  switch (sql_type) {
+  case SQL_BOOLEAN:
+  case SQL_TINYINT:
+    return MYSQL_TYPE_TINY;
+  case SQL_SMALLINT:
+    return MYSQL_TYPE_SHORT;
+  case SQL_INTEGER:
+    return MYSQL_TYPE_LONG;
+  case SQL_BIGINT:
+    return MYSQL_TYPE_LONGLONG;
+
+  case SQL_FLOAT:
+    return MYSQL_TYPE_FLOAT;
+  case SQL_DOUBLE:
+  case SQL_REAL:
+    return MYSQL_TYPE_DOUBLE;
+
+  /* TODO: datetime structures */
+#if 0
+  case SQL_TIME:
+    return MYSQL_TYPE_TIME;
+  case SQL_DATE:
+    return MYSQL_TYPE_DATE;
+  case SQL_DATETIME:
+    return MYSQL_TYPE_DATETIME;
+  case SQL_TIMESTAMP:
+    return MYSQL_TYPE_TIMESTAMP;
+#endif
+
+  case SQL_BIT:
+  case SQL_BLOB:
+  case SQL_BINARY:
+  case SQL_VARBINARY:
+  case SQL_LONGVARBINARY:
+    return MYSQL_TYPE_BLOB;
+
+  default:
+    return MYSQL_TYPE_STRING;
+  }
+}
+
+/*
+  Returns true if MySQL type for prepared statement storage uses dynamically allocated buffer
+*/
+static bool mysql_type_has_allocated_buffer(enum enum_field_types type)
+{
+  switch (type) {
+  case MYSQL_TYPE_STRING:
+  case MYSQL_TYPE_BLOB:
+    return true;
+
+  default:
+    return false;
+  }
+}
+#endif
+
+/*
+  Returns true if DBI SQL type should be treated as binary sequence of octets, not UNICODE string
+*/
+static bool sql_type_is_binary(IV sql_type)
+{
+  switch (sql_type) {
+  case SQL_BIT:
+  case SQL_BLOB:
+  case SQL_BINARY:
+  case SQL_VARBINARY:
+  case SQL_LONGVARBINARY:
+    return true;
+
+  default:
+    return false;
+  }
+}
+
+/*
+  Returns true if DBI SQL type represents numeric value (regardless of how is stored)
+*/
+static bool sql_type_is_numeric(IV sql_type)
+{
+  switch (sql_type) {
+  case SQL_BOOLEAN:
+  case SQL_TINYINT:
+  case SQL_SMALLINT:
+  case SQL_INTEGER:
+  case SQL_BIGINT:
+  case SQL_FLOAT:
+  case SQL_DOUBLE:
+  case SQL_REAL:
+  case SQL_NUMERIC:
+  case SQL_DECIMAL:
+    return true;
+
+  default:
+    return false;
+  }
 }
 
 #if defined(DBD_MYSQL_EMBEDDED)
@@ -544,13 +711,12 @@ static char *parse_params(
 {
   bool comment_end= false;
   char *salloc, *statement_ptr;
-  char *statement_ptr_end, *ptr, *valbuf;
+  char *statement_ptr_end, *ptr;
   char *cp, *end;
   int alen, i;
   int slen= *slen_ptr;
   int limit_flag= 0;
   int comment_length=0;
-  STRLEN vallen;
   imp_sth_ph_t *ph;
 
   if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
@@ -570,30 +736,19 @@ static char *parse_params(
 
   for (i= 0, ph= params; i < num_params; i++, ph++)
   {
-    int defined= 0;
-    if (ph->value)
-    {
-      if (SvMAGICAL(ph->value))
-        mg_get(ph->value);
-      if (SvOK(ph->value))
-        defined=1;
-    }
-    if (!defined)
+    if (!ph->value)
       alen+= 3;  /* Erase '?', insert 'NULL' */
     else
     {
-      valbuf= SvPV(ph->value, vallen);
-      alen+= 2+vallen+1;
+      alen+= 2+ph->len+1;
       /* this will most likely not happen since line 214 */
       /* of mysql.xs hardcodes all types to SQL_VARCHAR */
       if (!ph->type)
       {
         if (bind_type_guessing)
         {
-          valbuf= SvPV(ph->value, vallen);
           ph->type= SQL_INTEGER;
-
-          if (parse_number(valbuf, vallen, &end) != 0)
+          if (parse_number(ph->value, ph->len, &end) != 0)
           {
               ph->type= SQL_VARCHAR;
           }
@@ -734,7 +889,7 @@ static char *parse_params(
         }
 
         ph = params+ (i++);
-        if (!ph->value  ||  !SvOK(ph->value))
+        if (!ph->value)
         {
           *ptr++ = 'N';
           *ptr++ = 'U';
@@ -745,26 +900,12 @@ static char *parse_params(
         {
           int is_num = FALSE;
 
-          valbuf= SvPV(ph->value, vallen);
-          if (valbuf)
+          if (ph->value)
           {
-            switch (ph->type)
-            {
-              case SQL_NUMERIC:
-              case SQL_DECIMAL:
-              case SQL_INTEGER:
-              case SQL_SMALLINT:
-              case SQL_FLOAT:
-              case SQL_REAL:
-              case SQL_DOUBLE:
-              case SQL_BIGINT:
-              case SQL_TINYINT:
-                is_num = TRUE;
-                break;
-            }
+            is_num = sql_type_is_numeric(ph->type);
 
             /* (note this sets *end, which we use if is_num) */
-            if ( parse_number(valbuf, vallen, &end) != 0 && is_num)
+            if ( parse_number(ph->value, ph->len, &end) != 0 && is_num)
             {
               if (bind_type_guessing) {
                 /* .. not a number, so apparently we guessed wrong */
@@ -782,12 +923,12 @@ static char *parse_params(
             if (!is_num)
             {
               *ptr++ = '\'';
-              ptr += mysql_real_escape_string(sock, ptr, valbuf, vallen);
+              ptr += mysql_real_escape_string(sock, ptr, ph->value, ph->len);
               *ptr++ = '\'';
             }
             else
             {
-              for (cp= valbuf; cp < end; cp++)
+              for (cp= ph->value; cp < end; cp++)
                   *ptr++= *cp;
             }
           }
@@ -813,22 +954,29 @@ static char *parse_params(
   return(salloc);
 }
 
-int bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type)
+static void bind_param(imp_sth_ph_t *ph, SV *value, IV sql_type, int field, bool enable_utf8)
 {
   dTHX;
-  if (ph->value)
-  {
-    if (SvMAGICAL(ph->value))
-      mg_get(ph->value);
-    (void) SvREFCNT_dec(ph->value);
-  }
+  char *buf;
+  bool is_binary;
 
-  ph->value= newSVsv(value);
+  if (ph->value)
+    Safefree(ph->value);
+
+  if (SvOK(value))
+  {
+    is_binary = sql_type_is_binary(sql_type);
+    get_param(aTHX_ value, field, enable_utf8, is_binary, &buf, &ph->len);
+    ph->value = savepvn(buf, ph->len);
+    ph->utf8 = (enable_utf8 && !is_binary);
+  }
+  else
+  {
+    ph->value = NULL;
+  }
 
   if (sql_type)
     ph->type = sql_type;
-
-  return TRUE;
 }
 
 static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
@@ -980,9 +1128,9 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
     0, 0, 10,
     SQL_SMALLINT, 0, 0,
 #if MYSQL_VERSION_ID < MYSQL_VERSION_5_0
-    FIELD_TYPE_YEAR,        0
+    FIELD_TYPE_YEAR,        1
 #else
-    MYSQL_TYPE_YEAR,     0
+    MYSQL_TYPE_YEAR,     1
 #endif
   },
   { "date", SQL_DATE, 10, "'",  "'",  NULL,
@@ -1211,11 +1359,13 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
   },
 
   { "bit", SQL_BIT, 1, NULL, NULL, NULL,
-    1, 0, 3, 0, 0, 0, "char(1)", 0, 0, 0,
+    1, 0, 3, 0, 0, 0, "bit", 0, 0, 0,
 #if MYSQL_VERSION_ID < MYSQL_VERSION_5_0
     SQL_BIT, 0, 0, FIELD_TYPE_TINY, 0
-#else
+#elif MYSQL_VERSION_ID < NEW_DATATYPE_VERSION
     SQL_BIT, 0, 0, MYSQL_TYPE_TINY, 0
+#else
+    SQL_BIT, 0, 0, MYSQL_TYPE_BIT, 0
 #endif
   },
 
@@ -1303,18 +1453,25 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
   { "bigint auto_increment", SQL_BIGINT, 19, NULL, NULL, NULL,
     0, 0, 3, 0, 0, 1, "bigint auto_increment", 0, 0, 10,
 #if MYSQL_VERSION_ID < MYSQL_VERSION_5_0
-    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1
+    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG,
 #else
-    SQL_BIGINT, 0, 0, MYSQL_TYPE_LONGLONG, 1
+    SQL_BIGINT, 0, 0, MYSQL_TYPE_LONGLONG,
+#endif
+#if IVSIZE < 8
+    0
+#else
+    1
 #endif
   },
 
   { "bit auto_increment", SQL_BIT, 1, NULL, NULL, NULL,
-    0, 0, 3, 0, 0, 1, "char(1) auto_increment", 0, 0, 0,
+    0, 0, 3, 0, 0, 1, "bit auto_increment", 0, 0, 0,
 #if MYSQL_VERSION_ID < MYSQL_VERSION_5_0
-    SQL_BIT, 0, 0, FIELD_TYPE_TINY, 1
+    SQL_BIT, 0, 0, FIELD_TYPE_TINY, 0
+#elif MYSQL_VERSION_ID < NEW_DATATYPE_VERSION
+    SQL_BIT, 0, 0, MYSQL_TYPE_TINY, 0
 #else
-    SQL_BIT, 0, 0, MYSQL_TYPE_TINY, 1
+    SQL_BIT, 0, 0, MYSQL_TYPE_BIT, 0
 #endif
   },
 
@@ -1358,9 +1515,14 @@ static const sql_type_info_t SQL_GET_TYPE_INFO_values[]= {
   { "bigint unsigned auto_increment", SQL_BIGINT, 20, NULL, NULL, NULL,
     0, 0, 3, 1, 0, 1, "bigint unsigned auto_increment", 0, 0, 10,
 #if MYSQL_VERSION_ID < MYSQL_VERSION_5_0
-    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG, 1
+    SQL_BIGINT, 0, 0, FIELD_TYPE_LONGLONG,
 #else
-    SQL_BIGINT, 0, 0, MYSQL_TYPE_LONGLONG, 1
+    SQL_BIGINT, 0, 0, MYSQL_TYPE_LONGLONG,
+#endif
+#if IVSIZE < 8
+    0
+#else
+    1
 #endif
   },
 
@@ -1879,8 +2041,6 @@ MYSQL *mysql_dr_connect(
                         imp_dbh->disable_fallback_for_server_prepare);
 #endif
 
-        /* HELMUT */
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
         if ((svp = hv_fetch(hv, "mysql_enable_utf8mb4", 20, FALSE)) && *svp && SvTRUE(*svp)) {
           mysql_options(sock, MYSQL_SET_CHARSET_NAME, "utf8mb4");
         }
@@ -1896,7 +2056,6 @@ MYSQL *mysql_dr_connect(
                          "mysql_options: MYSQL_SET_CHARSET_NAME=%s\n",
                          (SvTRUE(*svp) ? "utf8" : "latin1"));
         }
-#endif
 
 #if defined(DBD_MYSQL_WITH_SSL) && !defined(DBD_MYSQL_EMBEDDED) && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
@@ -2144,11 +2303,8 @@ int dbd_db_login(SV* dbh, imp_dbh_t* imp_dbh, char* dbname, char* user,
  /* Safer we flip this to TRUE perl side if we detect a mod_perl env. */
   imp_dbh->auto_reconnect = FALSE;
 
-  /* HELMUT */
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   imp_dbh->enable_utf8 = FALSE;     /* initialize mysql_enable_utf8 */
   imp_dbh->enable_utf8mb4 = FALSE;  /* initialize mysql_enable_utf8mb4 */
-#endif
 
   if (!my_login(aTHX_ dbh, imp_dbh))
   {
@@ -2475,12 +2631,10 @@ dbd_db_STORE_attrib(
     imp_dbh->bind_type_guessing = bool_value;
   else if (kl == 31 && strEQ(key,"mysql_bind_comment_placeholders"))
     imp_dbh->bind_type_guessing = bool_value;
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   else if (kl == 17 && strEQ(key, "mysql_enable_utf8"))
     imp_dbh->enable_utf8 = bool_value;
   else if (kl == 20 && strEQ(key, "mysql_enable_utf8mb4"))
     imp_dbh->enable_utf8mb4 = bool_value;
-#endif
 #if FABRIC_SUPPORT
   else if (kl == 22 && strEQ(key, "mysql_fabric_opt_group"))
     mysql_options(imp_dbh->pmysql, FABRIC_OPT_GROUP, (void *)SvPVbyte_nolen(valuesv));
@@ -2535,22 +2689,74 @@ dbd_db_STORE_attrib(
  *  Notes:   Do not forget to call sv_2mortal in the former case!
  *
  **************************************************************************/
-static SV*
-my_ulonglong2str(pTHX_ my_ulonglong val)
+
+#if IVSIZE < 8
+static char *
+my_ulonglong2str(my_ulonglong val, char *buf, STRLEN *len)
 {
-  char buf[64];
-  char *ptr = buf + sizeof(buf) - 1;
+  char *ptr = buf + *len - 1;
+
+  if (*len < 2)
+  {
+    *len = 0;
+    return NULL;
+  }
 
   if (val == 0)
-    return newSVpvn("0", 1);
+  {
+    buf[0] = '0';
+    buf[1] = '\0';
+    *len = 1;
+    return buf;
+  }
 
   *ptr = '\0';
   while (val > 0)
   {
+    if (ptr == buf)
+    {
+      *len = 0;
+      return NULL;
+    }
     *(--ptr) = ('0' + (val % 10));
     val = val / 10;
   }
-  return newSVpvn(ptr, (buf+ sizeof(buf) - 1) - ptr);
+
+  *len = (buf + *len - 1) - ptr;
+  return ptr;
+}
+
+static char*
+signed_my_ulonglong2str(my_ulonglong val, char *buf, STRLEN *len)
+{
+  char *ptr;
+
+  if (val <= LLONG_MAX)
+    return my_ulonglong2str(val, buf, len);
+
+  ptr = my_ulonglong2str(-val, buf, len);
+  if (!ptr || ptr == buf) {
+    *len = 0;
+    return NULL;
+  }
+
+  *(--ptr) = '-';
+  *len += 1;
+  return ptr;
+}
+#endif
+
+static SV*
+my_ulonglong2sv(pTHX_ my_ulonglong val)
+{
+#if IVSIZE >= 8
+  return newSVuv(val);
+#else
+  char buf[64];
+  STRLEN len = sizeof(buf);
+  char *ptr = my_ulonglong2str(val, buf, &len);
+  return newSVpvn(ptr, len);
+#endif
 }
 
 SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
@@ -2604,7 +2810,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 13 && strEQ(key, "clientversion"))
     {
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_client_version()));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_get_client_version()));
     }
     break;
   case 'e':
@@ -2616,13 +2822,10 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       const char* msg = mysql_error(imp_dbh->pmysql);
       result= sv_2mortal(newSVpvn(msg, strlen(msg)));
     }
-    /* HELMUT */
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
     else if (kl == strlen("enable_utf8mb4") && strEQ(key, "enable_utf8mb4"))
         result = sv_2mortal(newSViv(imp_dbh->enable_utf8mb4));
     else if (kl == strlen("enable_utf8") && strEQ(key, "enable_utf8"))
         result = sv_2mortal(newSViv(imp_dbh->enable_utf8));
-#endif
     break;
 
   case 'd':
@@ -2664,7 +2867,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     else if (kl == 8  &&  strEQ(key, "insertid"))
       /* We cannot return an IV, because the insertid is a long. */
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
     break;
   case 'n':
     if (kl == strlen("no_autocommit_cmd") &&
@@ -2684,7 +2887,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
         sv_2mortal(newSVpvn(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     } 
     else if (kl == 13 && strEQ(key, "serverversion"))
-      result= sv_2mortal(my_ulonglong2str(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
+      result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv(PTR2IV(imp_dbh->pmysql)));
     else if (strEQ(key, "sockfd"))
@@ -2750,14 +2953,16 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
  *
  **************************************************************************/
 int
-dbd_st_prepare(
+dbd_st_prepare_sv(
   SV *sth,
   imp_sth_t *imp_sth,
-  char *statement,
+  SV *statement_sv,
   SV *attribs)
 {
   int i;
   SV **svp;
+  char *statement;
+  STRLEN statement_len;
   dTHX;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 #if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
@@ -2772,6 +2977,11 @@ dbd_st_prepare(
 #endif
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
+
+  get_statement(aTHX_ statement_sv, enable_utf8, &statement, &statement_len);
+  imp_sth->statement = savepvn(statement, statement_len);
+  imp_sth->statement_len = statement_len;
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -2855,7 +3065,7 @@ dbd_st_prepare(
 #else
                     "\t\tneed to test for restrictions\n");
 #endif
-    str_last_ptr = statement + strlen(statement);
+    str_last_ptr = statement + statement_len;
     for (str_ptr= statement; str_ptr < str_last_ptr; str_ptr++)
     {
 #if MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION
@@ -2951,7 +3161,7 @@ dbd_st_prepare(
 
     prepare_retval= mysql_stmt_prepare(imp_sth->stmt,
                                        statement,
-                                       strlen(statement));
+                                       statement_len);
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tmysql_stmt_prepare returned %d\n",
@@ -3278,7 +3488,8 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
 my_ulonglong mysql_st_internal_execute(
                                        SV *h, /* could be sth or dbh */
-                                       SV *statement,
+                                       char *sbuf,
+                                       STRLEN slen,
                                        SV *attribs,
                                        int num_params,
                                        imp_sth_ph_t *params,
@@ -3290,8 +3501,6 @@ my_ulonglong mysql_st_internal_execute(
   dTHX;
   bool bind_type_guessing= FALSE;
   bool bind_comment_placeholders= TRUE;
-  STRLEN slen;
-  char *sbuf = SvPV(statement, slen);
   char *table;
   char *salloc;
   int htype;
@@ -3489,7 +3698,6 @@ my_ulonglong mysql_st_internal_execute41(
                                         )
 {
   int i;
-  enum enum_field_types enum_type;
   dTHX;
   int execute_retval;
   my_ulonglong rows=0;
@@ -3551,15 +3759,14 @@ my_ulonglong mysql_st_internal_execute41(
   */
   else
   {
-    for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i) {
-        enum_type = mysql_to_perl_type(stmt->fields[i].type);
-        if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_LONGLONG && enum_type != MYSQL_TYPE_BIT)
-        {
-            /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
-            my_bool on = 1;
-            mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
-            break;
-        }
+    for (i = mysql_stmt_field_count(stmt) - 1; i >=0; --i)
+    {
+      if (mysql_type_has_allocated_buffer(stmt->fields[i].type))
+      {
+        /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
+        my_bool on = 1;
+        mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
+      }
     }
     /* Get the total rows affected and return */
     if (mysql_stmt_store_result(stmt))
@@ -3617,7 +3824,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   dTHX;
   char actual_row_num[64];
   int i;
-  SV **statement;
   D_imp_dbh_from_sth;
   D_imp_xxh(sth);
 #if defined (dTHR)
@@ -3645,8 +3851,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 
     imp_sth->av_attr[i]= Nullav;
   }
-
-  statement= hv_fetch((HV*) SvRV(sth), "Statement", 9, FALSE);
 
   /* 
      Clean-up previous result set(s) for sth to prevent
@@ -3695,7 +3899,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   {
     imp_sth->row_num= mysql_st_internal_execute(
                                                 sth,
-                                                *statement,
+                                                imp_sth->statement,
+                                                imp_sth->statement_len,
                                                 NULL,
                                                 DBIc_NUM_PARAMS(imp_sth),
                                                 imp_sth->params,
@@ -3777,7 +3982,6 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
   if (imp_sth->use_server_side_prepare)
   {
     int i;
-    int col_type;
     int num_fields= DBIc_NUM_FIELDS(imp_sth);
     imp_sth_fbh_t *fbh;
     MYSQL_BIND *buffer;
@@ -3817,27 +4021,29 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
          i++, fbh++, buffer++
         )
     {
-      /* get the column type */
-      col_type = fields ? fields[i].type : MYSQL_TYPE_STRING;
-
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       {
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\ti %d col_type %d fbh->length %lu\n",
-                      i, col_type, fbh->length);
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),"\t\ti %d fbh->length %lu\n",
+                      i, fbh->length);
+#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
+        PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                      "\t\tfields[i].length %lu fields[i].max_length %lu fields[i].type %d fields[i].charsetnr %d\n",
+                      fields[i].length, fields[i].max_length, fields[i].type);
+#else
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tfields[i].length %lu fields[i].max_length %lu fields[i].type %d fields[i].charsetnr %d\n",
                       fields[i].length, fields[i].max_length, fields[i].type,
                       fields[i].charsetnr);
+#endif
       }
-      fbh->charsetnr = fields[i].charsetnr;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
       fbh->flags     = fields[i].flags;
+#else
+      fbh->charsetnr = fields[i].charsetnr;
 #endif
 
-      buffer->buffer_type= mysql_to_perl_type(col_type);
-      if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-        PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tmysql_to_perl_type returned %d\n",
-                      col_type);
+      buffer->buffer_type= fields[i].type;
+      buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
       buffer->length= &(fbh->length);
       buffer->is_null= (my_bool*) &(fbh->is_null);
       buffer->error= (my_bool*) &(fbh->error);
@@ -3846,28 +4052,56 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         buffer->buffer_type = MYSQL_TYPE_STRING;
 
       switch (buffer->buffer_type) {
-      case MYSQL_TYPE_DOUBLE:
-        buffer->buffer_length= sizeof(fbh->ddata);
-        buffer->buffer= (char*) &fbh->ddata;
+      case MYSQL_TYPE_NULL:
+        buffer->buffer_length= 0;
+        buffer->buffer= NULL;
+
+      case MYSQL_TYPE_TINY:
+        buffer->buffer_length= sizeof(fbh->numeric_val.tval);
+        buffer->buffer= (char*) &fbh->numeric_val.tval;
+        break;
+
+      case MYSQL_TYPE_SHORT:
+        buffer->buffer_length= sizeof(fbh->numeric_val.sval);
+        buffer->buffer= (char*) &fbh->numeric_val.sval;
         break;
 
       case MYSQL_TYPE_LONG:
-      case MYSQL_TYPE_LONGLONG:
-        buffer->buffer_length= sizeof(fbh->ldata);
-        buffer->buffer= (char*) &fbh->ldata;
-        buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
+        buffer->buffer_length= sizeof(fbh->numeric_val.lval);
+        buffer->buffer= (char*) &fbh->numeric_val.lval;
         break;
 
-      case MYSQL_TYPE_BIT:
-        buffer->buffer_length= 8;
-        Newz(908, fbh->data, buffer->buffer_length, char);
-        buffer->buffer= (char *) fbh->data;
+      case MYSQL_TYPE_LONGLONG:
+        buffer->buffer_length= sizeof(fbh->numeric_val.llval);
+        buffer->buffer= (char*) &fbh->numeric_val.llval;
         break;
+
+      case MYSQL_TYPE_FLOAT:
+        buffer->buffer_length= sizeof(fbh->numeric_val.fval);
+        buffer->buffer= (char*) &fbh->numeric_val.fval;
+        break;
+
+      case MYSQL_TYPE_DOUBLE:
+        buffer->buffer_length= sizeof(fbh->numeric_val.dval);
+        buffer->buffer= (char*) &fbh->numeric_val.dval;
+        break;
+
+      /* TODO: datetime structures */
+#if 0
+      case MYSQL_TYPE_TIME:
+      case MYSQL_TYPE_DATE:
+      case MYSQL_TYPE_DATETIME:
+      case MYSQL_TYPE_TIMESTAMP:
+        break;
+#endif
 
       default:
+        if (buffer->buffer_type != MYSQL_TYPE_BLOB)
+          buffer->buffer_type= MYSQL_TYPE_STRING;
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
+        break;
       }
     }
 
@@ -3918,8 +4152,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   D_imp_xxh(sth);
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *buffer;
+  IV int_val;
+  const char *int_type;
 #endif
   MYSQL_FIELD *fields;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
+
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t-> dbd_st_fetch\n");
 
@@ -4043,7 +4281,7 @@ process:
            in dbd_describe() for data. Here we know real size of field
            so we should increase buffer size and refetch column value
         */
-        if (fbh->length > buffer->buffer_length || fbh->error)
+        if (mysql_type_has_allocated_buffer(buffer->buffer_type) && (fbh->length > buffer->buffer_length || fbh->error))
         {
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -4085,67 +4323,136 @@ process:
           }
         }
 
-        /* This does look a lot like Georg's PHP driver doesn't it?  --Brian */
-        /* Credit due to Georg - mysqli_api.c  ;) --PMG */
         switch (buffer->buffer_type) {
+        case MYSQL_TYPE_TINY:
+        case MYSQL_TYPE_SHORT:
+        case MYSQL_TYPE_LONG:
+#if IVSIZE >= 8
+        case MYSQL_TYPE_LONGLONG:
+#endif
+          switch (buffer->buffer_type) {
+          case MYSQL_TYPE_TINY:
+            if (buffer->is_unsigned)
+              int_val= (unsigned char)fbh->numeric_val.tval;
+            else
+              int_val= (signed char)fbh->numeric_val.tval;
+            int_type= "TINY INT";
+            break;
+
+          case MYSQL_TYPE_SHORT:
+            if (buffer->is_unsigned)
+              int_val= (unsigned short)fbh->numeric_val.sval;
+            else
+              int_val= (signed short)fbh->numeric_val.sval;
+            int_type= "SHORT INT";
+            break;
+
+          case MYSQL_TYPE_LONG:
+            if (buffer->is_unsigned)
+              int_val= (uint32_t)fbh->numeric_val.lval;
+            else
+              int_val= (int32_t)fbh->numeric_val.lval;
+            int_type= "LONG INT";
+            break;
+
+#if IVSIZE >= 8
+          case MYSQL_TYPE_LONGLONG:
+            if (buffer->is_unsigned)
+              int_val= fbh->numeric_val.llval;
+            else
+              int_val= fbh->numeric_val.llval;
+            int_type= "LONGLONG INT";
+            break;
+#endif
+          }
+
+          if (buffer->is_unsigned)
+            sv_setuv(sv, (UV)int_val);
+          else
+            sv_setiv(sv, (IV)int_val);
+
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          {
+            if (buffer->is_unsigned)
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch AN UNSIGNED %s NUMBER %"UVuf"\n",
+                            int_type, (UV)int_val);
+            else
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch A SIGNED %s NUMBER %"IVdf"\n",
+                            int_type, (IV)int_val);
+          }
+          break;
+
+#if IVSIZE < 8
+        case MYSQL_TYPE_LONGLONG:
+          {
+            char buf[64];
+            STRLEN len = sizeof(buf);
+            char *ptr;
+
+            if (buffer->is_unsigned)
+              ptr = my_ulonglong2str(fbh->numeric_val.llval, buf, &len);
+            else
+              ptr = signed_my_ulonglong2str(fbh->numeric_val.llval, buf, &len);
+
+            sv_setpvn(sv, ptr, len);
+
+            if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch %s LONGLONG INT NUMBER %s\n",
+                            (buffer->is_unsigned ? "AN UNSIGNED" : "A SIGNED"), ptr);
+          }
+          break;
+#endif
+
+        case MYSQL_TYPE_FLOAT:
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch A FLOAT NUMBER %f\n", fbh->numeric_val.fval);
+          sv_setnv(sv, fbh->numeric_val.fval);
+          break;
+
         case MYSQL_TYPE_DOUBLE:
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch double data %f\n", fbh->ddata);
-          sv_setnv(sv, fbh->ddata);
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch A DOUBLE NUMBER %f\n", fbh->numeric_val.dval);
+          sv_setnv(sv, fbh->numeric_val.dval);
           break;
 
-        case MYSQL_TYPE_LONG:
-        case MYSQL_TYPE_LONGLONG:
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tst_fetch int data %"IVdf", unsigned? %d\n",
-                          fbh->ldata, buffer->is_unsigned);
-          if (buffer->is_unsigned)
-            sv_setuv(sv, fbh->ldata);
-          else
-            sv_setiv(sv, fbh->ldata);
-
+        /* TODO: datetime structures */
+  #if 0
+        case MYSQL_TYPE_TIME:
+        case MYSQL_TYPE_DATE:
+        case MYSQL_TYPE_DATETIME:
+        case MYSQL_TYPE_TIMESTAMP:
           break;
+  #endif
 
-        case MYSQL_TYPE_BIT:
-          sv_setpvn(sv, fbh->data, fbh->length);
-
+        case MYSQL_TYPE_NULL:
+          (void) SvOK_off(sv);  /*  Field is NULL, return undef  */
           break;
 
         default:
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tERROR IN st_fetch_string");
+          /* TEXT columns can be returned as MYSQL_TYPE_BLOB, so always check for charset */
           len= fbh->length;
 	  /* ChopBlanks server-side prepared statement */
           if (ChopBlanks)
           {
-            /* 
-              see bottom of:
-              http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html
-            */
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
             if (fbh->charsetnr != 63)
+#else
+            if (!(fbh->flags & BINARY_FLAG))
+#endif
               while (len && fbh->data[len-1] == ' ') { --len; }
           }
 	  /* END OF ChopBlanks */
 
           sv_setpvn(sv, fbh->data, len);
 
-	/* UTF8 */
-        /*HELMUT*/
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-
 #if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION 
-  /* SHOW COLLATION WHERE Id = 63; -- 63 == charset binary, collation binary */
-        if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fbh->charsetnr != 63)
+          if (enable_utf8 && charsetnr_is_utf8(fbh->charsetnr))
 #else
-	if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && !(fbh->flags & BINARY_FLAG))
+          if (enable_utf8 && !(fbh->flags & BINARY_FLAG))
 #endif
-	  sv_utf8_decode(sv);
-#endif
-	/* END OF UTF8 */
+            sv_utf8_decode(sv);
           break;
-
         }
-
       }
     }
 
@@ -4251,7 +4558,7 @@ process:
         sv_setpvn(sv, col, len);
 
         switch (mysql_to_perl_type(fields[i].type)) {
-        case MYSQL_TYPE_DOUBLE:
+        case PERL_TYPE_NUMERIC:
           if (!(fields[i].flags & ZEROFILL_FLAG))
           {
             /* Coerce to dobule and set scalar as NV */
@@ -4260,8 +4567,7 @@ process:
           }
           break;
 
-        case MYSQL_TYPE_LONG:
-        case MYSQL_TYPE_LONGLONG:
+        case PERL_TYPE_INTEGER:
           if (!(fields[i].flags & ZEROFILL_FLAG))
           {
             /* Coerce to integer and set scalar as UV resp. IV */
@@ -4278,22 +4584,19 @@ process:
           }
           break;
 
-#if MYSQL_VERSION_ID > NEW_DATATYPE_VERSION
-        case MYSQL_TYPE_BIT:
-          /* Let it as binary string */
+        case PERL_TYPE_UNDEF:
+          /* Field is NULL, return undef */
+          (void) SvOK_off(sv);
           break;
-#endif
 
         default:
-	/* UTF8 */
-        /*HELMUT*/
-#if defined(sv_utf8_decode) && MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
-
-  /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
-        if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fields[i].charsetnr != 63)
-	  sv_utf8_decode(sv);
+          /* TEXT columns can be returned as MYSQL_TYPE_BLOB, so always check for charset */
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+          if (enable_utf8 && charsetnr_is_utf8(fields[i].charsetnr))
+#else
+          if (enable_utf8 && !(fields[i].flags & BINARY_FLAG))
 #endif
-	/* END OF UTF8 */
+            sv_utf8_decode(sv);
           break;
         }
       }
@@ -4425,6 +4728,9 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   imp_sth_fbh_t *fbh;
   int n;
+
+  if (imp_sth->statement)
+    Safefree(imp_sth->statement);
 
   n= DBIc_NUM_PARAMS(imp_sth);
   if (n)
@@ -4749,11 +5055,13 @@ dbd_st_FETCH_internal(
             int n;
             char key[100];
             I32 keylen;
+            SV *sv;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
             {
                 keylen= sprintf(key, "%d", n);
-                (void)hv_store(pvhv, key,
-                         keylen, newSVsv(imp_sth->params[n].value), 0);
+                sv= newSVpvn(imp_sth->params[n].value, imp_sth->params[n].len);
+                if (imp_sth->params[n].utf8) SvUTF8_on(sv);
+                (void)hv_store(pvhv, key, keylen, sv, 0);
             }
         }
         retsv= sv_2mortal(newRV_noinc((SV*)pvhv));
@@ -4798,7 +5106,7 @@ dbd_st_FETCH_internal(
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %llu\n", imp_sth->insertid);
 
-        return sv_2mortal(my_ulonglong2str(aTHX_ imp_sth->insertid));
+        return sv_2mortal(my_ulonglong2sv(aTHX_ imp_sth->insertid));
       }
       break;
     case 15:
@@ -4910,23 +5218,26 @@ int dbd_st_blob_read (
 int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
   dTHX;
-  int rc;
   int param_num= SvIV(param);
   int idx= param_num - 1;
   char *err_msg;
+  bool enable_utf8;
   D_imp_xxh(sth);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-  STRLEN slen;
   char *buffer= NULL;
   int buffer_is_null= 0;
   int buffer_is_unsigned= 0;
   int buffer_length= 0;
   unsigned int buffer_type= 0;
+  IV int_val= 0;
+  const char *int_type = "";
 #endif
 
   D_imp_dbh_from_sth;
   ASYNC_CHECK_RETURN(sth, FALSE);
+
+  enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -4945,14 +5256,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
      This fixes the bug whereby no warning was issued upon binding a
      defined non-numeric as numeric
    */
-  if (SvOK(value) &&
-      (sql_type == SQL_NUMERIC  ||
-       sql_type == SQL_DECIMAL  ||
-       sql_type == SQL_INTEGER  ||
-       sql_type == SQL_SMALLINT ||
-       sql_type == SQL_FLOAT    ||
-       sql_type == SQL_REAL     ||
-       sql_type == SQL_DOUBLE) )
+  if (SvOK(value) && sql_type_is_numeric(sql_type))
   {
     if (! looks_like_number(value))
     {
@@ -4969,116 +5273,196 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     return FALSE;
   }
 
-  rc = bind_param(&imp_sth->params[idx], value, sql_type);
+  bind_param(&imp_sth->params[idx], value, sql_type, idx+1, enable_utf8);
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
-      switch(sql_type) {
-      case SQL_NUMERIC:
-      case SQL_INTEGER:
-      case SQL_SMALLINT:
-      case SQL_TINYINT:
+    buffer_is_null = !imp_sth->params[idx].value;
+    if (!buffer_is_null) {
+      buffer_type= sql_to_mysql_type(sql_type);
+      switch (buffer_type) {
+      case MYSQL_TYPE_TINY:
+      case MYSQL_TYPE_SHORT:
+      case MYSQL_TYPE_LONG:
 #if IVSIZE >= 8
-      case SQL_BIGINT:
-          buffer_type= MYSQL_TYPE_LONGLONG;
-#else
-          buffer_type= MYSQL_TYPE_LONG;
+      case MYSQL_TYPE_LONGLONG:
 #endif
-          break;
-      case SQL_DOUBLE:
-      case SQL_DECIMAL: 
-      case SQL_FLOAT: 
-      case SQL_REAL:
-          buffer_type= MYSQL_TYPE_DOUBLE;
-          break;
-      case SQL_CHAR: 
-      case SQL_VARCHAR: 
-      case SQL_DATE: 
-      case SQL_TIME: 
-      case SQL_TIMESTAMP: 
-      case SQL_LONGVARCHAR: 
-      case SQL_BINARY: 
-      case SQL_VARBINARY: 
-      case SQL_LONGVARBINARY:
-          buffer_type= MYSQL_TYPE_BLOB;
-          break;
-      default:
-          buffer_type= MYSQL_TYPE_STRING;
-    }
-    buffer_is_null = !(SvOK(imp_sth->params[idx].value) && imp_sth->params[idx].value);
-    if (! buffer_is_null) {
-      switch(buffer_type) {
-        case MYSQL_TYPE_LONG:
-        case MYSQL_TYPE_LONGLONG:
-          /* INT */
-          if (!SvIOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
-          buffer_length = sizeof imp_sth->fbind[idx].numeric_val.lval;
-          imp_sth->fbind[idx].numeric_val.lval= SvIV(imp_sth->params[idx].value);
-          buffer=(void*)&(imp_sth->fbind[idx].numeric_val.lval);
-          if (!SvIOK(imp_sth->params[idx].value))
-          {
-            if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-              PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                            "   Conversion to INT NUMBER was not successful -> '%s' --> (unsigned) '%"UVuf"' / (signed) '%"IVdf"' <- fallback to STRING\n",
-                            SvPV_nolen(imp_sth->params[idx].value), imp_sth->fbind[idx].numeric_val.lval, imp_sth->fbind[idx].numeric_val.lval);
-            buffer_type = MYSQL_TYPE_STRING;
-            break;
-          }
-          if (SvIsUV(imp_sth->params[idx].value))
+        if (!SvIOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
+        int_val= SvIV(value);
+        if (SvIsUV(value))
+          buffer_is_unsigned= 1;
+
+        switch (buffer_type) {
+        case MYSQL_TYPE_TINY:
+          buffer_length= sizeof(imp_sth->fbind[idx].numeric_val.tval);
+          if (int_val > SCHAR_MAX)
             buffer_is_unsigned= 1;
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %"IVdf" ->%"IVdf"<- IS A INT NUMBER\n",
-                          sql_type, *(IV *)buffer);
+          if (buffer_is_unsigned)
+            imp_sth->fbind[idx].numeric_val.tval= (unsigned char)((UV)int_val);
+          else
+            imp_sth->fbind[idx].numeric_val.tval= (signed char)((IV)int_val);
+          buffer= (void*)&(imp_sth->fbind[idx].numeric_val.tval);
+          int_val= imp_sth->fbind[idx].numeric_val.tval;
+          int_type= "TINY INT";
           break;
 
-        case MYSQL_TYPE_DOUBLE:
-          if (!SvNOK(imp_sth->params[idx].value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A FLOAT NUMBER\n");
-          buffer_length = sizeof imp_sth->fbind[idx].numeric_val.dval;
-          imp_sth->fbind[idx].numeric_val.dval= SvNV(imp_sth->params[idx].value);
-          buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %"IVdf" ->%f<- IS A FLOAT NUMBER\n",
-                          sql_type, (double)(*buffer));
+        case MYSQL_TYPE_SHORT:
+          buffer_length= sizeof(imp_sth->fbind[idx].numeric_val.sval);
+          if (int_val > SHRT_MAX)
+            buffer_is_unsigned= 1;
+          if (buffer_is_unsigned)
+            imp_sth->fbind[idx].numeric_val.sval= (unsigned short)((UV)int_val);
+          else
+            imp_sth->fbind[idx].numeric_val.sval= (signed short)((IV)int_val);
+          buffer= (void*)&(imp_sth->fbind[idx].numeric_val.sval);
+          int_val= imp_sth->fbind[idx].numeric_val.sval;
+          int_type= "SHORT INT";
           break;
 
-        case MYSQL_TYPE_BLOB:
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type BLOB\n");
+        case MYSQL_TYPE_LONG:
+          buffer_length= sizeof(imp_sth->fbind[idx].numeric_val.lval);
+          if (int_val > INT32_MAX)
+            buffer_is_unsigned= 1;
+          if (buffer_is_unsigned)
+            imp_sth->fbind[idx].numeric_val.lval= (uint32_t)((UV)int_val);
+          else
+            imp_sth->fbind[idx].numeric_val.lval= (int32_t)((IV)int_val);
+          buffer= (void*)&(imp_sth->fbind[idx].numeric_val.lval);
+          int_val= imp_sth->fbind[idx].numeric_val.lval;
+          int_type= "LONG INT";
           break;
 
-        case MYSQL_TYPE_STRING:
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type STRING %"IVdf", buffertype=%d\n", sql_type, buffer_type);
+#if IVSIZE >= 8
+        case MYSQL_TYPE_LONGLONG:
+          buffer_length= sizeof(imp_sth->fbind[idx].numeric_val.llval);
+          if (int_val > LLONG_MAX)
+            buffer_is_unsigned= 1;
+          if (buffer_is_unsigned)
+            imp_sth->fbind[idx].numeric_val.llval= (UV)int_val;
+          else
+            imp_sth->fbind[idx].numeric_val.llval= (IV)int_val;
+          int_val= imp_sth->fbind[idx].numeric_val.llval;
+          int_type= "LONGLONG INT";
+          buffer= (void*)&(imp_sth->fbind[idx].numeric_val.llval);
           break;
+#endif
+        }
 
-        default:
-          croak("Bug in DBD::Mysql file dbdimp.c#dbd_bind_ph: do not know how to handle unknown buffer type.");
-      }
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+        {
+          if (buffer_is_unsigned)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                          "   SCALAR sql_type %"IVdf" ->%"UVuf"<- IS AN UNSIGNED %s NUMBER\n",
+                          sql_type, (UV)int_val, int_type);
+          else
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                          "   SCALAR sql_type %"IVdf" ->%"IVdf"<- IS A SIGNED %s NUMBER\n",
+                          sql_type, (IV)int_val, int_type);
+        }
+        break;
 
-      if (buffer_type == MYSQL_TYPE_STRING || buffer_type == MYSQL_TYPE_BLOB)
-      {
-        buffer= SvPV(imp_sth->params[idx].value, slen);
-        buffer_length= slen;
+#if IVSIZE < 8
+      case MYSQL_TYPE_LONGLONG:
+        {
+          char *buf;
+          my_ulonglong val;
+
+          buffer_length= sizeof(imp_sth->fbind[idx].numeric_val.llval);
+
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+            PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN LONGLONG INT NUMBER FROM STRING\n");
+
+          buf= SvPV_nolen(value);
+          val= strtoll(buf, NULL, 10);
+          if (val == LLONG_MAX)
+          {
+            val= strtoull(buf, NULL, 10);
+            buffer_is_unsigned= 1;
+          }
+
+          imp_sth->fbind[idx].numeric_val.llval= val;
+          buffer= (void*)&(imp_sth->fbind[idx].numeric_val.llval);
+
+          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          {
+            if (buffer_is_unsigned)
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                            "   SCALAR sql_type %"IVdf" ->%llu<- IS AN UNSIGNED LONGLONG INT NUMBER\n",
+                            sql_type, imp_sth->fbind[idx].numeric_val.llval);
+            else
+              PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                            "   SCALAR sql_type %"IVdf" ->%lld<- IS A SIGNED LONGLONG INT NUMBER\n",
+                            sql_type, imp_sth->fbind[idx].numeric_val.llval);
+          }
+        }
+        break;
+#endif
+
+      case MYSQL_TYPE_FLOAT:
+        if (!SvNOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A FLOAT NUMBER\n");
+        buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.fval);
+        imp_sth->fbind[idx].numeric_val.fval= SvNV(value);
+        buffer=(char*)&(imp_sth->fbind[idx].numeric_val.fval);
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                        " SCALAR type %"IVdf" ->length %d<- IS A STRING or BLOB\n",
-                        sql_type, buffer_length);
+                        "   SCALAR sql_type %"IVdf" ->%f<- IS A FLOAT NUMBER\n",
+                        sql_type, *(float *)buffer);
+        break;
+
+      case MYSQL_TYPE_DOUBLE:
+        if (!SvNOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A DOUBLE NUMBER\n");
+        buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.dval);
+#if NVSIZE >= 8
+        imp_sth->fbind[idx].numeric_val.dval= SvNV(value);
+#else
+        imp_sth->fbind[idx].numeric_val.dval= atof(SvPV_nolen(value));
+#endif
+        buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                        "   SCALAR sql_type %"IVdf" ->%f<- IS A DOUBLE NUMBER\n",
+                        sql_type, *(double *)buffer);
+        break;
+
+      /* TODO: datetime structures */
+#if 0
+      case MYSQL_TYPE_TIME:
+      case MYSQL_TYPE_DATE:
+      case MYSQL_TYPE_DATETIME:
+      case MYSQL_TYPE_TIMESTAMP:
+        break;
+#endif
+
+      case MYSQL_TYPE_BLOB:
+        buffer= imp_sth->params[idx].value;
+        buffer_length= imp_sth->params[idx].len;
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                        "   SCALAR sql_type %"IVdf" ->length %d<- IS A BLOB\n", sql_type, buffer_length);
+        break;
+
+      default:
+        buffer_type= MYSQL_TYPE_STRING;
+        buffer= imp_sth->params[idx].value;
+        buffer_length= imp_sth->params[idx].len;
+        if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh),
+                        "   SCALAR sql_type %"IVdf" ->%s<- IS A STRING\n", sql_type, buffer);
+        break;
       }
     }
     else
     {
-      /*case: buffer_is_null != 0*/
       buffer= NULL;
+      buffer_type= MYSQL_TYPE_NULL;
+      buffer_length= 0;
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                      "   SCALAR NULL VALUE: buffer type is: %d\n", buffer_type);
+                      "   SCALAR sql_type %"IVdf" IS A NULL VALUE", sql_type);
     }
 
     /* Type of column was changed. Force to rebind */
@@ -5106,7 +5490,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     imp_sth->fbind[idx].is_null= buffer_is_null;
   }
 #endif
-  return rc;
+  return TRUE;
 }
 
 
@@ -5334,9 +5718,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 
     ptr= SvPV(str, len);
     result= newSV(len*2+3);
-#ifdef SvUTF8
     if (SvUTF8(str)) SvUTF8_on(result);
-#endif
     sptr= SvPVX(result);
 
     *sptr++ = '\'';
@@ -5366,7 +5748,7 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
   attr= attr;
 
   ASYNC_CHECK_RETURN(dbh, &PL_sv_undef);
-  return sv_2mortal(my_ulonglong2str(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
+  return sv_2mortal(my_ulonglong2sv(aTHX_ mysql_insert_id(imp_dbh->pmysql)));
 }
 #endif
 

@@ -77,7 +77,7 @@ sub test_int_type ($$$$) {
     ########################################
     # Try to insert under the limit value
     ########################################
-    ok($store->bind_param( 1, ($min-1)->bstr(), $perl_type ), "binding less than minimal $mysql_type, mode=$mode");
+    ok($store->bind_param( 1, ($min-1)->bstr(), $dbh->{mysql_server_prepare} ? DBI::SQL_VARCHAR : $perl_type ), "binding less than minimal $mysql_type, mode=$mode");
     if ($mode eq 'strict') {
         $@ = '';
         eval{$store->execute()};
@@ -98,7 +98,7 @@ sub test_int_type ($$$$) {
     ########################################
     # Try to insert over the limit value
     ########################################
-    ok($store->bind_param( 1, ($max+1)->bstr(), $perl_type ), "binding more than maximal $mysql_type, mode=$mode");
+    ok($store->bind_param( 1, ($max+1)->bstr(), $dbh->{mysql_server_prepare} ? DBI::SQL_VARCHAR : $perl_type ), "binding more than maximal $mysql_type, mode=$mode");
     if ($mode eq 'strict') {
         $@ = '';
         eval{$store->execute()};

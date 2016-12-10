@@ -1496,25 +1496,70 @@ See L</"STATEMENT HANDLES">.
 
 =item mysql_enable_utf8
 
-This attribute determines whether DBD::mysql should assume strings
-stored in the database are utf8.  This feature defaults to off.
+This attribute affects input data from DBI (statement and bind parameters) and
+output data from the mysql server.
 
-When set, a data retrieved from a textual column type (char, varchar,
-etc) will have the UTF-8 flag turned on if necessary.  This enables
-character semantics on that string.  You will also need to ensure that
-your database / table / column is configured to use UTF8. See for more
-information the chapter on character set support in the MySQL manual:
+If used as a part of the call to C<connect()> then it issues the command
+C<SET NAMES utf8>.
+
+When set, any statement or bind parameter which is not of binary type is
+automatically encoded to UTF-8 octets before being sent to the MySQL server.
+Any retrieved MySQL data with a charset of C<utf8> or C<utf8mb4> from a textual
+column type (char, varchar, etc) is automatically UTF-8 decoded and returned as
+a perl Unicode scalar (with SvUTF8 flag on).  That enables character semantics
+on those retrieved UTF-8 strings.  The MySQL charset of a retrieved value is
+affected by the last C<SET NAMES> command and also could be affected by the
+database, table and column configuration.  For more information, see the
+I<Character Set Support> chapter in the MySQL manual:
 L<http://dev.mysql.com/doc/refman/5.7/en/charset.html>
 
-Additionally, turning on this flag tells MySQL that incoming data should
-be treated as UTF-8.  This will only take effect if used as part of the
-call to connect().  If you turn the flag on after connecting, you will
-need to issue the command C<SET NAMES utf8> to get the same effect.
+When unset and a statement or bind parameter contains a wide Unicode character then
+DBD::mysql gives the warning C<Wide character in ... but mysql_enable_utf8 not set>.
+The MySQL protocol does not support wide characters and so DBD::mysql does not know
+how to send a statement with wide characters when C<mysql_enable_utf8> is not set.
+
+Please note that when C<mysql_enable_utf8> is set, the input statement and bind
+parameters are encoded to UTF-8 octets even if the current MySQL session charset
+is not C<utf8> or C<utf8mb4>!  You are responsible for calling the C<SET NAMES utf8>
+or C<SET NAMES utf8mb4> command when setting the C<mysql_enable_utf8> attribute
+after connecting.  The same applies to unsetting the C<mysql_enable_utf8>
+attribute.  You are responsible for calling C<SET NAMES latin1> (resp. with
+correct charset) and then passing perl scalars in the correct encoding.
+Otherwise strings will be sent to MySQL server incorrectly!
+
+Input bind parameters of binary types (C<SQL_BIT>, C<SQL_BLOB>, C<SQL_BINARY>,
+C<SQL_VARBINARY> and C<SQL_LONGVARBINARY>) are not touched regardless of the
+C<mysql_enable_utf8> attribute state.  They are treated as a sequence of octets
+and sent to the MySQL server as is.  If that bind parameter contains a wide Unicode
+character then DBD::mysql gives the warning C<Wide character in binary field ...>
+because binary data is a sequence of octets, not Unicode characters!
+
+Output data fetched from the MySQL server which does not have a C<utf8> or
+C<utf8mb4> charset (so also binary data) is not UTF-8 decoded regardless of the
+C<mysql_enable_utf8> attribute state.  They are treated as a sequence of octets
+and it is your responsibility to decode them correctly.
+
+B<WARNING>: DBD::mysql prior to version XXX had different and buggy behaviour
+when the attribute C<mysql_enable_utf8> was enabled!  Input statement and bind
+parameters were never encoded to UTF-8 octets and retrieved columns were
+always UTF-8 decoded regardless of the column charset (except binary charsets).
 
 =item mysql_enable_utf8mb4
 
-This is similar to mysql_enable_utf8, but is capable of handling 4-byte
-UTF-8 characters.
+Exactly the same as the attribute C<mysql_enable_utf8>.
+
+Additionally if used as a part of the call to C<connect()> then it issues
+the command C<SET NAMES utf8mb4> instead of C<utf8>.
+
+MySQL's C<utf8mb4> charset is capable of handling 4-byte UTF-8 characters.
+MySQL's C<utf8> charset is capable of handling only up to 3-byte UTF-8
+characters!  See MySQL manual for more information:
+L<http://dev.mysql.com/doc/refman/5.7/en/charset-unicode-utf8mb4.html>
+
+You should use MySQL's C<utf8mb4> charset instead of C<utf8> to prevent problems
+with data exchange.  When the C<utf8> charset is used then you are responsible
+for 3-byte UTF-8 sequence checks on input perl scalar strings.  Otherwise MySQL
+server can reject or modify the input statement!
 
 =item mysql_bind_type_guessing
 
