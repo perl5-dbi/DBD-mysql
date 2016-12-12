@@ -1522,7 +1522,7 @@ Please note that when C<mysql_enable_utf8> is set, the input statement and bind
 parameters are encoded to UTF-8 octets even if the current MySQL session charset
 is not C<utf8> or C<utf8mb4>!  You are responsible for calling the C<SET NAMES utf8>
 or C<SET NAMES utf8mb4> command when setting the C<mysql_enable_utf8> attribute
-after connecting.  The same applies to unsetting the C<mysql_enable_utf8>
+B<after> connecting.  The same applies to unsetting the C<mysql_enable_utf8>
 attribute.  You are responsible for calling C<SET NAMES latin1> (resp. with
 correct charset) and then passing perl scalars in the correct encoding.
 Otherwise strings will be sent to MySQL server incorrectly!
@@ -1539,7 +1539,7 @@ C<utf8mb4> charset (so also binary data) is not UTF-8 decoded regardless of the
 C<mysql_enable_utf8> attribute state.  They are treated as a sequence of octets
 and it is your responsibility to decode them correctly.
 
-B<WARNING>: DBD::mysql prior to version XXX had different and buggy behaviour
+B<WARNING>: DBD::mysql prior to version 4.042 had different and buggy behaviour
 when the attribute C<mysql_enable_utf8> was enabled!  Input statement and bind
 parameters were never encoded to UTF-8 octets and retrieved columns were
 always UTF-8 decoded regardless of the column charset (except binary charsets).

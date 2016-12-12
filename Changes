@@ -1,4 +1,13 @@
-2016-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_)1)
+2016-12-12 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_1)
+* Unicode fixes: when using mysql_enable_utf8 or mysql_enable_utf8mb4,
+  previous versions of DBD::mysql did not properly encode input statements
+  to UTF-8 and retrieved columns were always UTF-8 decoded regardless of the
+  column charset.
+  Fix by Pali Rohár.
+  Reported and feedback on fix by Marc Lehmann
+  (https://rt.cpan.org/Public/Bug/Display.html?id=87428)
+  Also, the UTF-8 flag was not set for decoded data:
+  (https://rt.cpan.org/Public/Bug/Display.html?id=53130)
 * Return INTs with ZEROFILL as strings. Reported by Knarf, fix by Pali Rohár.
   (https://rt.cpan.org/Public/Bug/Display.html?id=118977)
 
