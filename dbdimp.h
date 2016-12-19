@@ -24,6 +24,26 @@
 #include <errmsg.h> /* Comes with MySQL-devel */
 #include <stdint.h> /* For uint32_t */
 
+#ifndef SvPV_nomg_nolen
+#define SvPV_nomg_nolen(sv) ((SvFLAGS(sv) & (SVf_POK)) == SVf_POK ? SvPVX(sv) : sv_2pv_flags(sv, &PL_na, 0))
+#endif
+
+#ifndef SvTRUE_nomg
+#define SvTRUE_nomg SvTRUE /* SvTRUE does not process get magic for scalars with already cached values, so we are safe */
+#endif
+
+#ifndef SvIV_nomg
+#define SvIV_nomg SvIV /* Sorry, there is no way to handle integer magic scalars properly prior to perl 5.9.1 */
+#endif
+
+#ifndef SvNV_nomg
+#define SvNV_nomg SvNV /* Sorry, there is no way to handle numeric magic scalars properly prior to perl 5.13.2 */
+#endif
+
+#ifndef sv_cmp_flags
+#define sv_cmp_flags(a,b,c) sv_cmp(a,b) /* Sorry, there is no way to compare magic scalars properly prior to perl 5.9.1 */
+#endif
+
 /* For now, we hardcode this, but in the future,
  * we can detect capabilities of the MySQL libraries
  * we're talking to */

@@ -254,11 +254,12 @@ do(dbh, statement, attr=Nullsv, ...)
   CODE:
 {
   D_imp_dbh(dbh);
-  int num_params= 0;
+  int num_params= (items > 3 ? items - 3 : 0);
+  int i;
   int retval;
   struct imp_sth_ph_st* params= NULL;
   MYSQL_RES* result= NULL;
-  SV* async = NULL;
+  bool async= FALSE;
   bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
   int next_result_rc;
@@ -282,6 +283,14 @@ do(dbh, statement, attr=Nullsv, ...)
         mysql_free_result(res);
       }
 #endif
+  if (SvMAGICAL(statement))
+    mg_get(statement);
+  for (i = 0; i < num_params; i++)
+  {
+    SV *param= ST(i+3);
+    if (SvMAGICAL(param))
+      mg_get(param);
+  }
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   /*
@@ -307,18 +316,18 @@ do(dbh, statement, attr=Nullsv, ...)
       SvTRUE(*svp) : imp_dbh->disable_fallback_for_server_prepare;
 
     svp   = DBD_ATTRIB_GET_SVP(attr, "async", 5);
-    async = (svp) ? *svp : &PL_sv_no;
+    async = (svp) ? SvTRUE(*svp) : FALSE;
   }
   if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_dbh),
                   "mysql.xs do() use_server_side_prepare %d, async %d\n",
-                  use_server_side_prepare, SvTRUE(async));
+                  use_server_side_prepare, (async ? 1 : 0));
 
   (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
 
   get_statement(aTHX_ statement, enable_utf8, &str_ptr, &slen);
 
-  if(SvTRUE(async)) {
+  if(async) {
 #if MYSQL_ASYNC
     if (disable_fallback_for_server_prepare)
     {
@@ -372,15 +381,11 @@ do(dbh, statement, attr=Nullsv, ...)
           Handle binding supplied values to placeholders assume user has
           passed the correct number of parameters
         */
-        int i;
-        num_params= items - 3;
         Newz(0, bind, (unsigned int) num_params, MYSQL_BIND);
 
         for (i = 0; i < num_params; i++)
         {
           SV *param= ST(i+3);
-          if (SvMAGICAL(param))
-            mg_get(param);
           if (SvOK(param))
           {
             get_param(aTHX_ param, i+1, enable_utf8, false, (char **)&bind[i].buffer, &blen);
@@ -429,14 +434,10 @@ do(dbh, statement, attr=Nullsv, ...)
     {
       /*  Handle binding supplied values to placeholders	   */
       /*  Assume user has passed the correct number of parameters  */
-      int i;
-      num_params= items-3;
       Newz(0, params, sizeof(*params)*num_params, struct imp_sth_ph_st);
       for (i= 0;  i < num_params;  i++)
       {
         SV *param= ST(i+3);
-        if (SvMAGICAL(param))
-          mg_get(param);
         if (SvOK(param))
           get_param(aTHX_ param, i+1, enable_utf8, false, &params[i].value, &params[i].len);
         else
@@ -459,7 +460,7 @@ do(dbh, statement, attr=Nullsv, ...)
     result= 0;
   }
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
-  if (retval != -2 && !SvTRUE(async)) /* -2 means error */
+  if (retval != -2 && !async) /* -2 means error */
     {
       /* more results? -1 = no, >0 = error, 0 = yes (keep looping) */
       while ((next_result_rc= mysql_next_result(imp_dbh->pmysql)) == 0)
@@ -791,11 +792,11 @@ dbd_mysql_get_info(dbh, sql_info_type)
     IV buffer_len;
 #endif 
 
-    if (SvMAGICAL(sql_info_type))
+    if (SvGMAGICAL(sql_info_type))
         mg_get(sql_info_type);
 
     if (SvOK(sql_info_type))
-    	type = SvIV(sql_info_type);
+    	type = SvIV_nomg(sql_info_type);
     else
     	croak("get_info called with an invalied parameter");
     
