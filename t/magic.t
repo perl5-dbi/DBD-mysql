@@ -93,7 +93,10 @@ foreach my $mysql_enable_utf8 (0, 1) {
                 $sth->finish();
                 is(tied($statement)->{fetch}, 1, "$func1 processes get magic on statement only once");
                 is(tied($statement)->{store}, 0, "$func1 does not process set magic on statement");
-                is(tied($param)->{fetch}, 1, "$func2 processes get magic on param only once");
+                SKIP: {
+                    skip('Passing magic scalar to bind_param() with DBI::SQL_INTEGER process get magic more times prior to perl 5.15.4', 1) if $] < 5.015004;
+                    is(tied($param)->{fetch}, 1, "$func2 processes get magic on param only once");
+                }
                 is(tied($param)->{store}, 0, "$func2 does not process set magic on param");
             }
             {
@@ -109,7 +112,10 @@ foreach my $mysql_enable_utf8 (0, 1) {
                 $sth->finish();
                 is(tied($statement)->{fetch}, 1, "$func1 processes get magic on statement only once");
                 is(tied($statement)->{store}, 0, "$func1 does not process set magic on statement");
-                is(tied($param)->{fetch}, 1, "$func2 processes get magic on param only once");
+                SKIP: {
+                    skip('Passing magic scalar to bind_param() with DBI::SQL_FLOAT process get magic more times prior to perl 5.15.4', 1) if $] < 5.015004;
+                    is(tied($param)->{fetch}, 1, "$func2 processes get magic on param only once");
+                }
                 is(tied($param)->{store}, 0, "$func2 does not process set magic on param");
             }
         }
