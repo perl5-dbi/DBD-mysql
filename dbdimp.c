@@ -73,7 +73,7 @@ void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, cha
   STRLEN len;
   int is_utf8;
 
-  buf = SvPV(param, len);
+  buf = SvPV_nomg(param, len);
   is_utf8 = SvUTF8(param);
   if (enable_utf8 && !is_binary && !is_utf8 && str_is_nonascii(buf, len))
   {
@@ -107,7 +107,7 @@ void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN
   STRLEN len;
   int is_utf8;
 
-  buf = SvPV(statement, len);
+  buf = SvPV_nomg(statement, len);
   is_utf8 = SvUTF8(statement);
   if (enable_utf8 && !is_utf8 && str_is_nonascii(buf, len))
   {
@@ -1760,7 +1760,7 @@ MYSQL *mysql_dr_connect(
           if ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE))  &&
               *svp  &&  SvTRUE(*svp))
           {
-            options = SvPV(*svp, lna);
+            options = SvPV_nomg(*svp, lna);
             imp_drh->embedded.groups=newSVsv(*svp);
 
             if ((server_groups_cnt=count_embedded_options(options)))
@@ -1780,7 +1780,7 @@ MYSQL *mysql_dr_connect(
           if ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE))  &&
               *svp  &&  SvTRUE(*svp))
           {
-            options = SvPV(*svp, lna);
+            options = SvPV_nomg(*svp, lna);
             imp_drh->embedded.args=newSVsv(*svp);
 
             if ((server_args_cnt=count_embedded_options(options)))
@@ -1816,11 +1816,11 @@ MYSQL *mysql_dr_connect(
 
           if ( ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE)) &&
             *svp  &&  SvTRUE(*svp)))
-            rc =+ abs(sv_cmp(*svp, imp_drh->embedded.groups));
+            rc =+ abs(sv_cmp_flags(*svp, imp_drh->embedded.groups, 0));
 
           if ( ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE)) &&
             *svp  &&  SvTRUE(*svp)) )
-            rc =+ abs(sv_cmp(*svp, imp_drh->embedded.args));
+            rc =+ abs(sv_cmp_flags(*svp, imp_drh->embedded.args, 0));
 
           if (rc)
           {
@@ -1856,7 +1856,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_init_command", 18, FALSE)) &&
             *svp && SvTRUE(*svp))
         {
-          char* df = SvPV(*svp, lna);
+          char* df = SvPV_nomg(*svp, lna);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                            "imp_dbh->mysql_dr_connect: Setting" \
@@ -1875,7 +1875,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_connect_timeout", 21, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
         {
-          int to = SvIV(*svp);
+          int to = SvIV_nomg(*svp);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Setting" \
@@ -1886,7 +1886,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_write_timeout", 19, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
         {
-          int to = SvIV(*svp);
+          int to = SvIV_nomg(*svp);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Setting" \
@@ -1897,7 +1897,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_read_timeout", 18, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
         {
-          int to = SvIV(*svp);
+          int to = SvIV_nomg(*svp);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Setting" \
@@ -1918,7 +1918,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {
-          char* df = SvPV(*svp, lna);
+          char* df = SvPV_nomg(*svp, lna);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Reading" \
@@ -1928,7 +1928,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_read_default_group", 24,
                             FALSE))  &&
             *svp  &&  SvTRUE(*svp)) {
-          char* gr = SvPV(*svp, lna);
+          char* gr = SvPV_nomg(*svp, lna);
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                     "imp_dbh->mysql_dr_connect: Using" \
@@ -2566,10 +2566,10 @@ dbd_db_STORE_attrib(
 {
   dTHX;
   STRLEN kl;
-  char *key = SvPV(keysv, kl);
+  char *key = SvPV(keysv, kl); /* needs to process get magic */
   SV *cachesv = Nullsv;
   int cacheit = FALSE;
-  const bool bool_value = SvTRUE(valuesv);
+  const bool bool_value = SvTRUE_nomg(valuesv);
 
   if (kl==10 && strEQ(key, "AutoCommit"))
   {
@@ -2637,12 +2637,12 @@ dbd_db_STORE_attrib(
     imp_dbh->enable_utf8mb4 = bool_value;
 #if FABRIC_SUPPORT
   else if (kl == 22 && strEQ(key, "mysql_fabric_opt_group"))
-    mysql_options(imp_dbh->pmysql, FABRIC_OPT_GROUP, (void *)SvPVbyte_nolen(valuesv));
+    mysql_options(imp_dbh->pmysql, FABRIC_OPT_GROUP, (void *)SvPV_nomg_nolen(valuesv));
   else if (kl == 29 && strEQ(key, "mysql_fabric_opt_default_mode"))
   {
     if (SvOK(valuesv)) {
       STRLEN len;
-      const char *str = SvPVbyte(valuesv, len);
+      const char *str = SvPV_nomg(valuesv, len);
       if ( len == 0 || ( len == 2 && (strnEQ(str, "ro", 3) || strnEQ(str, "rw", 3)) ) )
         mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, len == 0 ? NULL : str);
       else
@@ -2655,7 +2655,7 @@ dbd_db_STORE_attrib(
   else if (kl == 21 && strEQ(key, "mysql_fabric_opt_mode"))
   {
     STRLEN len;
-    const char *str = SvPVbyte(valuesv, len);
+    const char *str = SvPV_nomg(valuesv, len);
     if (len != 2 || (strnNE(str, "ro", 3) && strnNE(str, "rw", 3)))
       croak("Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'");
 
@@ -2763,7 +2763,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
 {
   dTHX;
   STRLEN kl;
-  char *key = SvPV(keysv, kl);
+  char *key = SvPV(keysv, kl); /* needs to process get magic */
   SV* result = NULL;
   dbh= dbh;
 
@@ -4819,7 +4819,7 @@ dbd_st_STORE_attrib(
 {
   dTHX;
   STRLEN(kl);
-  char *key= SvPV(keysv, kl);
+  char *key= SvPV(keysv, kl); /* needs to process get magic */
   int retval= FALSE;
   D_imp_xxh(sth);
 
@@ -4830,7 +4830,7 @@ dbd_st_STORE_attrib(
 
   if (strEQ(key, "mysql_use_result"))
   {
-    imp_sth->use_mysql_use_result= SvTRUE(valuesv);
+    imp_sth->use_mysql_use_result= SvTRUE_nomg(valuesv);
   }
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -5025,7 +5025,7 @@ dbd_st_FETCH_internal(
 {
   dTHX;
   STRLEN(kl);
-  char *key= SvPV(keysv, kl);
+  char *key= SvPV(keysv, kl); /* needs to process get magic */
   SV *retsv= Nullsv;
   D_imp_xxh(sth);
 
@@ -5218,7 +5218,7 @@ int dbd_st_blob_read (
 int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 		 IV sql_type, SV *attribs, int is_inout, IV maxlen) {
   dTHX;
-  int param_num= SvIV(param);
+  int param_num= SvIV(param); /* needs to process get magic */
   int idx= param_num - 1;
   char *err_msg;
   bool enable_utf8;
@@ -5258,6 +5258,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
    */
   if (SvOK(value) && sql_type_is_numeric(sql_type))
   {
+    /* FIXME: looks_like_number() process get magic prior to perl 5.15.4 */
     if (! looks_like_number(value))
     {
       err_msg = SvPVX(sv_2mortal(newSVpvf(
@@ -5290,7 +5291,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 #endif
         if (!SvIOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN INT NUMBER\n");
-        int_val= SvIV(value);
+        int_val= SvIV_nomg(value);
         if (SvIsUV(value))
           buffer_is_unsigned= 1;
 
@@ -5374,7 +5375,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND AN LONGLONG INT NUMBER FROM STRING\n");
 
-          buf= SvPV_nolen(value);
+          buf= SvPV_nomg_nolen(value);
           val= strtoll(buf, NULL, 10);
           if (val == LLONG_MAX)
           {
@@ -5404,7 +5405,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
         if (!SvNOK(value) && DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A FLOAT NUMBER\n");
         buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.fval);
-        imp_sth->fbind[idx].numeric_val.fval= SvNV(value);
+        imp_sth->fbind[idx].numeric_val.fval= SvNV_nomg(value);
         buffer=(char*)&(imp_sth->fbind[idx].numeric_val.fval);
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
@@ -5417,9 +5418,9 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tTRY TO BIND A DOUBLE NUMBER\n");
         buffer_length = sizeof(imp_sth->fbind[idx].numeric_val.dval);
 #if NVSIZE >= 8
-        imp_sth->fbind[idx].numeric_val.dval= SvNV(value);
+        imp_sth->fbind[idx].numeric_val.dval= SvNV_nomg(value);
 #else
-        imp_sth->fbind[idx].numeric_val.dval= atof(SvPV_nolen(value));
+        imp_sth->fbind[idx].numeric_val.dval= atof(SvPV_nomg_nolen(value));
 #endif
         buffer=(char*)&(imp_sth->fbind[idx].numeric_val.dval);
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -5697,13 +5698,13 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 
     D_imp_dbh(dbh);
 
-    if (type && SvMAGICAL(type))
+    if (type && SvGMAGICAL(type))
       mg_get(type);
 
     if (type  &&  SvOK(type))
     {
       int i;
-      int tp= SvIV(type);
+      int tp= SvIV_nomg(type);
       for (i= 0;  i < (int)SQL_GET_TYPE_INFO_num;  i++)
       {
         const sql_type_info_t *t= &SQL_GET_TYPE_INFO_values[i];
@@ -5716,7 +5717,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
       }
     }
 
-    ptr= SvPV(str, len);
+    ptr= SvPV_nomg(str, len);
     result= newSV(len*2+3);
     if (SvUTF8(str)) SvUTF8_on(result);
     sptr= SvPVX(result);
