@@ -1,4 +1,11 @@
 2017-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043_01)
+* Fix parsing configure libs from mysql_config --libs output in Makefile.PL
+  Libraries in mysql_config --libs output can be specified by library name
+  with the -l prefix or by absolute path to library name without any prefix.
+  Parameters must start with a hyphen, so treat all options without leading
+  hyphen in mysql_config --libs output as libraries with full path.
+  Partially fixes bug https://rt.cpan.org/Public/Bug/Display.html?id=100898
+  Fix by Pali Rohár.
 * Return INTs with ZEROFILL as strings. Reported by Knarf, fix by Pali Rohár.
    https://rt.cpan.org/Public/Bug/Display.html?id=118977
 * Correct require on relative path for perl 5.26. Fix by Grinnz.
