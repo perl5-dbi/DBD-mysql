@@ -257,6 +257,8 @@ do(dbh, statement, attr=Nullsv, ...)
   int num_params= (items > 3 ? items - 3 : 0);
   int i;
   int retval;
+  STRLEN slen;
+  char *str_ptr;
   struct imp_sth_ph_st* params= NULL;
   MYSQL_RES* result= NULL;
   bool async= FALSE;
@@ -265,8 +267,6 @@ do(dbh, statement, attr=Nullsv, ...)
   int next_result_rc;
 #endif
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-  STRLEN slen;
-  char            *str_ptr;
   int             has_binded;
   int             use_server_side_prepare= 0;
   int             disable_fallback_for_server_prepare= 0;
@@ -291,8 +291,9 @@ do(dbh, statement, attr=Nullsv, ...)
     if (SvMAGICAL(param))
       mg_get(param);
   }
+  (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
+  get_statement(aTHX_ statement, enable_utf8, &str_ptr, &slen);
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-
   /*
    * Globaly enabled using of server side prepared statement
    * for dbh->do() statements. It is possible to force driver
@@ -300,7 +301,6 @@ do(dbh, statement, attr=Nullsv, ...)
    * 'mysql_server_prepare' attribute to do() method localy:
    * $dbh->do($stmt, {mysql_server_prepared=>1});
   */
-
   use_server_side_prepare = imp_dbh->use_server_side_prepare;
   if (attr)
   {
@@ -314,21 +314,25 @@ do(dbh, statement, attr=Nullsv, ...)
     svp = DBD_ATTRIB_GET_SVP(attr, "mysql_server_prepare_disable_fallback", 37);
     disable_fallback_for_server_prepare = (svp) ?
       SvTRUE(*svp) : imp_dbh->disable_fallback_for_server_prepare;
-
+  }
+  if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
+    PerlIO_printf(DBIc_LOGPIO(imp_dbh),
+                  "mysql.xs do() use_server_side_prepare %d\n",
+                  use_server_side_prepare);
+#endif
+  if (attr)
+  {
+    SV** svp;
     svp   = DBD_ATTRIB_GET_SVP(attr, "async", 5);
     async = (svp) ? SvTRUE(*svp) : FALSE;
   }
   if (DBIc_DBISTATE(imp_dbh)->debug >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_dbh),
-                  "mysql.xs do() use_server_side_prepare %d, async %d\n",
-                  use_server_side_prepare, (async ? 1 : 0));
-
-  (void)hv_store((HV*)SvRV(dbh), "Statement", 9, SvREFCNT_inc(statement), 0);
-
-  get_statement(aTHX_ statement, enable_utf8, &str_ptr, &slen);
-
+                  "mysql.xs do() async %d\n",
+                  (async ? 1 : 0));
   if(async) {
 #if MYSQL_ASYNC
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
     if (disable_fallback_for_server_prepare)
     {
       do_error(dbh, ER_UNSUPPORTED_PS,
@@ -336,6 +340,7 @@ do(dbh, statement, attr=Nullsv, ...)
       XSRETURN_UNDEF;
     }
     use_server_side_prepare = FALSE; /* for now */
+#endif
     imp_dbh->async_query_in_flight = imp_dbh;
 #else
     do_error(dbh, 2000,
@@ -343,7 +348,7 @@ do(dbh, statement, attr=Nullsv, ...)
     XSRETURN_UNDEF;
 #endif
   }
-
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (use_server_side_prepare)
   {
     stmt= mysql_stmt_init(imp_dbh->pmysql);
@@ -613,6 +618,9 @@ more_results(sth)
   {
     RETVAL=0;
   }
+#else
+  PERL_UNUSED_ARG(sth);
+  RETVAL=0;
 #endif
 }
     OUTPUT:

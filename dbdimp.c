@@ -3001,12 +3001,18 @@ dbd_st_prepare_sv(
     svp= DBD_ATTRIB_GET_SVP(attribs, "mysql_server_prepare_disable_fallback", 37);
     imp_sth->disable_fallback_for_server_prepare = (svp) ?
       SvTRUE(*svp) : imp_dbh->disable_fallback_for_server_prepare;
+  }
+  imp_sth->fetch_done= 0;
+#endif
 
+  if (attribs)
+  {
     svp = DBD_ATTRIB_GET_SVP(attribs, "async", 5);
 
     if(svp && SvTRUE(*svp)) {
 #if MYSQL_ASYNC
         imp_sth->is_async = TRUE;
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
         if (imp_sth->disable_fallback_for_server_prepare)
         {
           do_error(sth, ER_UNSUPPORTED_PS,
@@ -3014,6 +3020,7 @@ dbd_st_prepare_sv(
           return 0;
         }
         imp_sth->use_server_side_prepare = FALSE;
+#endif
 #else
         do_error(sth, 2000,
                  "Async support was not built into this version of DBD::mysql", "HY000");
@@ -3021,9 +3028,6 @@ dbd_st_prepare_sv(
 #endif
     }
   }
-
-  imp_sth->fetch_done= 0;
-#endif
 
   imp_sth->done_desc= 0;
   imp_sth->result= NULL;
@@ -3357,12 +3361,14 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     return 0;
   }
 
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     do_warn(sth, JW_ERR_NOT_IMPLEMENTED,
             "Processing of multiple result set is not possible with server side prepare");
     return 0;
   }
+#endif
 
   /*
    *  Free cached array attributes
@@ -3931,7 +3937,9 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       /** Store the result in the current statement handle */
       DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
       DBIc_ACTIVE_on(imp_sth);
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
       if (!use_server_side_prepare)
+#endif
         imp_sth->done_desc= 0;
       imp_sth->fetch_done= 0;
     }
