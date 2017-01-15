@@ -578,7 +578,7 @@ sub Configure {
                 if ($param eq 'libs') {
                     my (@libs, @ldflags);
                     for (split ' ', $str) {
-                        if (/^-[Ll]/) { push @libs, $_ }
+                        if (/^-[Ll]/ || /^[^\-]/) { push @libs, $_ }
                         else          { push @ldflags, $_ }
                     }
                     $str = "@libs";
