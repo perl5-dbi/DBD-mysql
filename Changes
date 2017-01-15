@@ -1,4 +1,11 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+* Fix parsing configure libs from mysql_config --libs output in Makefile.PL
+  Libraries in mysql_config --libs output can be specified by library name
+  with the -l prefix or by absolute path to library name without any prefix.
+  Parameters must start with a hyphen, so treat all options without leading
+  hyphen in mysql_config --libs output as libraries with full path.
+  Partially fixes bug https://rt.cpan.org/Public/Bug/Display.html?id=100898
+  Fix by Pali Rohár.
 * Fix support for magic scalars (pali)
    (https://github.com/perl5-dbi/DBD-mysql/pull/76)
 
