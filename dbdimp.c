@@ -2226,6 +2226,7 @@ static int my_login(pTHX_ SV* dbh, imp_dbh_t *imp_dbh)
 
   if (!imp_dbh->pmysql) {
      Newz(908, imp_dbh->pmysql, 1, MYSQL);
+     imp_dbh->pmysql->net.fd = -1;
   }
   result = mysql_dr_connect(dbh, imp_dbh->pmysql, mysql_socket, host, port, user,
 			  password, dbname, imp_dbh) ? TRUE : FALSE;
@@ -2405,6 +2406,7 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %p\n",
 		              imp_dbh->pmysql);
   mysql_close(imp_dbh->pmysql );
+  imp_dbh->pmysql->net.fd = -1;
 
   /* We don't free imp_dbh since a reference still exists    */
   /* The DESTROY method is the only one to 'free' memory.    */
@@ -2818,7 +2820,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     else if (strEQ(key, "sock"))
       result= sv_2mortal(newSViv(PTR2IV(imp_dbh->pmysql)));
     else if (strEQ(key, "sockfd"))
-      result= sv_2mortal(newSViv((IV) imp_dbh->pmysql->net.fd));
+      result= (imp_dbh->pmysql->net.fd != -1) ?
+        sv_2mortal(newSViv((IV) imp_dbh->pmysql->net.fd)) : &PL_sv_undef;
     else if (strEQ(key, "stat"))
     {
       const char* stats = mysql_stat(imp_dbh->pmysql);
@@ -5596,7 +5599,7 @@ int mysql_db_async_ready(SV* h)
   }
 
   if(dbh->async_query_in_flight) {
-      if(dbh->async_query_in_flight == imp_xxh) {
+      if(dbh->async_query_in_flight == imp_xxh && dbh->pmysql->net.fd != -1) {
           struct pollfd fds;
           int retval;
 
