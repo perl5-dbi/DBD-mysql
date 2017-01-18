@@ -77,6 +77,7 @@ t/magic.t
 t/manifest.t
 t/mysql.dbtest
 t/pod.t
+t/rt110983-valid-mysqlfd.t
 t/rt118977-zerofill.t
 t/rt25389-bin-case.t
 t/rt50304-column_info_parentheses.t

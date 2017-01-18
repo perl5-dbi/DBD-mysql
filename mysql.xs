@@ -57,6 +57,7 @@ _ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL)
   PPCODE:
 {
     MYSQL mysql;
+    mysql.net.fd = -1;
     MYSQL* sock = mysql_dr_connect(drh, &mysql, NULL, host, port, user, password,
 				   NULL, NULL);
     if (sock != NULL)
@@ -109,6 +110,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   }
   else
   {
+    mysql.net.fd = -1;
     sock = mysql_dr_connect(drh, &mysql, NULL, host, port, user,  password, NULL, NULL);
     if (sock == NULL)
     {
@@ -539,15 +541,17 @@ quote(dbh, str, type=NULL)
 	XSRETURN(1);
     }
 
-int mysql_fd(dbh)
+void mysql_fd(dbh)
     SV* dbh
-  CODE:
+  PPCODE:
     {
         D_imp_dbh(dbh);
-        RETVAL = imp_dbh->pmysql->net.fd;
+        if(imp_dbh->pmysql->net.fd != -1) {
+            XSRETURN_IV(imp_dbh->pmysql->net.fd);
+        } else {
+            XSRETURN_UNDEF;
+        }
     }
-  OUTPUT:
-    RETVAL
 
 void mysql_async_result(dbh)
     SV* dbh
