@@ -1,4 +1,7 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+* mysql_fd() still returned file descriptor after closing connection.
+  Reported by Larry Leszczynski, fixed by Pali Rohár.
+   (https://rt.cpan.org/Public/Bug/Display.html?id=110983)
 * Fix parsing configure libs from mysql_config --libs output in Makefile.PL
   Libraries in mysql_config --libs output can be specified by library name
   with the -l prefix or by absolute path to library name without any prefix.
