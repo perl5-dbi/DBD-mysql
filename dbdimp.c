@@ -4057,7 +4057,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
       buffer->length= &(fbh->length);
       buffer->is_null= (my_bool*) &(fbh->is_null);
+#if MYSQL_VERSION_ID >= NEW_DATATYPE_VERSION
       buffer->error= (my_bool*) &(fbh->error);
+#endif
 
       if (fields[i].flags & ZEROFILL_FLAG)
         buffer->buffer_type = MYSQL_TYPE_STRING;
