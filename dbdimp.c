@@ -3537,10 +3537,10 @@ my_ulonglong mysql_st_internal_execute(
   {
     D_imp_dbh(h);
     /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
-    if (imp_dbh && imp_dbh->bind_type_guessing)
+    if (imp_dbh)
     {
       bind_type_guessing= imp_dbh->bind_type_guessing;
-      bind_comment_placeholders= bind_comment_placeholders;
+      bind_comment_placeholders= imp_dbh->bind_comment_placeholders;
     }
 #if MYSQL_ASYNC
     async = (bool) (imp_dbh->async_query_in_flight != NULL);
