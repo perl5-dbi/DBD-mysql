@@ -475,6 +475,7 @@ do(dbh, statement, attr=Nullsv, ...)
         result = mysql_use_result(imp_dbh->pmysql);
           if (result)
             mysql_free_result(result);
+            result = NULL;
           }
           if (next_result_rc > 0)
           {

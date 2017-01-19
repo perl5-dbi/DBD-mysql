@@ -3386,7 +3386,10 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
   /* Release previous MySQL result*/
   if (imp_sth->result)
+  {
     mysql_free_result(imp_sth->result);
+    imp_sth->result= NULL;
+  }
 
   if (DBIc_ACTIVE(imp_sth))
     DBIc_ACTIVE_off(imp_sth);
@@ -5815,6 +5818,7 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
       retval= mysql_num_rows(*resp);
       if(resp == &_res) {
         mysql_free_result(*resp);
+        *resp= NULL;
       }
     }
     if(htype == DBIt_ST) {
