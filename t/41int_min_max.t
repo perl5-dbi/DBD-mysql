@@ -17,7 +17,6 @@ if ($@) {
 }
 
 if (!MinimumVersion($dbh, '4.1')) {
-    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
