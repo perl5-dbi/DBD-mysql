@@ -1,4 +1,7 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+* Fix compilation on MySQL 4.1 (pali)
+* Do not leak dangling pointer to mysql result (pali)
+* Fix logic when assigning to variable bind_comment_placeholders (pali)
 * mysql_fd() still returned file descriptor after closing connection.
   Reported by Larry Leszczynski, fixed by Pali Rohár.
    (https://rt.cpan.org/Public/Bug/Display.html?id=110983)
