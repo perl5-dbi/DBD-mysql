@@ -17,13 +17,9 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
-#
-# DROP/CREATE PROCEDURE will give syntax error
-# for versions < 5.0
-#
-if (!MinimumVersion($dbh, '4.1')) {
+if ($dbh->{mysql_clientversion} < 40103 or $dbh->{mysql_serverversion} < 40103) {
     plan skip_all =>
-        "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
+        "SKIP TEST: You must have MySQL version 4.1.3 and greater for this test to run";
 }
 plan tests => 3;
 

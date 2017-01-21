@@ -14,8 +14,9 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-
-plan tests => (8 + ((5 + 9 + 9) * 4)) * 2;
+if ($dbh->{mysql_serverversion} < 40103) {
+    plan skip_all => "You must have MySQL version 4.1.3 and greater for this test to run";
+}
 
 for my $mysql_server_prepare (0, 1) {
 eval {$dbh= DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
@@ -85,3 +86,4 @@ ok $sth2->finish;
 ok $dbh->do("DROP TABLE dbd_mysql_t50chopblanks"), "drop dbd_mysql_t50chopblanks";
 ok $dbh->disconnect;
 }
+done_testing;

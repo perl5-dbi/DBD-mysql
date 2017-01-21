@@ -17,8 +17,8 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
-if ( !MinimumVersion($dbh, '4.1') ) {
-    plan skip_all => "Servers < 4.1 do not report warnings";
+if ($dbh->{mysql_serverversion} < 40101) {
+    plan skip_all => "Servers < 4.1.1 do not report warnings";
 }
 
 my $expected_warnings = 1;
