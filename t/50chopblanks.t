@@ -28,7 +28,7 @@ ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t50chopblanks"), "drop table if exis
 my $create= <<EOT;
 CREATE TABLE dbd_mysql_t50chopblanks (
   id INT(4),
-  name VARCHAR(64)
+  name TEXT
 )
 EOT
 
