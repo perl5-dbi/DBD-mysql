@@ -25,6 +25,10 @@ if ($dbh->{mysql_serverversion} < 50008) {
   plan skip_all => "Servers < 5.0.8 do not support b'' syntax";
 }
 
+if ($dbh->{mysql_serverversion} < 50026) {
+  plan skip_all => "Servers < 5.0.26 do not support BIN() for BIT values";
+}
+
 my $create = <<EOT;
 CREATE TEMPORARY TABLE `dbd_mysql_rt88006_bit_prep` (
   `id` bigint(20) NOT NULL auto_increment,
