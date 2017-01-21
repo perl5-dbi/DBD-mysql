@@ -27,6 +27,9 @@ SKIP: {
   skip "Server doesn't support multi statements", 25
   if $dbh->{mysql_clientversion} < 40101 or $dbh->{mysql_serverversion} < 40101;
 
+  skip "Server has deadlock bug 16581", 25
+  if $dbh->{mysql_clientversion} < 50025 or ($dbh->{mysql_serverversion} >= 50100 and $dbh->{mysql_serverversion} < 50112);
+
   ok($dbh->do("SET SQL_MODE=''"),"init connection SQL_MODE non strict");
 
   ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_t76multi"), "clean up");
