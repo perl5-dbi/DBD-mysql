@@ -16,9 +16,9 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
-if (!MinimumVersion($dbh, '4.1')) {
+if ($dbh->{mysql_serverversion} < 50002) {
     plan skip_all =>
-        "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
+        "SKIP TEST: You must have MySQL version 5.0.2 and greater for this test to run";
 }
 # nostrict tests + strict tests + init/tear down commands
 plan tests => (19*8 + 17*8 + 4) * 2;
