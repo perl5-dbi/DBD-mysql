@@ -21,9 +21,9 @@ if ($dbh->{mysql_serverversion} < 40101) {
     plan skip_all => "Servers < 4.1.1 do not report warnings";
 }
 
-my $expected_warnings = 1;
-if ( MinimumVersion($dbh, '5.5') ) {
-    $expected_warnings = 2;
+my $expected_warnings = 2;
+if ($dbh->{mysql_serverversion} >= 50000 && $dbh->{mysql_serverversion} < 50500) {
+    $expected_warnings = 1;
 }
 
 plan tests => 14;
