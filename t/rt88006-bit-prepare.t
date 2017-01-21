@@ -21,6 +21,10 @@ if ($@) {
   plan skip_all => "no database connection";
 }
 
+if ($dbh->{mysql_serverversion} < 50008) {
+  plan skip_all => "Servers < 5.0.8 do not support b'' syntax";
+}
+
 my $create = <<EOT;
 CREATE TEMPORARY TABLE `dbd_mysql_rt88006_bit_prep` (
   `id` bigint(20) NOT NULL auto_increment,
