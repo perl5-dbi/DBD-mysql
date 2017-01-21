@@ -89,7 +89,10 @@ ok $sth->finish;
 cmp_ok($dbh->{mysql_warning_count}, '==', 1, 'got warning for INSERT') or do { diag("SHOW WARNINGS:"); diag($_->[2]) foreach @{$dbh->selectall_arrayref("SHOW WARNINGS", { mysql_server_prepare => 0 })}; };
 cmp_ok($dbh->selectrow_arrayref("SHOW WARNINGS", { mysql_server_prepare => 0 })->[2], 'eq', 'Incorrect string value: \'\xC4\x80dam\' for column \'ascii\' at row 1');
 
-$query = "SELECT name,bincol,asbinary(shape), binutf, profile, str2, ascii, latin FROM dbd_mysql_t55utf8 LIMIT 1";
+# AsBinary() is deprecated as of MySQL 5.7.6, use ST_AsBinary() instead
+my $asbinary = $dbh->{mysql_serverversion} >= 50706 ? 'ST_AsBinary' : 'AsBinary';
+
+$query = "SELECT name,bincol,$asbinary(shape), binutf, profile, str2, ascii, latin FROM dbd_mysql_t55utf8 LIMIT 1";
 $sth = $dbh->prepare($query) or die "$DBI::errstr";
 
 ok $sth->execute;
