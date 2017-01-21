@@ -15,8 +15,10 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
+ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_rt50304_column_info"));
+
 my $create = <<EOC;
-CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
+CREATE TABLE dbd_mysql_rt50304_column_info (
     id int(10)unsigned NOT NULL AUTO_INCREMENT,
     problem_column SET('','(Some Text)') DEFAULT NULL,
     regular_column SET('','Some Text') DEFAULT NULL,
@@ -25,7 +27,7 @@ CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
 );
 EOC
 
-ok $dbh->do($create), "create temporary table dbd_mysql_rt50304_column_info";
+ok($dbh->do($create), "create table dbd_mysql_rt50304_column_info");
 
 my $sth = $dbh->column_info(undef, undef, 'dbd_mysql_rt50304_column_info', 'problem_column');
 my $info = $sth->fetchall_arrayref({});
@@ -38,5 +40,7 @@ $info = $sth->fetchall_arrayref({});
 is ( scalar @{$info->[0]->{mysql_values}}, 2, 'regular_column values');
 is ( $info->[0]->{mysql_values}->[0], '', 'regular_column first value');
 is ( $info->[0]->{mysql_values}->[1], 'Some Text', 'regular_column second value');
+
+ok($dbh->do("DROP TABLE dbd_mysql_rt50304_column_info"));
 ok($dbh->disconnect());
 done_testing;
