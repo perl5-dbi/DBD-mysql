@@ -14,6 +14,9 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
+if ($dbh->{mysql_serverversion} < 40103) {
+    plan skip_all => "You must have MySQL version 4.1.3 and greater for this test to run";
+}
 plan tests => 36 * 2;
 
 for my $mysql_server_prepare (0, 1) {
