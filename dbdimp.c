@@ -3386,7 +3386,10 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
 
   /* Release previous MySQL result*/
   if (imp_sth->result)
+  {
     mysql_free_result(imp_sth->result);
+    imp_sth->result= NULL;
+  }
 
   if (DBIc_ACTIVE(imp_sth))
     DBIc_ACTIVE_off(imp_sth);
@@ -3534,10 +3537,10 @@ my_ulonglong mysql_st_internal_execute(
   {
     D_imp_dbh(h);
     /* if imp_dbh is not available, it causes segfault (proper) on OpenBSD */
-    if (imp_dbh && imp_dbh->bind_type_guessing)
+    if (imp_dbh)
     {
       bind_type_guessing= imp_dbh->bind_type_guessing;
-      bind_comment_placeholders= bind_comment_placeholders;
+      bind_comment_placeholders= imp_dbh->bind_comment_placeholders;
     }
 #if MYSQL_ASYNC
     async = (bool) (imp_dbh->async_query_in_flight != NULL);
@@ -4057,7 +4060,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
       buffer->length= &(fbh->length);
       buffer->is_null= (my_bool*) &(fbh->is_null);
+#if MYSQL_VERSION_ID >= NEW_DATATYPE_VERSION
       buffer->error= (my_bool*) &(fbh->error);
+#endif
 
       if (fields[i].flags & ZEROFILL_FLAG)
         buffer->buffer_type = MYSQL_TYPE_STRING;
@@ -5813,6 +5818,7 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
       retval= mysql_num_rows(*resp);
       if(resp == &_res) {
         mysql_free_result(*resp);
+        *resp= NULL;
       }
     }
     if(htype == DBIt_ST) {
