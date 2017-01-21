@@ -53,7 +53,7 @@ ok(($end - $start) >= 2);
 
 $start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)', { async => 1 });
-ok defined($dbh->mysql_async_ready);
+ok(defined($dbh->mysql_async_ready)) or die;
 $end = Time::HiRes::gettimeofday();
 
 ok $rows;
