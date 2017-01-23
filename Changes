@@ -1,4 +1,6 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+* Fix test suite on range of older and newer MySQL and MariaDB versions
+   (https://github.com/perl5-dbi/DBD-mysql/pull/87)
 * Fix compilation on MySQL 4.1 (pali)
 * Do not leak dangling pointer to mysql result (pali)
 * Fix logic when assigning to variable bind_comment_placeholders (pali)
