@@ -14,5 +14,5 @@ before_install:
  - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev
  - perlbrew install-cpanm -f
 install:
-  - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
+  - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable Devel::CheckLib
 script: "export RELEASE_TESTING=1 && perl Makefile.PL && make disttest && perl Makefile.PL --force-embedded && make disttest"

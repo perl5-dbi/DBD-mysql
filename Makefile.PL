@@ -9,6 +9,7 @@ use Config;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 use Data::Dumper;
+use Devel::CheckLib;
 use File::Path;
 use File::Copy;
 use File::Basename;
@@ -204,6 +205,29 @@ To change these settings, see 'perl Makefile.PL --help' and
 'perldoc DBD::mysql::INSTALL'.
 
 MSG
+
+print "Checking if settings can be used for compiling...\n";
+
+print "\nWarning: This check may fail. If it happens please upgrade\n         Devel::CheckLib to version 1.07 and try again.\n\n"
+  if $Devel::CheckLib::VERSION < 1.07;
+
+assert_lib(
+  header => [ 'mysql.h', 'mysqld_error.h', 'errmsg.h' ],
+  LIBS => ($opt->{'embedded'} ? $opt->{'embedded'} : $opt->{libs}),
+  $Devel::CheckLib::VERSION >= 1.07 ? (
+    ccflags => $opt->{cflags} . (
+      # NOTE: Windows version of mysql.h cannot be compiled without SOCKET type (which is unsigned integer of pointer size)
+      ($^O eq 'MSWin32') ? ' -DSOCKET="unsigned long int"' : ''
+    ),
+    $opt->{ldflags} ? (ldflags => $opt->{ldflags}) : (),
+  ) : (
+    # NOTE: Devel::CheckLib prior to 1.07 does not support passing cflags and ldflags
+    #       We just pass incpaths prefixed by -I via INC
+    INC => join(" ", grep /^-I/, split / /, $opt->{cflags}),
+  ),
+);
+
+print "Looks good.\n\n";
 
 sleep 1;
 
@@ -451,6 +475,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     },
     CONFIGURE_REQUIRES => { 'DBI' => 1.609,
                             'Data::Dumper' => 0,
+                            'Devel::CheckLib' => 0,
     },
   );
 }

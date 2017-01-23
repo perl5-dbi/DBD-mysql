@@ -11,6 +11,7 @@ install:
   - perl -V
   - cpan App::cpanminus
   - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
+  - cpanm -q -n Devel::CheckLib
 
 build_script:
   - perl Makefile.PL --mysql_config=c:\strawberry\c\bin\mysql_config.bat --testuser=root --testpassword=Password12!
