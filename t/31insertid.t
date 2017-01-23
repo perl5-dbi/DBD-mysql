@@ -18,8 +18,11 @@ if ($@) {
 }
 plan tests => 19;
 
-ok $dbh->do('SET @@auto_increment_offset = 1');
-ok $dbh->do('SET @@auto_increment_increment = 1');
+SKIP: {
+    skip 'SET @@auto_increment_offset needs MySQL >= 5.0.2', 2 unless $dbh->{mysql_serverversion} >= 50002;
+    ok $dbh->do('SET @@auto_increment_offset = 1');
+    ok $dbh->do('SET @@auto_increment_increment = 1');
+}
 
 my $create = <<EOT;
 CREATE TEMPORARY TABLE dbd_mysql_t31 (
