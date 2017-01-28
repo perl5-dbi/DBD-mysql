@@ -9,6 +9,7 @@ use Config;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 use Data::Dumper;
+use Devel::CheckLib;
 use File::Path;
 use File::Copy;
 use File::Basename;
@@ -20,7 +21,7 @@ my $TESTDB = "test";
 our $opt = { "help" => \&Usage, };
 
 {
-local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded);
+local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded, $::test_mysql_config);
 eval { require "t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
@@ -29,6 +30,7 @@ $opt->{'testsocket'} = $::test_socket;
 $opt->{'testpassword'} = $::test_password;
 $opt->{'testdb'} = $::test_db;
 $opt->{'force-embedded'} = $::test_force_embedded if $::test_force_embedded;
+$opt->{'mysql_config'} = $::test_mysql_config;
 }
 }
 
@@ -72,7 +74,7 @@ my $source = {};
   {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
-    if (!-f $opt->{'mysql_config'})
+    if (! defined `$opt->{'mysql_config'} --version`)
     {
       print <<"MSG";
 
@@ -204,6 +206,29 @@ To change these settings, see 'perl Makefile.PL --help' and
 
 MSG
 
+print "Checking if settings can be used for compiling...\n";
+
+print "\nWarning: This check may fail. If it happens please upgrade\n         Devel::CheckLib to version 1.07 and try again.\n\n"
+  if $Devel::CheckLib::VERSION < 1.07;
+
+assert_lib(
+  header => [ 'mysql.h', 'mysqld_error.h', 'errmsg.h' ],
+  LIBS => ($opt->{'embedded'} ? $opt->{'embedded'} : $opt->{libs}),
+  $Devel::CheckLib::VERSION >= 1.07 ? (
+    ccflags => $opt->{cflags} . (
+      # NOTE: Windows version of mysql.h cannot be compiled without SOCKET type (which is unsigned integer of pointer size)
+      ($^O eq 'MSWin32') ? ' -DSOCKET="unsigned long int"' : ''
+    ),
+    $opt->{ldflags} ? (ldflags => $opt->{ldflags}) : (),
+  ) : (
+    # NOTE: Devel::CheckLib prior to 1.07 does not support passing cflags and ldflags
+    #       We just pass incpaths prefixed by -I via INC
+    INC => join(" ", grep /^-I/, split / /, $opt->{cflags}),
+  ),
+);
+
+print "Looks good.\n\n";
+
 sleep 1;
 
 my $dsn= '';
@@ -228,6 +253,7 @@ my $fileName = $@ ?
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
+	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
@@ -449,6 +475,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     },
     CONFIGURE_REQUIRES => { 'DBI' => 1.609,
                             'Data::Dumper' => 0,
+                            'Devel::CheckLib' => 0,
     },
   );
 }
