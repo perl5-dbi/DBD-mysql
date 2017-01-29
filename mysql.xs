@@ -15,15 +15,11 @@
 #include <errno.h>
 #include <string.h>
 
-#if MYSQL_ASYNC
-#  define ASYNC_CHECK_XS(h)\
-    if(imp_dbh->async_query_in_flight) {\
-        do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
-        XSRETURN_UNDEF;\
-    }
-#else
-#  define ASYNC_CHECK_XS(h)
-#endif
+#define ASYNC_CHECK_XS(h)\
+  if(imp_dbh->async_query_in_flight) {\
+      do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
+      XSRETURN_UNDEF;\
+  }
 
 
 DBISTATE_DECLARE;
@@ -333,7 +329,6 @@ do(dbh, statement, attr=Nullsv, ...)
                   "mysql.xs do() async %d\n",
                   (async ? 1 : 0));
   if(async) {
-#if MYSQL_ASYNC
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
     if (disable_fallback_for_server_prepare)
     {
@@ -344,11 +339,6 @@ do(dbh, statement, attr=Nullsv, ...)
     use_server_side_prepare = FALSE; /* for now */
 #endif
     imp_dbh->async_query_in_flight = imp_dbh;
-#else
-    do_error(dbh, 2000,
-             "Async support was not built into this version of DBD::mysql", "HY000");
-    XSRETURN_UNDEF;
-#endif
   }
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (use_server_side_prepare)
@@ -558,7 +548,6 @@ void mysql_async_result(dbh)
     SV* dbh
   PPCODE:
     {
-#if MYSQL_ASYNC
         int retval;
 
         retval = mysql_db_async_result(dbh, NULL);
@@ -570,17 +559,12 @@ void mysql_async_result(dbh)
         } else {
             XSRETURN_UNDEF;
         }
-#else
-        do_error(dbh, 2000, "Async support was not built into this version of DBD::mysql", "HY000");
-        XSRETURN_UNDEF;
-#endif
     }
 
 void mysql_async_ready(dbh)
     SV* dbh
   PPCODE:
     {
-#if MYSQL_ASYNC
         int retval;
 
         retval = mysql_db_async_ready(dbh);
@@ -591,10 +575,6 @@ void mysql_async_ready(dbh)
         } else {
             XSRETURN_UNDEF;
         }
-#else
-        do_error(dbh, 2000, "Async support was not built into this version of DBD::mysql", "HY000");
-        XSRETURN_UNDEF;
-#endif
     }
 
 void _async_check(dbh)
@@ -685,14 +665,12 @@ rows(sth)
   CODE:
     D_imp_sth(sth);
     char buf[64];
-#if MYSQL_ASYNC
     D_imp_dbh_from_sth;
     if(imp_dbh->async_query_in_flight) {
         if(mysql_db_async_result(sth, &imp_sth->result) < 0) {
             XSRETURN_UNDEF;
         }
     }
-#endif
 
   /* fix to make rows able to handle errors and handle max value from 
      affected rows.
@@ -711,7 +689,6 @@ int mysql_async_result(sth)
     SV* sth
   CODE:
     {
-#if MYSQL_ASYNC
         D_imp_sth(sth);
         int retval;
 
@@ -726,11 +703,6 @@ int mysql_async_result(sth)
         } else {
             XSRETURN_UNDEF;
         }
-#else
-        do_error(sth, 2000,
-                 "Async support was not built into this version of DBD::mysql", "HY000");
-        XSRETURN_UNDEF;
-#endif
     }
   OUTPUT:
     RETVAL
@@ -739,7 +711,6 @@ void mysql_async_ready(sth)
     SV* sth
   PPCODE:
     {
-#if MYSQL_ASYNC
         int retval;
 
         retval = mysql_db_async_ready(sth);
@@ -750,11 +721,6 @@ void mysql_async_ready(sth)
         } else {
             XSRETURN_UNDEF;
         }
-#else
-        do_error(sth, 2000,
-                 "Async support was not built into this version of DBD::mysql", "HY000");
-        XSRETURN_UNDEF;
-#endif
     }
 
 void _async_check(sth)
@@ -855,18 +821,10 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv= newSVpvn(imp_dbh->pmysql->host_info,strlen(imp_dbh->pmysql->host_info));
 	    break;
         case SQL_ASYNC_MODE:
-#if MYSQL_ASYNC
             retsv = newSViv(SQL_AM_STATEMENT);
-#else
-            retsv = newSViv(SQL_AM_NONE);
-#endif
             break;
         case SQL_MAX_ASYNC_CONCURRENT_STATEMENTS:
-#if MYSQL_ASYNC
             retsv = newSViv(1);
-#else
-            retsv = newSViv(0);
-#endif
             break;
     	default:
  		croak("Unknown SQL Info type: %i", mysql_errno(imp_dbh->pmysql));

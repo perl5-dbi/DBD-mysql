@@ -20,9 +20,6 @@ if (!$dbh) {
 if ($dbh->{mysql_serverversion} < 50012) {
     plan skip_all => "Servers < 5.0.12 do not support SLEEP()";
 }
-unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
-    plan skip_all => "Async support wasn't built into this version of DBD::mysql";
-}
 plan tests => 92;
 
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
