@@ -412,3 +412,5 @@ int mysql_db_async_ready(SV* h);
 
 void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len);
 void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);
+
+int mysql_socket_ready(my_socket fd);
