@@ -927,8 +927,12 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
 
   # Drop table 'foo'. This may fail, if 'foo' doesn't exist
   # Thus we put an eval around it.
-  eval { $dbh->do("DROP TABLE foo") };
-  print "Dropping foo failed: $@\n" if $@;
+  eval {
+      $dbh->do("DROP TABLE foo");
+      1;
+  } or do {
+      print "Dropping foo failed: $@\n";
+  };
 
   # Create a new table 'foo'. This must not fail, thus we don't
   # catch errors.
