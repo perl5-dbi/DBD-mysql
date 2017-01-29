@@ -14,6 +14,7 @@ MANIFEST.SKIP
 myld
 mysql.xs
 README.md
+socket.c
 t/00base.t
 t/05dbcreate.t
 t/10connect.t

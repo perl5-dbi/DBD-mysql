@@ -12,20 +12,9 @@
  *  License or the Artistic License, as specified in the Perl README file.
  */
 
-
-#ifdef WIN32
-#include "windows.h"
-#include "winsock.h"
-#endif
-
 #include "dbdimp.h"
 
-#if defined(WIN32)  &&  defined(WORD)
-#undef WORD
-typedef short WORD;
-#endif
-
-#ifdef WIN32
+#ifdef _WIN32
 #define MIN min
 #else
 #ifndef MIN
@@ -34,8 +23,6 @@ typedef short WORD;
 #endif
 
 #if MYSQL_ASYNC
-#  include <poll.h>
-#  include <errno.h>
 #  define ASYNC_CHECK_RETURN(h, value)\
     if(imp_dbh->async_query_in_flight) {\
         do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
@@ -5634,16 +5621,9 @@ int mysql_db_async_ready(SV* h)
 
   if(dbh->async_query_in_flight) {
       if(dbh->async_query_in_flight == imp_xxh && dbh->pmysql->net.fd != -1) {
-          struct pollfd fds;
-          int retval;
-
-          fds.fd = dbh->pmysql->net.fd;
-          fds.events = POLLIN;
-
-          retval = poll(&fds, 1, 0);
-
+          int retval = mysql_socket_ready(dbh->pmysql->net.fd);
           if(retval < 0) {
-              do_error(h, errno, strerror(errno), "HY000");
+              do_error(h, -retval, strerror(-retval), "HY000");
           }
           return retval;
       } else {

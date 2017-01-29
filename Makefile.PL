@@ -257,7 +257,7 @@ my %o = ( 'NAME' => 'DBD::mysql',
 			      'COMPRESS'     => "gzip -9f" },
 	  'clean' => { 'FILES' => '*.xsi' },
 		'realclean' => { 'FILES' => 't/mysql.mtest' },
-          'C' => ["dbdimp.c", "mysql.c"],
+          'C' => ["dbdimp.c", "mysql.c", "socket.c"],
           'XS' => {'mysql.xs' => 'mysql.c'},
 	  'OBJECT' => '$(O_FILES)',
 	  'LIBS' => $opt->{'libs'},
@@ -335,6 +335,9 @@ if ($opt->{'embedded'})
                        'myld' => { filename => 'mysqlEmb/myld',
                                    makedir => 'mysqlEmb'
                                  },
+                       'socket.c' => { filename => 'mysqlEmb/socket.c',
+                                   makedir => 'mysqlEmb'
+                                 },
                        'dbdimp.c' => { filename => 'mysqlEmb/dbdimp.c',
                                    makedir => 'mysqlEmb'
                                  },
@@ -359,7 +362,7 @@ if ($opt->{'embedded'})
   $o{'DIR'}=['mysqlEmb'];
 
   $e{'NAME'} = 'DBD::mysqlEmb';
-  $e{'C'} = ["dbdimp.c", "mysqlEmb.c"];
+  $e{'C'} = ["dbdimp.c", "mysqlEmb.c", "socket.c"];
   $e{'XS'} = {'mysqlEmb.xs' => 'mysqlEmb.c'};
   $e{'VERSION_FROM'} = 'lib/DBD/mysqlEmb.pm';
   $e{'LIBS'} = $opt->{'embedded'};
