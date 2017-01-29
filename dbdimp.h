@@ -44,11 +44,6 @@
 #define sv_cmp_flags(a,b,c) sv_cmp(a,b) /* Sorry, there is no way to compare magic scalars properly prior to perl 5.9.1 */
 #endif
 
-/* For now, we hardcode this, but in the future,
- * we can detect capabilities of the MySQL libraries
- * we're talking to */
-#define MYSQL_ASYNC 1
-
 
 /*
  * This is the version of MySQL wherer
@@ -201,9 +196,7 @@ struct imp_dbh_st {
                                */
     bool use_server_side_prepare;
     bool disable_fallback_for_server_prepare;
-#if MYSQL_ASYNC
     void* async_query_in_flight;
-#endif
     bool enable_utf8;
     bool enable_utf8mb4;
     struct {
@@ -311,9 +304,7 @@ struct imp_sth_st {
                           /* mysql_use_result rather than           */
                           /* mysql_store_result */
 
-#if MYSQL_ASYNC
     bool is_async;
-#endif
 };
 
 
@@ -401,10 +392,8 @@ extern MYSQL* mysql_dr_connect(SV*, MYSQL*, char*, char*, char*, char*, char*,
 
 extern int mysql_db_reconnect(SV*);
 int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
-#if MYSQL_ASYNC
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
-#endif
 
 void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len);
 void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);

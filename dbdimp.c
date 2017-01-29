@@ -21,15 +21,11 @@
 #endif
 #endif
 
-#if MYSQL_ASYNC
-#  define ASYNC_CHECK_RETURN(h, value)\
-    if(imp_dbh->async_query_in_flight) {\
-        do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
-        return (value);\
-    }
-#else
-#  define ASYNC_CHECK_RETURN(h, value)
-#endif
+#define ASYNC_CHECK_RETURN(h, value)\
+  if(imp_dbh->async_query_in_flight) {\
+      do_error(h, 2000, "Calling a synchronous function on an asynchronous handle", "HY000");\
+      return (value);\
+  }
 
 #ifndef PERL_STATIC_INLINE
 #define PERL_STATIC_INLINE static
@@ -2133,11 +2129,9 @@ MYSQL *mysql_dr_connect(
         imp_dbh->use_server_side_prepare = FALSE;
 #endif
 
-#if MYSQL_ASYNC
       if(imp_dbh) {
           imp_dbh->async_query_in_flight = NULL;
       }
-#endif
 
       /*
         we turn off Mysql's auto reconnect and handle re-connecting ourselves
@@ -3000,7 +2994,6 @@ dbd_st_prepare_sv(
     svp = DBD_ATTRIB_GET_SVP(attribs, "async", 5);
 
     if(svp && SvTRUE(*svp)) {
-#if MYSQL_ASYNC
         imp_sth->is_async = TRUE;
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
         if (imp_sth->disable_fallback_for_server_prepare)
@@ -3010,11 +3003,6 @@ dbd_st_prepare_sv(
           return 0;
         }
         imp_sth->use_server_side_prepare = FALSE;
-#endif
-#else
-        do_error(sth, 2000,
-                 "Async support was not built into this version of DBD::mysql", "HY000");
-        return 0;
 #endif
     }
   }
@@ -3503,9 +3491,7 @@ my_ulonglong mysql_st_internal_execute(
   char *table;
   char *salloc;
   int htype;
-#if MYSQL_ASYNC
   bool async = FALSE;
-#endif
   my_ulonglong rows= 0;
   /* thank you DBI.c for this info! */
   D_imp_xxh(h);
@@ -3529,9 +3515,7 @@ my_ulonglong mysql_st_internal_execute(
       bind_type_guessing= imp_dbh->bind_type_guessing;
       bind_comment_placeholders= imp_dbh->bind_comment_placeholders;
     }
-#if MYSQL_ASYNC
     async = (bool) (imp_dbh->async_query_in_flight != NULL);
-#endif
   }
   /* h is a sth */
   else
@@ -3544,14 +3528,12 @@ my_ulonglong mysql_st_internal_execute(
       bind_type_guessing= imp_dbh->bind_type_guessing;
       bind_comment_placeholders= imp_dbh->bind_comment_placeholders;
     }
-#if MYSQL_ASYNC
     async = imp_sth->is_async;
     if(async) {
         imp_dbh->async_query_in_flight = imp_sth;
     } else {
         imp_dbh->async_query_in_flight = NULL;
     }
-#endif
   }
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3617,7 +3599,6 @@ my_ulonglong mysql_st_internal_execute(
     return 0;
   }
 
-#if MYSQL_ASYNC
   if(async) {
     if((mysql_send_query(svsock, sbuf, slen)) &&
        (!mysql_db_reconnect(h) ||
@@ -3628,7 +3609,6 @@ my_ulonglong mysql_st_internal_execute(
         rows = 0;
     }
   } else {
-#endif
       if ((mysql_real_query(svsock, sbuf, slen))  &&
           (!mysql_db_reconnect(h)  ||
            (mysql_real_query(svsock, sbuf, slen))))
@@ -3650,9 +3630,7 @@ my_ulonglong mysql_st_internal_execute(
               rows = -2;
           }
       }
-#if MYSQL_ASYNC
   }
-#endif
 
   if (salloc)
     Safefree(salloc);
@@ -3907,12 +3885,10 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
                                                 imp_dbh->pmysql,
                                                 imp_sth->use_mysql_use_result
                                                );
-#if MYSQL_ASYNC
     if(imp_dbh->async_query_in_flight) {
         DBIc_ACTIVE_on(imp_sth);
         return 0;
     }
-#endif
   }
 
   if (imp_sth->row_num+1 != (my_ulonglong)-1)
@@ -4164,13 +4140,11 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t-> dbd_st_fetch\n");
 
-#if MYSQL_ASYNC
   if(imp_dbh->async_query_in_flight) {
       if(mysql_db_async_result(sth, &imp_sth->result) <= 0) {
         return Nullav;
       }
   }
-#endif
 
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
@@ -4651,17 +4625,15 @@ int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
 int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
   dTHX;
   D_imp_xxh(sth);
+  D_imp_dbh_from_sth;
 
 #if defined (dTHR)
   dTHR;
 #endif
 
-#if MYSQL_ASYNC
-  D_imp_dbh_from_sth;
   if(imp_dbh->async_query_in_flight) {
     mysql_db_async_result(sth, &imp_sth->result);
   }
-#endif
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -5226,6 +5198,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   char *err_msg;
   bool enable_utf8;
   D_imp_xxh(sth);
+  D_imp_dbh_from_sth;
 
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   char *buffer= NULL;
@@ -5237,7 +5210,6 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   const char *int_type = "";
 #endif
 
-  D_imp_dbh_from_sth;
   ASYNC_CHECK_RETURN(sth, FALSE);
 
   enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
@@ -5756,7 +5728,6 @@ SV *mysql_db_last_insert_id(SV *dbh, imp_dbh_t *imp_dbh,
 }
 #endif
 
-#if MYSQL_ASYNC
 int mysql_db_async_result(SV* h, MYSQL_RES** resp)
 {
   dTHX;
@@ -5869,7 +5840,6 @@ int mysql_db_async_ready(SV* h)
       return -1;
   }
 }
-#endif
 
 static int parse_number(char *string, STRLEN len, char **end)
 {

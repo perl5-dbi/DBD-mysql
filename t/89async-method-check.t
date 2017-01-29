@@ -81,9 +81,6 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if (!$dbh) {
     plan skip_all => "no database connection";
 }
-unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
-    plan skip_all => "Async support wasn't built into this version of DBD::mysql";
-}
 plan tests =>
   2 * @db_safe_methods     +
   4 * @db_unsafe_methods   +
