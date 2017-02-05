@@ -75,7 +75,7 @@ before_install:
       esac ;
       SANDBOX_FILE="$HOME/$(basename "$SANDBOX_URL")" ;
     elif [ "$DB" = "MariaDB" ]; then
-      SANDBOX_URL=https://downloads.mariadb.org/interstitial/mariadb-$VERSION/bintar-linux-x86_64/mariadb-$VERSION-linux-x86_64.tar.gz/from/http%3A//ftp.hosteurope.de/mirror/archive.mariadb.org/ ;
+      SANDBOX_URL=https://downloads.mariadb.com/MariaDB/mariadb-$VERSION/bintar-linux-x86_64/mariadb-$VERSION-linux-x86_64.tar.gz ;
       SANDBOX_FILE="$HOME/mariadb-$VERSION-linux-x86_64.tar.gz" ;
     elif [ -n "$DB" ]; then
       echo "Unsupported DB '$DB'"; exit 1 ;
