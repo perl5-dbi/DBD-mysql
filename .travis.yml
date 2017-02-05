@@ -62,6 +62,26 @@ matrix:
       env: DB=MariaDB VERSION=10.2.0
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.2.1
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.0.2
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.1.0
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.1.9
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.2.0-labs
+    - perl: "5.20"
+      env: CONC_DB=MariaDB CONC_VERSION=2.2.0
+    - perl: "5.20"
+      env: CONC_DB=MariaDB CONC_VERSION=2.2.3
+    - perl: "5.20"
+      env: CONC_DB=MariaDB CONC_VERSION=2.3.0
+    - perl: "5.20"
+      env: CONC_DB=MariaDB CONC_VERSION=2.3.2
+    - perl: "5.20"
+      env: CONC_DB=MariaDB CONC_VERSION=3.0.1-beta
 before_install:
   - if [ "$DB" = "MySQL" ]; then
       case "$VERSION" in
@@ -85,10 +105,30 @@ before_install:
       export SANDBOX_BINARY="$SANDBOX_HOME/binary" ;
       wget "$SANDBOX_URL" -O "$SANDBOX_FILE" || exit 1 ;
     fi
+  - if [ "$CONC_DB" = "MySQL" ]; then
+      case "$CONC_VERSION" in
+        *-labs)      CONC_URL=https://downloads.mysql.com/snapshots/pb/mysql-connector-c-$CONC_VERSION/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
+        6.0.*)       CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.3-x86-64bit.tar.gz ;;
+        6.1.*)       CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
+        *)           echo "Unsupported MySQL Connector/C version '$VERSION'"; exit 1 ;;
+      esac ;
+      CONC_FILE="$HOME/$(basename "$CONC_URL")" ;
+    elif [ "$CONC_DB" = "MariaDB" ]; then
+      CONC_URL=https://downloads.mariadb.com/Connectors/c/connector-c-${CONC_VERSION/-*/}/mariadb-connector-c-$CONC_VERSION-linux-x86_64.tar.gz ;
+      CONC_FILE="$HOME/mariadb-connector-c-$CONC_VERSION-linux-x86_64.tar.gz" ;
+    elif [ -n "$CONC_DB" ]; then
+      echo "Unsupported Connector/C '$CONC_DB'"; exit 1 ;
+    fi
+  - if [ -n "$CONC_DB" ]; then
+      wget "$CONC_URL" -O "$CONC_FILE" || exit 1 ;
+    fi
   - sudo apt-get update -qq
   - if [ -n "$DB" ]; then
       sudo apt-get install -qq libaio-dev libnuma-dev libjemalloc-dev || exit 1 ;
       sudo apt-get remove -qq mysql-client mysql-client-5.5 mysql-client-core-5.5 mysql-common mysql-server mysql-server-5.5 mysql-server-core-5.5 libmysqlclient-dev libmysqlclient18 || exit 1 ;
+    elif [ -n "$CONC_DB" ]; then
+      sudo apt-get remove -qq libmysqlclient-dev || exit 1 ;
+      sudo apt-get install -qq libstdc++5 || exit 1 ;
     else
       sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev || exit 1 ;
     fi
@@ -98,15 +138,35 @@ install:
   - if [ -n "$DB" ]; then
       cpanm --quiet MySQL::Sandbox || exit 1 ;
       make_sandbox --export_binaries "$SANDBOX_FILE" -- --sandbox_port 3310 --sandbox_directory msb --no_confirm || exit 1 ;
-      printf '%s\n%s\n' '#!/bin/sh' 'exec "$SANDBOX_HOME/msb/my" sql_config "$@"' > "$SANDBOX_HOME/msb/mysql_config" || exit 1 ;
-      chmod +x "$SANDBOX_HOME/msb/mysql_config" || exit 1 ;
+    fi
+  - if [ -n "$CONC_DB" ]; then
+      mkdir -p "$HOME/conc" ;
+      tar --strip-components=1 --directory="$HOME/conc" -xf "$CONC_FILE" || exit 1 ;
+      if $HOME/conc/bin/mysql_config 2>&1 | grep -q /usr/local; then
+        rm -f $HOME/conc/bin/mysql_config ;
+      fi ;
+      if [ -x $HOME/conc/bin/mysql_config ]; then
+        sed 's/-l "/-lmysqlclient "/g' -i "$HOME/conc/bin/mysql_config" || exit 1 ;
+        export DBD_MYSQL_CONFIG="$HOME/conc/bin/mysql_config" ;
+      else
+        INCLUDE_PATH=`find "$HOME/conc" -name "mysql.h" | sort | head -1` ;
+        if [ -z "$INCLUDE_PATH" ]; then echo "File mysql.h was not found"; exit 1; fi ;
+        LIB_PATH=`find "$HOME/conc" -name "lib*.so" | sort | head -1` ;
+        if [ -z "$INCLUDE_PATH" ]; then echo "File lib*.so was not found"; exit 1; fi ;
+        export DBD_MYSQL_CFLAGS="-I`dirname $INCLUDE_PATH`" ;
+        export DBD_MYSQL_LIBS="-L`dirname $LIB_PATH` -l`echo $LIB_PATH | sed 's/.*\/lib//;s/\.so//'`" ;
+      fi ;
+    elif [ -n "$DB" ]; then
+      export DBD_MYSQL_CONFIG="$SANDBOX_HOME/msb/my sql_config" ;
     fi
   - export RELEASE_TESTING=1
   - export CONNECTION_TESTING=1
   - export SKIP_CRASH_TESTING=1
 script:
   - if [ -n "$DB" ]; then
-      perl Makefile.PL --mysql_config="$SANDBOX_HOME/msb/mysql_config" --testuser=msandbox --testpassword=msandbox --testhost=127.0.0.1 --testport=3310 && make disttest || exit 1;
+      perl Makefile.PL --testuser=msandbox --testpassword=msandbox --testhost=127.0.0.1 --testport=3310 && make disttest || exit 1 ;
+    elif [ -n "$CONC_DB" ]; then
+      perl Makefile.PL --testhost=127.0.0.1 --testport=3306 && make disttest || exit 1 ;
     else
       perl Makefile.PL && make disttest || exit 1 ;
       perl Makefile.PL --force-embedded && make disttest || exit 1 ;
