@@ -11,12 +11,11 @@ require 'lib.pl';
 
 my $dbh;
 my $sth;
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})};
 
-if ($@) {
-  plan skip_all => "no database connection";
-}
+$dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
+$dbh->disconnect();
+
 plan tests => 13 * 2;
 
 for my $mysql_server_prepare (0, 1) {

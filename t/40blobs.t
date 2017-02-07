@@ -21,18 +21,12 @@ sub ShowBlob($) {
     }
 }
 
-my $dbh;
 my $charset= 'DEFAULT CHARSET=utf8';
 
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;};
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
 
-if ($@) {
-    plan skip_all => "no database connection";
-}
-else {
-    plan tests => 14;
-}
+plan tests => 14;
 
 if (!MinimumVersion($dbh, '4.1')) {
     $charset= '';

@@ -7,12 +7,8 @@ use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 plan tests => 19;
 
 ok $dbh->do("drop table if exists dbd_mysql_65types");

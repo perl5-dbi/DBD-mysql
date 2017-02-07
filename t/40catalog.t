@@ -9,16 +9,12 @@ $|= 1;
 
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
                       { RaiseError            => 1,
                         PrintError            => 1,
                         AutoCommit            => 1,
-                        mysql_server_prepare  => 0 });};
+                        mysql_server_prepare  => 0 });
 
-if ($@) {
-    plan skip_all => "no database connection";
-}
 plan tests => 78;
 
 ok(defined $dbh, "connecting");

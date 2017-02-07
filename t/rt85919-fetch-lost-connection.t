@@ -6,12 +6,8 @@ use lib 't', '.';
 use vars qw($test_dsn $test_user $test_password $mdriver);
 require 'lib.pl';
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });
 my $sth;
 my $ok = eval {
     note "Connecting...\n";

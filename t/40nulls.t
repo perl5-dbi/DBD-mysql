@@ -8,12 +8,8 @@ use lib 't', '.';
 require 'lib.pl';
 
 my ($dbh, $sth);
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all =>
-        "no database connection";
-}
+$dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 plan tests => 10;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t40nulls"), "DROP TABLE IF EXISTS dbd_mysql_t40nulls";

@@ -8,14 +8,9 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require "lib.pl";
 
-my $dbh;
-eval{$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-			    {RaiseError => 1});};
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+			    {RaiseError => 1});
 
-if ($@) {
-    plan skip_all =>
-        "no database connection";
-}
 plan tests => 19;
 
 SKIP: {

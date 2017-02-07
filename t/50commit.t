@@ -8,12 +8,8 @@ require 'lib.pl';
 
 use vars qw($have_transactions $got_warning $test_dsn $test_user $test_password);
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 
 sub catch_warning ($) {
     $got_warning = 1;
