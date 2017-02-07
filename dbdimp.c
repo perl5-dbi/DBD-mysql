@@ -3144,6 +3144,12 @@ dbd_st_prepare_sv(
     prepare_retval= mysql_stmt_prepare(imp_sth->stmt,
                                        statement,
                                        statement_len);
+
+    if (prepare_retval && mysql_db_reconnect(sth))
+        prepare_retval= mysql_stmt_prepare(imp_sth->stmt,
+                                           statement,
+                                           statement_len);
+
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
         PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                       "\t\tmysql_stmt_prepare returned %d\n",
@@ -3710,6 +3716,8 @@ my_ulonglong mysql_st_internal_execute41(
                   num_params);
 
   execute_retval= mysql_stmt_execute(stmt);
+  if (execute_retval && mysql_db_reconnect(sth))
+    execute_retval= mysql_stmt_execute(stmt);
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                   "\t\tmysql_stmt_execute returned %d\n",
