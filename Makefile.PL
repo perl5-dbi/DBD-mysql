@@ -63,7 +63,7 @@ my $source = {};
   $source->{'mysql_config'} = "guessed";
 
   if ($opt->{'mysql_config'}) {
-    $source->{'mysql_config'} = 'Users choice';
+    $source->{'mysql_config'} = "User's choice";
   }
   if (!$opt->{'mysql_config'} && $ENV{DBD_MYSQL_CONFIG}) {
      $opt->{'mysql_config'} = $ENV{DBD_MYSQL_CONFIG};
