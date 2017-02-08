@@ -73,7 +73,7 @@ my $source = {};
   {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
-    if (! defined `$opt->{'mysql_config'} --version`)
+    if (! defined `$opt->{'mysql_config'}`)
     {
       print <<"MSG";
 
@@ -86,7 +86,7 @@ MSG
   }
   else
   {
-    if (! `mysql_config`)
+    if (! defined `mysql_config`)
     {
       print <<MSG;
 
