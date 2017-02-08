@@ -75,13 +75,11 @@ my $source = {};
         if $^O eq 'MSWin32';
     if (! defined `$opt->{'mysql_config'}`)
     {
-      print <<"MSG";
+      die <<"MSG";
 
 Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist.
-Please check path/permissions. Will try to use default mysql_config
-script found through PATH.
+Please check path/permissions.
 MSG
-      $opt->{'mysql_config'}= "mysql_config";
     }
   }
   else
