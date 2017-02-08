@@ -55,7 +55,6 @@ Getopt::Long::GetOptions(
     "embedded=s",
     "mysql_config=s",
     "force-embedded",
-    "with-mysql=s"
     ) || die Usage();
 
 my $source = {};
@@ -508,7 +507,6 @@ Possible options are:
                          by default the port number is chosen from the
                          mysqlclient library
   --mysql_config=<path>  Specify <path> for mysql_config script
-  --with-mysql=<path>    Specify <path> for the root of the MySQL installation.
   --nocatchstderr        Suppress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavior of \$sth->rows() so that it
