@@ -224,6 +224,7 @@ my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
+	      " local " . Data::Dumper->Dump([$source], ["source"]) .
 	      "\$::test_host = \$opt->{'testhost'};\n" .
 	      "\$::test_port = \$opt->{'testport'};\n" .
 	      "\$::test_user = \$opt->{'testuser'};\n" .
@@ -235,7 +236,7 @@ my $fileName = $@ ?
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
-	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
+	      "\$::test_mysql_config = \$opt->{'mysql_config'} if \$source->{'mysql_config'} eq 'User\\'s choice';\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
