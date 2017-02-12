@@ -1507,7 +1507,8 @@ See L</"STATEMENT HANDLES">.
 =item mysql_enable_utf8
 
 This attribute affects input data from DBI (statement and bind parameters) and
-output data from the mysql server.
+output data from the MySQL server.  Applies also for database, table and column
+names and also for warning and error messages from MySQL server.
 
 If used as a part of the call to C<connect()> then it issues the command
 C<SET NAMES utf8>.
