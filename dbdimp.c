@@ -4853,8 +4853,10 @@ dbd_st_FETCH_internal(
 {
   dTHX;
   D_imp_sth(sth);
+  D_imp_dbh_from_sth;
   AV *av= Nullav;
   MYSQL_FIELD *curField;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
   /* Are we asking for a legal value? */
   if (what < 0 ||  what >= AV_ATTRIB_LAST)
@@ -4880,10 +4882,22 @@ dbd_st_FETCH_internal(
       switch(what) {
       case AV_ATTRIB_NAME:
         sv= newSVpvn(curField->name, strlen(curField->name));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+        if (enable_utf8 && charsetnr_is_utf8(curField->charsetnr))
+#else
+        if (enable_utf8 && !(curField->flags & BINARY_FLAG))
+#endif
+          sv_utf8_decode(sv);
         break;
 
       case AV_ATTRIB_TABLE:
         sv= newSVpvn(curField->table, strlen(curField->table));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+        if (enable_utf8 && charsetnr_is_utf8(curField->charsetnr))
+#else
+        if (enable_utf8 && !(curField->flags & BINARY_FLAG))
+#endif
+          sv_utf8_decode(sv);
         break;
 
       case AV_ATTRIB_TYPE:
