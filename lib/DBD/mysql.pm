@@ -169,17 +169,19 @@ sub connect {
 sub data_sources {
     my($self) = shift;
     my($attributes) = shift;
-    my($host, $port, $user, $password) = ('', '', '', '');
+    my($host, $port, $user, $password, $utf8) = ('', '', '', '');
     if ($attributes) {
       $host = $attributes->{host} || '';
       $port = $attributes->{port} || '';
       $user = $attributes->{user} || '';
       $password = $attributes->{password} || '';
+      $utf8 = $attributes->{utf8} || $attributes->{mysql_enable_utf8};
     }
-    my(@dsn) = $self->func($host, $port, $user, $password, '_ListDBs');
+    my(@dsn) = $self->func($host, $port, $user, $password, $utf8, '_ListDBs');
+    $utf8 = $utf8 ? ";mysql_enable_utf8=1" : "";
     my($i);
     for ($i = 0;  $i < @dsn;  $i++) {
-	$dsn[$i] = "DBI:mysql:$dsn[$i]";
+	$dsn[$i] = "DBI:mysql:$dsn[$i]$utf8";
     }
     @dsn;
 }
@@ -1377,6 +1379,10 @@ running on C<$hostname>, port C<$port>. This is a legacy
 method.  Instead, you should use the portable method
 
     @dbs = DBI->data_sources("mysql");
+
+or with connection arguments
+
+    @dbs = DBI->data_sources("mysql", {"host" => $host, "port" => $port, "user" => $user, "password" => $pass, "utf8" => 1});
 
 =back
 
