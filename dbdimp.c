@@ -1580,14 +1580,30 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
 {
   dTHX;
   D_imp_xxh(h);
+  imp_dbh_t* dbh;
   SV *errstr;
   SV *errstate;
+  bool enable_utf8;
+
+  if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
+
+  enable_utf8 = (dbh->enable_utf8 || dbh->enable_utf8mb4);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\t--> do_error\n");
   errstr= DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
+  SvUTF8_off(errstr);
   sv_setpv(errstr, what);
+  if (enable_utf8)
+    sv_utf8_decode(errstr);
 
 #if MYSQL_VERSION_ID >= SQL_STATE_VERSION
   if (sqlstate)
@@ -1612,10 +1628,26 @@ void do_warn(SV* h, int rc, char* what)
 {
   dTHX;
   D_imp_xxh(h);
+  imp_dbh_t* dbh;
+  bool enable_utf8;
+
+  if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
+
+  enable_utf8 = (dbh->enable_utf8 || dbh->enable_utf8mb4);
 
   SV *errstr = DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
+  SvUTF8_off(errstr);
   sv_setpv(errstr, what);
+  if (enable_utf8)
+    sv_utf8_decode(errstr);
   /* NO EFFECT DBIh_EVENT2(h, WARN_event, DBIc_ERR(imp_xxh), errstr);*/
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%s warning %d recorded: %s\n",
@@ -2734,7 +2766,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   STRLEN kl;
   char *key = SvPV(keysv, kl); /* needs to process get magic */
   SV* result = NULL;
-  dbh= dbh;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
+  PERL_UNUSED_ARG(dbh);
 
   switch (*key) {
     case 'A':
@@ -2790,6 +2823,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     /* Note that errmsg is obsolete, as of 2.09! */
       const char* msg = mysql_error(imp_dbh->pmysql);
       result= sv_2mortal(newSVpvn(msg, strlen(msg)));
+      if (enable_utf8)
+        sv_utf8_decode(result);
     }
     else if (kl == strlen("enable_utf8mb4") && strEQ(key, "enable_utf8mb4"))
         result = sv_2mortal(newSViv(imp_dbh->enable_utf8mb4));
