@@ -61,12 +61,17 @@
 #define NEW_DATATYPE_VERSION 50003
 #define SSL_VERIFY_VERSION 50023
 #define SSL_LAST_VERIFY_VERSION 50799
+#define SSL_ENFORCE_VERSION 50703
+#define SSL_LAST_ENFORCE_VERSION 50799
 #define MYSQL_VERSION_5_0 50001
+#define MARIADB_VERSION_10 100000
 /* This is to avoid the ugly #ifdef mess in dbdimp.c */
 #if MYSQL_VERSION_ID < SQL_STATE_VERSION
 #define mysql_sqlstate(svsock) (NULL)
 #endif
-
+#if MYSQL_VERSION_ID > 50710 && MYSQL_VERSION_ID < MARIADB_VERSION_10
+#define MYSQL_SSL_MODE
+#endif
 /*
  * This is the versions of libmysql that supports MySQL Fabric.
 */

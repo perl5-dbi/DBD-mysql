@@ -2052,16 +2052,14 @@ MYSQL *mysql_dr_connect(
 	    char *ca_path = NULL;
 	    char *cipher = NULL;
 	    STRLEN lna;
-#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION
-            /*
-              New code to utilise MySQLs new feature that verifies that the
-              server's hostname that the client connects to matches that of
-              the certificate
-            */
+#ifdef MYSQL_SSL_MODE
+	    unsigned int ssl_mode = SSL_MODE_PREFERRED;
+#endif
+            /* Verify if the hostname we connect to matches the hostname in the certificate */
 	    my_bool ssl_verify_true = 0;
 	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE))  &&  *svp)
 	      ssl_verify_true = SvTRUE(*svp);
-#endif
+
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
 
@@ -2083,10 +2081,32 @@ MYSQL *mysql_dr_connect(
 
 	    mysql_ssl_set(sock, client_key, client_cert, ca_file,
 			  ca_path, cipher);
-#if MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION
+#ifdef MYSQL_SSL_MODE
+	    if (ssl_verify_true)
+	      ssl_mode = SSL_MODE_VERIFY_IDENTITY;
+	    else if (ca_file)
+	      ssl_mode = SSL_MODE_VERIFY_CA;
+	    else if (ca_path)
+	      ssl_mode = SSL_MODE_VERIFY_CA;
+	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
+#elif MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION || MYSQL_VERSION_ID >= MARIADB_VERSION_10
 	    mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify_true);
+#if MYSQL_VERSION_ID >= SSL_ENFORCE_VERSION && MYSQL_VERSION_ID <= SSL_LAST_ENFORCE_VERSION
+	    /* Only needed for Oracle MySQL 5.7 if MYSQL_OPT_SSL_MODE is not available */
+	    mysql_options(sock, MYSQL_OPT_SSL_ENFORCE, &ssl_verify_true);
+#endif
+#else
+	    croak("Can't enable strict certificate checks");
 #endif
 	    client_flag |= CLIENT_SSL;
+#ifdef MYSQL_SSL_MODE
+	  }
+	    else
+	  {
+	    /* mysql_ssl=0 */
+	    unsigned int ssl_mode = SSL_MODE_DISABLED;
+	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
+#endif
 	  }
 	}
 #endif
