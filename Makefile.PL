@@ -55,7 +55,6 @@ Getopt::Long::GetOptions(
     "embedded=s",
     "mysql_config=s",
     "force-embedded",
-    "with-mysql=s"
     ) || die Usage();
 
 my $source = {};
@@ -64,7 +63,7 @@ my $source = {};
   $source->{'mysql_config'} = "guessed";
 
   if ($opt->{'mysql_config'}) {
-    $source->{'mysql_config'} = 'Users choice';
+    $source->{'mysql_config'} = "User's choice";
   }
   if (!$opt->{'mysql_config'} && $ENV{DBD_MYSQL_CONFIG}) {
      $opt->{'mysql_config'} = $ENV{DBD_MYSQL_CONFIG};
@@ -74,20 +73,18 @@ my $source = {};
   {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
-    if (! defined `$opt->{'mysql_config'} --version`)
+    if (! defined `$opt->{'mysql_config'}`)
     {
-      print <<"MSG";
+      die <<"MSG";
 
 Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist.
-Please check path/permissions. Will try to use default mysql_config
-script found through PATH.
+Please check path/permissions.
 MSG
-      $opt->{'mysql_config'}= "mysql_config";
     }
   }
   else
   {
-    if (! `mysql_config`)
+    if (! defined `mysql_config`)
     {
       print <<MSG;
 
@@ -227,6 +224,7 @@ my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
+	      " local " . Data::Dumper->Dump([$source], ["source"]) .
 	      "\$::test_host = \$opt->{'testhost'};\n" .
 	      "\$::test_port = \$opt->{'testport'};\n" .
 	      "\$::test_user = \$opt->{'testuser'};\n" .
@@ -238,7 +236,7 @@ my $fileName = $@ ?
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
-	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
+	      "\$::test_mysql_config = \$opt->{'mysql_config'} if \$source->{'mysql_config'} eq 'User\\'s choice';\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
@@ -508,7 +506,6 @@ Possible options are:
                          by default the port number is chosen from the
                          mysqlclient library
   --mysql_config=<path>  Specify <path> for mysql_config script
-  --with-mysql=<path>    Specify <path> for the root of the MySQL installation.
   --nocatchstderr        Suppress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavior of \$sth->rows() so that it
