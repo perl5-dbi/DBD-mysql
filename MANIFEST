@@ -40,7 +40,6 @@ t/40nulls_prepare.t
 t/40numrows.t
 t/40server_prepare.t
 t/40server_prepare_crash.t
-t/40server_prepare_crash2.t
 t/40server_prepare_error.t
 t/40types.t
 t/41bindparam.t
@@ -74,6 +73,7 @@ t/89async-method-check.t
 t/90utf8_params.t
 t/91errcheck.t
 t/99_bug_server_prepare_blob_null.t
+t/cve-2017-3302.t
 t/lib.pl
 t/magic.t
 t/manifest.t
