@@ -32,4 +32,5 @@ build_script:
 
 test_script:
   - set CONNECTION_TESTING=1
+  - set SKIP_CRASH_TESTING=1
   - dmake test

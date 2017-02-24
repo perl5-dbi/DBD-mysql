@@ -1,4 +1,8 @@
 # This must be minimal test, even strict or Test::More can hide real crash
+if ($ENV{SKIP_CRASH_TESTING}) {
+  print "1..0 # SKIP \$ENV{SKIP_CRASH_TESTING} is set\n";
+  exit;
+}
 no warnings 'once';
 use DBI;
 use vars qw($test_dsn $test_user $test_password $test_db);

@@ -75,6 +75,12 @@ ok $sth->finish();
 
 ok $dbh->do("SELECT 1 FROM t WHERE i = ?" . (" OR i = ?" x 10000), {}, (1) x (10001));
 
+if ($ENV{SKIP_CRASH_TESTING}) {
+  ok $dbh->disconnect();
+  Test::More->builder->skip("\$ENV{SKIP_CRASH_TESTING} is set") for (1..5);
+  exit;
+}
+
 # $sth2 is statement that cannot be executed as mysql server side prepared statement, so fallback must be allowed
 ok my $dbname = $dbh->selectrow_arrayref("SELECT DATABASE()")->[0];
 ok my $sth2 = $dbh->prepare("USE $dbname", { mysql_server_prepare_disable_fallback => 0 });
