@@ -13,7 +13,7 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-plan tests => 30;
+plan tests => 31;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t40numrows");
 
@@ -77,6 +77,8 @@ is $sth->rows, 3, 'rows should be 3';
 ok ($aref= $sth->fetchall_arrayref);
 
 is scalar @$aref, 3, 'Verified rows should be 3';
+
+ok $sth->finish;
 
 ok $dbh->do("DROP TABLE dbd_mysql_t40numrows"), "drop table dbd_mysql_t40numrows";
 
