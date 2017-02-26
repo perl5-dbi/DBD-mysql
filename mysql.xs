@@ -44,12 +44,13 @@ constant(name, arg)
 MODULE = DBD::mysql	PACKAGE = DBD::mysql::dr
 
 void
-_ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL)
+_ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL, enable_utf8=false)
     SV *        drh
     char *	host
     char *      port
     char *      user
     char *      password
+    bool        enable_utf8
   PPCODE:
 {
     MYSQL mysql;
@@ -59,17 +60,31 @@ _ListDBs(drh, host=NULL, port=NULL, user=NULL, password=NULL)
     if (sock != NULL)
     {
       MYSQL_ROW cur;
-      MYSQL_RES* res = mysql_list_dbs(sock, NULL);
+      MYSQL_RES* res;
+      MYSQL_FIELD* field;
+
+      if (enable_utf8)
+        mysql_set_character_set(sock, "utf8");
+
+      res = mysql_list_dbs(sock, NULL);
       if (!res)
       {
         do_error(drh, mysql_errno(sock), mysql_error(sock), mysql_sqlstate(sock));
       }
       else
       {
+	field = mysql_fetch_field(res);
 	EXTEND(sp, mysql_num_rows(res));
 	while ((cur = mysql_fetch_row(res)))
         {
-	  PUSHs(sv_2mortal((SV*)newSVpvn(cur[0], strlen(cur[0]))));
+	  SV* sv = sv_2mortal(newSVpvn(cur[0], strlen(cur[0])));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+	  if (enable_utf8 && field && charsetnr_is_utf8(field->charsetnr))
+#else
+	  if (enable_utf8 && field && !(field->flags & BINARY_FLAG))
+#endif
+	    sv_utf8_decode(sv);
+	  PUSHs(sv);
 	}
 	mysql_free_result(res);
       }
@@ -218,11 +233,14 @@ _ListDBs(dbh)
   SV*	dbh
   PPCODE:
   MYSQL_RES* res;
+  MYSQL_FIELD* field;
   MYSQL_ROW cur;
 
   D_imp_dbh(dbh);
 
   ASYNC_CHECK_XS(dbh);
+
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
   res = mysql_list_dbs(imp_dbh->pmysql, NULL);
   if (!res  &&
@@ -234,10 +252,18 @@ _ListDBs(dbh)
 }
 else
 {
+  field = mysql_fetch_field(res);
   EXTEND(sp, mysql_num_rows(res));
   while ((cur = mysql_fetch_row(res)))
   {
-    PUSHs(sv_2mortal((SV*)newSVpvn(cur[0], strlen(cur[0]))));
+    SV* sv = sv_2mortal(newSVpvn(cur[0], strlen(cur[0])));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+    if (enable_utf8 && field && charsetnr_is_utf8(field->charsetnr))
+#else
+    if (enable_utf8 && field && !(field->flags & BINARY_FLAG))
+#endif
+      sv_utf8_decode(sv);
+    PUSHs(sv);
   }
   mysql_free_result(res);
 }

@@ -24,6 +24,10 @@
 #include <errmsg.h> /* Comes with MySQL-devel */
 #include <stdint.h> /* For uint32_t */
 
+#ifndef PERL_STATIC_INLINE
+#define PERL_STATIC_INLINE static
+#endif
+
 #ifndef SvPV_nomg_nolen
 #define SvPV_nomg_nolen(sv) ((SvFLAGS(sv) & (SVf_POK)) == SVf_POK ? SvPVX(sv) : sv_2pv_flags(sv, &PL_na, 0))
 #endif
@@ -399,3 +403,13 @@ void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, cha
 void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);
 
 int mysql_socket_ready(my_socket fd);
+
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
+{
+  /* See mysql source code for all utf8 ids: grep -E '^(CHARSET_INFO|struct charset_info_st).*utf8' -A 2 -r strings | grep number | sed -E 's/^.*-  *([^,]+),.*$/\1/' | sort -n */
+  /* Some utf8 ids (selected at mysql compile time) can be retrieved by: SELECT ID FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME LIKE 'utf8%' ORDER BY ID */
+  return (id == 33 || id == 45 || id == 46 || id == 83 || (id >= 192 && id <= 215) || (id >= 223 && id <= 247) || (id >= 254 && id <= 277) || (id >= 576 && id <= 578)
+      || (id >= 608 && id <= 610) || id == 1057 || (id >= 1069 && id <= 1070) || id == 1107 || id == 1216 || id == 1283 || id == 1248 || id == 1270);
+}
+#endif

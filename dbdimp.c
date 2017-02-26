@@ -27,20 +27,6 @@
       return (value);\
   }
 
-#ifndef PERL_STATIC_INLINE
-#define PERL_STATIC_INLINE static
-#endif
-
-#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
-PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
-{
-  /* See mysql source code for all utf8 ids: grep -E '^(CHARSET_INFO|struct charset_info_st).*utf8' -A 2 -r strings | grep number | sed -E 's/^.*-  *([^,]+),.*$/\1/' | sort -n */
-  /* Some utf8 ids (selected at mysql compile time) can be retrieved by: SELECT ID FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME LIKE 'utf8%' ORDER BY ID */
-  return (id == 33 || id == 45 || id == 46 || id == 83 || (id >= 192 && id <= 215) || (id >= 223 && id <= 247) || (id >= 254 && id <= 277) || (id >= 576 && id <= 578)
-      || (id >= 608 && id <= 610) || id == 1057 || (id >= 1069 && id <= 1070) || id == 1107 || id == 1216 || id == 1283 || id == 1248 || id == 1270);
-}
-#endif
-
 PERL_STATIC_INLINE bool str_is_nonascii(const char *str, STRLEN len)
 {
   STRLEN i;
@@ -1594,14 +1580,30 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
 {
   dTHX;
   D_imp_xxh(h);
+  imp_dbh_t* dbh;
   SV *errstr;
   SV *errstate;
+  bool enable_utf8;
+
+  if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
+
+  enable_utf8 = (dbh->enable_utf8 || dbh->enable_utf8mb4);
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\t--> do_error\n");
   errstr= DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
+  SvUTF8_off(errstr);
   sv_setpv(errstr, what);
+  if (enable_utf8)
+    sv_utf8_decode(errstr);
 
 #if MYSQL_VERSION_ID >= SQL_STATE_VERSION
   if (sqlstate)
@@ -1626,10 +1628,26 @@ void do_warn(SV* h, int rc, char* what)
 {
   dTHX;
   D_imp_xxh(h);
+  imp_dbh_t* dbh;
+  bool enable_utf8;
+
+  if (DBIc_TYPE(imp_xxh) == DBIt_DB) {
+      D_imp_dbh(h);
+      dbh = imp_dbh;
+  } else {
+      D_imp_sth(h);
+      D_imp_dbh_from_sth;
+      dbh = imp_dbh;
+  }
+
+  enable_utf8 = (dbh->enable_utf8 || dbh->enable_utf8mb4);
 
   SV *errstr = DBIc_ERRSTR(imp_xxh);
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
+  SvUTF8_off(errstr);
   sv_setpv(errstr, what);
+  if (enable_utf8)
+    sv_utf8_decode(errstr);
   /* NO EFFECT DBIh_EVENT2(h, WARN_event, DBIc_ERR(imp_xxh), errstr);*/
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "%s warning %d recorded: %s\n",
@@ -2748,7 +2766,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
   STRLEN kl;
   char *key = SvPV(keysv, kl); /* needs to process get magic */
   SV* result = NULL;
-  dbh= dbh;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
+  PERL_UNUSED_ARG(dbh);
 
   switch (*key) {
     case 'A':
@@ -2804,6 +2823,8 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     /* Note that errmsg is obsolete, as of 2.09! */
       const char* msg = mysql_error(imp_dbh->pmysql);
       result= sv_2mortal(newSVpvn(msg, strlen(msg)));
+      if (enable_utf8)
+        sv_utf8_decode(result);
     }
     else if (kl == strlen("enable_utf8mb4") && strEQ(key, "enable_utf8mb4"))
         result = sv_2mortal(newSViv(imp_dbh->enable_utf8mb4));
@@ -4860,8 +4881,10 @@ dbd_st_FETCH_internal(
 {
   dTHX;
   D_imp_sth(sth);
+  D_imp_dbh_from_sth;
   AV *av= Nullav;
   MYSQL_FIELD *curField;
+  bool enable_utf8 = (imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4);
 
   /* Are we asking for a legal value? */
   if (what < 0 ||  what >= AV_ATTRIB_LAST)
@@ -4887,10 +4910,22 @@ dbd_st_FETCH_internal(
       switch(what) {
       case AV_ATTRIB_NAME:
         sv= newSVpvn(curField->name, strlen(curField->name));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+        if (enable_utf8 && charsetnr_is_utf8(curField->charsetnr))
+#else
+        if (enable_utf8 && !(curField->flags & BINARY_FLAG))
+#endif
+          sv_utf8_decode(sv);
         break;
 
       case AV_ATTRIB_TABLE:
         sv= newSVpvn(curField->table, strlen(curField->table));
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+        if (enable_utf8 && charsetnr_is_utf8(curField->charsetnr))
+#else
+        if (enable_utf8 && !(curField->flags & BINARY_FLAG))
+#endif
+          sv_utf8_decode(sv);
         break;
 
       case AV_ATTRIB_TYPE:
