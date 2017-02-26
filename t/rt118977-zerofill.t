@@ -7,8 +7,7 @@ use DBI;
 use vars qw($test_dsn $test_user $test_password);
 require "t/lib.pl";
 
-my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1 }) };
-plan skip_all => "no database connection" if $@ or not $dbh;
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1 });
 
 plan tests => 4*2;
 

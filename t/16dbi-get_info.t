@@ -10,13 +10,8 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh;
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})};
-
-if ($@) {
-  plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
 
 # DBI documentation states:
 # Because some DBI methods make use of get_info(), drivers are strongly

@@ -11,8 +11,7 @@ my $tb = Test::More->builder;
 binmode $tb->failure_output, ":utf8";
 binmode $tb->todo_output,    ":utf8";
 
-my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0, mysql_server_prepare_disable_fallback => 1 }) };
-plan skip_all => "no database connection" if $@ or not $dbh;
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0, mysql_server_prepare_disable_fallback => 1 });
 
 plan tests => 288*2;
 

@@ -8,12 +8,8 @@ require "t/lib.pl";
 
 use Test::More;
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });
 
 ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_rt50304_column_info"));
 

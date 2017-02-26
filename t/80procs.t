@@ -8,13 +8,8 @@ use Test::More;
 use vars qw($test_dsn $test_user $test_password);
 
 my ($row, $vers, $test_procs, $dbh, $sth);
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})};
-
-if ($@) {
-    plan skip_all =>
-        "no database connection";
-}
+$dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
 
 #
 # DROP/CREATE PROCEDURE will give syntax error

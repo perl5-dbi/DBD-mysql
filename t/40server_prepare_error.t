@@ -9,13 +9,8 @@ require 'lib.pl';
 use vars qw($test_dsn $test_user $test_password);
 
 $test_dsn.= ";mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1";
-my $dbh;
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})};
-
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
 
 if ($dbh->{mysql_clientversion} < 40103 or $dbh->{mysql_serverversion} < 40103) {
     plan skip_all =>

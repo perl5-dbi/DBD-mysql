@@ -9,13 +9,9 @@ require 'lib.pl';
 
 my ($row, $vers, $test_procs);
 
-my $dbh;
-eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1})};
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1});
 
-if ($@) {
-  plan skip_all => "no database connection";
-}
 plan tests => 12;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t75supported");

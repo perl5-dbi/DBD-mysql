@@ -10,15 +10,11 @@ $|= 1;
 use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
-my $dbh;
 
 # yes, we will reconnect, but I want to keep the "fail if not connect"
 # separate from the actual test where we reconnect
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });
 plan tests => 6;
 
 for my $ur (0,1) {

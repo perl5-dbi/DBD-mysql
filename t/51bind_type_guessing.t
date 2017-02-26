@@ -9,12 +9,8 @@ require 'lib.pl';
 
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 plan tests => 26; 
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t51bind_type_guessing"), "drop table if exists dbd_mysql_t51bind_type_guessing";

@@ -7,12 +7,8 @@ use lib 't', '.';
 require 'lib.pl';
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
-if ($@) {
-    plan skip_all => "no database connection";
-}
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
 if (!MinimumVersion($dbh, '4.1') ) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";

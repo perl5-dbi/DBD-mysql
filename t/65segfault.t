@@ -10,26 +10,15 @@ $|= 1;
 
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh;
-eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
                       {
                           mysql_auto_reconnect  => 1,
                           RaiseError => 1,
                           PrintError => 1,
                           AutoCommit => 1 });
-};
 
-if ($@) {
-    plan skip_all =>
-        "no database connection";
-}
-my $dbh2;
-eval {$dbh2= DBI->connect($test_dsn, $test_user, $test_password);};
+my $dbh2= DbiTestConnect($test_dsn, $test_user, $test_password);
 
-if ($@) {
-    plan skip_all =>
-        "no database connection";
-}
 plan tests => 5;
 
 ok(defined $dbh, "Handle 1 Connected to database");
