@@ -1,5 +1,9 @@
 version: 1.0.{build}
 
+cache:
+  - C:\ProgramData\chocolatey\cache
+  - C:\strawberry\cpan\sources
+
 environment:
   matrix:
     - perl: "5.14.4.1"
@@ -18,6 +22,7 @@ services:
 
 install:
   - if /I %PLATFORM% == x86 (set x86=--forcex86) else (set "x86= ")
+  - choco config set cacheLocation C:\ProgramData\chocolatey\cache
   - cinst StrawberryPerl --version %perl% %x86% --allow-empty-checksums
   - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
   - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
