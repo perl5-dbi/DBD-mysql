@@ -5091,6 +5091,12 @@ dbd_st_FETCH_internal(
     case 10:
       if (strEQ(key, "mysql_type"))
         retsv= ST_FETCH_AV(AV_ATTRIB_TYPE);
+      else if (strEQ(key, "mysql_sock"))
+#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
+        retsv= (imp_sth->stmt) ? sv_2mortal(newSViv(PTR2IV(imp_sth->stmt->mysql))) : boolSV(0);
+#else
+        retsv= boolSV(0);
+#endif
       break;
     case 11:
       if (strEQ(key, "mysql_table"))

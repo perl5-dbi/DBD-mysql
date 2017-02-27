@@ -73,6 +73,7 @@ t/89async-method-check.t
 t/90utf8_params.t
 t/91errcheck.t
 t/99_bug_server_prepare_blob_null.t
+t/cve-2017-3302.t
 t/lib.pl
 t/magic.t
 t/manifest.t

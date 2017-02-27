@@ -103,6 +103,7 @@ install:
     fi
   - export RELEASE_TESTING=1
   - export CONNECTION_TESTING=1
+  - export SKIP_CRASH_TESTING=1
 script:
   - if [ -n "$DB" ]; then
       perl Makefile.PL --mysql_config="$SANDBOX_HOME/msb/mysql_config" --testuser=msandbox --testpassword=msandbox --testhost=127.0.0.1 --testport=3310 && make disttest || exit 1;
