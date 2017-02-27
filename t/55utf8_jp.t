@@ -8,11 +8,7 @@ use Encode;
 use vars qw($test_dsn $test_user $test_password);
 require "t/lib.pl";
 
-my $dbh = eval {
-  DBI->connect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => 1, PrintError => 1, RaiseError => 1 });
-} or do {
-  plan skip_all => "no database connection";
-};
+my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => 1, PrintError => 1, RaiseError => 1 });
 
 eval { $dbh->do("SET lc_messages = 'ja_JP'") } or do { plan skip_all => "Server lc_messages ja_JP are needed for this test" };
 
