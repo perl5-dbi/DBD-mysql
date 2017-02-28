@@ -1,4 +1,21 @@
-2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+2017-02-28 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
+* Statement handle now also has mysql_sock attribute, just as database handle.
+  (by Pali)
+* Fix type conversions for magic types. Issue reported by Dmitriy Yatsenko and
+  Giovanni Bechis, fix by Pali.
+    https://lists.amavis.org/pipermail/amavis-users/2016-December/004674.html
+    https://github.com/perl5-dbi/DBD-mysql/issues/78
+* Fix UTF8-encoding of table names, field names, warnings and error messages.
+  Reported by Tanabe Yoshinori, fix by Pali.
+    https://rt.cpan.org/Public/Bug/Display.html?id=120141
+* Fix mysql_auto_reconnect when using mysql_server_prepare (pali). Reported by
+  Vladimir Marek.
+    https://github.com/perl5-dbi/DBD-mysql/pull/95
+* Improve regex for removing database from dsn (pali)
+    https://rt.cpan.org/Public/Bug/Display.html?id=118837
+* Locate MySQL libs using Devel::CheckLib (pali)
+* Support async on Windows (pali)
+
 * Fix test suite on range of older and newer MySQL and MariaDB versions
    (https://github.com/perl5-dbi/DBD-mysql/pull/87)
 * Fix compilation on MySQL 4.1 (pali)
