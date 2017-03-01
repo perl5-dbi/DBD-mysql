@@ -144,6 +144,13 @@ install:
   - if [ -n "$DB" ]; then
       cpanm --quiet MySQL::Sandbox || exit 1 ;
       make_sandbox --export_binaries "$SANDBOX_FILE" -- --sandbox_port 3310 --sandbox_directory msb --no_confirm || exit 1 ;
+      export DBD_MYSQL_TESTUSER=msandbox ;
+      export DBD_MYSQL_TESTPASSWORD=msandbox ;
+      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
+      export DBD_MYSQL_TESTPORT=3310 ;
+    elif [ -n "$CONC_DB" ]; then
+      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
+      export DBD_MYSQL_TESTPORT=3306 ;
     fi
   - if [ -n "$CONC_DB" ]; then
       mkdir -p "$HOME/conc" ;
@@ -161,19 +168,15 @@ install:
         if [ -z "$INCLUDE_PATH" ]; then echo "File lib*.so was not found"; exit 1; fi ;
         export DBD_MYSQL_CFLAGS="-I`dirname $INCLUDE_PATH`" ;
         export DBD_MYSQL_LIBS="-L`dirname $LIB_PATH` -l`echo $LIB_PATH | sed 's/.*\/lib//;s/\.so//'`" ;
+        export DBD_MYSQL_CONFIG="skip" ;
       fi ;
     elif [ -n "$DB" ]; then
       export DBD_MYSQL_CONFIG="$SANDBOX_HOME/msb/my sql_config" ;
+    else
+      export DBD_MYSQL_FORCE_EMBEDDED=1 ;
     fi
   - export RELEASE_TESTING=1
   - export CONNECTION_TESTING=1
   - export SKIP_CRASH_TESTING=1
 script:
-  - if [ -n "$DB" ]; then
-      perl Makefile.PL --testuser=msandbox --testpassword=msandbox --testhost=127.0.0.1 --testport=3310 && make disttest || exit 1 ;
-    elif [ -n "$CONC_DB" ]; then
-      perl Makefile.PL --testhost=127.0.0.1 --testport=3306 && make disttest || exit 1 ;
-    else
-      perl Makefile.PL && make disttest || exit 1 ;
-      perl Makefile.PL --force-embedded && make disttest || exit 1 ;
-    fi
+  - perl Makefile.PL && make disttest
