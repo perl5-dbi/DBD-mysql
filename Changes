@@ -1,3 +1,6 @@
+2017-03-08 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042)
+* Full release to include development releases 4.041_2 and 4.041_1.
+
 2017-02-28 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.041_2)
 * Statement handle now also has mysql_sock attribute, just as database handle.
   (by Pali)
