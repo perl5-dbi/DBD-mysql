@@ -1,4 +1,5 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042_01)
+* Improve CI testing on AppVeyor: caching, path to cpan, configure deps (pali)
 * Specify bigint as test dependency.
 
 2017-03-08 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042)
