@@ -1,3 +1,6 @@
+2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042_01)
+* Specify bigint as test dependency.
+
 2017-03-08 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042)
 * Full release to include development releases 4.041_2 and 4.041_1.
 
