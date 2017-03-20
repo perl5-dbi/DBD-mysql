@@ -1,5 +1,9 @@
 version: 1.0.{build}
 
+cache:
+  - C:\ProgramData\chocolatey\cache
+  - C:\strawberry\cpan\sources
+
 environment:
   matrix:
     - perl: "5.14.4.1"
@@ -18,17 +22,17 @@ services:
 
 install:
   - if /I %PLATFORM% == x86 (set x86=--forcex86) else (set "x86= ")
+  - choco config set cacheLocation C:\ProgramData\chocolatey\cache
   - cinst StrawberryPerl --version %perl% %x86% --allow-empty-checksums
-  - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
-  - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
-  - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
+  - path C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;C:\strawberry\c\bin;%PATH%
   - perl -V
-  - cpan App::cpanminus
-  - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
-  - cpanm -q -n Devel::CheckLib
+  - cpan -T App::cpanminus
+  - cpanm --quiet --notest --skip-satisfied Devel::CheckLib
+  - cpanm --quiet --notest --skip-satisfied --installdeps --with-configure --with-develop --with-recommends --with-suggests .
 
 build_script:
   - perl Makefile.PL --mysql_config=c:\strawberry\c\bin\mysql_config.bat --testuser=root --testpassword=Password12!
+  - dmake
 
 test_script:
   - set CONNECTION_TESTING=1
