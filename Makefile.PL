@@ -71,6 +71,7 @@ my $source = {};
   }
   if ($opt->{'mysql_config'})
   {
+    if ($opt->{'mysql_config'} ne 'skip') {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
     if (! defined `$opt->{'mysql_config'}`)
@@ -80,6 +81,7 @@ my $source = {};
 Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist.
 Please check path/permissions.
 MSG
+    }
     }
   }
   else
@@ -569,6 +571,7 @@ sub Configure {
       cflags include libs libs_r plugindir socket port version libmysqld-libs embedded
     );
     if ( grep {$_ eq $param} @mysql_config_options ) {
+        if ($opt->{'mysql_config'} and $opt->{'mysql_config'} ne 'skip') {
         my $command = $opt->{'mysql_config'} . " --$param";
         eval
         {
@@ -608,12 +611,15 @@ sub Configure {
         else {
             print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
         }
+        }
     }
 
     # Ok, mysql_config doesn't work. We need to do our best
     # First check environment variables
-    if (defined($ENV{'DBD_MYSQL_'.uc($param)})) {
-        $opt->{$param} = $ENV{'DBD_MYSQL_'.uc($param)};
+    my $normparam = uc($param);
+    $normparam =~ tr/-/_/;
+    if (defined($ENV{'DBD_MYSQL_'.$normparam})) {
+        $opt->{$param} = $ENV{'DBD_MYSQL_'.$normparam};
         $source->{$param} = 'environment';
     }
 
