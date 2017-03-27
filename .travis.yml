@@ -138,11 +138,12 @@ before_install:
     else
       sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev || exit 1 ;
     fi
-  - perlbrew install-cpanm -f
 install:
-  - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable Devel::CheckLib
+  - perlbrew install-cpanm --force --notest
+  - cpanm --quiet --notest --skip-satisfied DBI Devel::CheckLib
+  - cpanm --quiet --notest --skip-satisfied --installdeps --with-configure --with-develop --with-recommends --with-suggests .
   - if [ -n "$DB" ]; then
-      cpanm --quiet MySQL::Sandbox || exit 1 ;
+      cpanm --quiet --notest --skip-satisfied MySQL::Sandbox || exit 1 ;
       make_sandbox --export_binaries "$SANDBOX_FILE" -- --sandbox_port 3310 --sandbox_directory msb --no_confirm || exit 1 ;
       export DBD_MYSQL_TESTUSER=msandbox ;
       export DBD_MYSQL_TESTPASSWORD=msandbox ;
