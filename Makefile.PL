@@ -463,6 +463,17 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'zefram <zefram@fysh.org>',
         'zentooo <ankerasoy@gmail.com>',
       ],
+      prereqs => {
+        test => {
+          recommends => {
+            'Proc::ProcessTable' => 0,
+          },
+          suggests => {
+            'Test::Pod' => '1.00',
+            'Test::DistManifest' => 0,
+          },
+        },
+      },
     },
     TEST_REQUIRES => { 'bigint'       => 0,
                        'Test::Simple' => '0.90',
