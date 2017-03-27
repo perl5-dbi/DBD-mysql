@@ -1,4 +1,7 @@
+sudo: false
+
 language: perl
+
 perl:
   - "5.8"
   - "5.10"
@@ -12,6 +15,7 @@ perl:
   - "5.22"
   - "5.22-shrplib"
   - "5.24"
+
 matrix:
   include:
     - perl: "5.20"
@@ -88,6 +92,18 @@ matrix:
 #      env: CONC_DB=MariaDB CONC_VERSION=2.3.2
 #    - perl: "5.20"
 #      env: CONC_DB=MariaDB CONC_VERSION=3.0.1-beta
+
+addons:
+  apt:
+    packages:
+      - libaio-dev
+      - libnuma-dev
+      - libjemalloc-dev
+      - libmysqlclient-dev
+      - libmysqld-dev
+      - libwrap0-dev
+      - libstdc++5
+
 before_install:
   - if [ "$DB" = "MySQL" ]; then
       case "$VERSION" in
@@ -128,16 +144,7 @@ before_install:
   - if [ -n "$CONC_DB" ]; then
       wget "$CONC_URL" -O "$CONC_FILE" || exit 1 ;
     fi
-  - sudo apt-get update -qq
-  - if [ -n "$DB" ]; then
-      sudo apt-get install -qq libaio-dev libnuma-dev libjemalloc-dev || exit 1 ;
-      sudo apt-get remove -qq mysql-client mysql-client-5.5 mysql-client-core-5.5 mysql-common mysql-server mysql-server-5.5 mysql-server-core-5.5 libmysqlclient-dev libmysqlclient18 || exit 1 ;
-    elif [ -n "$CONC_DB" ]; then
-      sudo apt-get remove -qq libmysqlclient-dev || exit 1 ;
-      sudo apt-get install -qq libstdc++5 || exit 1 ;
-    else
-      sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev || exit 1 ;
-    fi
+
 install:
   - perlbrew install-cpanm --force --notest
   - cpanm --quiet --notest --skip-satisfied DBI Devel::CheckLib
@@ -145,13 +152,7 @@ install:
   - if [ -n "$DB" ]; then
       cpanm --quiet --notest --skip-satisfied MySQL::Sandbox || exit 1 ;
       make_sandbox --export_binaries "$SANDBOX_FILE" -- --sandbox_port 3310 --sandbox_directory msb --no_confirm || exit 1 ;
-      export DBD_MYSQL_TESTUSER=msandbox ;
-      export DBD_MYSQL_TESTPASSWORD=msandbox ;
-      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
-      export DBD_MYSQL_TESTPORT=3310 ;
-    elif [ -n "$CONC_DB" ]; then
-      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
-      export DBD_MYSQL_TESTPORT=3306 ;
+      mysqladmin -u root shutdown || exit 1 ;
     fi
   - if [ -n "$CONC_DB" ]; then
       mkdir -p "$HOME/conc" ;
@@ -161,12 +162,28 @@ install:
       fi ;
       if [ -x $HOME/conc/bin/mysql_config ]; then
         sed 's/-l "/-lmysqlclient "/g' -i "$HOME/conc/bin/mysql_config" || exit 1 ;
-        export DBD_MYSQL_CONFIG="$HOME/conc/bin/mysql_config" ;
       else
         INCLUDE_PATH=`find "$HOME/conc" -name "mysql.h" | sort | head -1` ;
         if [ -z "$INCLUDE_PATH" ]; then echo "File mysql.h was not found"; exit 1; fi ;
         LIB_PATH=`find "$HOME/conc" -name "lib*.so" | sort | head -1` ;
         if [ -z "$INCLUDE_PATH" ]; then echo "File lib*.so was not found"; exit 1; fi ;
+      fi ;
+    fi
+
+before_script:
+  - if [ -n "$DB" ]; then
+      export DBD_MYSQL_TESTUSER=msandbox ;
+      export DBD_MYSQL_TESTPASSWORD=msandbox ;
+      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
+      export DBD_MYSQL_TESTPORT=3310 ;
+    elif [ -n "$CONC_DB" ]; then
+      export DBD_MYSQL_TESTHOST=127.0.0.1 ;
+      export DBD_MYSQL_TESTPORT=3306 ;
+    fi
+  - if [ -n "$CONC_DB" ]; then
+      if [ -x $HOME/conc/bin/mysql_config ]; then
+        export DBD_MYSQL_CONFIG="$HOME/conc/bin/mysql_config" ;
+      else
         export DBD_MYSQL_CFLAGS="-I`dirname $INCLUDE_PATH`" ;
         export DBD_MYSQL_LIBS="-L`dirname $LIB_PATH` -l`echo $LIB_PATH | sed 's/.*\/lib//;s/\.so//'`" ;
         export DBD_MYSQL_CONFIG="skip" ;
@@ -176,8 +193,12 @@ install:
     else
       export DBD_MYSQL_FORCE_EMBEDDED=1 ;
     fi
+  - export HARNESS_OPTIONS=j1
   - export RELEASE_TESTING=1
   - export CONNECTION_TESTING=1
   - export SKIP_CRASH_TESTING=1
+
 script:
-  - perl Makefile.PL && make disttest
+  - rm -f t/mysql.mtest
+  - perl Makefile.PL
+  - make disttest
