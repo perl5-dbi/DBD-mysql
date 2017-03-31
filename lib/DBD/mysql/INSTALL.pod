@@ -559,29 +559,17 @@ it:
 
 Below you find information on particular systems:
 
-=head2 Mac OS X
+=head2 macOS
 
-Please see the the post at
-L<https://discussions.apple.com/thread/3932531>
+For installing DBD::mysql you need to have the libssl header files and the
+mysql client libs. The easiest way to install these is using Homebrew
+(L<https://brew.sh/>).
 
-(Thanks to Kris Davey for pointing this out to me). I plan to see if I can get the build process
-to be more intelligent about using build flags that work. It is very difficult as it's
-not a driver problem per se but a problem in how one builds DBD::mysql with a binary client lib
-built on a different compiler than the one the user is using.
+Once you have Homebrew set up, you can simply install the dependencies using
 
-Quite simply, using the binary MySQL installation from Oracle, you will need to first run:
+    brew install openssl mysql-connector-c
 
-  perl Makefile.PL --mysql_config=/usr/local/mysql-5.6.16-osx10.7-x86_64/bin/mysql_config
-
-There are some runtime issues you may encounter with OS X. Upon
-running make test, you might encounter the error:
-
-  Error:  Can't load '/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle' for module DBD::mysql: dlopen(/Users/username/DBD-mysql/blib/arch/auto/DBD/mysql/mysql.bundle, 2): Library not loaded: libmysqlclient.18.dylib
-
-To solve this issue, you need to set the library path, similar to LD_LIBRARY_PATH on other Unix variants, but on OS X you need to do the following (this is for a binary install of MySQL from Oracle)
-
-  export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:/usr/local/mysql-5.6.16-osx10.7-x86_64/lib/
-
+Then you can install DBD::mysql using your cpan client.
 
 =head2 Cygwin
 
