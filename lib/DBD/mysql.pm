@@ -274,7 +274,7 @@ sub admin {
 }
 
 sub _SelectDB ($$) {
-    die "_SelectDB is removed from this module; use DBI->connect instead.";
+    Carp::croak "_SelectDB is removed from this module; use DBI->connect instead.";
 }
 
 sub table_info ($) {
@@ -410,7 +410,7 @@ sub table_info ($) {
 sub _ListTables {
   my $dbh = shift;
   if (!$DBD::mysql::QUIET) {
-    warn "_ListTables is deprecated, use \$dbh->tables()";
+    Carp::carp "_ListTables is deprecated, use \$dbh->tables()";
   }
   return map { $_ =~ s/.*\.//; $_ } $dbh->tables();
 }
@@ -592,7 +592,6 @@ sub column_info {
 	    Carp::carp("column_info: unrecognized column type '$basetype' of $table_id.$row->{field} treated as varchar");
     }
     $info->{SQL_DATA_TYPE} ||= $info->{DATA_TYPE};
-    #warn Dumper($info);
   }
 
   my $sponge = DBI->connect("DBI:Sponge:", '','')
