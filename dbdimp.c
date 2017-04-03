@@ -4254,11 +4254,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
     if ((rc= mysql_stmt_fetch(imp_sth->stmt)))
     {
-      if (rc == 1)
-        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt),
-                mysql_stmt_sqlstate(imp_sth->stmt));
-
 #if MYSQL_VERSION_ID >= MYSQL_VERSION_5_0 
       if (rc == MYSQL_DATA_TRUNCATED) {
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -4274,6 +4269,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         imp_sth->fetch_done=1;
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tdbd_st_fetch no data\n");
+      }
+      else if (rc == 1)
+      {
+        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
+                 mysql_stmt_error(imp_sth->stmt),
+                 mysql_stmt_sqlstate(imp_sth->stmt));
       }
 
       dbd_st_finish(sth, imp_sth);
@@ -4341,9 +4342,12 @@ process:
 
           /*TODO: Use offset instead of 0 to fetch only remain part of data*/
           if (mysql_stmt_fetch_column(imp_sth->stmt, buffer , i, 0))
+          {
             do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                      mysql_stmt_error(imp_sth->stmt),
                      mysql_stmt_sqlstate(imp_sth->stmt));
+            return Nullav;
+          }
 
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
             int j;
@@ -5311,6 +5315,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
               "Binding non-numeric field %d, value %s as a numeric!",
               param_num, neatsvpv(value,0))));
       do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg, NULL);
+      return FALSE;
     }
   }
 
@@ -5840,7 +5845,10 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
     *resp= mysql_store_result(svsock);
 
     if (mysql_errno(svsock))
+    {
       do_error(h, mysql_errno(svsock), mysql_error(svsock), mysql_sqlstate(svsock));
+      return -1;
+    }
     if (!*resp)
       retval= mysql_affected_rows(svsock);
     else {
