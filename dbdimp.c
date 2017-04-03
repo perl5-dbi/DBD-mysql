@@ -2397,7 +2397,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 */
 int
 dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
-  /* croak, if not in AutoCommit mode */
+  /* report error, if not in AutoCommit mode */
   if (DBIc_has(imp_dbh, DBIcf_AutoCommit))
     return FALSE;
 
@@ -2635,7 +2635,7 @@ dbd_db_STORE_attrib(
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
                  "Transactions not supported by database" ,NULL);
-        croak("Transactions not supported by database");
+        return FALSE;
       }
     }
   }
@@ -2668,7 +2668,10 @@ dbd_db_STORE_attrib(
       if ( len == 0 || ( len == 2 && (strnEQ(str, "ro", 3) || strnEQ(str, "rw", 3)) ) )
         mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, len == 0 ? NULL : str);
       else
-        croak("Valid settings for FABRIC_OPT_DEFAULT_MODE are 'ro', 'rw', or undef/empty string");
+      {
+        do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "Valid settings for FABRIC_OPT_DEFAULT_MODE are 'ro', 'rw', or undef/empty string", "HY000");
+        return FALSE;
+      }
     }
     else {
       mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, NULL);
@@ -2679,13 +2682,17 @@ dbd_db_STORE_attrib(
     STRLEN len;
     const char *str = SvPV_nomg(valuesv, len);
     if (len != 2 || (strnNE(str, "ro", 3) && strnNE(str, "rw", 3)))
-      croak("Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'");
+    {
+      do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'", "HY000");
+      return FALSE;
+    }
 
     mysql_options(imp_dbh->pmysql, FABRIC_OPT_MODE, str);
   }
   else if (kl == 34 && strEQ(key, "mysql_fabric_opt_group_credentials"))
   {
-    croak("'fabric_opt_group_credentials' is not supported");
+    do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "'fabric_opt_group_credentials' is not supported", "HY000");
+    return FALSE;
   }
 #endif
   else
@@ -4989,7 +4996,8 @@ dbd_st_FETCH_internal(
         sv= boolSV(IS_AUTO_INCREMENT(curField->flags));
         break;
 #else
-        croak("AUTO_INCREMENT_FLAG is not supported on this machine");
+        do_error(dbh, JW_ERR_NOT_IMPLEMENTED, "AUTO_INCREMENT_FLAG is not supported on this machine", "HY000");
+        return &PL_sv_undef;
 #endif
 
       case AV_ATTRIB_IS_KEY:

@@ -185,7 +185,8 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   }
   else
   {
-    croak("Unknown command: %s", command);
+    do_error(drh, JW_ERR_INVALID_ATTRIBUTE, SvPVX(sv_2mortal(newSVpvf("Unknown command %s", command))), "HY000");
+    XSRETURN_NO;
   }
   if (retval)
   {
@@ -803,7 +804,10 @@ dbd_mysql_get_info(dbh, sql_info_type)
     if (SvOK(sql_info_type))
     	type = SvIV_nomg(sql_info_type);
     else
-    	croak("get_info called with an invalied parameter");
+    {
+        do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "get_info called with an invalied parameter", "HY000");
+        XSRETURN_UNDEF;
+    }
     
     switch(type) {
     	case SQL_CATALOG_NAME_SEPARATOR:
@@ -853,7 +857,8 @@ dbd_mysql_get_info(dbh, sql_info_type)
             retsv = newSViv(1);
             break;
     	default:
- 		croak("Unknown SQL Info type: %i", mysql_errno(imp_dbh->pmysql));
+	    do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, SvPVX(sv_2mortal(newSVpvf("Unknown SQL Info type %" IVdf, type))), "HY000");
+	    XSRETURN_UNDEF;
     }
     ST(0) = sv_2mortal(retsv);
 
