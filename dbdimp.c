@@ -2397,7 +2397,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 */
 int
 dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
-  /* croak, if not in AutoCommit mode */
+  /* report error, if not in AutoCommit mode */
   if (DBIc_has(imp_dbh, DBIcf_AutoCommit))
     return FALSE;
 
@@ -2635,7 +2635,7 @@ dbd_db_STORE_attrib(
       {
         do_error(dbh, JW_ERR_NOT_IMPLEMENTED,
                  "Transactions not supported by database" ,NULL);
-        croak("Transactions not supported by database");
+        return FALSE;
       }
     }
   }
@@ -2668,7 +2668,10 @@ dbd_db_STORE_attrib(
       if ( len == 0 || ( len == 2 && (strnEQ(str, "ro", 3) || strnEQ(str, "rw", 3)) ) )
         mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, len == 0 ? NULL : str);
       else
-        croak("Valid settings for FABRIC_OPT_DEFAULT_MODE are 'ro', 'rw', or undef/empty string");
+      {
+        do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "Valid settings for FABRIC_OPT_DEFAULT_MODE are 'ro', 'rw', or undef/empty string", "HY000");
+        return FALSE;
+      }
     }
     else {
       mysql_options(imp_dbh->pmysql, FABRIC_OPT_DEFAULT_MODE, NULL);
@@ -2679,13 +2682,17 @@ dbd_db_STORE_attrib(
     STRLEN len;
     const char *str = SvPV_nomg(valuesv, len);
     if (len != 2 || (strnNE(str, "ro", 3) && strnNE(str, "rw", 3)))
-      croak("Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'");
+    {
+      do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "Valid settings for FABRIC_OPT_MODE are 'ro' or 'rw'", "HY000");
+      return FALSE;
+    }
 
     mysql_options(imp_dbh->pmysql, FABRIC_OPT_MODE, str);
   }
   else if (kl == 34 && strEQ(key, "mysql_fabric_opt_group_credentials"))
   {
-    croak("'fabric_opt_group_credentials' is not supported");
+    do_error(dbh, JW_ERR_INVALID_ATTRIBUTE, "'fabric_opt_group_credentials' is not supported", "HY000");
+    return FALSE;
   }
 #endif
   else
@@ -4247,11 +4254,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
 
     if ((rc= mysql_stmt_fetch(imp_sth->stmt)))
     {
-      if (rc == 1)
-        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
-                 mysql_stmt_error(imp_sth->stmt),
-                mysql_stmt_sqlstate(imp_sth->stmt));
-
 #if MYSQL_VERSION_ID >= MYSQL_VERSION_5_0 
       if (rc == MYSQL_DATA_TRUNCATED) {
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -4267,6 +4269,12 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
         imp_sth->fetch_done=1;
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
           PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t\tdbd_st_fetch no data\n");
+      }
+      else if (rc == 1)
+      {
+        do_error(sth, mysql_stmt_errno(imp_sth->stmt),
+                 mysql_stmt_error(imp_sth->stmt),
+                 mysql_stmt_sqlstate(imp_sth->stmt));
       }
 
       dbd_st_finish(sth, imp_sth);
@@ -4334,9 +4342,12 @@ process:
 
           /*TODO: Use offset instead of 0 to fetch only remain part of data*/
           if (mysql_stmt_fetch_column(imp_sth->stmt, buffer , i, 0))
+          {
             do_error(sth, mysql_stmt_errno(imp_sth->stmt),
                      mysql_stmt_error(imp_sth->stmt),
                      mysql_stmt_sqlstate(imp_sth->stmt));
+            return Nullav;
+          }
 
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2) {
             int j;
@@ -4989,7 +5000,8 @@ dbd_st_FETCH_internal(
         sv= boolSV(IS_AUTO_INCREMENT(curField->flags));
         break;
 #else
-        croak("AUTO_INCREMENT_FLAG is not supported on this machine");
+        do_error(dbh, JW_ERR_NOT_IMPLEMENTED, "AUTO_INCREMENT_FLAG is not supported on this machine", "HY000");
+        return &PL_sv_undef;
 #endif
 
       case AV_ATTRIB_IS_KEY:
@@ -5303,6 +5315,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
               "Binding non-numeric field %d, value %s as a numeric!",
               param_num, neatsvpv(value,0))));
       do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, err_msg, NULL);
+      return FALSE;
     }
   }
 
@@ -5832,7 +5845,10 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
     *resp= mysql_store_result(svsock);
 
     if (mysql_errno(svsock))
+    {
       do_error(h, mysql_errno(svsock), mysql_error(svsock), mysql_sqlstate(svsock));
+      return -1;
+    }
     if (!*resp)
       retval= mysql_affected_rows(svsock);
     else {
