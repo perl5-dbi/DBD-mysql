@@ -74,7 +74,9 @@
 #define mysql_sqlstate(svsock) (NULL)
 #endif
 #if MYSQL_VERSION_ID > 50710 && MYSQL_VERSION_ID < MARIADB_VERSION_10
+#if MYSQL_VERSION_ID != 60000  /* MySQL Connector/C 6.0 */
 #define MYSQL_SSL_MODE
+#endif
 #endif
 /*
  * This is the versions of libmysql that supports MySQL Fabric.
