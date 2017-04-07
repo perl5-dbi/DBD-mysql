@@ -10,7 +10,15 @@ require "t/lib.pl";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => 1, PrintError => 1, RaiseError => 1 });
 
-eval { $dbh->do("SET lc_messages = 'ja_JP'") } or do { plan skip_all => "Server lc_messages ja_JP are needed for this test" };
+eval {
+  $dbh->{PrintError} = 0;
+  $dbh->do("SET lc_messages = 'ja_JP'");
+  $dbh->{PrintError} = 1;
+  1;
+} or do {
+  $dbh->disconnect();
+  plan skip_all => "Server lc_messages ja_JP are needed for this test";
+};
 
 plan tests => 21;
 
@@ -18,7 +26,7 @@ my $jpnTable = "\N{U+8868}"; # Japanese table
 my $jpnGender = "\N{U+6027}\N{U+5225}"; # Japanese word "gender"
 my $jpnYamadaTaro = "\N{U+5c71}\N{U+7530}\N{U+592a}\N{U+90ce}"; # a Japanese person name
 my $jpnMale = "\N{U+7537}"; # Japanese word "male"
-my $jpnErr = qr/\N{U+4ed8}\N{U+8fd1}.*\N{U+884c}\N{U+76ee}/;
+my $jpnErr = qr/\x{4ed8}\x{8fd1}.*\x{884c}\x{76ee}/; # Use \x{...} instead \N{U+...} due to Perl 5.12.0 bug
 
 my $sth;
 my $row;
