@@ -1446,18 +1446,19 @@ handles (read only):
 
   $errno = $dbh->{'mysql_errno'};
   $error = $dbh->{'mysql_error'};
-  $info = $dbh->{'mysql_hostinfo'};
+  $hostinfo = $dbh->{'mysql_hostinfo'};
   $info = $dbh->{'mysql_info'};
   $insertid = $dbh->{'mysql_insertid'};
-  $info = $dbh->{'mysql_protoinfo'};
-  $info = $dbh->{'mysql_serverinfo'};
-  $info = $dbh->{'mysql_stat'};
-  $threadId = $dbh->{'mysql_thread_id'};
+  $protoinfo = $dbh->{'mysql_protoinfo'};
+  $serverinfo = $dbh->{'mysql_serverinfo'};
+  $ssl_cipher = $dbh->{'mysql_ssl_cipher'};
+  $stat = $dbh->{'mysql_stat'};
+  $thread_id = $dbh->{'mysql_thread_id'};
 
 These correspond to mysql_errno(), mysql_error(), mysql_get_host_info(),
 mysql_info(), mysql_insert_id(), mysql_get_proto_info(),
-mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
-respectively.
+mysql_get_server_info(), mysql_stat(), mysql_get_ssl_cipher()
+and mysql_thread_id() respectively.
 
 =over 2
 
@@ -1481,6 +1482,19 @@ against:
   print "$dbh->{mysql_serverversion}\n";
 
   50200
+
+=item mysql_ssl_cipher
+
+Returns the SSL encryption cipher used for the given connection to
+the server.  In case SSL encryption was not enabled with C<mysql_ssl>
+or was not established returns undef.
+
+  my $ssl_cipher = $dbh->{mysql_ssl_cipher};
+  if (defined $ssl_cipher) {
+    print "Connection with server is encrypted with cipher: $ssl_cipher\n";
+  } else {
+    print "Connection with server is not encrypted\n";
+  }
 
 =item mysql_dbd_stats
 

@@ -2993,6 +2993,14 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       result= serverinfo ?
         sv_2mortal(newSVpvn(serverinfo, strlen(serverinfo))) : &PL_sv_undef;
     } 
+#if ((MYSQL_VERSION_ID >= 50023 && MYSQL_VERSION_ID < 50100) || MYSQL_VERSION_ID >= 50111)
+    else if (kl == 10 && strEQ(key, "ssl_cipher"))
+    {
+      const char* ssl_cipher = mysql_get_ssl_cipher(imp_dbh->pmysql);
+      result= ssl_cipher ?
+        sv_2mortal(newSVpvn(ssl_cipher, strlen(ssl_cipher))) : &PL_sv_undef;
+    }
+#endif
     else if (kl == 13 && strEQ(key, "serverversion"))
       result= sv_2mortal(my_ulonglong2sv(aTHX_ mysql_get_server_version(imp_dbh->pmysql)));
     else if (strEQ(key, "sock"))
