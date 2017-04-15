@@ -1228,6 +1228,22 @@ cipher in the list is supported, encrypted connections will not work.
   mysql_ssl_cipher=AES128-SHA
   mysql_ssl_cipher=DHE-RSA-AES256-SHA:AES128-SHA
 
+=item mysql_ssl_optional
+
+Setting C<mysql_ssl_optional> to true disables strict SSL enforcement
+and makes SSL connection optional.  This option opens security hole
+for man-in-the-middle attacks.  Default value is false which means
+that C<mysql_ssl> set to true enforce SSL encryption.
+
+This option was introduced in 4.043 version of DBD::mysql.  Due to
+L<The BACKRONYM|http://backronym.fail/> and L<The Riddle|http://riddle.link/>
+vulnerabilities in libmysqlclient library, enforcement of SSL
+encryption was not possbile and therefore C<mysql_ssl_optional=1>
+was effectively set for all DBD::mysql versions prior to 4.043.
+Starting with 4.043, DBD::mysql with C<mysql_ssl=1> could refuse
+connection to MySQL server if underlaying libmysqlclient library is
+vulnerable.  Option C<mysql_ssl_optional> can be used to make SSL
+connection vulnerable.
 
 =item mysql_local_infile
 
