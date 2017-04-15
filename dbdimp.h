@@ -52,7 +52,6 @@
 #if MYSQL_VERSION_ID < SQL_STATE_VERSION
 #define mysql_sqlstate(svsock) (NULL)
 #endif
-
 /*
  * This is the versions of libmysql that supports MySQL Fabric.
 */
