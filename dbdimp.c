@@ -1669,6 +1669,12 @@ void do_warn(SV* h, int rc, char* what)
     } \
   }
 
+static void set_ssl_error(MYSQL *sock, const char *error)
+{
+  sock->net.last_errno = CR_SSL_CONNECTION_ERROR;
+  strcpy(sock->net.sqlstate, "HY000");
+  my_snprintf(sock->net.last_error, sizeof(sock->net.last_error)-1, "SSL connection error: %-.100s", error);
+}
 
 /***************************************************************************
  *
@@ -2059,25 +2065,31 @@ MYSQL *mysql_dr_connect(
                          (SvTRUE(*svp) ? "utf8" : "latin1"));
         }
 
+	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
+          {
 #if defined(DBD_MYSQL_WITH_SSL) && !defined(DBD_MYSQL_EMBEDDED) && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
-	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE))  &&  *svp)
-        {
-	  if (SvTRUE(*svp))
-          {
 	    char *client_key = NULL;
 	    char *client_cert = NULL;
 	    char *ca_file = NULL;
 	    char *ca_path = NULL;
 	    char *cipher = NULL;
 	    STRLEN lna;
-#ifdef MYSQL_SSL_MODE
-	    unsigned int ssl_mode = SSL_MODE_PREFERRED;
-#endif
+	    unsigned int ssl_mode;
+	    my_bool ssl_enforce = 1;
+	    my_bool ssl_verify = 0;
+	    my_bool ssl_verify_set = 0;
+
             /* Verify if the hostname we connect to matches the hostname in the certificate */
-	    my_bool ssl_verify_true = 0;
-	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE))  &&  *svp)
-	      ssl_verify_true = SvTRUE(*svp);
+	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE)) && *svp) {
+  #if defined(HAVE_SSL_VERIFY) || defined(HAVE_SSL_MODE)
+	      ssl_verify = SvTRUE(*svp);
+	      ssl_verify_set = 1;
+  #else
+	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
+	      return NULL;
+  #endif
+	    }
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
@@ -2100,35 +2112,84 @@ MYSQL *mysql_dr_connect(
 
 	    mysql_ssl_set(sock, client_key, client_cert, ca_file,
 			  ca_path, cipher);
-#ifdef MYSQL_SSL_MODE
-	    if (ssl_verify_true)
+
+	    if (ssl_verify && !(ca_file || ca_path)) {
+	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported without mysql_ssl_ca_file or mysql_ssl_ca_path");
+	      return NULL;
+	    }
+
+  #ifdef HAVE_SSL_MODE
+
+	    if (ssl_verify)
 	      ssl_mode = SSL_MODE_VERIFY_IDENTITY;
-	    else if (ca_file)
+	    else if (ca_file || ca_path)
 	      ssl_mode = SSL_MODE_VERIFY_CA;
-	    else if (ca_path)
-	      ssl_mode = SSL_MODE_VERIFY_CA;
-	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
-#elif MYSQL_VERSION_ID >= SSL_VERIFY_VERSION && MYSQL_VERSION_ID <= SSL_LAST_VERIFY_VERSION || MYSQL_VERSION_ID >= MARIADB_VERSION_10
-	    mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify_true);
-#if MYSQL_VERSION_ID >= SSL_ENFORCE_VERSION && MYSQL_VERSION_ID <= SSL_LAST_ENFORCE_VERSION
-	    /* Only needed for Oracle MySQL 5.7 if MYSQL_OPT_SSL_MODE is not available */
-	    mysql_options(sock, MYSQL_OPT_SSL_ENFORCE, &ssl_verify_true);
-#endif
-#else
-	    croak("Can't enable strict certificate checks");
-#endif
-	    client_flag |= CLIENT_SSL;
-#ifdef MYSQL_SSL_MODE
-	  }
 	    else
+	      ssl_mode = SSL_MODE_REQUIRED;
+	    if (mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0) {
+	      set_ssl_error(sock, "Enforcing SSL encryption is not supported");
+	      return NULL;
+	    }
+
+  #else
+
+    #if defined(HAVE_SSL_MODE_ONLY_REQUIRED)
+	      ssl_mode = SSL_MODE_REQUIRED;
+	      if (mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0) {
+	        set_ssl_error(sock, "Enforcing SSL encryption is not supported");
+	        return NULL;
+	      }
+    #elif defined(HAVE_SSL_ENFORCE)
+	      if (mysql_options(sock, MYSQL_OPT_SSL_ENFORCE, &ssl_enforce) != 0) {
+	        set_ssl_error(sock, "Enforcing SSL encryption is not supported");
+	        return NULL;
+	      }
+    #elif defined(HAVE_SSL_VERIFY)
+	      if (!ssl_verify_also_enforce_ssl()) {
+	        set_ssl_error(sock, "Enforcing SSL encryption is not supported");
+	        return NULL;
+	      }
+	      if (ssl_verify_set && !ssl_verify) {
+	        set_ssl_error(sock, "Enforcing SSL encryption is not supported without mysql_ssl_verify_server_cert=1");
+	        return NULL;
+	      }
+	      ssl_verify = 1;
+    #else
+	      set_ssl_error(sock, "Enforcing SSL encryption is not supported");
+	      return NULL;
+    #endif
+
+	    if (ssl_verify) {
+	      if (!ssl_verify_usable() && ssl_verify_set) {
+	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
+	        return NULL;
+	      }
+    #ifdef HAVE_SSL_VERIFY
+	      if (mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify) != 0) {
+	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
+	        return NULL;
+	      }
+    #else
+	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
+	      return NULL;
+    #endif
+	    }
+
+  #endif
+
+	    client_flag |= CLIENT_SSL;
+#else
+	    set_ssl_error(sock, "mysql_ssl=1 is not supported");
+	    return NULL;
+#endif
+	  }
+	else
 	  {
-	    /* mysql_ssl=0 */
+#ifdef HAVE_SSL_MODE
 	    unsigned int ssl_mode = SSL_MODE_DISABLED;
 	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
 #endif
 	  }
-	}
-#endif
 #if (MYSQL_VERSION_ID >= 32349)
 	/*
 	 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use
