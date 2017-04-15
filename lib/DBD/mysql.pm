@@ -1160,7 +1160,8 @@ location for the socket than that built into the client.
 =item mysql_ssl
 
 A true value turns on the CLIENT_SSL flag when connecting to the MySQL
-database:
+server and enforce SSL encryption.  A false value (which is default)
+disable SSL encryption with the MySQL server.
 
 When enabling SSL encryption you should set also other SSL options,
 at least mysql_ssl_ca_file or mysql_ssl_ca_path.

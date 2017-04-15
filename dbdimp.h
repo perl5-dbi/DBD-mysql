@@ -47,9 +47,6 @@
 #define LIMIT_PLACEHOLDER_VERSION 50007
 #define GEO_DATATYPE_VERSION 50007
 #define NEW_DATATYPE_VERSION 50003
-#define SSL_VERIFY_VERSION 50023
-#define SSL_LAST_VERIFY_VERSION 50799
-#define SECURE_AUTH_LAST_VERSION 50704
 #define MYSQL_VERSION_5_0 50001
 /* This is to avoid the ugly #ifdef mess in dbdimp.c */
 #if MYSQL_VERSION_ID < SQL_STATE_VERSION
@@ -82,6 +79,54 @@
 
 #define true 1
 #define false 0
+
+/*
+ * Check which SSL settings are supported by API at compile time
+ */
+
+/* Use mysql_options with MYSQL_OPT_SSL_VERIFY_SERVER_CERT */
+#if ((MYSQL_VERSION_ID >= 50023 && MYSQL_VERSION_ID < 50100) || MYSQL_VERSION_ID >= 50111) && (MYSQL_VERSION_ID < 80000 || defined(MARIADB_BASE_VERSION))
+#define HAVE_SSL_VERIFY
+#endif
+
+/* Use mysql_options with MYSQL_OPT_SSL_ENFORCE */
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50703 && MYSQL_VERSION_ID < 80000 && MYSQL_VERSION_ID != 60000
+#define HAVE_SSL_ENFORCE
+#endif
+
+/* Use mysql_options with MYSQL_OPT_SSL_MODE */
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50711 && MYSQL_VERSION_ID != 60000
+#define HAVE_SSL_MODE
+#endif
+
+/* Use mysql_options with MYSQL_OPT_SSL_MODE, but only SSL_MODE_REQUIRED is supported */
+#if !defined(MARIADB_BASE_VERSION) && ((MYSQL_VERSION_ID >= 50636 && MYSQL_VERSION_ID < 50700) || (MYSQL_VERSION_ID >= 50555 && MYSQL_VERSION_ID < 50600))
+#define HAVE_SSL_MODE_ONLY_REQUIRED
+#endif
+
+/*
+ * Check which SSL settings are supported by API at runtime
+ */
+
+/* MYSQL_OPT_SSL_VERIFY_SERVER_CERT automatically enforce SSL mode */
+PERL_STATIC_INLINE bool ssl_verify_also_enforce_ssl(void) {
+#ifdef MARIADB_BASE_VERSION
+	my_ulonglong version = mysql_get_client_version();
+	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106);
+#else
+	return false;
+#endif
+}
+
+/* MYSQL_OPT_SSL_VERIFY_SERVER_CERT is not vulnerable (CVE-2016-2047) and can be used */
+PERL_STATIC_INLINE bool ssl_verify_usable(void) {
+	my_ulonglong version = mysql_get_client_version();
+#ifdef MARIADB_BASE_VERSION
+	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
+#else
+	return ((version >= 50549 && version < 50600) || (version >= 50630 && version < 50700) || version >= 50712);
+#endif
+}
 
 /*
  *  The following are return codes passed in $h->err in case of
