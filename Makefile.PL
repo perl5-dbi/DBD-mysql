@@ -480,9 +480,9 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
                        'Test::Deep'   => 0,
                        'Time::HiRes'  => 0,
     },
-    CONFIGURE_REQUIRES => { 'DBI' => 1.609,
+    CONFIGURE_REQUIRES => { 'DBI' => '1.609',
                             'Data::Dumper' => 0,
-                            'Devel::CheckLib' => 0,
+                            'Devel::CheckLib' => '1.09',
                             'ExtUtils::MakeMaker' => 0,
     },
   );

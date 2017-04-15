@@ -1,4 +1,6 @@
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042_01)
+* Use Devel::CheckLib 1.09 or newer, fixes
+   https://github.com/perl5-dbi/DBD-mysql/issues/109
 * Improve CI testing on AppVeyor: caching, path to cpan, configure deps (pali)
 * Specify bigint as test dependency.
 
