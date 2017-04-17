@@ -6,7 +6,8 @@ use DBI;
 use Encode;
 
 use vars qw($test_dsn $test_user $test_password);
-require "t/lib.pl";
+use lib 't', '.';
+require "lib.pl";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => 1, PrintError => 1, RaiseError => 1 });
 

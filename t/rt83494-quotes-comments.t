@@ -9,7 +9,8 @@ use DBI;
 use Test::More;
 
 use vars qw($test_dsn $test_user $test_password $state);
-require "t/lib.pl";
+use lib 't', '.';
+require "lib.pl";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1, PrintError => 0, AutoCommit => 0 });

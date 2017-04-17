@@ -4,7 +4,8 @@ use warnings;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-require "t/lib.pl";
+use lib 't', '.';
+require "lib.pl";
 
 use Test::More;
 
