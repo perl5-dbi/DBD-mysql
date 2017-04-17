@@ -1621,6 +1621,40 @@ when the attribute C<mysql_enable_utf8> was enabled!  Input statement and bind
 parameters were never encoded to UTF-8 octets and retrieved columns were
 always UTF-8 decoded regardless of the column charset (except binary charsets).
 
+If you need to pass statements or input bind parameters with Unicode characters
+from code which needs to be compatible with DBD::mysql versions prior to 4.042
+and also new versions then you can use "hack" with calling C<utf8::upgrade()>
+function on scalars immediately before passing scalar to DBD::mysql.  Calling
+C<utf8::upgrade()> function has absolutely no effect on (correctly) written
+Perl code.  So it is noop for DBD::mysql >= 4.042 but "hack" fix for DBD::mysql
+prior to 4.042 which has broken Unicode support.  In same way for binary (byte)
+data can be passed with calling C<utf8::downgrade()> function (it dies on wide
+Unicode strings with codepoints above U+FF).  See following example:
+
+  # check that last name contains LATIN CAPITAL LETTER O WITH STROKE (U+D8)
+  my $statement = "SELECT * FROM users WHERE last_name LIKE '%\x{D8}%' AND first_name = ? AND data = ?";
+
+  my $wide_string_param = "Andr\x{E9}"; # Andre with LATIN SMALL LETTER E WITH ACUTE (U+E9)
+
+  my $byte_param = "\x{D8}\x{A0}\x{39}\x{F8}"; # some bytes (binary data)
+
+  my $dbh = DBI->connect('DBI:mysql:database', 'username', 'pass', { mysql_enable_utf8 => 1 });
+  $dbh->do("SET NAMES utf8mb4") if $dbh->{mysql_serverversion} >= 50503; # enable 4-byte UTF-8 characters
+
+  utf8::upgrade($statement); # UTF-8 fix for DBD::mysql < 4.042
+  my $sth = $dbh->prepare($statement);
+
+  utf8::upgrade($wide_string_param); # UTF-8 fix for DBD::mysql < 4.042
+  $sth->bind_param(1, $wide_string_param);
+
+  utf8::downgrade($byte_param); # byte fix for DBD::mysql < 4.042
+  $sth->bind_param(2, $byte_param, DBI::SQL_BINARY); # set correct binary type
+
+  $sth->execute();
+
+  my $output = $sth->fetchall_arrayref();
+  # returned data in $output reference should be already UTF-8 decoded
+
 =item mysql_enable_utf8mb4
 
 Exactly the same as the attribute C<mysql_enable_utf8>.
@@ -1637,6 +1671,8 @@ You should use MySQL's C<utf8mb4> charset instead of C<utf8> to prevent problems
 with data exchange.  When the C<utf8> charset is used then you are responsible
 for 3-byte UTF-8 sequence checks on input perl scalar strings.  Otherwise MySQL
 server can reject or modify the input statement!
+
+MySQL's C<utf8mb4> charset was introduced in MySQL server version 5.5.3.
 
 =item mysql_bind_type_guessing
 
