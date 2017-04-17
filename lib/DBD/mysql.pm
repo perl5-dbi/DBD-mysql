@@ -1165,9 +1165,13 @@ location for the socket than that built into the client.
 =item mysql_ssl
 
 A true value turns on the CLIENT_SSL flag when connecting to the MySQL
-database:
+server and enforce SSL encryption.  A false value (which is default)
+disable SSL encryption with the MySQL server.
 
-  mysql_ssl=1
+When enabling SSL encryption you should set also other SSL options,
+at least mysql_ssl_ca_file or mysql_ssl_ca_path.
+
+  mysql_ssl=1 mysql_ssl_verify_server_cert=1 mysql_ssl_ca_file=/path/to/ca_cert.pem
 
 This means that your communication with the server will be encrypted.
 
@@ -1175,22 +1179,71 @@ Please note that this can only work if you enabled SSL when compiling
 DBD::mysql; this is the default starting version 4.034.
 See L<DBD::mysql::INSTALL> for more details.
 
-If you turn mysql_ssl on, you might also wish to use the following
-flags:
-
-=item mysql_ssl_client_key
-
-=item mysql_ssl_client_cert
-
 =item mysql_ssl_ca_file
+
+The path to a file in PEM format that contains a list of trusted SSL
+certificate authorities.
+
+When set MySQL server certificate is checked that it is signed by some
+CA certificate in the list.  Common Name value is not verified unless
+C<mysql_ssl_verify_server_cert> is enabled.
 
 =item mysql_ssl_ca_path
 
+The path to a directory that contains trusted SSL certificate authority
+certificates in PEM format.
+
+When set MySQL server certificate is checked that it is signed by some
+CA certificate in the list.  Common Name value is not verified unless
+C<mysql_ssl_verify_server_cert> is enabled.
+
+Please note that this option is supported only if your MySQL client was
+compiled with OpenSSL library, and not with default yaSSL library.
+
+=item mysql_ssl_verify_server_cert
+
+Checks the server's Common Name value in the certificate that the server
+sends to the client.  The client verifies that name against the host name
+the client uses for connecting to the server, and the connection fails if
+there is a mismatch.  For encrypted connections, this option helps prevent
+man-in-the-middle attacks.
+
+Verification of the host name is disabled by default.
+
+=item mysql_ssl_client_key
+
+The name of the SSL key file in PEM format to use for establishing
+a secure connection.
+
+=item mysql_ssl_client_cert
+
+The name of the SSL certificate file in PEM format to use for
+establishing a secure connection.
+
 =item mysql_ssl_cipher
 
-These are used to specify the respective parameters of a call
-to mysql_ssl_set, if mysql_ssl is turned on.
+A list of permissible ciphers to use for connection encryption.  If no
+cipher in the list is supported, encrypted connections will not work.
 
+  mysql_ssl_cipher=AES128-SHA
+  mysql_ssl_cipher=DHE-RSA-AES256-SHA:AES128-SHA
+
+=item mysql_ssl_optional
+
+Setting C<mysql_ssl_optional> to true disables strict SSL enforcement
+and makes SSL connection optional.  This option opens security hole
+for man-in-the-middle attacks.  Default value is false which means
+that C<mysql_ssl> set to true enforce SSL encryption.
+
+This option was introduced in 4.043 version of DBD::mysql.  Due to
+L<The BACKRONYM|http://backronym.fail/> and L<The Riddle|http://riddle.link/>
+vulnerabilities in libmysqlclient library, enforcement of SSL
+encryption was not possbile and therefore C<mysql_ssl_optional=1>
+was effectively set for all DBD::mysql versions prior to 4.043.
+Starting with 4.043, DBD::mysql with C<mysql_ssl=1> could refuse
+connection to MySQL server if underlaying libmysqlclient library is
+vulnerable.  Option C<mysql_ssl_optional> can be used to make SSL
+connection vulnerable.
 
 =item mysql_local_infile
 
@@ -1393,18 +1446,19 @@ handles (read only):
 
   $errno = $dbh->{'mysql_errno'};
   $error = $dbh->{'mysql_error'};
-  $info = $dbh->{'mysql_hostinfo'};
+  $hostinfo = $dbh->{'mysql_hostinfo'};
   $info = $dbh->{'mysql_info'};
   $insertid = $dbh->{'mysql_insertid'};
-  $info = $dbh->{'mysql_protoinfo'};
-  $info = $dbh->{'mysql_serverinfo'};
-  $info = $dbh->{'mysql_stat'};
-  $threadId = $dbh->{'mysql_thread_id'};
+  $protoinfo = $dbh->{'mysql_protoinfo'};
+  $serverinfo = $dbh->{'mysql_serverinfo'};
+  $ssl_cipher = $dbh->{'mysql_ssl_cipher'};
+  $stat = $dbh->{'mysql_stat'};
+  $thread_id = $dbh->{'mysql_thread_id'};
 
 These correspond to mysql_errno(), mysql_error(), mysql_get_host_info(),
 mysql_info(), mysql_insert_id(), mysql_get_proto_info(),
-mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
-respectively.
+mysql_get_server_info(), mysql_stat(), mysql_get_ssl_cipher()
+and mysql_thread_id() respectively.
 
 =over 2
 
@@ -1428,6 +1482,19 @@ against:
   print "$dbh->{mysql_serverversion}\n";
 
   50200
+
+=item mysql_ssl_cipher
+
+Returns the SSL encryption cipher used for the given connection to
+the server.  In case SSL encryption was not enabled with C<mysql_ssl>
+or was not established returns undef.
+
+  my $ssl_cipher = $dbh->{mysql_ssl_cipher};
+  if (defined $ssl_cipher) {
+    print "Connection with server is encrypted with cipher: $ssl_cipher\n";
+  } else {
+    print "Connection with server is not encrypted\n";
+  }
 
 =item mysql_dbd_stats
 

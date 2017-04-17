@@ -38,7 +38,11 @@ matrix:
     - perl: "5.20"
       env: DB=MySQL VERSION=5.5.47
     - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.49
+    - perl: "5.20"
       env: DB=MySQL VERSION=5.5.54
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.55
     - perl: "5.20"
       env: DB=MySQL VERSION=5.6.10
     - perl: "5.20"
@@ -46,27 +50,49 @@ matrix:
     - perl: "5.20"
       env: DB=MySQL VERSION=5.6.35
     - perl: "5.20"
+      env: DB=MySQL VERSION=5.6.36
+    - perl: "5.20"
       env: DB=MySQL VERSION=5.7.8-rc
     - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.11
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.12
+    - perl: "5.20"
       env: DB=MySQL VERSION=5.7.17
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.18
     - perl: "5.20"
       env: DB=MySQL VERSION=8.0.0-dmr
     - perl: "5.20"
       env: DB=MariaDB VERSION=5.5.40
     - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.44
+    - perl: "5.20"
       env: DB=MariaDB VERSION=5.5.47
     - perl: "5.20"
       env: DB=MariaDB VERSION=5.5.54
     - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.55
+    - perl: "5.20"
       env: DB=MariaDB VERSION=10.0.14
     - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.20
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.23
+    - perl: "5.20"
       env: DB=MariaDB VERSION=10.0.29
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.30
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.2
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.8
     - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.11
+    - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.20
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.22
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.2.0
     - perl: "5.20"
@@ -76,6 +102,14 @@ matrix:
 #      env: DB=MariaDB VERSION=10.2.2
 #    - perl: "5.20"
 #      env: DB=MariaDB VERSION=10.2.3
+# Incompatible with DBD::mysql due to broken something in libmysqlclient
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.4
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.5
+# Not supported by MySQL::Sandbox yet
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.3.0
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
     - perl: "5.20"
