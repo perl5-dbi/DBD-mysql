@@ -25,6 +25,11 @@ if ($@) {
 eval { require Storable };
 $have_storable = $@ ? 0 : 1;
 
+my $have_pt_size = grep { $_ eq 'size' } Proc::ProcessTable->new('cache_ttys' => $have_storable)->fields;
+if (!$have_pt_size) {
+        plan skip_all => "module Proc::ProcessTable does not support size attribute on current platform\n";
+}
+
 my ($dbh, $sth);
 $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
                                             { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
