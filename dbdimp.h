@@ -88,6 +88,10 @@
 #define mysql_warning_count(svsock) 0
 #endif
 
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 80001
+#define my_bool bool
+#endif
+
 #define true 1
 #define false 0
 

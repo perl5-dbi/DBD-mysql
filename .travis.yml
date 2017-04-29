@@ -64,6 +64,8 @@ matrix:
     - perl: "5.20"
       env: DB=MySQL VERSION=8.0.0-dmr
     - perl: "5.20"
+      env: DB=MySQL VERSION=8.0.1-dmr
+    - perl: "5.20"
       env: DB=MariaDB VERSION=5.5.40
     - perl: "5.20"
       env: DB=MariaDB VERSION=5.5.44
