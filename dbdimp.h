@@ -290,7 +290,7 @@ typedef union numeric_val_u {
 typedef struct imp_sth_phb_st {
     numeric_val_t   numeric_val;
     unsigned long   length;
-    char            is_null;
+    my_bool         is_null;
 } imp_sth_phb_t;
 
 /*
@@ -299,7 +299,7 @@ typedef struct imp_sth_phb_st {
  */
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
-    bool           is_null;
+    my_bool        is_null;
     bool           error;
     char           *data;
     int            charsetnr;
@@ -312,7 +312,7 @@ typedef struct imp_sth_fbh_st {
 
 typedef struct imp_sth_fbind_st {
    unsigned long   * length;
-   char            * is_null;
+   my_bool         * is_null;
 } imp_sth_fbind_t;
 
 

@@ -3337,7 +3337,7 @@ dbd_st_prepare_sv(
           bind->buffer_type=  MYSQL_TYPE_STRING;
           bind->buffer=       NULL;
           bind->length=       &(fbind->length);
-          bind->is_null=      (char*) &(fbind->is_null);
+          bind->is_null=      &(fbind->is_null);
           fbind->is_null=     1;
           fbind->length=      0;
         }
@@ -4162,7 +4162,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->buffer_type= fields[i].type;
       buffer->is_unsigned= (fields[i].flags & UNSIGNED_FLAG) ? 1 : 0;
       buffer->length= &(fbh->length);
-      buffer->is_null= (my_bool*) &(fbh->is_null);
+      buffer->is_null= &(fbh->is_null);
 #if MYSQL_VERSION_ID >= NEW_DATATYPE_VERSION
       buffer->error= (my_bool*) &(fbh->error);
 #endif
