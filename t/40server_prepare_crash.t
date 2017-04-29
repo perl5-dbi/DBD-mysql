@@ -5,7 +5,8 @@ use Test::More;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-require "t/lib.pl";
+use lib 't', '.';
+require "lib.pl";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1, AutoCommit => 0, mysql_server_prepare => 1, mysql_server_prepare_disable_fallback => 1 });
 plan skip_all => "You must have MySQL version 4.1.3 and greater for this test to run" if $dbh->{mysql_clientversion} < 40103 or $dbh->{mysql_serverversion} < 40103;
