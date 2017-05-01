@@ -5896,6 +5896,7 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
   MYSQL_RES* _res;
   int retval = 0;
   int htype;
+  bool async_sth = FALSE;
 
   if(! resp) {
       resp = &_res;
@@ -5910,9 +5911,13 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
       D_imp_sth(h);
       D_imp_dbh_from_sth;
       dbh = imp_dbh;
+      async_sth = imp_sth->is_async;
+      retval = imp_sth->row_num;
   }
 
   if(! dbh->async_query_in_flight) {
+      if (async_sth)
+          return retval;
       do_error(h, 2000, "Gathering asynchronous results for a synchronous handle", "HY000");
       return -1;
   }
@@ -5974,6 +5979,8 @@ int mysql_db_async_ready(SV* h)
   D_imp_xxh(h);
   imp_dbh_t* dbh;
   int htype;
+  bool async_sth = FALSE;
+  bool async_active = FALSE;
 
   htype = DBIc_TYPE(imp_xxh);
   
@@ -5984,6 +5991,8 @@ int mysql_db_async_ready(SV* h)
       D_imp_sth(h);
       D_imp_dbh_from_sth;
       dbh = imp_dbh;
+      async_sth = imp_sth->is_async;
+      async_active = !!DBIc_ACTIVE(imp_sth);
   }
 
   if(dbh->async_query_in_flight) {
@@ -5998,6 +6007,12 @@ int mysql_db_async_ready(SV* h)
           return -1;
       }
   } else {
+      if (async_sth) {
+          if (async_active)
+              return 1;
+          do_error(h, 2000, "Asynchronous handle was not executed yet", "HY000");
+          return -1;
+      }
       do_error(h, 2000, "Handle is not in asynchronous mode", "HY000");
       return -1;
   }
