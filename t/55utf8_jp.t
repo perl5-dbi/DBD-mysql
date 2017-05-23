@@ -11,6 +11,11 @@ require "lib.pl";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { mysql_enable_utf8 => 1, PrintError => 1, RaiseError => 1 });
 
+if (!MinimumVersion($dbh, '5.5')) {
+    plan skip_all =>
+        "SKIP TEST: You must have MySQL version 5.5 or greater for this test to run";
+}
+
 eval {
   $dbh->{PrintError} = 0;
   $dbh->do("SET lc_messages = 'ja_JP'");

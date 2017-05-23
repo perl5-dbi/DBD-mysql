@@ -14,6 +14,10 @@ binmode $tb->todo_output,    ":utf8";
 
 my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0, mysql_server_prepare_disable_fallback => 1 });
 
+if (!MinimumVersion($dbh, '4.1')) {
+    plan skip_all =>
+        "SKIP TEST: You must have MySQL version 4.1 or greater for this test to run"
+}
 plan tests => 288*2;
 
 $dbh->do("CREATE TEMPORARY TABLE t(i INT)");
