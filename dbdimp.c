@@ -1663,7 +1663,7 @@ void do_warn(SV* h, int rc, char* what)
 
 #define doquietwarn(s) \
   { \
-    SV* sv = perl_get_sv(DBD_MYSQL_NAMESPACE, FALSE);  \
+    SV* sv = get_sv(DBD_MYSQL_NAMESPACE, FALSE);  \
     if (!sv  ||  !SvTRUE(sv)) { \
       warn s; \
     } \
@@ -2586,7 +2586,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 #endif
 
   /* The disconnect_all concept is flawed and needs more work */
-  if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
+  if (!PL_dirty && !SvTRUE(get_sv("DBI::PERL_ENDING",0))) {
     sv_setiv(DBIc_ERR(imp_drh), (IV)1);
     sv_setpv(DBIc_ERRSTR(imp_drh),
              (char*)"disconnect_all not implemented");
