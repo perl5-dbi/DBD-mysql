@@ -8,6 +8,7 @@ cache:
 language: perl
 
 perl:
+  - "5.8.1"
   - "5.8"
   - "5.10"
   - "5.12"
@@ -146,6 +147,7 @@ addons:
       - libstdc++5
 
 before_install:
+  - if [ "$TRAVIS_PERL_VERSION" = "5.8.1" ]; then eval $(curl https://travis-perl.github.io/init) --perl; fi
   - if [ "$DB" = "MySQL" ]; then
       case "$VERSION" in
         4.1.*)       SANDBOX_URL=http://mysql.localhost.net.ar/Downloads/MySQL-4.1/mysql-standard-$VERSION-unknown-linux-gnu-x86_64-glibc23.tar.gz ;;
