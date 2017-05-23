@@ -1671,9 +1671,26 @@ void do_warn(SV* h, int rc, char* what)
 
 static void set_ssl_error(MYSQL *sock, const char *error)
 {
+  const char *prefix = "SSL connection error: ";
+  STRLEN prefix_len;
+  STRLEN error_len;
+
   sock->net.last_errno = CR_SSL_CONNECTION_ERROR;
   strcpy(sock->net.sqlstate, "HY000");
-  my_snprintf(sock->net.last_error, sizeof(sock->net.last_error)-1, "SSL connection error: %-.100s", error);
+
+  prefix_len = strlen(prefix);
+  if (prefix_len > sizeof(sock->net.last_error) - 1)
+    prefix_len = sizeof(sock->net.last_error) - 1;
+  memcpy(sock->net.last_error, prefix, prefix_len);
+
+  error_len = strlen(error);
+  if (prefix_len + error_len > sizeof(sock->net.last_error) - 1)
+    error_len = sizeof(sock->net.last_error) - prefix_len - 1;
+  if (prefix_len + error_len > 100)
+    error_len = 100 - prefix_len;
+  memcpy(sock->net.last_error + prefix_len, error, error_len);
+
+  sock->net.last_error[prefix_len + error_len] = 0;
 }
 
 /***************************************************************************
