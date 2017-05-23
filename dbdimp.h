@@ -28,6 +28,16 @@
 #define PERL_STATIC_INLINE static
 #endif
 
+/* PERL_UNUSED_ARG does not exist prior to perl 5.9.3 */
+#ifndef PERL_UNUSED_ARG
+#  if defined(lint) && defined(S_SPLINT_S) /* www.splint.org */
+#    include <note.h>
+#    define PERL_UNUSED_ARG(x) NOTE(ARGUNUSED(x))
+#  else
+#    define PERL_UNUSED_ARG(x) ((void)x)
+#  endif
+#endif
+
 #ifndef SvPV_nomg_nolen
 #define SvPV_nomg_nolen(sv) ((SvFLAGS(sv) & (SVf_POK)) == SVf_POK ? SvPVX(sv) : sv_2pv_flags(sv, &PL_na, 0))
 #endif
