@@ -1663,7 +1663,7 @@ void do_warn(SV* h, int rc, char* what)
 
 #define doquietwarn(s) \
   { \
-    SV* sv = perl_get_sv(DBD_MYSQL_NAMESPACE, FALSE);  \
+    SV* sv = get_sv(DBD_MYSQL_NAMESPACE, FALSE);  \
     if (!sv  ||  !SvTRUE(sv)) { \
       warn s; \
     } \
@@ -1671,9 +1671,26 @@ void do_warn(SV* h, int rc, char* what)
 
 static void set_ssl_error(MYSQL *sock, const char *error)
 {
+  const char *prefix = "SSL connection error: ";
+  STRLEN prefix_len;
+  STRLEN error_len;
+
   sock->net.last_errno = CR_SSL_CONNECTION_ERROR;
   strcpy(sock->net.sqlstate, "HY000");
-  my_snprintf(sock->net.last_error, sizeof(sock->net.last_error)-1, "SSL connection error: %-.100s", error);
+
+  prefix_len = strlen(prefix);
+  if (prefix_len > sizeof(sock->net.last_error) - 1)
+    prefix_len = sizeof(sock->net.last_error) - 1;
+  memcpy(sock->net.last_error, prefix, prefix_len);
+
+  error_len = strlen(error);
+  if (prefix_len + error_len > sizeof(sock->net.last_error) - 1)
+    error_len = sizeof(sock->net.last_error) - prefix_len - 1;
+  if (prefix_len + error_len > 100)
+    error_len = 100 - prefix_len;
+  memcpy(sock->net.last_error + prefix_len, error, error_len);
+
+  sock->net.last_error[prefix_len + error_len] = 0;
 }
 
 /***************************************************************************
@@ -2586,7 +2603,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
 #endif
 
   /* The disconnect_all concept is flawed and needs more work */
-  if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
+  if (!PL_dirty && !SvTRUE(get_sv("DBI::PERL_ENDING",0))) {
     sv_setiv(DBIc_ERR(imp_drh), (IV)1);
     sv_setpv(DBIc_ERRSTR(imp_drh),
              (char*)"disconnect_all not implemented");

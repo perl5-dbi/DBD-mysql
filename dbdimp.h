@@ -55,7 +55,7 @@
 #endif
 
 #ifndef sv_cmp_flags
-#define sv_cmp_flags(a,b,c) sv_cmp(a,b) /* Sorry, there is no way to compare magic scalars properly prior to perl 5.9.1 */
+#define sv_cmp_flags(a,b,c) sv_cmp(a,b) /* Sorry, there is no way to compare magic scalars properly prior to perl 5.13.6 */
 #endif
 
 
