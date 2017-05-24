@@ -855,7 +855,7 @@ package DBD::mysql::st; # ====== STATEMENT ======
 use strict;
 
 BEGIN {
-    my @needs_async_result = qw/fetchrow_hashref fetchall_hashref/;
+    my @needs_async_result = qw/fetchrow_arrayref fetchrow_array fetchrow_hashref fetchall_arrayref fetchall_hashref/;
     my @needs_async_check = qw/bind_param_array bind_col bind_columns execute_for_fetch/;
 
     foreach my $method (@needs_async_result) {
@@ -2099,7 +2099,8 @@ C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>.
 C<mysql_async_result> returns what do or execute would have; that is, the
 number of rows affected.  C<mysql_async_ready> returns true if
 C<mysql_async_result> will not block, and zero otherwise.  They both return
-C<undef> if that handle is not currently running an asynchronous query.
+C<undef> if that handle was not created with 'async' set to true
+or if an asynchronous query was not started yet.
 C<mysql_fd> returns the file descriptor number for the MySQL connection; you
 can use this in an event loop.
 
