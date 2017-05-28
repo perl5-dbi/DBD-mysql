@@ -2252,6 +2252,7 @@ MYSQL *mysql_dr_connect(
 
     if (result)
     {
+      my_bool reconnect= 0;
 #if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
       /* connection succeeded. */
       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
@@ -2268,7 +2269,7 @@ MYSQL *mysql_dr_connect(
         we turn off Mysql's auto reconnect and handle re-connecting ourselves
         so that we can keep track of when this happens.
       */
-      result->reconnect=0;
+      mysql_options(result, MYSQL_OPT_RECONNECT, &reconnect);
     }
     else {
       /* 
