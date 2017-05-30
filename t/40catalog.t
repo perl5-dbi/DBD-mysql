@@ -31,7 +31,7 @@ SKIP: {
     if !MinimumVersion($dbh, '5.0');
 
   my $have_innodb = 0;
-  if (!MinimumVersion($dbh, '5.6')) {
+  if (!MinimumVersion($dbh, '4.1.2')) {
     my $dummy;
     ($dummy,$have_innodb)=
       $dbh->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")

@@ -18,7 +18,7 @@ if (!@ilwtenabled) {
 }
 
 my $have_innodb = 0;
-if (!MinimumVersion($dbh1, '5.6')) {
+if (!MinimumVersion($dbh1, '4.1.2')) {
   my $dummy;
   ($dummy,$have_innodb)=
     $dbh1->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
