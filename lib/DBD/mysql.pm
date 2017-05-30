@@ -855,7 +855,7 @@ package DBD::mysql::st; # ====== STATEMENT ======
 use strict;
 
 BEGIN {
-    my @needs_async_result = qw/fetchrow_arrayref fetchrow_array fetchrow_hashref fetchall_arrayref fetchall_hashref/;
+    my @needs_async_result = qw/fetchrow_hashref fetchall_hashref/;
     my @needs_async_check = qw/bind_param_array bind_col bind_columns execute_for_fetch/;
 
     foreach my $method (@needs_async_result) {
