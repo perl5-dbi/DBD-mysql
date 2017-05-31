@@ -2092,7 +2092,9 @@ MYSQL *mysql_dr_connect(
 	    char *ca_path = NULL;
 	    char *cipher = NULL;
 	    STRLEN lna;
+  #if defined(HAVE_SSL_MODE) || defined(HAVE_SSL_MODE_ONLY_REQUIRED)
 	    unsigned int ssl_mode;
+  #endif
 	    my_bool ssl_enforce = 1;
 	    my_bool ssl_verify = 0;
 	    my_bool ssl_verify_set = 0;
