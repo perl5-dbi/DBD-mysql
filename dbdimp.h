@@ -19,10 +19,14 @@
  */
 #include <DBIXS.h>  /* installed by the DBI module                        */
 #include <mysql.h>  /* Comes with MySQL-devel */
-#include <mysqld_error.h>  /* Comes MySQL */
 
 #include <errmsg.h> /* Comes with MySQL-devel */
 #include <stdint.h> /* For uint32_t */
+
+/* MariaDB Connector/C doesn't ship GPL'ed licensed mysqld_error.h
+   so we use hardcoded error code here instead of including mysqld_error.h
+ */
+#define ER_UNSUPPORTED_PS 1295
 
 #ifndef PERL_STATIC_INLINE
 #define PERL_STATIC_INLINE static
@@ -60,7 +64,7 @@
 
 
 /*
- * This is the version of MySQL wherer
+ * This is the version of MySQL where
  * the server will be used to process prepare
  * statements as opposed to emulation in the driver
 */
@@ -75,6 +79,12 @@
 #define NEW_DATATYPE_VERSION 50003
 #define MYSQL_VERSION_5_0 50001
 /* This is to avoid the ugly #ifdef mess in dbdimp.c */
+
+/* MariaDB Connector/C has MARIADB_VERSION_ID instead of MYSQL_VERSION_ID */
+#if !defined(MYSQL_VERSION_ID) && defined(MARIADB_VERSION_ID)
+#define MYSQL_VERSION_ID MARIADB_VERSION_ID
+#endif
+
 #if MYSQL_VERSION_ID < SQL_STATE_VERSION
 #define mysql_sqlstate(svsock) (NULL)
 #endif
@@ -98,7 +108,11 @@
 #define mysql_warning_count(svsock) 0
 #endif
 
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 80001
+#if defined(MARIADB_BASE_VERSION) || defined(MARIADB_VERSION_ID)
+#define MARIADB_CLIENT
+#endif
+
+#if !defined(MARIADB_CLIENT) && MYSQL_VERSION_ID >= 80001
 #define my_bool bool
 #endif
 
@@ -110,22 +124,22 @@
  */
 
 /* Use mysql_options with MYSQL_OPT_SSL_VERIFY_SERVER_CERT */
-#if ((MYSQL_VERSION_ID >= 50023 && MYSQL_VERSION_ID < 50100) || MYSQL_VERSION_ID >= 50111) && (MYSQL_VERSION_ID < 80000 || defined(MARIADB_BASE_VERSION))
+#ifdef CLIENT_SSL_VERIFY_SERVER_CERT
 #define HAVE_SSL_VERIFY
 #endif
 
 /* Use mysql_options with MYSQL_OPT_SSL_ENFORCE */
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50703 && MYSQL_VERSION_ID < 80000 && MYSQL_VERSION_ID != 60000
+#if !defined(MARIADB_CLIENT) && MYSQL_VERSION_ID >= 50703 && MYSQL_VERSION_ID < 80000 && MYSQL_VERSION_ID != 60000
 #define HAVE_SSL_ENFORCE
 #endif
 
 /* Use mysql_options with MYSQL_OPT_SSL_MODE */
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50711 && MYSQL_VERSION_ID != 60000
+#if !defined(MARIADB_CLIENT) && MYSQL_VERSION_ID >= 50711 && MYSQL_VERSION_ID != 60000 
 #define HAVE_SSL_MODE
 #endif
 
 /* Use mysql_options with MYSQL_OPT_SSL_MODE, but only SSL_MODE_REQUIRED is supported */
-#if !defined(MARIADB_BASE_VERSION) && ((MYSQL_VERSION_ID >= 50636 && MYSQL_VERSION_ID < 50700) || (MYSQL_VERSION_ID >= 50555 && MYSQL_VERSION_ID < 50600))
+#if !defined(MARIADB_CLIENT) && ((MYSQL_VERSION_ID >= 50636 && MYSQL_VERSION_ID < 50700) || (MYSQL_VERSION_ID >= 50555 && MYSQL_VERSION_ID < 50600))
 #define HAVE_SSL_MODE_ONLY_REQUIRED
 #endif
 

@@ -1961,7 +1961,7 @@ MYSQL *mysql_dr_connect(
           mysql_options(sock, MYSQL_READ_DEFAULT_GROUP, gr);
         }
         /* 60000 is identifier for MySQL Connector/C versions 6.0.x which do not support MYSQL_OPT_CONNECT_ATTR_ADD */
-        #if (MYSQL_VERSION_ID >= 50606 && MYSQL_VERSION_ID != 60000)
+        #ifdef CLIENT_CONNECT_ATTRS
           if ((svp = hv_fetch(hv, "mysql_conn_attrs", 16, FALSE)) && *svp) {
               HV* attrs = (HV*) SvRV(*svp);
               HE* entry = NULL;
@@ -4235,7 +4235,10 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       default:
         if (buffer->buffer_type != MYSQL_TYPE_BLOB)
           buffer->buffer_type= MYSQL_TYPE_STRING;
-        buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
+        /* In case we didn't call mysql_stmt_attr_set with option
+           STMT_ATTR_UPDATE_MAX_LENGTH, we need to recalculate length */
+        buffer->buffer_length= fields[i].max_length ? fields[i].max_length :
+                               fields[i].length ? fields[i].length : 1;
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
         break;
