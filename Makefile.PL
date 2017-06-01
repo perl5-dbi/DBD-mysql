@@ -21,7 +21,7 @@ our $opt = { "help" => \&Usage, };
 
 {
 local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded);
-eval { require "t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
+eval { require "./t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
 $opt->{'testuser'} = $::test_user;
