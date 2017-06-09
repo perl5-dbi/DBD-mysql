@@ -48,6 +48,8 @@ matrix:
     - perl: "5.20"
       env: DB=MySQL VERSION=5.5.55
     - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.56
+    - perl: "5.20"
       env: DB=MySQL VERSION=5.6.10
     - perl: "5.20"
       env: DB=MySQL VERSION=5.6.30
@@ -90,6 +92,8 @@ matrix:
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.0.30
     - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.31
+    - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.2
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.8
@@ -99,6 +103,8 @@ matrix:
       env: DB=MariaDB VERSION=10.1.20
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.1.22
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.24
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.2.0
     - perl: "5.20"
@@ -124,6 +130,8 @@ matrix:
       env: CONC_DB=MySQL CONC_VERSION=6.1.0
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.1.9
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.1.10
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.2.0-labs
 # Incompatible with DBD::mysql due to broken zerofill support
@@ -153,13 +161,15 @@ before_install:
   - if [ -z "$PERLBREW_PERL" ]; then eval $(curl https://travis-perl.github.io/init) --perl; fi
   - if [ "$DB" = "MySQL" ]; then
       case "$VERSION" in
-        4.1.*)       SANDBOX_URL=http://mysql.localhost.net.ar/Downloads/MySQL-4.1/mysql-standard-$VERSION-unknown-linux-gnu-x86_64-glibc23.tar.gz ;;
-        5.0.[012]*)  SANDBOX_URL=https://downloads.mysql.com/archives/get/file/mysql-standard-$VERSION-linux-x86_64-glibc23.tar.gz ;;
-        5.[01].*)    SANDBOX_URL=https://downloads.mysql.com/archives/get/file/mysql-$VERSION-linux-x86_64-glibc23.tar.gz ;;
-        5.5.*)       SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
-        5.[67].*)    SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.5-x86_64.tar.gz ;;
-        8.0.*)       SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
-        *)           echo "Unsupported MySQL version '$VERSION'"; exit 1 ;;
+        4.1.*)            SANDBOX_URL=http://mysql.localhost.net.ar/Downloads/MySQL-4.1/mysql-standard-$VERSION-unknown-linux-gnu-x86_64-glibc23.tar.gz ;;
+        5.0.[012]*)       SANDBOX_URL=https://downloads.mysql.com/archives/get/file/mysql-standard-$VERSION-linux-x86_64-glibc23.tar.gz ;;
+        5.[01].*)         SANDBOX_URL=https://downloads.mysql.com/archives/get/file/mysql-$VERSION-linux-x86_64-glibc23.tar.gz ;;
+        5.5.?)            SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
+        5.5.[1234]*)      SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
+        5.5.5[012345]*)   SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
+        5.[567].*)        SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.5-x86_64.tar.gz ;;
+        8.0.*)            SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
+        *)                echo "Unsupported MySQL version '$VERSION'"; exit 1 ;;
       esac ;
       SANDBOX_CACHE_FILE="$HOME/cache/$(basename "$SANDBOX_URL")" ;
     elif [ "$DB" = "MariaDB" ]; then
@@ -178,10 +188,11 @@ before_install:
     fi
   - if [ "$CONC_DB" = "MySQL" ]; then
       case "$CONC_VERSION" in
-        *-labs)      CONC_URL=https://downloads.mysql.com/snapshots/pb/mysql-connector-c-$CONC_VERSION/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
-        6.0.*)       CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.3-x86-64bit.tar.gz ;;
-        6.1.*)       CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
-        *)           echo "Unsupported MySQL Connector/C version '$VERSION'"; exit 1 ;;
+        *-labs)           CONC_URL=https://downloads.mysql.com/snapshots/pb/mysql-connector-c-$CONC_VERSION/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
+        6.0.*)            CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.3-x86-64bit.tar.gz ;;
+        6.1.[0123456789]) CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.5-x86_64.tar.gz ;;
+        6.1.*)            CONC_URL=https://dev.mysql.com/get/mysql-connector-c-$CONC_VERSION-linux-glibc2.12-x86_64.tar.gz ;;
+        *)                echo "Unsupported MySQL Connector/C version '$VERSION'"; exit 1 ;;
       esac ;
       CONC_FILE="$HOME/cache/$(basename "$CONC_URL")" ;
     elif [ "$CONC_DB" = "MariaDB" ]; then
