@@ -9,8 +9,16 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
+if (!$dbh) {
+    plan skip_all => "no database connection";
+}
+unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
+    my $mode = $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'});
+    plan skip_all => "Async support wasn't built into this version of DBD::mysql (mode is $mode, $GetInfoType{'SQL_ASYNC_MODE'})";
+}
 plan tests => 8;
 
 $dbh->do(<<SQL);

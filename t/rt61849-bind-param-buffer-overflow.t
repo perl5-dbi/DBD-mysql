@@ -5,12 +5,12 @@ use Test::More;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-use lib 't', '.';
-require "lib.pl";
+require "t/lib.pl";
 
 my $INSECURE_VALUE_FROM_USER = "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password, { PrintError => 0, RaiseError => 1, AutoCommit => 0 });
+my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 0, RaiseError => 1, AutoCommit => 0 }) };
+plan skip_all => "no database connection" if $@ or not $dbh;
 
 plan tests => 2;
 my $sth = $dbh->prepare("select * from unknown_table where id=?");

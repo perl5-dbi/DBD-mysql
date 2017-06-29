@@ -9,9 +9,13 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1});
+my $dbh;
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
 
+if ($@) {
+  plan skip_all => "no database connection";
+}
 plan tests => 25;
 
 my @chars = grep !/[0O1Iil]/, 0..9, 'A'..'Z', 'a'..'z';

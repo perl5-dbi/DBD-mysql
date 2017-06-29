@@ -14,19 +14,11 @@ my $sth;
 
 my $dsn = $test_dsn;
 $dsn .= ';mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1' if $scenario eq 'prepare';
-$dbh = DbiTestConnect($dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1});
+eval {$dbh = DBI->connect($dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
 
 if ($@) {
   plan skip_all => "no database connection";
-}
-
-if ($dbh->{mysql_serverversion} < 50008) {
-  plan skip_all => "Servers < 5.0.8 do not support b'' syntax";
-}
-
-if ($dbh->{mysql_serverversion} < 50026) {
-  plan skip_all => "Servers < 5.0.26 do not support BIN() for BIT values";
 }
 
 my $create = <<EOT;

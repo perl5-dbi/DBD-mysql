@@ -5,12 +5,13 @@ use Test::More;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-use lib 't', '.';
-require "lib.pl";
+require "t/lib.pl";
 
-my $dbh1 = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 });
+my $dbh1 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
+plan skip_all => "no database connection" if $@ or not $dbh1;
 
-my $dbh2 = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 });
+my $dbh2 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
+plan skip_all => "no database connection" if $@ or not $dbh2;
 
 my @ilwtenabled = $dbh1->selectrow_array("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
 if (!@ilwtenabled) {
@@ -18,7 +19,7 @@ if (!@ilwtenabled) {
 }
 
 my $have_innodb = 0;
-if (!MinimumVersion($dbh1, '4.1.2')) {
+if (!MinimumVersion($dbh1, '5.6')) {
   my $dummy;
   ($dummy,$have_innodb)=
     $dbh1->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")
@@ -40,16 +41,12 @@ if (!$have_innodb) {
   plan skip_all => "Server doesn't support InnoDB, needed for testing innodb_lock_wait_timeout";
 }
 
-eval {
-  $dbh2->{PrintError} = 0;
-  $dbh2->do("SET innodb_lock_wait_timeout=1");
-  $dbh2->{PrintError} = 1;
-  1;
-} or do {
+eval {$dbh2->do("SET innodb_lock_wait_timeout=1");};
+if ($@) {
   $dbh1->disconnect();
   $dbh2->disconnect();
   plan skip_all => "innodb_lock_wait_timeout is not modifyable on this version of MySQL";
-};
+}
 
 ok $dbh1->do("DROP TABLE IF EXISTS dbd_mysql_rt75353_innodb_lock_timeout"), "drop table if exists dbd_mysql_rt75353_innodb_lock_timeout";
 ok $dbh1->do("CREATE TABLE dbd_mysql_rt75353_innodb_lock_timeout(id INT PRIMARY KEY) ENGINE=INNODB"), "create table dbd_mysql_rt75353_innodb_lock_timeout";

@@ -8,9 +8,13 @@ use vars qw($COL_NULLABLE $COL_KEY);
 use lib 't', '.';
 require 'lib.pl';
 
+my $dbh;
 $test_dsn .= ';mysql_server_prepare=1;mysql_server_prepare_disable_fallback=1';
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
 #
 # DROP/CREATE PROCEDURE will give syntax error for these versions

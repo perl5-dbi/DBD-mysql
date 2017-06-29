@@ -1,3 +1,17 @@
+2017-06-29 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043)
+
+YOUR ATTENTION PLEASE, THIS IS A REVERT TO 4.041
+This version is the same as 4.041 with all its bugs and
+limitations. In version 4.042 there were some changes to Unicode handling
+that turned out to be causing issues with existing implementations.
+While it is possible to argue that the old behaviour was wrong and buggy,
+lots of applications and scripts were depending on this behaviour so it
+is NOT a good idea to change this.
+
+There were lots of commits since 4.041, we'll add those back bit by bit
+in a future release, excluding the ones which cause problems.
+
+
 2017-??-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.042_01)
 * Use Devel::CheckLib 1.09 or newer, fixes
    https://github.com/perl5-dbi/DBD-mysql/issues/109

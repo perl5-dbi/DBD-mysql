@@ -15,7 +15,7 @@ our @ISA = qw(DynaLoader);
 # SQL_DRIVER_VER is formatted as dd.dd.dddd
 # for version 5.x please switch to 5.00(_00) version numbering
 # keep $VERSION in Bundle/DBD/mysql.pm in sync
-our $VERSION = '4.042_01';
+our $VERSION = '4.043';
 
 bootstrap DBD::mysql $VERSION;
 
@@ -169,19 +169,17 @@ sub connect {
 sub data_sources {
     my($self) = shift;
     my($attributes) = shift;
-    my($host, $port, $user, $password, $utf8) = ('', '', '', '');
+    my($host, $port, $user, $password) = ('', '', '', '');
     if ($attributes) {
       $host = $attributes->{host} || '';
       $port = $attributes->{port} || '';
       $user = $attributes->{user} || '';
       $password = $attributes->{password} || '';
-      $utf8 = $attributes->{utf8} || $attributes->{mysql_enable_utf8};
     }
-    my(@dsn) = $self->func($host, $port, $user, $password, $utf8, '_ListDBs');
-    $utf8 = $utf8 ? ";mysql_enable_utf8=1" : "";
+    my(@dsn) = $self->func($host, $port, $user, $password, '_ListDBs');
     my($i);
     for ($i = 0;  $i < @dsn;  $i++) {
-	$dsn[$i] = "DBI:mysql:$dsn[$i]$utf8";
+	$dsn[$i] = "DBI:mysql:$dsn[$i]";
     }
     @dsn;
 }
@@ -274,7 +272,7 @@ sub admin {
 }
 
 sub _SelectDB ($$) {
-    Carp::croak "_SelectDB is removed from this module; use DBI->connect instead.";
+    die "_SelectDB is removed from this module; use DBI->connect instead.";
 }
 
 sub table_info ($) {
@@ -410,7 +408,7 @@ sub table_info ($) {
 sub _ListTables {
   my $dbh = shift;
   if (!$DBD::mysql::QUIET) {
-    Carp::carp "_ListTables is deprecated, use \$dbh->tables()";
+    warn "_ListTables is deprecated, use \$dbh->tables()";
   }
   return map { $_ =~ s/.*\.//; $_ } $dbh->tables();
 }
@@ -592,6 +590,7 @@ sub column_info {
 	    Carp::carp("column_info: unrecognized column type '$basetype' of $table_id.$row->{field} treated as varchar");
     }
     $info->{SQL_DATA_TYPE} ||= $info->{DATA_TYPE};
+    #warn Dumper($info);
   }
 
   my $sponge = DBI->connect("DBI:Sponge:", '','')
@@ -928,12 +927,8 @@ DBD::mysql - MySQL driver for the Perl5 Database Interface (DBI)
 
   # Drop table 'foo'. This may fail, if 'foo' doesn't exist
   # Thus we put an eval around it.
-  eval {
-      $dbh->do("DROP TABLE foo");
-      1;
-  } or do {
-      print "Dropping foo failed: $@\n";
-  };
+  eval { $dbh->do("DROP TABLE foo") };
+  print "Dropping foo failed: $@\n" if $@;
 
   # Create a new table 'foo'. This must not fail, thus we don't
   # catch errors.
@@ -1165,13 +1160,9 @@ location for the socket than that built into the client.
 =item mysql_ssl
 
 A true value turns on the CLIENT_SSL flag when connecting to the MySQL
-server and enforce SSL encryption.  A false value (which is default)
-disable SSL encryption with the MySQL server.
+database:
 
-When enabling SSL encryption you should set also other SSL options,
-at least mysql_ssl_ca_file or mysql_ssl_ca_path.
-
-  mysql_ssl=1 mysql_ssl_verify_server_cert=1 mysql_ssl_ca_file=/path/to/ca_cert.pem
+  mysql_ssl=1
 
 This means that your communication with the server will be encrypted.
 
@@ -1179,71 +1170,22 @@ Please note that this can only work if you enabled SSL when compiling
 DBD::mysql; this is the default starting version 4.034.
 See L<DBD::mysql::INSTALL> for more details.
 
-=item mysql_ssl_ca_file
-
-The path to a file in PEM format that contains a list of trusted SSL
-certificate authorities.
-
-When set MySQL server certificate is checked that it is signed by some
-CA certificate in the list.  Common Name value is not verified unless
-C<mysql_ssl_verify_server_cert> is enabled.
-
-=item mysql_ssl_ca_path
-
-The path to a directory that contains trusted SSL certificate authority
-certificates in PEM format.
-
-When set MySQL server certificate is checked that it is signed by some
-CA certificate in the list.  Common Name value is not verified unless
-C<mysql_ssl_verify_server_cert> is enabled.
-
-Please note that this option is supported only if your MySQL client was
-compiled with OpenSSL library, and not with default yaSSL library.
-
-=item mysql_ssl_verify_server_cert
-
-Checks the server's Common Name value in the certificate that the server
-sends to the client.  The client verifies that name against the host name
-the client uses for connecting to the server, and the connection fails if
-there is a mismatch.  For encrypted connections, this option helps prevent
-man-in-the-middle attacks.
-
-Verification of the host name is disabled by default.
+If you turn mysql_ssl on, you might also wish to use the following
+flags:
 
 =item mysql_ssl_client_key
 
-The name of the SSL key file in PEM format to use for establishing
-a secure connection.
-
 =item mysql_ssl_client_cert
 
-The name of the SSL certificate file in PEM format to use for
-establishing a secure connection.
+=item mysql_ssl_ca_file
+
+=item mysql_ssl_ca_path
 
 =item mysql_ssl_cipher
 
-A list of permissible ciphers to use for connection encryption.  If no
-cipher in the list is supported, encrypted connections will not work.
+These are used to specify the respective parameters of a call
+to mysql_ssl_set, if mysql_ssl is turned on.
 
-  mysql_ssl_cipher=AES128-SHA
-  mysql_ssl_cipher=DHE-RSA-AES256-SHA:AES128-SHA
-
-=item mysql_ssl_optional
-
-Setting C<mysql_ssl_optional> to true disables strict SSL enforcement
-and makes SSL connection optional.  This option opens security hole
-for man-in-the-middle attacks.  Default value is false which means
-that C<mysql_ssl> set to true enforce SSL encryption.
-
-This option was introduced in 4.043 version of DBD::mysql.  Due to
-L<The BACKRONYM|http://backronym.fail/> and L<The Riddle|http://riddle.link/>
-vulnerabilities in libmysqlclient library, enforcement of SSL
-encryption was not possbile and therefore C<mysql_ssl_optional=1>
-was effectively set for all DBD::mysql versions prior to 4.043.
-Starting with 4.043, DBD::mysql with C<mysql_ssl=1> could refuse
-connection to MySQL server if underlaying libmysqlclient library is
-vulnerable.  Option C<mysql_ssl_optional> can be used to make SSL
-connection vulnerable.
 
 =item mysql_local_infile
 
@@ -1432,10 +1374,6 @@ method.  Instead, you should use the portable method
 
     @dbs = DBI->data_sources("mysql");
 
-or with connection arguments
-
-    @dbs = DBI->data_sources("mysql", {"host" => $host, "port" => $port, "user" => $user, "password" => $pass, "utf8" => 1});
-
 =back
 
 
@@ -1446,19 +1384,18 @@ handles (read only):
 
   $errno = $dbh->{'mysql_errno'};
   $error = $dbh->{'mysql_error'};
-  $hostinfo = $dbh->{'mysql_hostinfo'};
+  $info = $dbh->{'mysql_hostinfo'};
   $info = $dbh->{'mysql_info'};
   $insertid = $dbh->{'mysql_insertid'};
-  $protoinfo = $dbh->{'mysql_protoinfo'};
-  $serverinfo = $dbh->{'mysql_serverinfo'};
-  $ssl_cipher = $dbh->{'mysql_ssl_cipher'};
-  $stat = $dbh->{'mysql_stat'};
-  $thread_id = $dbh->{'mysql_thread_id'};
+  $info = $dbh->{'mysql_protoinfo'};
+  $info = $dbh->{'mysql_serverinfo'};
+  $info = $dbh->{'mysql_stat'};
+  $threadId = $dbh->{'mysql_thread_id'};
 
 These correspond to mysql_errno(), mysql_error(), mysql_get_host_info(),
 mysql_info(), mysql_insert_id(), mysql_get_proto_info(),
-mysql_get_server_info(), mysql_stat(), mysql_get_ssl_cipher()
-and mysql_thread_id() respectively.
+mysql_get_server_info(), mysql_stat() and mysql_thread_id(),
+respectively.
 
 =over 2
 
@@ -1482,19 +1419,6 @@ against:
   print "$dbh->{mysql_serverversion}\n";
 
   50200
-
-=item mysql_ssl_cipher
-
-Returns the SSL encryption cipher used for the given connection to
-the server.  In case SSL encryption was not enabled with C<mysql_ssl>
-or was not established returns undef.
-
-  my $ssl_cipher = $dbh->{mysql_ssl_cipher};
-  if (defined $ssl_cipher) {
-    print "Connection with server is encrypted with cipher: $ssl_cipher\n";
-  } else {
-    print "Connection with server is not encrypted\n";
-  }
 
 =item mysql_dbd_stats
 
@@ -1572,107 +1496,25 @@ See L</"STATEMENT HANDLES">.
 
 =item mysql_enable_utf8
 
-This attribute affects input data from DBI (statement and bind parameters) and
-output data from the MySQL server.  Applies also for database, table and column
-names and also for warning and error messages from MySQL server.
+This attribute determines whether DBD::mysql should assume strings
+stored in the database are utf8.  This feature defaults to off.
 
-If used as a part of the call to C<connect()> then it issues the command
-C<SET NAMES utf8>.
-
-When set, any statement or bind parameter which is not of binary type is
-automatically encoded to UTF-8 octets before being sent to the MySQL server.
-Any retrieved MySQL data with a charset of C<utf8> or C<utf8mb4> from a textual
-column type (char, varchar, etc) is automatically UTF-8 decoded and returned as
-a perl Unicode scalar (with SvUTF8 flag on).  That enables character semantics
-on those retrieved UTF-8 strings.  The MySQL charset of a retrieved value is
-affected by the last C<SET NAMES> command and also could be affected by the
-database, table and column configuration.  For more information, see the
-I<Character Set Support> chapter in the MySQL manual:
+When set, a data retrieved from a textual column type (char, varchar,
+etc) will have the UTF-8 flag turned on if necessary.  This enables
+character semantics on that string.  You will also need to ensure that
+your database / table / column is configured to use UTF8. See for more
+information the chapter on character set support in the MySQL manual:
 L<http://dev.mysql.com/doc/refman/5.7/en/charset.html>
 
-When unset and a statement or bind parameter contains a wide Unicode character then
-DBD::mysql gives the warning C<Wide character in ... but mysql_enable_utf8 not set>.
-The MySQL protocol does not support wide characters and so DBD::mysql does not know
-how to send a statement with wide characters when C<mysql_enable_utf8> is not set.
-
-Please note that when C<mysql_enable_utf8> is set, the input statement and bind
-parameters are encoded to UTF-8 octets even if the current MySQL session charset
-is not C<utf8> or C<utf8mb4>!  You are responsible for calling the C<SET NAMES utf8>
-or C<SET NAMES utf8mb4> command when setting the C<mysql_enable_utf8> attribute
-B<after> connecting.  The same applies to unsetting the C<mysql_enable_utf8>
-attribute.  You are responsible for calling C<SET NAMES latin1> (resp. with
-correct charset) and then passing perl scalars in the correct encoding.
-Otherwise strings will be sent to MySQL server incorrectly!
-
-Input bind parameters of binary types (C<SQL_BIT>, C<SQL_BLOB>, C<SQL_BINARY>,
-C<SQL_VARBINARY> and C<SQL_LONGVARBINARY>) are not touched regardless of the
-C<mysql_enable_utf8> attribute state.  They are treated as a sequence of octets
-and sent to the MySQL server as is.  If that bind parameter contains a wide Unicode
-character then DBD::mysql gives the warning C<Wide character in binary field ...>
-because binary data is a sequence of octets, not Unicode characters!
-
-Output data fetched from the MySQL server which does not have a C<utf8> or
-C<utf8mb4> charset (so also binary data) is not UTF-8 decoded regardless of the
-C<mysql_enable_utf8> attribute state.  They are treated as a sequence of octets
-and it is your responsibility to decode them correctly.
-
-B<WARNING>: DBD::mysql prior to version 4.042 had different and buggy behaviour
-when the attribute C<mysql_enable_utf8> was enabled!  Input statement and bind
-parameters were never encoded to UTF-8 octets and retrieved columns were
-always UTF-8 decoded regardless of the column charset (except binary charsets).
-
-If you need to pass statements or input bind parameters with Unicode characters
-from code which needs to be compatible with DBD::mysql versions prior to 4.042
-and also new versions then you can use "hack" with calling C<utf8::upgrade()>
-function on scalars immediately before passing scalar to DBD::mysql.  Calling
-C<utf8::upgrade()> function has absolutely no effect on (correctly) written
-Perl code.  So it is noop for DBD::mysql >= 4.042 but "hack" fix for DBD::mysql
-prior to 4.042 which has broken Unicode support.  In same way for binary (byte)
-data can be passed with calling C<utf8::downgrade()> function (it dies on wide
-Unicode strings with codepoints above U+FF).  See following example:
-
-  # check that last name contains LATIN CAPITAL LETTER O WITH STROKE (U+D8)
-  my $statement = "SELECT * FROM users WHERE last_name LIKE '%\x{D8}%' AND first_name = ? AND data = ?";
-
-  my $wide_string_param = "Andr\x{E9}"; # Andre with LATIN SMALL LETTER E WITH ACUTE (U+E9)
-
-  my $byte_param = "\x{D8}\x{A0}\x{39}\x{F8}"; # some bytes (binary data)
-
-  my $dbh = DBI->connect('DBI:mysql:database', 'username', 'pass', { mysql_enable_utf8 => 1 });
-  $dbh->do("SET NAMES utf8mb4") if $dbh->{mysql_serverversion} >= 50503; # enable 4-byte UTF-8 characters
-
-  utf8::upgrade($statement); # UTF-8 fix for DBD::mysql < 4.042
-  my $sth = $dbh->prepare($statement);
-
-  utf8::upgrade($wide_string_param); # UTF-8 fix for DBD::mysql < 4.042
-  $sth->bind_param(1, $wide_string_param);
-
-  utf8::downgrade($byte_param); # byte fix for DBD::mysql < 4.042
-  $sth->bind_param(2, $byte_param, DBI::SQL_BINARY); # set correct binary type
-
-  $sth->execute();
-
-  my $output = $sth->fetchall_arrayref();
-  # returned data in $output reference should be already UTF-8 decoded
+Additionally, turning on this flag tells MySQL that incoming data should
+be treated as UTF-8.  This will only take effect if used as part of the
+call to connect().  If you turn the flag on after connecting, you will
+need to issue the command C<SET NAMES utf8> to get the same effect.
 
 =item mysql_enable_utf8mb4
 
-Exactly the same as the attribute C<mysql_enable_utf8>.
-
-Additionally if used as a part of the call to C<connect()> then it issues
-the command C<SET NAMES utf8mb4> instead of C<utf8>.
-
-MySQL's C<utf8mb4> charset is capable of handling 4-byte UTF-8 characters.
-MySQL's C<utf8> charset is capable of handling only up to 3-byte UTF-8
-characters!  See MySQL manual for more information:
-L<http://dev.mysql.com/doc/refman/5.7/en/charset-unicode-utf8mb4.html>
-
-You should use MySQL's C<utf8mb4> charset instead of C<utf8> to prevent problems
-with data exchange.  When the C<utf8> charset is used then you are responsible
-for 3-byte UTF-8 sequence checks on input perl scalar strings.  Otherwise MySQL
-server can reject or modify the input statement!
-
-MySQL's C<utf8mb4> charset was introduced in MySQL server version 5.5.3.
+This is similar to mysql_enable_utf8, but is capable of handling 4-byte
+UTF-8 characters.
 
 =item mysql_bind_type_guessing
 
@@ -2099,8 +1941,7 @@ C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>.
 C<mysql_async_result> returns what do or execute would have; that is, the
 number of rows affected.  C<mysql_async_ready> returns true if
 C<mysql_async_result> will not block, and zero otherwise.  They both return
-C<undef> if that handle was not created with 'async' set to true
-or if an asynchronous query was not started yet.
+C<undef> if that handle is not currently running an asynchronous query.
 C<mysql_fd> returns the file descriptor number for the MySQL connection; you
 can use this in an event loop.
 

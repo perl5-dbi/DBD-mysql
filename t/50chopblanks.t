@@ -8,25 +8,24 @@ require 'lib.pl';
 
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });
-if ($dbh->{mysql_serverversion} < 40103) {
-    plan skip_all => "You must have MySQL version 4.1.3 and greater for this test to run";
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
+if ($@) {
+    plan skip_all => "no database connection";
 }
-$dbh->disconnect;
-
 plan tests => 36 * 2;
 
 for my $mysql_server_prepare (0, 1) {
-$dbh = DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });
+eval {$dbh= DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t50chopblanks"), "drop table if exists dbd_mysql_t50chopblanks";
 
 my $create= <<EOT;
 CREATE TABLE dbd_mysql_t50chopblanks (
   id INT(4),
-  name TEXT
+  name VARCHAR(64)
 )
 EOT
 

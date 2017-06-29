@@ -8,14 +8,19 @@ use Test::More;
 use vars qw($test_dsn $test_user $test_password);
 
 my ($row, $vers, $test_procs, $dbh, $sth);
-$dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1});
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
+
+if ($@) {
+    plan skip_all =>
+        "no database connection";
+}
 
 #
 # DROP/CREATE PROCEDURE will give syntax error
 # for versions < 5.0
 #
-if ($dbh->{mysql_serverversion} < 50000) {
+if (!MinimumVersion($dbh, '5.0') ) {
     plan skip_all =>
         "You must have MySQL version 5.0 and greater for this test to run";
 }

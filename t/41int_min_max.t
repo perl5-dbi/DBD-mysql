@@ -9,12 +9,17 @@ use Data::Dumper;
 require 'lib.pl';
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 1 });};
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
-if ($dbh->{mysql_serverversion} < 50002) {
+if (!MinimumVersion($dbh, '4.1')) {
+    plan skip_all => "ERROR: $DBI::errstr. Can't continue test";
     plan skip_all =>
-        "SKIP TEST: You must have MySQL version 5.0.2 and greater for this test to run";
+        "SKIP TEST: You must have MySQL version 4.1 and greater for this test to run";
 }
 # nostrict tests + strict tests + init/tear down commands
 plan tests => (19*8 + 17*8 + 4) * 2;
@@ -72,7 +77,7 @@ sub test_int_type ($$$$) {
     ########################################
     # Try to insert under the limit value
     ########################################
-    ok($store->bind_param( 1, ($min-1)->bstr(), $dbh->{mysql_server_prepare} ? DBI::SQL_VARCHAR : $perl_type ), "binding less than minimal $mysql_type, mode=$mode");
+    ok($store->bind_param( 1, ($min-1)->bstr(), $perl_type ), "binding less than minimal $mysql_type, mode=$mode");
     if ($mode eq 'strict') {
         $@ = '';
         eval{$store->execute()};
@@ -93,7 +98,7 @@ sub test_int_type ($$$$) {
     ########################################
     # Try to insert over the limit value
     ########################################
-    ok($store->bind_param( 1, ($max+1)->bstr(), $dbh->{mysql_server_prepare} ? DBI::SQL_VARCHAR : $perl_type ), "binding more than maximal $mysql_type, mode=$mode");
+    ok($store->bind_param( 1, ($max+1)->bstr(), $perl_type ), "binding more than maximal $mysql_type, mode=$mode");
     if ($mode eq 'strict') {
         $@ = '';
         eval{$store->execute()};

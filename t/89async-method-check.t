@@ -75,13 +75,20 @@ my %sth_args = (
     bind_columns      => [\(my $scalar3)],
 );
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
+if (!$dbh) {
+    plan skip_all => "no database connection";
+}
+unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
+    plan skip_all => "Async support wasn't built into this version of DBD::mysql";
+}
 plan tests =>
   2 * @db_safe_methods     +
   4 * @db_unsafe_methods   +
   7 * @st_safe_methods     +
-  3 * @common_safe_methods +
+  2 * @common_safe_methods +
   2 * @st_unsafe_methods   +
   3;
 
@@ -119,7 +126,6 @@ foreach my $method (@common_safe_methods) {
     $sth->$method(@$args);
     ok !$sth->errstr, "Testing method '$method' on DBD::mysql::db during asynchronous operation";
     ok defined($sth->mysql_async_result);
-    ok defined($sth->mysql_async_result);
 }
 
 foreach my $method (@st_safe_methods) {
@@ -129,9 +135,9 @@ foreach my $method (@st_safe_methods) {
     $sth->$method(@$args);
     ok !$sth->errstr, "Testing method '$method' on DBD::mysql::st during asynchronous operation";
 
-    # statement safe methods cache async result and mysql_async_result can be called multiple times
-    ok defined($sth->mysql_async_result), "Testing DBD::mysql::st method '$method' for async result";
-    ok defined($sth->mysql_async_result), "Testing DBD::mysql::st method '$method' for async result";
+    # statement safe methods clear async state
+    ok !defined($sth->mysql_async_result), "Testing DBD::mysql::st method '$method' clears async state";
+    like $sth->errstr, qr/Gathering asynchronous results for a synchronous handle/;
 }
 
 foreach my $method (@st_safe_methods) {

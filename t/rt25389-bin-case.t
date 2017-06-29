@@ -4,13 +4,16 @@ use warnings;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-use lib 't', '.';
-require "lib.pl";
+require "t/lib.pl";
 
 use Test::More;
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 0, AutoCommit => 1 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 1 });};
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
 if (!MinimumVersion($dbh, '5.1')) {
     plan skip_all =>

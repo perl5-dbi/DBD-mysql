@@ -1,41 +1,19 @@
 version: 1.0.{build}
 
-cache:
-  - C:\ProgramData\chocolatey\cache
-  - C:\strawberry\cpan\sources
-
-environment:
-  matrix:
-    - perl: "5.14.4.1"
-    - perl: "5.16.3.20170202"
-    - perl: "5.18.4.1"
-    - perl: "5.20.3.3"
-    - perl: "5.22.3.1"
-    - perl: "5.24.1.1"
-    - perl: "5.26.0.1"
-
-platform:
-  - x86
-  - x64
-
 services:
   - mysql
 
 install:
-  - if /I %PLATFORM% == x86 (set x86=--forcex86) else (set "x86= ")
-  - choco config set cacheLocation C:\ProgramData\chocolatey\cache
-  - cinst StrawberryPerl --version %perl% %x86% --allow-empty-checksums
-  - path C:\strawberry\perl\site\bin;C:\strawberry\perl\bin;C:\strawberry\c\bin;%PATH%
+  - cinst StrawberryPerl
+  - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
+  - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
   - perl -V
-  - cpan -T App::cpanminus
-  - cpanm --quiet --notest --skip-satisfied Devel::CheckLib
-  - cpanm --quiet --notest --skip-satisfied --installdeps --with-configure --with-develop --with-recommends --with-suggests .
+  - cpan App::cpanminus
+  - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
 
 build_script:
   - perl Makefile.PL --mysql_config=c:\strawberry\c\bin\mysql_config.bat --testuser=root --testpassword=Password12!
-  - perl -MConfig -e "exec $Config{make}"
 
 test_script:
-  - set CONNECTION_TESTING=1
-  - set SKIP_CRASH_TESTING=1
-  - perl -MConfig -e "exec $Config{make}, 'test'"
+  - dmake test
