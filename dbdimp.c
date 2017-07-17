@@ -1746,12 +1746,14 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_skip_secure_auth", 22, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {
+#if MYSQL_VERSION_ID <= SECURE_AUTH_LAST_VERSION
           my_bool secauth = 0;
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Skipping" \
                           " secure auth\n");
           mysql_options(sock, MYSQL_SECURE_AUTH, &secauth);
+#endif
         }
         if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
