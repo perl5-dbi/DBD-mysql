@@ -1746,6 +1746,9 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_skip_secure_auth", 22, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {
+#if LIBMYSQL_VERSION_ID > SECURE_AUTH_LAST_VERSION
+          croak("mysql_skip_secure_auth not supported");
+#endif
 #if MYSQL_VERSION_ID <= SECURE_AUTH_LAST_VERSION
           my_bool secauth = 0;
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
