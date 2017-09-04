@@ -13,6 +13,7 @@ before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev
  - perlbrew install-cpanm -f
+ - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
 install:
   - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
 script: "export RELEASE_TESTING=1 && perl Makefile.PL && make disttest && perl Makefile.PL --force-embedded && make disttest"
