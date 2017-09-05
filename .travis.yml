@@ -11,8 +11,10 @@ perl:
   - "5.24"
 before_install:
  - sudo apt-get update -qq
- - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev
+ - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
  - perlbrew install-cpanm -f
+ - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+ - mysql -e "grant all privileges on test.* to 'travis'@'localhost' identified by 's3kr1t';"
 install:
   - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
-script: "export RELEASE_TESTING=1 && perl Makefile.PL && make disttest && perl Makefile.PL --force-embedded && make disttest"
+script: "export RELEASE_TESTING=1 && perl Makefile.PL --testuser=travis --testpassword=s3kr1t && make disttest && perl Makefile.PL --force-embedded && make disttest"
