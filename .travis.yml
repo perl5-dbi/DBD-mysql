@@ -17,4 +17,4 @@ before_install:
  - mysql -e "grant all privileges on test.* to 'travis'@'localhost' identified by 's3kr1t';"
 install:
   - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
-script: "export RELEASE_TESTING=1 && perl Makefile.PL && make disttest && perl Makefile.PL --force-embedded && make disttest"
+script: "export RELEASE_TESTING=1 && perl Makefile.PL --testuser=travis && make disttest && perl Makefile.PL --force-embedded && make disttest"
