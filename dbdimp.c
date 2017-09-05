@@ -4451,12 +4451,8 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 
   if (imp_sth->stmt)
   {
-    if (mysql_stmt_close(imp_sth->stmt))
-    {
-      do_error(DBIc_PARENT_H(imp_sth), mysql_stmt_errno(imp_sth->stmt),
-          mysql_stmt_error(imp_sth->stmt),
-          mysql_stmt_sqlstate(imp_sth->stmt));
-    }
+    mysql_stmt_close(imp_sth->stmt);
+    imp_sth->stmt= NULL;
   }
 #endif
 

@@ -416,11 +416,8 @@ do(dbh, statement, attr=Nullsv, ...)
       if (bind)
         Safefree(bind);
 
-      if(mysql_stmt_close(stmt))
-      {
-        fprintf(stderr, "\n failed while closing the statement");
-        fprintf(stderr, "\n %s", mysql_stmt_error(stmt));
-      }
+      mysql_stmt_close(stmt);
+      stmt= NULL;
 
       if (retval == -2) /* -2 means error */
       {
