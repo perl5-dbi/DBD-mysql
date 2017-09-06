@@ -18,5 +18,5 @@ before_install:
  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
  - mysql -e "grant all privileges on test.* to 'travis'@'localhost' identified by 's3kr1t';"
 install:
-  - cpanm --quiet DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
+  - cpanm --quiet --force DBI Test::Pod Test::Deep Test::DistManifest Proc::ProcessTable
 script: "export RELEASE_TESTING=1 && perl Makefile.PL --testuser=travis --testpassword=s3kr1t && make disttest && perl Makefile.PL --force-embedded && make disttest"
