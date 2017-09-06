@@ -49,6 +49,7 @@
 #define NEW_DATATYPE_VERSION 50003
 #define SSL_VERIFY_VERSION 50023
 #define SSL_LAST_VERIFY_VERSION 50799
+#define SECURE_AUTH_LAST_VERSION 50704
 #define MYSQL_VERSION_5_0 50001
 /* This is to avoid the ugly #ifdef mess in dbdimp.c */
 #if MYSQL_VERSION_ID < SQL_STATE_VERSION
@@ -73,6 +74,10 @@
 
 #if MYSQL_VERSION_ID < WARNING_COUNT_VERSION
 #define mysql_warning_count(svsock) 0
+#endif
+
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 80001
+#define my_bool bool
 #endif
 
 #define true 1
