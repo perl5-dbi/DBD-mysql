@@ -204,9 +204,9 @@ before_install:
   - if [ -n "$CONC_DB" ]; then
       if [ ! -f "$CONC_FILE" ]; then wget "$CONC_URL" -O "$CONC_FILE" || exit 1; fi ;
     fi
-  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
-  - mysql -e "create user 'msandbox'@'localhost' identified by 'msandbox';"
-  - mysql -e "grant all privileges on test.* to 'msandbox'@'localhost';"
+#  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+#  - mysql -e "create user 'msandbox'@'localhost' identified by 'msandbox';"
+#  - mysql -e "grant all privileges on test.* to 'msandbox'@'localhost';"
 
 install:
   - perlbrew install-cpanm --force --notest
