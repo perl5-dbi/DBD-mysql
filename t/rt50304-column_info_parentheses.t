@@ -4,7 +4,8 @@ use warnings;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password $state);
-require "t/lib.pl";
+use lib 't', '.';
+require "lib.pl";
 
 use Test::More;
 
@@ -15,8 +16,10 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
+ok($dbh->do("DROP TABLE IF EXISTS dbd_mysql_rt50304_column_info"));
+
 my $create = <<EOC;
-CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
+CREATE TABLE dbd_mysql_rt50304_column_info (
     id int(10)unsigned NOT NULL AUTO_INCREMENT,
     problem_column SET('','(Some Text)') DEFAULT NULL,
     regular_column SET('','Some Text') DEFAULT NULL,
@@ -25,7 +28,7 @@ CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
 );
 EOC
 
-ok $dbh->do($create), "create temporary table dbd_mysql_rt50304_column_info";
+ok($dbh->do($create), "create table dbd_mysql_rt50304_column_info");
 
 my $sth = $dbh->column_info(undef, undef, 'dbd_mysql_rt50304_column_info', 'problem_column');
 my $info = $sth->fetchall_arrayref({});
