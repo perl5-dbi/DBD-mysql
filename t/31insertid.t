@@ -16,13 +16,14 @@ if ($@) {
     plan skip_all =>
         "no database connection";
 }
-plan tests => 19;
+plan tests => 20;
 
 ok $dbh->do('SET @@auto_increment_offset = 1');
 ok $dbh->do('SET @@auto_increment_increment = 1');
+ok $dbh->do('DROP TABLE IF EXISTS dbd_mysql_t31');
 
 my $create = <<EOT;
-CREATE TEMPORARY TABLE dbd_mysql_t31 (
+CREATE TABLE dbd_mysql_t31 (
   id INT(3) PRIMARY KEY AUTO_INCREMENT NOT NULL,
   name VARCHAR(64))
 EOT

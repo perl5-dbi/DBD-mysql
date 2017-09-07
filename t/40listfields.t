@@ -19,12 +19,14 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-plan tests => 25;
+plan tests => 26;
 
 $dbh->{mysql_server_prepare}= 0;
 
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_40listfields"), "drop table"; 
+
 $create = <<EOC;
-CREATE TEMPORARY TABLE dbd_mysql_40listfields (
+CREATE TABLE dbd_mysql_40listfields (
     id INT(4) NOT NULL,
     name VARCHAR(64),
     key id (id)

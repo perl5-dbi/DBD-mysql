@@ -29,8 +29,11 @@ for my $charset (qw(latin1 utf8)) {
     for my $unique ( "", "unique" ) {
 
         my $table = "dbd-mysql-$charset-$unique";
+
+        $dbh->do("DROP TABLE IF EXISTS `$table`");
+
         my $create =
-"CREATE TEMPORARY TABLE `$table` (name VARCHAR(8) CHARACTER SET $charset COLLATE ${charset}_bin $unique)";
+"CREATE TABLE `$table` (name VARCHAR(8) CHARACTER SET $charset COLLATE ${charset}_bin $unique)";
 
         $dbh->do($create) or die $DBI::errstr;
         for (@test) {

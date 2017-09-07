@@ -14,13 +14,14 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-plan tests => 13;
+plan tests => 14;
 
 ok $dbh->do('SET @@auto_increment_offset = 1');
 ok $dbh->do('SET @@auto_increment_increment = 1');
+ok $dbh->do('DROP TABLE IF EXISTS dbd_mysql_t40bindparam2');
 
 my $create= <<EOT;
-CREATE TEMPORARY TABLE dbd_mysql_t40bindparam2 (
+CREATE TABLE dbd_mysql_t40bindparam2 (
     id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
     num INT(3))
 EOT

@@ -25,8 +25,10 @@ plan tests => 92;
 is $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'}), 2; # statement-level async
 is $dbh->get_info($GetInfoType{'SQL_MAX_ASYNC_CONCURRENT_STATEMENTS'}), 1;
 
+$dbh->do("DROP TABLE IF EXISTS async_test");
+
 $dbh->do(<<SQL);
-CREATE TEMPORARY TABLE async_test (
+CREATE TABLE async_test (
     value0 INTEGER,
     value1 INTEGER,
     value2 INTEGER

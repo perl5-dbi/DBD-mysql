@@ -10,11 +10,13 @@ require "t/lib.pl";
 my $dbh = eval { DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 1, AutoCommit => 0, mysql_server_prepare => 1, mysql_server_prepare_disable_fallback => 1 }) };
 plan skip_all => "no database connection" if $@ or not $dbh;
 
-plan tests => 39;
+plan tests => 40;
 
 my $sth;
 
-ok $dbh->do("CREATE TEMPORARY TABLE t (i INTEGER NOT NULL, n LONGBLOB)");
+ok $dbh->do("DROP TABLE IF EXISTS t");
+
+ok $dbh->do("CREATE TABLE t (i INTEGER NOT NULL, n LONGBLOB)");
 
 ok $sth = $dbh->prepare("INSERT INTO t(i, n) VALUES(?, ?)");
 ok $sth->execute(1, "x" x 10);

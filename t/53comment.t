@@ -22,8 +22,10 @@ if ($@) {
         "no database connection";
 }
 
+ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_53");
+
 my $create= <<"EOTABLE";
-CREATE TEMPORARY TABLE dbd_mysql_53 (
+CREATE TABLE dbd_mysql_53 (
     id bigint unsigned not null default 0
     )
 EOTABLE

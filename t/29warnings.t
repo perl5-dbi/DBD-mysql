@@ -26,7 +26,7 @@ if ( MinimumVersion($dbh, '5.5') ) {
     $expected_warnings = 2;
 }
 
-plan tests => 14;
+plan tests => 16;
 
 ok(defined $dbh, "Connected to database");
 
@@ -36,14 +36,18 @@ ok($sth->execute());
 is($sth->{mysql_warning_count}, 1, 'warnings from sth');
 
 ok($dbh->do("SET sql_mode=''"));
-ok($dbh->do("CREATE TEMPORARY TABLE dbd_drv_sth_warnings (c CHAR(1))"));
+ok($dbh->do("DROP TABLE IF EXISTS dbd_drv_sth_warnings"));
+ok($dbh->do("CREATE TABLE dbd_drv_sth_warnings (c CHAR(1))"));
 ok($dbh->do("INSERT INTO dbd_drv_sth_warnings (c) VALUES ('perl'), ('dbd'), ('mysql')"));
 is($dbh->{mysql_warning_count}, 3, 'warnings from dbh');
 
 
 # tests to make sure mysql_warning_count is the same as reported by mysql_info();
 # see https://rt.cpan.org/Ticket/Display.html?id=29363
-ok($dbh->do("CREATE TEMPORARY TABLE dbd_drv_count_warnings (i TINYINT NOT NULL)") );
+
+ok($dbh->do("DROP TABLE IF EXISTS dbd_drv_count_warnings"));
+
+ok($dbh->do("CREATE TABLE dbd_drv_count_warnings (i TINYINT NOT NULL)") );
 
 my $q = "INSERT INTO dbd_drv_count_warnings VALUES (333),('as'),(3)";
 
