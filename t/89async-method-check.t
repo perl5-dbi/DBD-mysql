@@ -92,8 +92,10 @@ plan tests =>
   2 * @st_unsafe_methods   +
   3;
 
+$dbh->do("DROP TABLE IF EXISTS async_test");
+
 $dbh->do(<<SQL);
-CREATE TEMPORARY TABLE async_test (
+CREATE TABLE async_test (
     value INTEGER
 )
 SQL

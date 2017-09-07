@@ -54,15 +54,20 @@ cmp_ok $dbh->quote($blob), 'eq', $quoted_blob, 'testing quoting of blob';
 
 #ok $dbh->{mysql_enable_utf8}, "mysql_enable_utf8 survive connect()";
 $dbh->{mysql_enable_utf8}=1;
+# GeomFromText() is deprecated as of MySQL 5.7.6, use ST_GeomFromText() instead
+my $geomfromtext = $dbh->{mysql_serverversion} >= 50706 ? 'ST_GeomFromText' : 'GeomFromText';
 
 my $query = <<EOI;
 INSERT INTO dbd_mysql_t55utf8 (name, bincol, shape, binutf, profile)
-    VALUES (?, ?, GeomFromText('Point(132865 501937)'), ?, ?)
+    VALUES (?, ?, $geomfromtext('Point(132865 501937)'), ?, ?)
 EOI
 
 ok $dbh->do($query, {}, $utf8_str, $blob, $utf8_str, $utf8_str), "INSERT query $query\n";
 
-$query = "SELECT name,bincol,asbinary(shape), binutf, profile FROM dbd_mysql_t55utf8 LIMIT 1";
+# AsBinary() is deprecated as of MySQL 5.7.6, use ST_AsBinary() instead
+my $asbinary = $dbh->{mysql_serverversion} >= 50706 ? 'ST_AsBinary' : 'AsBinary';
+
+$query = "SELECT name,bincol,$asbinary(shape), binutf, profile FROM dbd_mysql_t55utf8 LIMIT 1";
 my $sth = $dbh->prepare($query) or die "$DBI::errstr";
 
 ok $sth->execute;

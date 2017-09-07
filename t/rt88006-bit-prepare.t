@@ -22,13 +22,15 @@ if ($@) {
 }
 
 my $create = <<EOT;
-CREATE TEMPORARY TABLE `dbd_mysql_rt88006_bit_prep` (
+CREATE TABLE `dbd_mysql_rt88006_bit_prep` (
   `id` bigint(20) NOT NULL auto_increment,
   `flags` bit(40) NOT NULL,
   PRIMARY KEY  (`id`),
   KEY `flags` (`flags`)
 )
 EOT
+
+ok $dbh->do("DROP TABLE IF EXISTS `dbd_mysql_rt88006_bit_prep`"), "DROP TABLE"; 
 
 ok $dbh->do($create),"create table for $scenario";
 
