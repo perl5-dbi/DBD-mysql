@@ -231,6 +231,8 @@ install:
     fi
 
 before_script:
+  - mysql -e 'CREATE DATABASE IF NOT EXISTS test;'
+  - mysql -e "grant all privileges on test.* to 'msandbox'@'localhost' identified by 'msandbox';"
   - if [ -n "$DB" ]; then
       export DBD_MYSQL_TESTUSER=msandbox ;
       export DBD_MYSQL_TESTPASSWORD=msandbox ;
