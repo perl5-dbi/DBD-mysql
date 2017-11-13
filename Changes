@@ -1,3 +1,7 @@
+2017-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043_01)
+* Correct require on relative path for perl 5.26. Fix by Grinnz.
+   https://github.com/perl5-dbi/DBD-mysql/pull/136
+
 2017-06-29 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043)
 
 YOUR ATTENTION PLEASE, THIS IS A REVERT TO 4.041
