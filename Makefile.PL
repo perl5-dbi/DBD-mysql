@@ -376,12 +376,19 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     LICENSE => 'perl',
     MIN_PERL_VERSION => '5.008001',
     META_MERGE => {
+      'meta-spec' => { version => 2 },
+      dynamic_config => 0,
       resources => {
-        repository => 'https://github.com/perl5-dbi/DBD-mysql',
-        MailingList => 'mailto:dbi-dev@perl.org',
-        license     => 'http://dev.perl.org/licenses/',
-        homepage    => 'http://dbi.perl.org/',
-        IRC         => 'irc://irc.perl.org/#dbi',
+        repository => {
+          type => 'git',
+          url  => 'https://github.com/perl5-dbi/DBD-mysql.git',
+          web  => 'https://github.com/perl5-dbi/DBD-mysql',
+        },
+        bugtracker    => { web => 'https://github.com/perl5-dbi/DBD-mysql/issues' },
+        x_MailingList => 'mailto:dbi-dev@perl.org',
+        license       => ['http://dev.perl.org/licenses/'],
+        homepage      => 'http://dbi.perl.org/',
+        x_IRC         => 'irc://irc.perl.org/#dbi',
       },
       x_contributors => [
         # a list of our awesome contributors generated from git
