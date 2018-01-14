@@ -1935,7 +1935,7 @@ MYSQL *mysql_dr_connect(
   #endif
 	    }
         if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
-            ssl_enforce = !SvTRUE(*svp)
+            ssl_enforce = !SvTRUE(*svp);
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
