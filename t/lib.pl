@@ -53,6 +53,28 @@ if (-f ($file = "t/$mdriver.mtest")  ||
     }
 }
 
+sub DbiTestConnect {
+    return (eval { DBI->connect(@_) } or do {
+        my $err;
+        if ( $@ ) {
+            $err = $@;
+            $err =~ s/ at \S+ line \d+\s*$//;
+        }
+        if ( not $err ) {
+            $err = $DBI::errstr;
+            $err = "unknown error" unless $err;
+            my $user = $_[1];
+            my $dsn = $_[0];
+            $dsn =~ s/^DBI:mysql://;
+            $err = "DBI connect('$dsn','$user',...) failed: $err";
+        }
+        if ( $ENV{CONNECTION_TESTING} ) {
+            BAIL_OUT "no database connection: $err";
+        } else {
+            plan skip_all => "no database connection: $err";
+        }
+    });
+}
 
 #
 #   Print a DBI error message
