@@ -9,9 +9,6 @@ perl:
   - "5.20"
   - "5.22"
   - "5.24"
-<<<<<<< HEAD
-  - "5.26"
-=======
 
 matrix:
   include:
@@ -135,7 +132,6 @@ addons:
       - libwrap0-dev
       - libstdc++5
 
->>>>>>> a681e2c... Enforce SSL encryption when mysql_ssl=1 is set
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
