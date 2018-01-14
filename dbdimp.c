@@ -1934,6 +1934,8 @@ MYSQL *mysql_dr_connect(
 	      return NULL;
   #endif
 	    }
+        if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
+            ssl_enforce = !SvTRUE(*svp)
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
@@ -1964,7 +1966,9 @@ MYSQL *mysql_dr_connect(
 
   #ifdef HAVE_SSL_MODE
 
-	    if (ssl_verify)
+        if (!ssl_enforce)
+          ssl_mode = SSL_MODE_PREFERRED;
+        else if (ssl_verify)
 	      ssl_mode = SSL_MODE_VERIFY_IDENTITY;
 	    else if (ca_file || ca_path)
 	      ssl_mode = SSL_MODE_VERIFY_CA;
@@ -1977,6 +1981,7 @@ MYSQL *mysql_dr_connect(
 
   #else
 
+        if (ssl_enforce) {
     #if defined(HAVE_SSL_MODE_ONLY_REQUIRED)
 	      ssl_mode = SSL_MODE_REQUIRED;
 	      if (mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode) != 0) {
@@ -2002,9 +2007,17 @@ MYSQL *mysql_dr_connect(
 	      set_ssl_error(sock, "Enforcing SSL encryption is not supported");
 	      return NULL;
     #endif
+        }
+
+    #ifdef HAVE_SSL_VERIFY
+        if (!ssl_enforce && ssl_verify && ssl_verify_also_enforce_ssl()) {
+            set_ssl_error(sock, "mysql_ssl_optional=1 with mysql_ssl_verify_server_cert=1 is not supported");
+            return NULL;
+        }
+    #endif
 
 	    if (ssl_verify) {
-	      if (!ssl_verify_usable() && ssl_verify_set) {
+          if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
 	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
 	        return NULL;
 	      }
