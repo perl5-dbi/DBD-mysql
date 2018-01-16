@@ -285,7 +285,7 @@ do(dbh, statement, attr=Nullsv, ...)
 #if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   /*
-   * Globaly enabled using of server side prepared statement
+   * Globally enabled using of server side prepared statement
    * for dbh->do() statements. It is possible to force driver
    * to use server side prepared statement mechanism by adding
    * 'mysql_server_prepare' attribute to do() method localy:

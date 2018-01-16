@@ -16,4 +16,4 @@ plan tests => 2;
 my $sth = $dbh->prepare("select * from unknown_table where id=?");
 eval { $sth->bind_param(1, $INSECURE_VALUE_FROM_USER, 3) };
 like $@, qr/Binding non-numeric field 1, value '$INSECURE_VALUE_FROM_USER' as a numeric!/, "bind_param failed on incorrect numeric value";
-pass "perl interpretor did not crashed";
+pass "perl interpreter did not crash";
