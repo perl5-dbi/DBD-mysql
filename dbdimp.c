@@ -1928,6 +1928,7 @@ MYSQL *mysql_dr_connect(
 
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
+	    my_bool ssl_enforce = 1;
 #if defined(DBD_MYSQL_WITH_SSL) && !defined(DBD_MYSQL_EMBEDDED) && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
 	    char *client_key = NULL;
@@ -1937,7 +1938,6 @@ MYSQL *mysql_dr_connect(
 	    char *cipher = NULL;
 	    STRLEN lna;
 	    unsigned int ssl_mode;
-	    my_bool ssl_enforce = 1;
 	    my_bool ssl_verify = 0;
 	    my_bool ssl_verify_set = 0;
 
@@ -2053,8 +2053,17 @@ MYSQL *mysql_dr_connect(
 
 	    client_flag |= CLIENT_SSL;
 #else
-	    set_ssl_error(sock, "mysql_ssl=1 is not supported");
-	    return NULL;
+	    if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
+	      ssl_enforce = !SvTRUE(*svp);
+            if (ssl_enforce)
+            {
+	      set_ssl_error(sock, "mysql_ssl=1 is not supported and mysql_ssl_optional is not enabled.");
+	      return NULL;
+            }
+            else
+            {
+              do_warn(dbh, SL_ERR_NOTAVAILBLE, "mysql_ssl is set but SSL support is not available.");
+            }
 #endif
 	  }
 	else
