@@ -9,7 +9,129 @@ perl:
   - "5.20"
   - "5.22"
   - "5.24"
-  - "5.26"
+
+matrix:
+  include:
+    - perl: "5.20"
+      env: DB=MySQL VERSION=4.1.22
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.0.15
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.0.96
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.1.30
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.1.72
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.8
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.47
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.49
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.54
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.5.55
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.6.10
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.6.30
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.6.35
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.6.36
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.8-rc
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.11
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.12
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.17
+    - perl: "5.20"
+      env: DB=MySQL VERSION=5.7.18
+    - perl: "5.20"
+      env: DB=MySQL VERSION=8.0.0-dmr
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.40
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.44
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.47
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.54
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=5.5.55
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.14
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.20
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.23
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.29
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.0.30
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.2
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.8
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.11
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.20
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.1.22
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.2.0
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.2.1
+# Incompatible with DBD::mysql due to broken mysql_config
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.2
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.3
+# Incompatible with DBD::mysql due to broken something in libmysqlclient
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.4
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.2.5
+# Not supported by MySQL::Sandbox yet
+#    - perl: "5.20"
+#      env: DB=MariaDB VERSION=10.3.0
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.0.2
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.1.0
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.1.9
+    - perl: "5.20"
+      env: CONC_DB=MySQL CONC_VERSION=6.2.0-labs
+# Incompatible with DBD::mysql due to broken zerofill support
+#    - perl: "5.20"
+#      env: CONC_DB=MariaDB CONC_VERSION=2.2.0
+#    - perl: "5.20"
+#      env: CONC_DB=MariaDB CONC_VERSION=2.2.3
+#    - perl: "5.20"
+#      env: CONC_DB=MariaDB CONC_VERSION=2.3.0
+#    - perl: "5.20"
+#      env: CONC_DB=MariaDB CONC_VERSION=2.3.2
+#    - perl: "5.20"
+#      env: CONC_DB=MariaDB CONC_VERSION=3.0.1-beta
+
+addons:
+  apt:
+    packages:
+      - libaio-dev
+      - libnuma-dev
+      - libjemalloc-dev
+      - libmysqlclient-dev
+      - libmysqld-dev
+      - libwrap0-dev
+      - libstdc++5
+
 before_install:
  - sudo apt-get update -qq
  - sudo apt-get install -qq libmysqlclient-dev libmysqld-dev libwrap0-dev libaio-dev
