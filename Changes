@@ -1,4 +1,6 @@
-2017-11-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.043_01)
+2018-01-22 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.044)
+* Reapply https://github.com/perl5-dbi/DBD-mysql/pull/114 "Improve SSL settings, reflect changes for BACKRONYM and Riddle vulnerabilities, enforce SSL encryption when mysql_ssl=1 is set"
+  Thank you to Pali Rohar, Daniël van Eeden, Booking.com, et al:w
 * Fix parsing configure libs from mysql_config --libs output in Makefile.PL
   Libraries in mysql_config --libs output can be specified by library name
   with the -l prefix or by absolute path to library name without any prefix.
