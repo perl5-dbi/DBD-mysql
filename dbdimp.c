@@ -5151,7 +5151,7 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
             buffer_is_unsigned= 1;
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "   SCALAR type %"IVdf" ->%"IVdf"<- IS A INT NUMBER\n",
+                          "   SCALAR type %"IVdf" ->%"IVdf"<- IS AN INT NUMBER\n",
                           sql_type, *(IV *)buffer);
           break;
 
@@ -5404,7 +5404,7 @@ AV *dbd_db_type_info_all(SV *dbh, imp_dbh_t *imp_dbh)
 
     IV_PUSH(t->sql_datatype); /* SQL_DATATYPE*/
     IV_PUSH(t->sql_datetime_sub); /* SQL_DATETIME_SUB*/
-    IV_PUSH(t->interval_precision); /* INTERVAL_PERCISION */
+    IV_PUSH(t->interval_precision); /* INTERVAL_PRECISION */
     IV_PUSH(t->native_type);
     IV_PUSH(t->is_num);
   }

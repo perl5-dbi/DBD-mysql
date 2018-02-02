@@ -274,7 +274,7 @@ typedef struct imp_sth_phb_st {
 /*
  *  The dbd_describe uses this structure for storing
  *  fields meta info.
- *  Added ddata, ldata, lldata for accomodate
+ *  Added ddata, ldata, lldata for accommodate
  *  being able to use different data types
  *  12.02.20004 PMG
  */

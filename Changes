@@ -426,7 +426,7 @@ docs to POD - Thanks!
 
 2010-07-10 Patrick Galbraith <patg at patg dot net> (4.016)
 * Disabled mysql_bind_type_guessing due to one performance issue
-  querying on a indexed character column unquoted will mean the index
+  querying on an indexed character column unquoted will mean the index
   is not used
 * Fixed int types that should be bools
 
@@ -1441,7 +1441,7 @@ Tokuhiro Matsuno!
 	* Makefile.lib (InitializeMysql): Modified order of -I statements
 	  (Inside MySQL distribution it can happen that headers of recently
 	  installed DBI versions are used instead of the correct headers.)
-	* nodbd/nodbd.xs.in, nodbd/typemap: Supressed warning for
+	* nodbd/nodbd.xs.in, nodbd/typemap: Suppressed warning for
 	  undef'd argument in connect method. (Chris Holt,
 	  <xris@migraine.stanford.edu>)
 	* nodbd/nodbd.xs.in: Fixed definition of 'HOST' attribute
@@ -1696,7 +1696,7 @@ DBD::mysql for DBI - Written by Alligator Descartes <descarte@mcqueen.com>
 	  Added the memory bug patch to this.
 
 96.06.18  Added pod documentation to mysql.pm and the possibility
-	  to retreive insert_id. This was done by Nathan Torkington.
+	  to retrieve insert_id. This was done by Nathan Torkington.
 
 	  Fixed memory bug that sql results never was freed.
 	  Now a result is freed when one calls the 'finish' action.
