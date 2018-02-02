@@ -618,7 +618,7 @@ test against a MySQL server on a remote host.
 =head3 Build MySQL clients under Cygwin:
 
 download the MySQL LINUX source from
-L<http://www.mysql.com/downloads/index.html>,
+L<https://www.mysql.com/downloads>,
 unpack mysql-<version>.tar.gz into some tmp location and from this directory
 run configure:
 
