@@ -1,4 +1,4 @@
-2018-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.044_01)
+2018-02-06 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.045)
 * Use API function for reconnect; fixes compilation on MariaDB 10.2.6+.
   Fix provided by Pali.
 * Fixed broken link to MySQL download page, provided by Mohammad S Anwar.
