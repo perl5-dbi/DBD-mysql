@@ -500,15 +500,31 @@ ping(dbh)
   CODE:
     {
       int retval;
+/* MySQL 5.7 below 5.7.18 is affected by Bug #78778.
+ * MySQL 5.7.18 and higher (including 8.0.3) is affected by Bug #89139.
+ *
+ * Once Bug #89139 is fixed we can adjust the upper bound of this check.
+ *
+ * https://bugs.mysql.com/bug.php?id=78778
+ * https://bugs.mysql.com/bug.php?id=89139 */
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+      unsigned long long insertid;
+#endif
 
       D_imp_dbh(dbh);
       ASYNC_CHECK_XS(dbh);
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+      insertid = mysql_insert_id(imp_dbh->pmysql);
+#endif
       retval = (mysql_ping(imp_dbh->pmysql) == 0);
       if (!retval) {
 	if (mysql_db_reconnect(dbh)) {
 	  retval = (mysql_ping(imp_dbh->pmysql) == 0);
 	}
       }
+#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+      imp_dbh->pmysql->insert_id = insertid;
+#endif
       RETVAL = boolSV(retval);
     }
   OUTPUT:
