@@ -15,6 +15,11 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
+if (($dbh->{'mysql_serverversion'} >= 80000) && ($dbh->{'mysql_serverversion'} < 90000)) {
+    plan skip_all =>
+        "MySQL 8.0 is affected by Bug #89224";
+}
+
 my $create = <<EOC;
 CREATE TEMPORARY TABLE dbd_mysql_rt50304_column_info (
     id int(10)unsigned NOT NULL AUTO_INCREMENT,
