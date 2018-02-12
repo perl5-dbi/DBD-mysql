@@ -9,6 +9,7 @@ use Config;
 use Getopt::Long;
 use ExtUtils::MakeMaker;
 use Data::Dumper;
+use Devel::CheckLib;
 use File::Path;
 use File::Copy;
 use File::Basename;
@@ -20,7 +21,7 @@ my $TESTDB = "test";
 our $opt = { "help" => \&Usage, };
 
 {
-local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded);
+local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded, $::test_mysql_config);
 eval { require "./t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
@@ -29,6 +30,7 @@ $opt->{'testsocket'} = $::test_socket;
 $opt->{'testpassword'} = $::test_password;
 $opt->{'testdb'} = $::test_db;
 $opt->{'force-embedded'} = $::test_force_embedded if $::test_force_embedded;
+$opt->{'mysql_config'} = $::test_mysql_config;
 }
 }
 
@@ -53,7 +55,6 @@ Getopt::Long::GetOptions(
     "embedded=s",
     "mysql_config=s",
     "force-embedded",
-    "with-mysql=s"
     ) || die Usage();
 
 my $source = {};
@@ -72,7 +73,7 @@ my $source = {};
   {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
-    if (!-f $opt->{'mysql_config'})
+    if (! defined `$opt->{'mysql_config'}`)
     {
       print <<"MSG";
 
@@ -85,7 +86,7 @@ MSG
   }
   else
   {
-    if (! `mysql_config`)
+    if (! defined `mysql_config`)
     {
       print <<MSG;
 
@@ -204,6 +205,14 @@ To change these settings, see 'perl Makefile.PL --help' and
 
 MSG
 
+print "Checking if libs are available for compiling...\n";
+
+assert_lib(
+  LIBS => ($opt->{'embedded'} ? $opt->{'embedded'} : $opt->{libs}),
+);
+
+print "Looks good.\n\n";
+
 sleep 1;
 
 my $dsn= '';
@@ -228,6 +237,7 @@ my $fileName = $@ ?
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
+	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
@@ -239,7 +249,7 @@ if ($^O eq 'VMS') {
 }
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
 $cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
-$cflags .= " -DDBD_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
+$cflags .= " -DDBD_MYSQL_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
 	  'INC' => $cflags,
@@ -453,13 +463,27 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'zefram <zefram@fysh.org>',
         'zentooo <ankerasoy@gmail.com>',
       ],
+      prereqs => {
+        test => {
+          recommends => {
+            'Proc::ProcessTable' => 0,
+          },
+          suggests => {
+            'Test::Pod' => '1.00',
+            'Test::DistManifest' => 0,
+          },
+        },
+      },
     },
-    TEST_REQUIRES => { 'Test::Simple' => '0.90',
+    TEST_REQUIRES => { 'bigint'       => 0,
+                       'Test::Simple' => '0.90',
                        'Test::Deep'   => 0,
                        'Time::HiRes'  => 0,
     },
-    CONFIGURE_REQUIRES => { 'DBI' => 1.609,
+    CONFIGURE_REQUIRES => { 'DBI' => '1.609',
                             'Data::Dumper' => 0,
+                            'Devel::CheckLib' => '1.09',
+                            'ExtUtils::MakeMaker' => 0,
     },
   );
 }
@@ -504,7 +528,6 @@ Possible options are:
                          by default the port number is chosen from the
                          mysqlclient library
   --mysql_config=<path>  Specify <path> for mysql_config script
-  --with-mysql=<path>    Specify <path> for the root of the MySQL installation.
   --nocatchstderr        Suppress using the "myld" script that redirects
                          STDERR while running the linker.
   --nofoundrows          Change the behavior of \$sth->rows() so that it

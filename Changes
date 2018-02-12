@@ -1,3 +1,20 @@
+2018-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046_01)
+* Use Devel::CheckLib 1.09 or newer, fixes
+   https://github.com/perl5-dbi/DBD-mysql/issues/109
+* Specify bigint as test dependency
+* Add recommends and suggests tests dependencies (pali)
+* Check only for libs via Devel::CheckLib in Makefile.PL (pali)
+* Remove param --with-mysql from Makefile.PL documentation (pali)
+* Check if specified Makefile.PL settings are working (pali)
+   Fixes https://rt.cpan.org/Ticket/Display.html?id=119902
+* Remember mysql_config value for Makefile.PL (pali)
+* Locate MySQL libs using Devel::CheckLib (pali)
+
+
+2018-02-08 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046)
+* Version bump because of issue with META file in 4.045 release.
+
+
 2018-02-06 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.045)
 * Use API function for reconnect; fixes compilation on MariaDB 10.2.6+.
   Fix provided by Pali.
