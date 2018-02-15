@@ -1,8 +1,9 @@
 /*
  *  DBD::mysql - DBI driver for the mysql database
  *
- *  Copyright (c) 2004-2014 Patrick Galbraith
- *  Copyright (c) 2013-2014 Michiel Beijen 
+ *  Copyright (c) 2015-2017 Pali Rohár
+ *  Copyright (c) 2004-2017 Patrick Galbraith
+ *  Copyright (c) 2013-2017 Michiel Beijen 
  *  Copyright (c) 2004-2007 Alexey Stroganov 
  *  Copyright (c) 2003-2005  Rudolf Lippan
  *  Copyright (c) 1997-2003  Jochen Wiedmann
