@@ -4373,6 +4373,11 @@ process:
         STRLEN len= lengths[i];
         if (ChopBlanks)
         {
+#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
+          if (fields[i].charsetnr != 63)
+#else
+          if (!(fields[i].flags & BINARY_FLAG))
+#endif
           while (len && col[len-1] == ' ')
           {	--len; }
         }
