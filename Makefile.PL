@@ -442,6 +442,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Pali <pali@cpan.org>',
         'Patrick Galbraith <patg@patg.net>',
         'Perlover <perlover@perlover.com>',
+        'Peter Botha <peterb@striata.com>',
         'Petr Písař <ppisar@redhat.com>',
         'Reini Urban <rurban@cpanel.net>',
         'Rob Hoelz <rhoelz@inoc.com>',
