@@ -405,6 +405,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         # using the command:
         # git shortlog -se | cut  -f2- | sed "s/^/        '/;s/$/',/"
 
+        'Alceu Rodrigues de Freitas Junior <arfreitas@cpan.org>',
         'Alexandr Ciornii <alexchorny@gmail.com>',
         'Alexey Molchanov <alexey.molchanov@portaone.com>',
         'Amiri Barksdale at Home <amiri@roosterpirates.com>',

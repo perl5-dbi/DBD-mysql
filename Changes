@@ -1,4 +1,8 @@
 2018-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046_01)
+* Skipped test which failed on OpenBSD because Proc::ProcessTable does not
+  come with a 'size' attribute on this platform (glasswalk3r, pali)
+* Improved test suite with regards to MySQL 8.0
+* Improved macOS installation notes.
 * Use Devel::CheckLib 1.09 or newer, fixes
    https://github.com/perl5-dbi/DBD-mysql/issues/109
 * Specify bigint as test dependency
