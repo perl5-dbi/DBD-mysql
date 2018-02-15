@@ -23,6 +23,12 @@ if ($@) {
 eval { require Storable };
 $have_storable = $@ ? 0 : 1;
 
+my $have_pt_size = grep { $_ eq 'size' } Proc::ProcessTable->new('cache_ttys' => $have_storable)->fields;
+
+unless ($have_pt_size) {
+        plan skip_all => "module Proc::ProcessTable does not support size attribute on current platform\n";
+}
+
 plan tests => 3;
 
 sub size {

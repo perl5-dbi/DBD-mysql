@@ -10,7 +10,6 @@ require 'lib.pl';
 my $COUNT_CONNECT = 4000;     # Number of connect/disconnect iterations
 my $COUNT_PREPARE = 30000;    # Number of prepare/execute/finish iterations
 my $COUNT_BIND    = 10000;    # Number of bind_param iterations
-
 my $have_storable;
 
 if (!$ENV{EXTENDED_TESTING}) {
@@ -24,6 +23,12 @@ if ($@) {
 
 eval { require Storable };
 $have_storable = $@ ? 0 : 1;
+
+my $have_pt_size = grep { $_ eq 'size' } Proc::ProcessTable->new('cache_ttys' => $have_storable)->fields;
+
+unless ($have_pt_size) {
+        plan skip_all => "module Proc::ProcessTable does not support size attribute on current platform\n";
+}
 
 my ($dbh, $sth);
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
