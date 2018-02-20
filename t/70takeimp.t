@@ -22,12 +22,6 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-unless ($DBI::VERSION ge '1.607') {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
-}
-unless ($dbh->can('take_imp_data')) {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
-}
 plan tests => 21;
 
 pass("obtained driver handle");
