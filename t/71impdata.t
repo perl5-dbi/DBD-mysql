@@ -25,12 +25,6 @@ if (! defined $drh) {
     plan skip_all => "Can't obtain driver handle. Can't continue test";
 }
 
-unless ($DBI::VERSION ge '1.607') {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
-}
-unless ($dbh->can('take_imp_data')) {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
-}
 plan tests => 10;
 
 pass("Connected to database");

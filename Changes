@@ -1,4 +1,6 @@
 2018-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046_01)
+* Remove #IFDEFs for code detecting ancient DBI versions. The minimum
+  DBI version we require is version 1.609 from 2009!
 * ChopBlanks should not trim binary fields (urcheon)
 * Skipped test which failed on OpenBSD because Proc::ProcessTable does not
   come with a 'size' attribute on this platform (glasswalk3r, pali)

@@ -144,11 +144,8 @@ sub connect {
 				    ['database', 'host', 'port']);
 
 
-    if ($DBI::VERSION >= 1.49)
-    {
-      $dbi_imp_data = delete $attrhash->{dbi_imp_data};
-      $connect_ref->{'dbi_imp_data'} = $dbi_imp_data;
-    }
+    $dbi_imp_data = delete $attrhash->{dbi_imp_data};
+    $connect_ref->{'dbi_imp_data'} = $dbi_imp_data;
 
     if (!defined($this = DBI::_new_dbh($drh,
             $connect_ref,
