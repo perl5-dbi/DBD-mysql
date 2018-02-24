@@ -19,13 +19,12 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-else {
-    plan tests => 15;
+
+if ($dbh->{mysql_serverversion} < 50008) {
+    plan skip_all => "Servers < 5.0.8 do not support b'' syntax";
 }
 
-if (!MinimumVersion($dbh, '4.1')) {
-    $charset= '';
-}
+plan tests => 15;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_b1"), "Drop table if exists dbd_mysql_b1";
 

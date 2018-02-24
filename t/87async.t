@@ -17,6 +17,9 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if (!$dbh) {
     plan skip_all => "no database connection";
 }
+if ($dbh->{mysql_serverversion} < 50012) {
+    plan skip_all => "Servers < 5.0.12 do not support SLEEP()";
+}
 unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
     plan skip_all => "Async support wasn't built into this version of DBD::mysql";
 }
@@ -50,7 +53,7 @@ ok(($end - $start) >= 2);
 
 $start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)', { async => 1 });
-ok defined($dbh->mysql_async_ready);
+ok(defined($dbh->mysql_async_ready)) or die;
 $end = Time::HiRes::gettimeofday();
 
 ok $rows;

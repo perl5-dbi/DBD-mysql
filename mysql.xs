@@ -840,15 +840,14 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpvn("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50709
-        /* MariaDB 10 is not MySQL source level compatible so this
-           only applies to MySQL*/
-	    /* mysql_get_option() was added in mysql 5.7.3 */
-	    /* MYSQL_OPT_NET_BUFFER_LENGTH was added in mysql 5.7.9 */
+        /* net_buffer_length macro is not defined in MySQL 5.7 and some MariaDB
+        versions - if it is not available, use newer mysql_get_option */
+#if !defined(net_buffer_length)
+            ;
+	    unsigned long buffer_len;
 	    mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &buffer_len);
 	    retsv = newSViv(buffer_len);
 #else
-	    /* before mysql 5.7.9 use net_buffer_length macro */
 	    retsv = newSViv(net_buffer_length);
 #endif
 	    break;

@@ -14,14 +14,16 @@ if ($@) {
     plan skip_all => "no database connection";
 }
 
-$dbh = DBI->connect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
-
-eval {$dbh->do("SET NAMES 'utf8mb4'");};
-if ($@) {
+eval {
+   $dbh->{PrintError} = 0;
+   $dbh->do("SET NAMES 'utf8mb4'");
+   $dbh->{PrintError} = 1;
+   1;
+} or do {
    $dbh->disconnect();
    plan skip_all => "no support for utf8mb4";
-}
+};
+
 ok $dbh->do("CREATE TEMPORARY TABLE dbd_mysql_t55utf8mb4 (id SERIAL, val TEXT CHARACTER SET utf8mb4)");
 
 my $sth = $dbh->prepare("INSERT INTO dbd_mysql_t55utf8mb4(val) VALUES('😈')");
