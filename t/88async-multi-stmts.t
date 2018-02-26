@@ -15,10 +15,6 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if (!$dbh) {
     plan skip_all => "no database connection";
 }
-unless($dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'})) {
-    my $mode = $dbh->get_info($GetInfoType{'SQL_ASYNC_MODE'});
-    plan skip_all => "Async support wasn't built into this version of DBD::mysql (mode is $mode, $GetInfoType{'SQL_ASYNC_MODE'})";
-}
 plan tests => 8;
 
 $dbh->do(<<SQL);

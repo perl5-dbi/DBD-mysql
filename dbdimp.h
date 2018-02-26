@@ -23,15 +23,6 @@
 
 #include <errmsg.h> /* Comes with MySQL-devel */
 
-/* For now, we hardcode this, but in the future,
- * we can detect capabilities of the MySQL libraries
- * we're talking to */
-#if defined(_WIN32)
-#define MYSQL_ASYNC 0
-#else
-#define MYSQL_ASYNC 1
-#endif
-
 
 /*
  * This is the version of MySQL wherer
@@ -234,9 +225,7 @@ struct imp_dbh_st {
                                */
     bool use_server_side_prepare;
     bool disable_fallback_for_server_prepare;
-#if MYSQL_ASYNC
     void* async_query_in_flight;
-#endif
     bool enable_utf8;
     bool enable_utf8mb4;
     struct {
@@ -335,10 +324,7 @@ struct imp_sth_st {
     int   use_mysql_use_result;  /*  TRUE if execute should use     */
                           /* mysql_use_result rather than           */
                           /* mysql_store_result */
-
-#if MYSQL_ASYNC
     bool is_async;
-#endif
 };
 
 
@@ -422,7 +408,7 @@ extern MYSQL* mysql_dr_connect(SV*, MYSQL*, char*, char*, char*, char*, char*,
 
 extern int mysql_db_reconnect(SV*);
 int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
-#if MYSQL_ASYNC
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
-#endif
+
+int mysql_socket_ready(my_socket fd);
