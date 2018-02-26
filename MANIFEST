@@ -69,7 +69,6 @@ t/86_bug_36972.t
 t/87async.t
 t/88async-multi-stmts.t
 t/89async-method-check.t
-t/90no-async.t
 t/91errcheck.t
 t/92ssl_optional.t
 t/92ssl_backronym_vulnerability.t
