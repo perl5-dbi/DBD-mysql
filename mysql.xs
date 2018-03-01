@@ -405,11 +405,20 @@ do(dbh, statement, attr=Nullsv, ...)
                                            stmt,
                                            bind,
                                            &has_binded);
+
       if (bind)
         Safefree(bind);
 
+      /*
+         as of 5.7, the end of package was deprecated, breaking
+         insertfetch with prepared statements enabled
+         no need for this as do() doesn't have a result set since
+         it's for DML statements only
+      */
+#if MYSQL_VERSION_ID < 50701
       mysql_stmt_close(stmt);
       stmt= NULL;
+#endif
 
       if (retval == -2) /* -2 means error */
       {
@@ -837,4 +846,3 @@ dbd_mysql_get_info(dbh, sql_info_type)
  		croak("Unknown SQL Info type: %i", mysql_errno(imp_dbh->pmysql));
     }
     ST(0) = sv_2mortal(retsv);
-
