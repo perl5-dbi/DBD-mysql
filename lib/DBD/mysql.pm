@@ -1473,7 +1473,7 @@ against:
 
 =item mysql_dbd_stats
 
-  $info_hashref = $dhb->{mysql_dbd_stats};
+  $info_hashref = $dbh->{mysql_dbd_stats};
 
 DBD::mysql keeps track of some statistics in the mysql_dbd_stats attribute.
 The following stats are being maintained:
@@ -1972,11 +1972,7 @@ to be completely thread safe, if the C libraries are thread safe
 and you don't share handles among threads.
 
 The obvious question is: Are the C libraries thread safe?
-In the case of MySQL the answer is "mostly" and, in theory, you should
-be able to get a "yes", if the C library is compiled for being thread
-safe (By default it isn't.) by passing the option -with-thread-safe-client
-to configure. See the section on I<How to make a threadsafe client> in
-the manual.
+In the case of MySQL the answer is yes, since MySQL 5.5 it is.
 
 
 =head1 ASYNCHRONOUS QUERIES
