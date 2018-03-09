@@ -16,6 +16,9 @@
    Fixes https://rt.cpan.org/Ticket/Display.html?id=119902
 * Remember mysql_config value for Makefile.PL (pali)
 * Locate MySQL libs using Devel::CheckLib (pali)
+* Added a fix for 30insertfetch failure when using server-side prepared 
+  statements. The stmt was being freed for DML statements before 
+  the handle attribute was read, mysql_info was reading back nulls
 
 
 2018-02-08 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046)
