@@ -1,4 +1,5 @@
-2018-02-?? Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046_01)
+2018-03-09 Patrick Galbraith, Michiel Beijen, DBI/DBD community (4.046_01)
+* Updated documentation re. multithreading (Daniël van Eeden)
 * Remove #IFDEFs for code detecting ancient DBI versions. The minimum
   DBI version we require is version 1.609 from 2009!
 * ChopBlanks should not trim binary fields (urcheon)
@@ -16,8 +17,8 @@
    Fixes https://rt.cpan.org/Ticket/Display.html?id=119902
 * Remember mysql_config value for Makefile.PL (pali)
 * Locate MySQL libs using Devel::CheckLib (pali)
-* Added a fix for 30insertfetch failure when using server-side prepared 
-  statements. The stmt was being freed for DML statements before 
+* Added a fix for 30insertfetch failure when using server-side prepared
+  statements. The stmt was being freed for DML statements before
   the handle attribute was read, mysql_info was reading back nulls
 
 
@@ -1337,7 +1338,7 @@ Tokuhiro Matsuno!
 	  <leachcj@vegemite.mel.az.bp.com>.
 	* nodbd/statement.pm.in: Changed length to CORE::length in
 	  some cases to prevent 5.005 warnings.
-	* Added a section on multithrading to the manual.
+	* Added a section on multithreading to the manual.
 
 1998-07-07  Jochen Wiedmann  <joe@ispsoft.de> (1.19_21)
 
