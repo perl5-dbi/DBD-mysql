@@ -2371,23 +2371,48 @@ int dbd_db_disconnect(SV* dbh, imp_dbh_t* imp_dbh)
 #ifdef dTHR
   dTHR;
 #endif
+
+  /* patched from mariadb_db_disconnect to clear mysql.extension correctly */
+
   dTHX;
   D_imp_xxh(dbh);
+  const void *methods;
+  char last_error[sizeof(imp_dbh->pmysql->net.last_error)];
+  char sqlstate[sizeof(imp_dbh->pmysql->net.sqlstate)];
+  unsigned int last_errno;
 
   /* We assume that disconnect will always work       */
   /* since most errors imply already disconnected.    */
   DBIc_ACTIVE_off(imp_dbh);
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->pmysql: %p\n",
-		              imp_dbh->pmysql);
+                  imp_dbh->pmysql);
+
+  /* MySQL and MariDB clients crash when methods pointer is NULL. */
+  /* Function mysql_close() set method pointer to NULL. */
+  /* Therefore store backup and restore it after mysql_init(). */
+  methods = imp_dbh->pmysql->methods;
+
+  /* Backup last error */
+  last_errno = imp_dbh->pmysql->net.last_errno;
+  memcpy(last_error, imp_dbh->pmysql->net.last_error, sizeof(last_error));
+  memcpy(sqlstate, imp_dbh->pmysql->net.sqlstate, sizeof(sqlstate));
+
   mysql_close(imp_dbh->pmysql );
+  mysql_init(imp_dbh->pmysql);
+
   imp_dbh->pmysql->net.fd = -1;
+  imp_dbh->pmysql->methods = methods;
+
+  /* Restore last error */
+  memcpy(imp_dbh->pmysql->net.last_error, last_error, sizeof(last_error));
+  memcpy(imp_dbh->pmysql->net.sqlstate, sqlstate, sizeof(sqlstate));
+  imp_dbh->pmysql->net.last_errno = last_errno;
 
   /* We don't free imp_dbh since a reference still exists    */
   /* The DESTROY method is the only one to 'free' memory.    */
   return TRUE;
 }
-
 
 /***************************************************************************
  *
