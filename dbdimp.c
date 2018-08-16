@@ -2015,7 +2015,7 @@ MYSQL *mysql_dr_connect(
     #endif
 
 	    if (ssl_verify) {
-          if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
+	      if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
 	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
 	        return NULL;
 	      }
