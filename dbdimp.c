@@ -3160,7 +3160,7 @@ dbd_st_prepare(
           bind->buffer_type=  MYSQL_TYPE_STRING;
           bind->buffer=       NULL;
           bind->length=       &(fbind->length);
-          bind->is_null=      (char*) &(fbind->is_null);
+          bind->is_null=      (_Bool*) &(fbind->is_null);
           fbind->is_null=     1;
           fbind->length=      0;
         }
