@@ -1920,20 +1920,24 @@ MYSQL *mysql_dr_connect(
 	    STRLEN lna;
 	    unsigned int ssl_mode;
 	    my_bool ssl_verify = 0;
+  #if defined(HAVE_SSL_VERIFY)
 	    my_bool ssl_verify_set = 0;
+  #endif
 
             /* Verify if the hostname we connect to matches the hostname in the certificate */
 	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE)) && *svp) {
+  #if defined(HAVE_SSL_VERIFY)
+	      ssl_verify_set = 1;
+  #endif
   #if defined(HAVE_SSL_VERIFY) || defined(HAVE_SSL_MODE)
 	      ssl_verify = SvTRUE(*svp);
-	      ssl_verify_set = 1;
   #else
 	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
 	      return NULL;
   #endif
 	    }
-        if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
-            ssl_enforce = !SvTRUE(*svp);
+	    if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
+	      ssl_enforce = !SvTRUE(*svp);
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
 	      client_key = SvPV(*svp, lna);
@@ -2015,7 +2019,7 @@ MYSQL *mysql_dr_connect(
     #endif
 
 	    if (ssl_verify) {
-          if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
+	      if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
 	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
 	        return NULL;
 	      }
@@ -3156,7 +3160,7 @@ dbd_st_prepare(
           bind->buffer_type=  MYSQL_TYPE_STRING;
           bind->buffer=       NULL;
           bind->length=       &(fbind->length);
-          bind->is_null=      (char*) &(fbind->is_null);
+          bind->is_null=      (_Bool*) &(fbind->is_null);
           fbind->is_null=     1;
           fbind->length=      0;
         }

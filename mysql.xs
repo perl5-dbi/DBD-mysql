@@ -783,10 +783,6 @@ dbd_mysql_get_info(dbh, sql_info_type)
     D_imp_dbh(dbh);
     IV type = 0;
     SV* retsv=NULL;
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50709
-/* MariaDB 10 is not MySQL source level compatible so this only applies to MySQL*/
-    IV buffer_len;
-#endif 
 
     if (SvMAGICAL(sql_info_type))
         mg_get(sql_info_type);
