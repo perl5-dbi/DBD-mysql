@@ -605,8 +605,8 @@ static char *parse_params(
         it would be good to be able to handle any number of cases and orders
       */
       if ((*statement_ptr == 'l' || *statement_ptr == 'L') &&
-          (!strncmp(statement_ptr+1, "imit ?", 6) ||
-           !strncmp(statement_ptr+1, "IMIT ?", 6)))
+          (!strncmp(statement_ptr+1, "imit ", 5) ||
+           !strncmp(statement_ptr+1, "IMIT ", 5)))
       {
         limit_flag = 1;
       }
