@@ -1723,6 +1723,11 @@ this attribute determines whether a I<fetchrow> will chop preceding
 and trailing blanks off the column values. Chopping blanks does not
 have impact on the I<max_length> attribute.
 
+=item mysql_gtids
+
+Returns GTID(s) if GTID session tracking is ensabled in the server via
+session_track_gtids.
+
 =item mysql_insertid
 
 If the statement you executed performs an INSERT, and there is an AUTO_INCREMENT

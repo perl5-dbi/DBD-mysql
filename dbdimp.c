@@ -2805,6 +2805,28 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       result= sv_2mortal((newRV_noinc((SV*)hv)));
     }
 
+#if MYSQL_VERSION_ID >= 50708
+#if MYSQL_VERSION_ID != 60000 /* Connector/C 6.0.x */
+#ifndef MARIADB_BASE_VERSION
+/* SESSION_TRACK_GTIDS was added in commit c4f32d662 in MySQL 5.7.8-rc */
+  case 'g':
+    if (strEQ(key, "gtids"))
+    {
+      const char *data;
+      size_t length;
+      if (mysql_session_track_get_first(imp_dbh->pmysql, SESSION_TRACK_GTIDS, &data, &length) == 0)
+      {
+        result= sv_2mortal(newSVpvn(data, length));
+      }
+      else
+      {
+        result= &PL_sv_undef;
+      }
+    }
+    break;
+#endif
+#endif
+#endif
   case 'h':
     if (strEQ(key, "hostinfo"))
     {
