@@ -1237,6 +1237,15 @@ connection to MySQL server if underlaying libmysqlclient library is
 vulnerable.  Option C<mysql_ssl_optional> can be used to make SSL
 connection vulnerable.
 
+=item mysql_server_pubkey
+
+Path to the RSA public key of the server. This is used for the
+sha256_password and caching_sha2_password authentication plugins.
+
+=item mysql_get_server_pubkey
+
+Setting C<mysql_get_server_pubkey> to true requests the public
+RSA key of the server.
 
 =item mysql_local_infile
 
