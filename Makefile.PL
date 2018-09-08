@@ -251,42 +251,45 @@ $cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
 $cflags .= " -DDBD_MYSQL_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
-	  'INC' => $cflags,
-	  'dist'         => { 'SUFFIX'       => ".gz",
-			      'DIST_DEFAULT' => 'all tardist',
-			      'COMPRESS'     => "gzip -9f" },
-	  'clean' => { 'FILES' => '*.xsi' },
-		'realclean' => { 'FILES' => 't/mysql.mtest' },
-          'C' => ["dbdimp.c", "mysql.c", "socket.c"],
-          'XS' => {'mysql.xs' => 'mysql.c'},
-	  'OBJECT' => '$(O_FILES)',
-	  'LIBS' => $opt->{'libs'},
-	  $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
-	  'VERSION_FROM' => 'lib/DBD/mysql.pm'
-	);
+	      'INC' => $cflags,
+	      'dist'=> { 'SUFFIX'       => ".gz",
+			         'DIST_DEFAULT' => 'all tardist',
+			         'COMPRESS'     => "gzip -9f" },
+	      'clean'     => { 'FILES'   => '*.xsi' },
+	      'realclean' => { 'FILES'   => 't/mysql.mtest' },
+          'C'         => ["dbdimp.c", "mysql.c", "socket.c"],
+          'XS'        => {'mysql.xs' => 'mysql.c'},
+	      'OBJECT' => '$(O_FILES)',
+	      'LIBS'   => $opt->{'libs'},
+	      $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
+	      'VERSION_FROM' => 'lib/DBD/mysql.pm'
+);
 
 my %embedded_files=();
 
 if ($opt->{'embedded'})
 {
 
- %embedded_files = ( 'mysql.xs' => { filename  => 'mysqlEmb/mysqlEmb.xs',
-                                       replace   => { ':mysql'    => ':mysqlEmb',
-                                                      'mysql.xsi' => 'mysqlEmb.xsi'},
-                                       makedir => 'mysqlEmb'
-                                     },
-                       'lib/DBD/mysql.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb.pm',
-                                               replace  => { ':mysql'   => ':mysqlEmb',
-                                                    '=> \'mysql\'' => '=> \'mysqlEmb\''},
-                                               makedir => 'mysqlEmb/lib/DBD'
-                                             },
+ %embedded_files = ('mysql.xs' => { filename  => 'mysqlEmb/mysqlEmb.xs',
+                                     replace   => { ':mysql'    => ':mysqlEmb',
+                                                    'mysql.xsi' => 'mysqlEmb.xsi'
+                                                  },
+                                     makedir => 'mysqlEmb'
+                                  },
+                    'lib/DBD/mysql.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb.pm',
+                                            replace  => { ':mysql'       => ':mysqlEmb',
+                                                          '=> \'mysql\'' => '=> \'mysqlEmb\''
+                                                        },
+                                                        makedir        => 'mysqlEmb/lib/DBD'
+                                          },
                        'lib/DBD/mysql/GetInfo.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb/GetInfo.pm',
-                                                       replace => {':mysql'   => ':mysqlEmb',
-                                                    '\'mysql\'' => '\'mysqlEmb\''},
+                                                       replace  => {':mysql'   => ':mysqlEmb',
+                                                                    '\'mysql\'' => '\'mysqlEmb\''
+                                                                   },
                                                        makedir => 'mysqlEmb/lib/DBD/mysqlEmb'
                                                      },
                        't/mysql.dbtest' => { filename => 'mysqlEmb/t/mysqlEmb.dbtest',
-                                             makedir => 'mysqlEmb/t'
+                                             makedir  => 'mysqlEmb/t'
                                            },
                        't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
                                              makedir => 'mysqlEmb/t',
