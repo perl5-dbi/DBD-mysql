@@ -2002,7 +2002,8 @@ C<mysql_async_result>, C<mysql_async_ready>, and C<mysql_fd>.
 C<mysql_async_result> returns what do or execute would have; that is, the
 number of rows affected.  C<mysql_async_ready> returns true if
 C<mysql_async_result> will not block, and zero otherwise.  They both return
-C<undef> if that handle is not currently running an asynchronous query.
+C<undef> if that handle was not created with 'async' set to true
+or if an asynchronous query was not started yet.
 C<mysql_fd> returns the file descriptor number for the MySQL connection; you
 can use this in an event loop.
 
