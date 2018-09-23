@@ -329,7 +329,7 @@ free_param(pTHX_ imp_sth_ph_t *params, int num_params)
 
 static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
 {
-  static enum enum_field_types enum_type;
+  enum enum_field_types enum_type;
 
   switch (type) {
   case MYSQL_TYPE_DOUBLE:
