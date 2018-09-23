@@ -10,8 +10,14 @@ use vars qw($test_dsn $test_user $test_password $test_db);
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+
+if ($@) {
+  diag $@;
+  plan skip_all => "no database connection";
+}
 
 ok(defined $dbh, "Connected to database");
 
@@ -41,26 +47,13 @@ like(
 
 like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
 
-# The variable name for MySQL's storage engine function has varied over time
-#
-# From MySQL version 3.23.0 until 4.1.2: @@table_type
-#   removed in 5.5.0
-# https://downloads.mysql.com/docs/refman-4.1-en.a4.pdf
-#
-# From MySQL version 4.1.2 until 5.5.3: @@storage_engine
-#   removed in 5.7.5
+# storage engine function is @@storage_engine in up to 5.5.03
+# at that version, @@default_storage_engine is introduced
 # http://dev.mysql.com/doc/refman/5.5/en/server-system-variables.html#sysvar_storage_engine
-#
-# From MySQL version 5.5.3:  @@default_storage_engine
+# in MySQL Server 5.7.5 the old option is removed
 # http://dev.mysql.com/doc/refman/5.7/en/server-system-variables.html#sysvar_storage_engine
 
-my $storage_engine = '@@default_storage_engine';
-if ($dbh->{mysql_serverversion} < 40102) {
-    $storage_engine = '@@table_type';
-} elsif ($dbh->{mysql_serverversion} < 50503) {
-    $storage_engine = '@@storage_engine';
-}
-
+my $storage_engine = $dbh->{mysql_serverversion} >= 50503 ? '@@default_storage_engine' : '@@storage_engine';
 my $result = $dbh->selectall_arrayref('select ' . $storage_engine);
 my $default_storage_engine = $result->[0]->[0] || 'unknown';
 diag "Default storage engine is: $default_storage_engine";

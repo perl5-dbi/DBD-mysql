@@ -22,7 +22,7 @@ our $opt = { "help" => \&Usage, };
 
 {
 local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded, $::test_mysql_config);
-eval { require "t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
+eval { require "./t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
 $opt->{'testuser'} = $::test_user;
@@ -63,7 +63,7 @@ my $source = {};
   $source->{'mysql_config'} = "guessed";
 
   if ($opt->{'mysql_config'}) {
-    $source->{'mysql_config'} = "User's choice";
+    $source->{'mysql_config'} = 'Users choice';
   }
   if (!$opt->{'mysql_config'} && $ENV{DBD_MYSQL_CONFIG}) {
      $opt->{'mysql_config'} = $ENV{DBD_MYSQL_CONFIG};
@@ -71,17 +71,17 @@ my $source = {};
   }
   if ($opt->{'mysql_config'})
   {
-    if ($opt->{'mysql_config'} ne 'skip') {
     $opt->{'mysql_config'} = Win32::GetShortPathName($opt->{'mysql_config'})
         if $^O eq 'MSWin32';
     if (! defined `$opt->{'mysql_config'}`)
     {
-      die <<"MSG";
+      print <<"MSG";
 
 Specified mysql configuration script '$opt->{'mysql_config'}' doesn't exist.
-Please check path/permissions.
+Please check path/permissions. Will try to use default mysql_config
+script found through PATH.
 MSG
-    }
+      $opt->{'mysql_config'}= "mysql_config";
     }
   }
   else
@@ -226,7 +226,6 @@ my $fileName = $@ ?
   "t/mysql.mtest" : File::Spec->catfile("t", "mysql.mtest");
 (open(FILE, ">$fileName") &&
  (print FILE ("{ local " . Data::Dumper->Dump([$opt], ["opt"]) .
-	      " local " . Data::Dumper->Dump([$source], ["source"]) .
 	      "\$::test_host = \$opt->{'testhost'};\n" .
 	      "\$::test_port = \$opt->{'testport'};\n" .
 	      "\$::test_user = \$opt->{'testuser'};\n" .
@@ -238,7 +237,7 @@ my $fileName = $@ ?
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
-	      "\$::test_mysql_config = \$opt->{'mysql_config'} if \$source->{'mysql_config'} eq 'User\\'s choice';\n" .
+	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
               $dsn .
 	      "} 1;\n"))  &&
   close(FILE))  ||  die "Failed to create $fileName: $!";
@@ -249,46 +248,48 @@ if ($^O eq 'VMS') {
   $cflags = "\$(DBI_INSTARCH_DIR),$opt->{'cflags'}";
 }
 $cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
-$cflags .= " -DDBD_MYSQL_INSERT_ID_IS_GOOD" if $DBI::VERSION > 1.42;
 $cflags .= " -DDBD_MYSQL_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
-	  'INC' => $cflags,
-	  'dist'         => { 'SUFFIX'       => ".gz",
-			      'DIST_DEFAULT' => 'all tardist',
-			      'COMPRESS'     => "gzip -9f" },
-	  'clean' => { 'FILES' => '*.xsi' },
-		'realclean' => { 'FILES' => 't/mysql.mtest' },
-          'C' => ["dbdimp.c", "mysql.c", "socket.c"],
-          'XS' => {'mysql.xs' => 'mysql.c'},
-	  'OBJECT' => '$(O_FILES)',
-	  'LIBS' => $opt->{'libs'},
-	  $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
-	  'VERSION_FROM' => 'lib/DBD/mysql.pm'
-	);
+	      'INC' => $cflags,
+	      'dist'=> { 'SUFFIX'       => ".gz",
+			         'DIST_DEFAULT' => 'all tardist',
+			         'COMPRESS'     => "gzip -9f" },
+	      'clean'     => { 'FILES'   => '*.xsi' },
+	      'realclean' => { 'FILES'   => 't/mysql.mtest' },
+          'C'         => ["dbdimp.c", "mysql.c", "socket.c"],
+          'XS'        => {'mysql.xs' => 'mysql.c'},
+	      'OBJECT' => '$(O_FILES)',
+	      'LIBS'   => $opt->{'libs'},
+	      $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
+	      'VERSION_FROM' => 'lib/DBD/mysql.pm'
+);
 
 my %embedded_files=();
 
 if ($opt->{'embedded'})
 {
 
- %embedded_files = ( 'mysql.xs' => { filename  => 'mysqlEmb/mysqlEmb.xs',
-                                       replace   => { ':mysql'    => ':mysqlEmb',
-                                                      'mysql.xsi' => 'mysqlEmb.xsi'},
-                                       makedir => 'mysqlEmb'
-                                     },
-                       'lib/DBD/mysql.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb.pm',
-                                               replace  => { ':mysql'   => ':mysqlEmb',
-                                                    '=> \'mysql\'' => '=> \'mysqlEmb\''},
-                                               makedir => 'mysqlEmb/lib/DBD'
-                                             },
+ %embedded_files = ('mysql.xs' => { filename  => 'mysqlEmb/mysqlEmb.xs',
+                                     replace   => { ':mysql'    => ':mysqlEmb',
+                                                    'mysql.xsi' => 'mysqlEmb.xsi'
+                                                  },
+                                     makedir => 'mysqlEmb'
+                                  },
+                    'lib/DBD/mysql.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb.pm',
+                                            replace  => { ':mysql'       => ':mysqlEmb',
+                                                          '=> \'mysql\'' => '=> \'mysqlEmb\''
+                                                        },
+                                                        makedir        => 'mysqlEmb/lib/DBD'
+                                          },
                        'lib/DBD/mysql/GetInfo.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb/GetInfo.pm',
-                                                       replace => {':mysql'   => ':mysqlEmb',
-                                                    '\'mysql\'' => '\'mysqlEmb\''},
+                                                       replace  => {':mysql'   => ':mysqlEmb',
+                                                                    '\'mysql\'' => '\'mysqlEmb\''
+                                                                   },
                                                        makedir => 'mysqlEmb/lib/DBD/mysqlEmb'
                                                      },
                        't/mysql.dbtest' => { filename => 'mysqlEmb/t/mysqlEmb.dbtest',
-                                             makedir => 'mysqlEmb/t'
+                                             makedir  => 'mysqlEmb/t'
                                            },
                        't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
                                              makedir => 'mysqlEmb/t',
@@ -390,28 +391,30 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
     LICENSE => 'perl',
     MIN_PERL_VERSION => '5.008001',
     META_MERGE => {
-      'meta-spec' => {
-        version => 2,
-      },
+      'meta-spec' => { version => 2 },
+      dynamic_config => 0,
       resources => {
-        repository  => {
-          url  => 'git://github.com/perl5-dbi/DBD-mysql.git',
-          web  => 'https://github.com/perl5-dbi/DBD-mysql',
+        repository => {
           type => 'git',
+          url  => 'https://github.com/perl5-dbi/DBD-mysql.git',
+          web  => 'https://github.com/perl5-dbi/DBD-mysql',
         },
+        bugtracker    => { web => 'https://github.com/perl5-dbi/DBD-mysql/issues' },
         x_MailingList => 'mailto:dbi-dev@perl.org',
-        license     => 'http://dev.perl.org/licenses/',
-        homepage    => 'http://dbi.perl.org/',
-        x_IRC       => 'irc://irc.perl.org/#dbi',
+        license       => ['http://dev.perl.org/licenses/'],
+        homepage      => 'http://dbi.perl.org/',
+        x_IRC         => 'irc://irc.perl.org/#dbi',
       },
       x_contributors => [
         # a list of our awesome contributors generated from git
         # using the command:
         # git shortlog -se | cut  -f2- | sed "s/^/        '/;s/$/',/"
 
+        'Alceu Rodrigues de Freitas Junior <arfreitas@cpan.org>',
         'Alexandr Ciornii <alexchorny@gmail.com>',
         'Alexey Molchanov <alexey.molchanov@portaone.com>',
         'Amiri Barksdale at Home <amiri@roosterpirates.com>',
+        'Andrew Miller <ikari7789@yahoo.com>',
         'Aran Deltac <bluefeet@gmail.com>',
         'Bernt M. Johnsen <bernt.johnsen@oracle.com>',
         'Chase Whitener <chase.whitener@infotechfl.com>',
@@ -422,6 +425,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Dagfinn Ilmari Mannsåker <ilmari@ilmari.org>',
         'Daisuke Murase <typester@cpan.org>',
         'Damyan Ivanov <dmn@debian.org>',
+        'Dan Book <grinnz@gmail.com>',
         'Daniël van Eeden <daniel.vaneeden@booking.com>',
         'Dave Lambley <davel@isosceles.(none)>',
         'David Farrell <davidnmfarrell@gmail.com>',
@@ -439,9 +443,11 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Matthew Horsfall (alh) <WolfSage@gmail.com>',
         'Michiel Beijen <michiel.beijen@gmail.com>',
         'Mike Pomraning <mjp@pilcrow.madison.wi.us>',
+        'Mohammad S Anwar <mohammad.anwar@yahoo.com>',
         'Pali <pali@cpan.org>',
         'Patrick Galbraith <patg@patg.net>',
         'Perlover <perlover@perlover.com>',
+        'Peter Botha <peterb@striata.com>',
         'Petr Písař <ppisar@redhat.com>',
         'Reini Urban <rurban@cpanel.net>',
         'Rob Hoelz <rhoelz@inoc.com>',
@@ -456,6 +462,7 @@ if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
         'Taro Kobayashi <9re.3000@gmail.com>',
         'Tatsuhiko Miyagawa <miyagawa@bulknews.net>',
         'Tim Mullin <tim@cpanel.net>',
+        'Ville Skyttä <ville.skytta@iki.fi>',
         'Vladimir Marek <vlmarek@volny.cz>',
         'katyavoid <katyavoid@gmail.com>',
         'kmx <kmx@cpan.org>',
@@ -590,7 +597,6 @@ sub Configure {
       cflags include libs libs_r plugindir socket port version libmysqld-libs embedded
     );
     if ( grep {$_ eq $param} @mysql_config_options ) {
-        if ($opt->{'mysql_config'} and $opt->{'mysql_config'} ne 'skip') {
         my $command = $opt->{'mysql_config'} . " --$param";
         eval
         {
@@ -630,15 +636,12 @@ sub Configure {
         else {
             print "Can't find mysql_config. Use --mysql_config option to specify where mysql_config is located\n";
         }
-        }
     }
 
     # Ok, mysql_config doesn't work. We need to do our best
     # First check environment variables
-    my $normparam = uc($param);
-    $normparam =~ tr/-/_/;
-    if (defined($ENV{'DBD_MYSQL_'.$normparam})) {
-        $opt->{$param} = $ENV{'DBD_MYSQL_'.$normparam};
+    if (defined($ENV{'DBD_MYSQL_'.uc($param)})) {
+        $opt->{$param} = $ENV{'DBD_MYSQL_'.uc($param)};
         $source->{$param} = 'environment';
     }
 
@@ -892,33 +895,6 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
   $eumm_version=eval $eumm_version;
   die "EXTRA_META is deprecated" if exists $params{EXTRA_META};
   die "License not specified" if not exists $params{LICENSE};
-  if ($params{META_MERGE} and $params{META_MERGE}->{'meta-spec'}->{version} >= 2 and $eumm_version < 6.68) {
-    #EUMM 6.68 has problems with meta-spec 2
-    delete $params{META_MERGE}->{'meta-spec'};
-    if ($params{META_MERGE}->{resources}) {
-      foreach (values %{$params{META_MERGE}->{resources}}) {
-        $_ = $_->{url} || $_->{web} if ref $_ eq 'HASH';
-      }
-    }
-    if ($params{META_MERGE}->{prereqs}) {
-      $params{CONFIGURE_REQUIRES} = { %{$params{CONFIGURE_REQUIRES} || {'ExtUtils::MakeMaker' => 0}}, %{$params{META_MERGE}->{prereqs}->{configure}->{requires} || {}} };
-      $params{BUILD_REQUIRES} = { %{$params{BUILD_REQUIRES} || {'ExtUtils::MakeMaker' => 0}}, %{$params{META_MERGE}->{prereqs}->{build}->{requires} || {}} };
-      $params{TEST_REQUIRES} = { %{$params{TEST_REQUIRES} || {}}, %{$params{META_MERGE}->{prereqs}->{test}->{requires} || {}} };
-      $params{PREREQ_PM} = { %{$params{PREREQ_PM} || {}}, %{$params{META_MERGE}->{prereqs}->{runtime}->{requires} || {}} };
-      my @recommends = (
-        %{$params{META_MERGE}->{prereqs}->{configure}->{recommends} || {}},
-        %{$params{META_MERGE}->{prereqs}->{configure}->{suggests} || {}},
-        %{$params{META_MERGE}->{prereqs}->{build}->{recommends} || {}},
-        %{$params{META_MERGE}->{prereqs}->{build}->{suggests} || {}},
-        %{$params{META_MERGE}->{prereqs}->{test}->{recommends} || {}},
-        %{$params{META_MERGE}->{prereqs}->{test}->{suggests} || {}},
-        %{$params{META_MERGE}->{prereqs}->{runtime}->{recommends} || {}},
-        %{$params{META_MERGE}->{prereqs}->{runtime}->{suggests} || {}},
-      );
-      $params{META_MERGE}->{recommends} = { %{$params{META_MERGE}->{recommends} || {}}, @recommends } if @recommends;
-      delete $params{META_MERGE}->{prereqs};
-    }
-  }
   if ($params{BUILD_REQUIRES} and $eumm_version < 6.5503) {
     #EUMM 6.5502 has problems with BUILD_REQUIRES
     $params{PREREQ_PM}={ %{$params{PREREQ_PM} || {}} , %{$params{BUILD_REQUIRES}} };

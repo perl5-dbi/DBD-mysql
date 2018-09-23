@@ -10,8 +10,12 @@ my ($row, $sth, $dbh);
 my ($table, $def, $rows, $errstr, $ret_ref);
 use vars qw($table $test_dsn $test_user $test_password);
 
-$dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-    { RaiseError => 1, AutoCommit => 1});
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+    { RaiseError => 1, AutoCommit => 1});};
+
+if ($@) {
+    plan skip_all => "no database connection",
+}
 
 ok(defined $dbh, "Connected to database");
 

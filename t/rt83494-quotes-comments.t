@@ -9,11 +9,14 @@ use DBI;
 use Test::More;
 
 use vars qw($test_dsn $test_user $test_password $state);
-use lib 't', '.';
-require "lib.pl";
+require "t/lib.pl";
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 0, AutoCommit => 0 });};
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
 my %tests = (
   questionmark => " -- Does the question mark at the end confuse DBI::MySQL?\nselect ?",

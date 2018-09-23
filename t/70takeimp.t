@@ -8,18 +8,19 @@ require 'lib.pl';
 $|= 1;
 use vars qw($test_dsn $test_user $test_password);
 
-my $drh = eval { DBI->install_driver('mysql') } or do {
+my $drh;
+eval {$drh = DBI->install_driver('mysql')};
+
+if ($@) {
     plan skip_all => "Can't obtain driver handle ERROR: $@. Can't continue test";
-};
-
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });
-
-unless ($DBI::VERSION ge '1.607') {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
 }
-unless ($dbh->can('take_imp_data')) {
-    plan skip_all => "version of DBI $DBI::VERSION doesn't support this test. Can't continue test";
+
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 })};
+
+if ($@) {
+    plan skip_all => "no database connection";
 }
 plan tests => 21;
 

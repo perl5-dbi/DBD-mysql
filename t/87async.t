@@ -11,8 +11,12 @@ use vars qw($test_dsn $test_user $test_password);
 use lib 't', '.';
 require 'lib.pl';
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
+if (!$dbh) {
+    plan skip_all => "no database connection";
+}
 if ($dbh->{mysql_serverversion} < 50012) {
     plan skip_all => "Servers < 5.0.12 do not support SLEEP()";
 }
@@ -42,7 +46,7 @@ $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)');
 $end = Time::HiRes::gettimeofday();
 
 is $rows, 1;
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 
 $start = Time::HiRes::gettimeofday();
 $rows = $dbh->do('INSERT INTO async_test VALUES (SLEEP(2), 0, 0)', { async => 1 });
@@ -52,11 +56,11 @@ $end = Time::HiRes::gettimeofday();
 ok $rows;
 is $rows, '0E0';
 
-cmp_ok(($end - $start), '<', 2);
+ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
 ok !defined($dbh->mysql_async_ready);
@@ -76,11 +80,11 @@ $end = Time::HiRes::gettimeofday();
 ok $rows;
 is $rows, '0E0';
 
-cmp_ok(($end - $start), '<', 2);
+ok(($end - $start) < 2);
 
 sleep 1 until $dbh->mysql_async_ready;
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 
 $rows = $dbh->mysql_async_result;
 
@@ -97,7 +101,7 @@ ok !defined($sth->mysql_async_ready);
 $start = Time::HiRes::gettimeofday();
 ok $sth->execute;
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 
 $sth = $dbh->prepare('SELECT SLEEP(2)', { async => 1 });
 ok !defined($sth->mysql_async_ready);
@@ -105,7 +109,7 @@ $start = Time::HiRes::gettimeofday();
 ok $sth->execute;
 ok defined($sth->mysql_async_ready);
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '<', 2);
+ok(($end - $start) < 2);
 
 sleep 1 until $sth->mysql_async_ready;
 
@@ -113,7 +117,7 @@ my $row = $sth->fetch;
 $end = Time::HiRes::gettimeofday();
 ok $row;
 is $row->[0], 0;
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 
 $rows = $dbh->do('INSERT INTO async_test VALUES(SLEEP(2), ?, ?', { async => 1 }, 1, 2);
 
@@ -129,13 +133,13 @@ $sth = $dbh->prepare('INSERT INTO async_test VALUES(SLEEP(2), ?, ?)', { async =>
 $start = Time::HiRes::gettimeofday();
 $rows = $sth->execute(1, 2);
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '<', 2);
+ok(($end - $start) < 2);
 ok $rows;
 is $rows, '0E0';
 
 $rows = $sth->mysql_async_result;
 $end = Time::HiRes::gettimeofday();
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 is $rows, 1;
 
 ( $a, $b, $c ) = $dbh->selectrow_array('SELECT * FROM async_test');
@@ -152,7 +156,7 @@ $start = Time::HiRes::gettimeofday();
 $dbh->selectrow_array('SELECT SLEEP(2)', { async => 1 });
 $end = Time::HiRes::gettimeofday();
 
-cmp_ok(($end - $start), '>=', 1.9);
+ok(($end - $start) >= 2);
 ok !defined($dbh->mysql_async_result);
 ok !defined($dbh->mysql_async_ready);
 

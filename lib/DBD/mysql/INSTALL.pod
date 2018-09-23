@@ -39,9 +39,8 @@ that doesn't help, you should check the section on L</SUPPORT>.
 
 Preferably a version of Perl, that comes preconfigured with
 your system. For example, all Linux and FreeBSD distributions
-come with Perl. For Windows, using ActivePerl or Strawberry Perl
-is recommended, see L<http://www.activestate.com> and
-L<http://www.strawberryperl.com> for details.
+come with Perl. For Windows, use L<ActivePerl|https://www.activestate.com/activeperl> 
+or L<Strawberry Perl|http://www.strawberryperl.com>.
 
 =item MySQL
 
@@ -606,7 +605,7 @@ test against a MySQL server on a remote host.
 =head3 Build MySQL clients under Cygwin:
 
 download the MySQL LINUX source from
-L<http://www.mysql.com/downloads/index.html>,
+L<https://www.mysql.com/downloads>,
 unpack mysql-<version>.tar.gz into some tmp location and from this directory
 run configure:
 

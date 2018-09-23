@@ -10,10 +10,15 @@ require 'lib.pl';
 sub VerifyBit ($) {
 }
 
+my $dbh;
 my $charset= 'DEFAULT CHARSET=utf8';
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1});
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1}) or ServerError() ;};
+
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
 if ($dbh->{mysql_serverversion} < 50008) {
     plan skip_all => "Servers < 5.0.8 do not support b'' syntax";

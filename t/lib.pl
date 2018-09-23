@@ -76,7 +76,6 @@ sub DbiTestConnect {
     });
 }
 
-
 #
 #   Print a DBI error message
 #

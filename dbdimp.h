@@ -22,41 +22,6 @@
 #include <mysqld_error.h>  /* Comes MySQL */
 
 #include <errmsg.h> /* Comes with MySQL-devel */
-#include <stdint.h> /* For uint32_t */
-
-#ifndef PERL_STATIC_INLINE
-#define PERL_STATIC_INLINE static
-#endif
-
-/* PERL_UNUSED_ARG does not exist prior to perl 5.9.3 */
-#ifndef PERL_UNUSED_ARG
-#  if defined(lint) && defined(S_SPLINT_S) /* www.splint.org */
-#    include <note.h>
-#    define PERL_UNUSED_ARG(x) NOTE(ARGUNUSED(x))
-#  else
-#    define PERL_UNUSED_ARG(x) ((void)x)
-#  endif
-#endif
-
-#ifndef SvPV_nomg_nolen
-#define SvPV_nomg_nolen(sv) ((SvFLAGS(sv) & (SVf_POK)) == SVf_POK ? SvPVX(sv) : sv_2pv_flags(sv, &PL_na, 0))
-#endif
-
-#ifndef SvTRUE_nomg
-#define SvTRUE_nomg SvTRUE /* SvTRUE does not process get magic for scalars with already cached values, so we are safe */
-#endif
-
-#ifndef SvIV_nomg
-#define SvIV_nomg SvIV /* Sorry, there is no way to handle integer magic scalars properly prior to perl 5.9.1 */
-#endif
-
-#ifndef SvNV_nomg
-#define SvNV_nomg SvNV /* Sorry, there is no way to handle numeric magic scalars properly prior to perl 5.13.2 */
-#endif
-
-#ifndef sv_cmp_flags
-#define sv_cmp_flags(a,b,c) sv_cmp(a,b) /* Sorry, there is no way to compare magic scalars properly prior to perl 5.13.6 */
-#endif
 
 
 /*
@@ -134,7 +99,7 @@
  */
 
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT automatically enforce SSL mode */
-PERL_STATIC_INLINE bool ssl_verify_also_enforce_ssl(void) {
+static inline bool ssl_verify_also_enforce_ssl(void) {
 #ifdef MARIADB_BASE_VERSION
 	my_ulonglong version = mysql_get_client_version();
 	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106);
@@ -144,7 +109,7 @@ PERL_STATIC_INLINE bool ssl_verify_also_enforce_ssl(void) {
 }
 
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT is not vulnerable (CVE-2016-2047) and can be used */
-PERL_STATIC_INLINE bool ssl_verify_usable(void) {
+static inline bool ssl_verify_usable(void) {
 	my_ulonglong version = mysql_get_client_version();
 #ifdef MARIADB_BASE_VERSION
 	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
@@ -181,7 +146,7 @@ enum errMsgs {
     TX_ERR_AUTOCOMMIT,
     TX_ERR_COMMIT,
     TX_ERR_ROLLBACK,
-    JW_ERR_INVALID_ATTRIBUTE
+    SL_ERR_NOTAVAILBLE,
 };
 
 
@@ -275,45 +240,39 @@ struct imp_dbh_st {
  *  parameters.
  */
 typedef struct imp_sth_ph_st {
-    char* value;
-    STRLEN len;
+    SV* value;
     int type;
-    bool utf8;
 } imp_sth_ph_t;
-
-/*
- *  Storage for numeric value in prepared statement
- */
-typedef union numeric_val_u {
-    unsigned char tval;
-    unsigned short sval;
-    uint32_t lval;
-    my_ulonglong llval;
-    float fval;
-    double dval;
-} numeric_val_t;
 
 /*
  *  The bind_param method internally uses this structure for storing
  *  parameters.
  */
 typedef struct imp_sth_phb_st {
-    numeric_val_t   numeric_val;
+    union
+    {
+      IV     lval;
+      double dval;
+    } numeric_val;
     unsigned long   length;
-    my_bool         is_null;
+    char            is_null;
 } imp_sth_phb_t;
 
 /*
  *  The dbd_describe uses this structure for storing
  *  fields meta info.
+ *  Added ddata, ldata, lldata for accommodate
+ *  being able to use different data types
+ *  12.02.20004 PMG
  */
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
-    my_bool        is_null;
+    bool           is_null;
     bool           error;
     char           *data;
     int            charsetnr;
-    numeric_val_t  numeric_val;
+    double         ddata;
+    IV             ldata;
 #if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
     unsigned int   flags;
 #endif
@@ -322,7 +281,7 @@ typedef struct imp_sth_fbh_st {
 
 typedef struct imp_sth_fbind_st {
    unsigned long   * length;
-   my_bool         * is_null;
+   char            * is_null;
 } imp_sth_fbind_t;
 
 
@@ -338,8 +297,6 @@ typedef struct imp_sth_fbind_st {
  */
 struct imp_sth_st {
     dbih_stc_t com;       /* MUST be first element in structure     */
-    char *statement;
-    STRLEN statement_len;
 
 #if (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
     MYSQL_STMT       *stmt;
@@ -367,7 +324,6 @@ struct imp_sth_st {
     int   use_mysql_use_result;  /*  TRUE if execute should use     */
                           /* mysql_use_result rather than           */
                           /* mysql_store_result */
-
     bool is_async;
 };
 
@@ -385,7 +341,7 @@ struct imp_sth_st {
 #define dbd_db_destroy		mysql_db_destroy
 #define dbd_db_STORE_attrib	mysql_db_STORE_attrib
 #define dbd_db_FETCH_attrib	mysql_db_FETCH_attrib
-#define dbd_st_prepare_sv	mysql_st_prepare_sv
+#define dbd_st_prepare		mysql_st_prepare
 #define dbd_st_execute		mysql_st_execute
 #define dbd_st_fetch		mysql_st_fetch
 #define dbd_st_more_results     mysql_st_next_results
@@ -403,10 +359,7 @@ struct imp_sth_st {
 #define do_error		mysql_dr_error
 #define dbd_db_type_info_all    mysql_db_type_info_all
 #define dbd_db_quote            mysql_db_quote
-
-#ifdef DBD_MYSQL_INSERT_ID_IS_GOOD /* prototype was broken in some versions of dbi */
 #define dbd_db_last_insert_id   mysql_db_last_insert_id
-#endif
 
 #include <dbd_xsh.h>
 void    do_error (SV* h, int rc, const char *what, const char *sqlstate);
@@ -415,8 +368,7 @@ SV	*dbd_db_fieldlist (MYSQL_RES* res);
 
 void    dbd_preparse (imp_sth_t *imp_sth, SV *statement);
 my_ulonglong mysql_st_internal_execute(SV *,
-                                       char *,
-                                       STRLEN,
+                                       SV *,
                                        SV *,
                                        int,
                                        imp_sth_ph_t *,
@@ -459,17 +411,4 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
 
-void get_param(pTHX_ SV *param, int field, bool enable_utf8, bool is_binary, char **out_buf, STRLEN *out_len);
-void get_statement(pTHX_ SV *statement, bool enable_utf8, char **out_buf, STRLEN *out_len);
-
 int mysql_socket_ready(my_socket fd);
-
-#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
-PERL_STATIC_INLINE bool charsetnr_is_utf8(unsigned int id)
-{
-  /* See mysql source code for all utf8 ids: grep -E '^(CHARSET_INFO|struct charset_info_st).*utf8' -A 2 -r strings | grep number | sed -E 's/^.*-  *([^,]+),.*$/\1/' | sort -n */
-  /* Some utf8 ids (selected at mysql compile time) can be retrieved by: SELECT ID FROM INFORMATION_SCHEMA.COLLATIONS WHERE CHARACTER_SET_NAME LIKE 'utf8%' ORDER BY ID */
-  return (id == 33 || id == 45 || id == 46 || id == 83 || (id >= 192 && id <= 215) || (id >= 223 && id <= 247) || (id >= 254 && id <= 277) || (id >= 576 && id <= 578)
-      || (id >= 608 && id <= 610) || id == 1057 || (id >= 1069 && id <= 1070) || id == 1107 || id == 1216 || id == 1283 || id == 1248 || id == 1270);
-}
-#endif

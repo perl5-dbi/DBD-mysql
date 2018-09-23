@@ -20,3 +20,4 @@ ok(defined $dbh, 'DBD::mysql supports mysql_ssl_optional=1 and connect via plain
 
 $dbh = DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 0, mysql_ssl => 1, mysql_ssl_optional => 1, mysql_ssl_ca_file => "" });
 ok(defined $dbh, 'DBD::mysql supports mysql_ssl_optional=1 and connect via plain text protocol when SSL is not supported by server even with mysql_ssl_ca_file') or diag('Error code: ' . ($DBI::err || 'none') . "\n" . 'Error message: ' . ($DBI::errstr || 'unknown'));
+

@@ -8,9 +8,13 @@ require 'lib.pl';
 
 use vars qw($test_dsn $test_user $test_password);
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-  { RaiseError => 1, AutoCommit => 1});
+my $dbh;
+eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
+  { RaiseError => 1, AutoCommit => 1})};
 
+if ($@) {
+    plan skip_all => "no database connection";
+}
 plan tests => 9;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t32");

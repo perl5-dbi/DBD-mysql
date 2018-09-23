@@ -5,12 +5,13 @@ use Test::More;
 use DBI;
 
 use vars qw($test_dsn $test_user $test_password);
-use lib 't', '.';
-require "lib.pl";
+require "t/lib.pl";
 
-my $dbh1 = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 });
+my $dbh1 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
+plan skip_all => "no database connection" if $@ or not $dbh1;
 
-my $dbh2 = DbiTestConnect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 });
+my $dbh2 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
+plan skip_all => "no database connection" if $@ or not $dbh2;
 
 my @ilwtenabled = $dbh1->selectrow_array("SHOW VARIABLES LIKE 'innodb_lock_wait_timeout'");
 if (!@ilwtenabled) {
@@ -18,7 +19,7 @@ if (!@ilwtenabled) {
 }
 
 my $have_innodb = 0;
-if (!MinimumVersion($dbh1, '4.1.2')) {
+if (!MinimumVersion($dbh1, '5.6')) {
   my $dummy;
   ($dummy,$have_innodb)=
     $dbh1->selectrow_array("SHOW VARIABLES LIKE 'have_innodb'")

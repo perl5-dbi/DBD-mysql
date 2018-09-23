@@ -75,8 +75,12 @@ my %sth_args = (
     bind_columns      => [\(my $scalar3)],
 );
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
-                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 0, PrintError => 0, AutoCommit => 0 });};
+if (!$dbh) {
+    plan skip_all => "no database connection";
+}
 plan tests =>
   2 * @db_safe_methods     +
   4 * @db_unsafe_methods   +

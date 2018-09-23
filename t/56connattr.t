@@ -11,13 +11,18 @@ require 'lib.pl';
 
 use vars qw($test_dsn $test_user $test_password $table);
 
-my $dbh = DbiTestConnect($test_dsn, $test_user, $test_password,
+my $dbh;
+eval { $dbh= DBI->connect($test_dsn, $test_user, $test_password,
                       { RaiseError => 1,
                         PrintError => 0,
                         AutoCommit => 0,
                         mysql_conn_attrs => { foo => 'bar' },
                         }
                         );
+     };
+if ($@) {
+    plan skip_all => "no database connection";
+}
 
 my @pfenabled = $dbh->selectrow_array("show variables like 'performance_schema'");
 if (!@pfenabled) {

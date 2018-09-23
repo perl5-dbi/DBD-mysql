@@ -10,7 +10,12 @@ use lib 't', '.';
 require 'lib.pl';
 
 # remove database from DSN
-$test_dsn =~ s/^DBI:mysql:([^:;]+)([:;]?)/DBI:mysql:$2/;
+$test_dsn =~ s/^DBI:mysql:([^:]+)(:?)/DBI:mysql:$2/;
+
+# This should result in a cached sha2 password entry
+# The result is that subsequent connections don't need
+# TLS or the RSA pubkey.
+$test_dsn .= ';mysql_ssl=1;mysql_get_server_pubkey=1';
 
 my $dbh;
 eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
@@ -22,11 +27,4 @@ if ($@) {
 plan tests => 2;
 
 ok defined $dbh, "Connected to database";
-eval{ $dbh->do("CREATE DATABASE IF NOT EXISTS $test_db") };
-if($@) {
-    diag "No permission to '$test_db' database on '$test_dsn' for user '$test_user'";
-} else {
-    diag "Database '$test_db' accessible";
-}
-
 ok $dbh->disconnect();
