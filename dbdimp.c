@@ -5665,6 +5665,22 @@ int mysql_db_async_ready(SV* h)
   }
 }
 
+/* 
+ * this funtion tries to parse numbers from the passed string value 
+ * for emulated prepared statements being bound
+ *   * finds the beginning and end address of the string
+ *   * loops through the string
+ *   * skips past any spaces
+ *   * if it sees a -, ., +, or e, sets a flag
+ *      * if all subsequent values are numbers, is a digit
+ *      * otherwise, a string
+ *   * if any character that's not a digit is found, it's a string
+ *   * if only numbers are found, it's a number
+ *   * `end` is set to the address of the last member in the iteration
+ *   and used in knowing where the value is when building the SQL
+ *   statement
+ *   
+*/
 static int parse_number(char *string, STRLEN len, char **end)
 {
     int seen_neg;
@@ -5672,7 +5688,7 @@ static int parse_number(char *string, STRLEN len, char **end)
     int seen_e;
     int seen_plus;
     int seen_digit;
-    char *cp;
+    char *cp,*str_end;
 
     seen_neg= seen_dec= seen_e= seen_plus= seen_digit= 0;
 
@@ -5681,6 +5697,7 @@ static int parse_number(char *string, STRLEN len, char **end)
     }
 
     cp= string;
+    str_end= string + len-1; 
 
     /* Skip leading whitespace */
     while (*cp && isspace(*cp))
@@ -5688,7 +5705,7 @@ static int parse_number(char *string, STRLEN len, char **end)
 
     for ( ; *cp; cp++)
     {
-      if ('-' == *cp)
+      if (*cp == '-')
       {
         if (seen_neg >= 2)
         {
@@ -5699,27 +5716,35 @@ static int parse_number(char *string, STRLEN len, char **end)
         }
         seen_neg += 1;
       }
-      else if ('.' == *cp)
+      else if (*cp == '.')
       {
-        if (seen_dec)
+        if (seen_dec || cp == str_end)
         {
           /* second '.' */
           break;
         }
         seen_dec= 1;
       }
-      else if ('e' == *cp)
+      else if (*cp == 'e')
       {
-        if (seen_e)
+        /* 
+         * this is the case where the value for example, e2,
+         * which should be a varchar 
+         */
+        if (cp == str_end -1)
+        {
+            break;
+        }
+        if (seen_e || cp == str_end)
         {
           /* second 'e' */
           break;
         }
         seen_e= 1;
       }
-      else if ('+' == *cp)
+      else if (*cp == '+')
       {
-        if (seen_plus)
+        if (seen_plus || cp == str_end)
         {
           /* second '+' */
           break;
@@ -5732,6 +5757,7 @@ static int parse_number(char *string, STRLEN len, char **end)
         /* seen_digit= 1; */
         break;
       }
+      /*printf("else: cp is a digit: %d\n", *cp); */
     }
 
     *end= cp;
