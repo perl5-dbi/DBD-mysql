@@ -41,6 +41,7 @@ DBI/DBD community (4.049)
 DBI/DBD community (4.048)
 * Fix corrupted META.json so cpan installations work as expected.
    https://github.com/perl5-dbi/DBD-mysql/issues/263
+* Fix issue 251: unable to insert "." with bind_type_guessing on
 
 2018-09-08 Daniël van Eeden, Patrick Galbraith, DBI/DBD community (4.047)
 * Add options needed for public key based security.
