@@ -171,8 +171,11 @@ before_install:
         5.5.?)            SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
         5.5.[1234]*)      SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
         5.5.5[012345]*)   SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux2.6-x86_64.tar.gz ;;
+        5.7.19)           SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
+        5.7.2*)           SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
         5.[567].*)        SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.5-x86_64.tar.gz ;;
-        8.0.*)            SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
+        8.0.[1234])       SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.gz ;;
+        8.0.??)           SANDBOX_URL=https://dev.mysql.com/get/mysql-$VERSION-linux-glibc2.12-x86_64.tar.xz ;;
         *)                echo "Unsupported MySQL version '$VERSION'"; exit 1 ;;
       esac ;
       SANDBOX_CACHE_FILE="$HOME/cache/$(basename "$SANDBOX_URL")" ;
