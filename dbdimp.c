@@ -2036,7 +2036,11 @@ MYSQL *mysql_dr_connect(
     #endif
 
 	    if (ssl_verify) {
+    #ifdef HAVE_SSL_VERIFY
 	      if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
+    #else
+	      if (!ssl_verify_usable() && ssl_enforce) {
+    #endif
 	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
 	        return NULL;
 	      }
