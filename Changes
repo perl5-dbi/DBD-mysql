@@ -1,3 +1,11 @@
+2018-10-25 Daniël van Eeden, Patrick Galbraith,
+DBI/DBD community (4.049)
+* Fix MariaDB issue #262 
+* Various fixes for travis builds
+* Fix to issue 187: Don't declare enum_type as static
+* Fix regex for removing database from DSN again
+* Allow to call $sth->mysql_async_ready and $sth->mysql_async_result more times without discarding result state 201
+
 2018-09-15 Daniël van Eeden, Patrick Galbraith, Michiel Beijen,
 DBI/DBD community (4.048)
 * Fix corrupted META.json so cpan installations work as expected.
