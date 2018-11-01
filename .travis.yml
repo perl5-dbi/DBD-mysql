@@ -214,7 +214,7 @@ before_install:
 
 install:
   - perlbrew install-cpanm --force --notest
-  - cpanm --quiet --notest --skip-satisfied DBI Devel::CheckLib
+  - cpanm --quiet --notest --skip-satisfied DBI Devel::CheckLib Test::Deep
   - cpanm --quiet --notest --skip-satisfied --installdeps --with-configure --with-develop --with-recommends --with-suggests .
   - if [ -n "$DB" ]; then
       mkdir -p $HOME/sandbox/binary || exit 1 ;
