@@ -67,6 +67,11 @@
 #define my_bool bool
 #endif
 
+/* MYSQL_TYPE_BIT is not available on MySQL 4.1 */
+#ifndef MYSQL_TYPE_BIT
+#define MYSQL_TYPE_BIT 16
+#endif
+
 #define true 1
 #define false 0
 
