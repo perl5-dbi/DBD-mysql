@@ -17,6 +17,10 @@ if ($@) {
         "no database connection";
 }
 
+if ($dbh->{mysql_serverversion} < 50000) {
+    plan skip_all => "You must have MySQL version 5.0.0 and greater for this test to run";
+}
+
 my @gtidtrackenabled = $dbh->selectrow_array('select @@global.session_track_gtids');
 if (!@gtidtrackenabled) {
   plan skip_all => 'GTID tracking not available';
