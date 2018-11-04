@@ -1908,7 +1908,7 @@ MYSQL *mysql_dr_connect(
         }
 
 #ifndef MARIADB_BASE_VERSION
-#if (MYSQL_VERSION_ID >= 50723)
+#ifdef MYSQL_OPT_GET_SERVER_PUBLIC_KEY
         if ((svp = hv_fetch(hv, "mysql_get_server_pubkey", 23, FALSE)) && *svp && SvTRUE(*svp)) {
           my_bool server_get_pubkey = 1;
           mysql_options(sock, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, &server_get_pubkey);
