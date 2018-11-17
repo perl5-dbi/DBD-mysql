@@ -218,9 +218,9 @@ install:
   - cpanm --quiet --notest --skip-satisfied --installdeps --with-configure --with-develop --with-recommends --with-suggests .
   - if [ -n "$DB" ]; then
       mkdir -p $HOME/sandbox/binary || exit 1 ;
-      wget https://github.com/datacharmer/dbdeployer/releases/download/1.13.0/dbdeployer-1.13.0.linux.tar.gz || exit 1 ;
-      tar zxf dbdeployer-1.13.0.linux.tar.gz || exit 1 ;
-      mv dbdeployer-1.13.0.linux dbdeployer || exit 1 ;
+      wget https://github.com/datacharmer/dbdeployer/releases/download/1.14.0/dbdeployer-1.14.0.linux.tar.gz || exit 1 ;
+      tar zxf dbdeployer-1.14.0.linux.tar.gz || exit 1 ;
+      mv dbdeployer-1.14.0.linux dbdeployer || exit 1 ;
       ./dbdeployer unpack "$SANDBOX_FILE" || exit 1 ;
       ./dbdeployer deploy single "${VERSION%-*}" --port 3310 --sandbox-directory msb --native-auth-plugin || exit 1 ;
       mysqladmin -u root shutdown || exit 1 ;
