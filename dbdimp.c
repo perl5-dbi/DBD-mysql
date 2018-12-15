@@ -4440,7 +4440,7 @@ process:
         case MYSQL_TYPE_DOUBLE:
           if (!(fields[i].flags & ZEROFILL_FLAG))
           {
-            /* Coerce to dobule and set scalar as NV */
+            /* Coerce to double and set scalar as NV */
             (void) SvNV(sv);
             SvNOK_only(sv);
           }
