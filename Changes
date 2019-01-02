@@ -1,4 +1,15 @@
 2018-10-25 Daniël van Eeden, Patrick Galbraith,
+DBI/DBD community (4.050)
+* Fix SQL syntax for statements that have "...limit = ?" #288
+* Make tests pass on MySQL 4.1 #286
+* Travis-CI: Install Test::Deep #281
+* Fix undefined ssl_verify_set on MySQL 5.0 and before #283
+* Fix compilation on MySQL 4.1 #283
+* Move Travis to dbdeployer (#284) #284
+* Fix compiling on 8.0.0 and 8.0.1 #285
+* Fix compatibility with MariaDB 10.3 #291
+
+2018-10-25 Daniël van Eeden, Patrick Galbraith,
 DBI/DBD community (4.049)
 * Fix MariaDB issue #262 
 * Various fixes for travis builds
