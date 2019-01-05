@@ -617,10 +617,11 @@ sub Configure {
                 $str =~ s/\-L\"(.*?)\"/-L$1/sg;
 
                 # Separate libs from ldflags
+                # Ignore static libs like libgnutls.a as reported by MariaDB's mysql_config
                 if ($param eq 'libs') {
                     my (@libs, @ldflags);
                     for (split ' ', $str) {
-                        if (/^-[Ll]/ || /^[^\-]/) { push @libs, $_ }
+                        if (/^-[Ll]/ || /^[^\-]/) { push @libs, $_ unless /\.a$/ }
                         else          { push @ldflags, $_ }
                     }
                     $str = "@libs";
@@ -628,6 +629,13 @@ sub Configure {
                     $source->{ldflags} = "mysql_config";
                 }
 
+                if ($command =~ /10.3/) {
+                    # MariaDB's mysql_config/mariadb_config reports the compile time
+                    # locations, not the install location. This results in issues for
+                    # dbdeployer etc. where these are not the same.
+                    my $installdir = substr(dirname($opt->{'mysql_config'}), 1, -4);
+                    $str =~ s#usr/local/mysql#$installdir#g;
+                }
                 $opt->{$param} = $str;
                 $source->{$param} = "mysql_config";
                 return;
