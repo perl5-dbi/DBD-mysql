@@ -125,8 +125,8 @@ matrix:
 #    - perl: "5.20"
 #      env: DB=MariaDB VERSION=10.2.5
 # mariadb_config bug: https://jira.mariadb.org/browse/MDEV-15820
-#    - perl: "5.20"
-#      env: DB=MariaDB VERSION=10.3.9
+    - perl: "5.20"
+      env: DB=MariaDB VERSION=10.3.11
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
     - perl: "5.20"
