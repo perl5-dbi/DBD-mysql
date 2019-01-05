@@ -17,6 +17,10 @@ if ($@) {
         "no database connection";
 }
 
+if ($dbh->{mysql_serverversion} > 100000) {
+    plan skip_all => "GTID tracking is not available on MariaDB";
+}
+
 if ($dbh->{mysql_serverversion} < 50000) {
     plan skip_all => "You must have MySQL version 5.0.0 and greater for this test to run";
 }
