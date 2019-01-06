@@ -4055,7 +4055,12 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         break;
 
       default:
+#if MYSQL_VERSION_ID > 100300
+        // https://jira.mariadb.org/browse/MDEV-18143
+        buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 2;
+#else
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
+#endif
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
       }
