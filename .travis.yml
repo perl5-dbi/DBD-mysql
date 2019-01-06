@@ -261,7 +261,17 @@ before_script:
         export DBD_MYSQL_CONFIG="skip" ;
       fi ;
     elif [ -n "$DB" ]; then
-      export DBD_MYSQL_CONFIG="$SANDBOX_HOME/msb/my sql_config" ;
+      if [ "$DB" = "MariaDB" ]; then
+        mariadb_config="$SANDBOX_HOME/binary/${VERSION}/bin/mariadb_config" ;
+        if [ -e $mariadb_config ]; then
+          export DBD_MYSQL_CONFIG=$mariadb_config;
+        else
+          echo "$mariadb_config does not exist, falling back to my sql_config" ;
+          export DBD_MYSQL_CONFIG="$SANDBOX_HOME/msb/my sql_config" ;
+        fi
+      else
+        export DBD_MYSQL_CONFIG="$SANDBOX_HOME/msb/my sql_config" ;
+      fi
     else
       export DBD_MYSQL_FORCE_EMBEDDED=1 ;
     fi
