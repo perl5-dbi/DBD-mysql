@@ -272,6 +272,9 @@ do(dbh, statement, attr=Nullsv, ...)
   MYSQL_BIND      *bind= NULL;
 #endif
     ASYNC_CHECK_XS(dbh);
+    if ((!DBIc_has(imp_dbh, DBIcf_ACTIVE)) &&
+        (!mysql_db_reconnect(dbh)))
+      XSRETURN_UNDEF;
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     while (mysql_next_result(imp_dbh->pmysql)==0)
     {
