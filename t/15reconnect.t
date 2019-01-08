@@ -16,7 +16,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
   plan skip_all => "no database connection";
 }
-plan tests => 8 * 2;
+plan tests => 13 * 2;
 
 for my $mysql_server_prepare (0, 1) {
 $dbh= DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
@@ -38,5 +38,13 @@ ok($dbh->do("SELECT 1"), "implicitly reconnecting handle with 'do'");
 
 ok($dbh->{Active}, "checking for reactivated handle");
 
-$dbh->disconnect();
+ok(!($dbh->{AutoCommit} = 0), "disabling autocommit");
+
+ok($dbh->disconnect(), "disconnecting active handle");
+
+ok(!$dbh->{Active}, "checking for inactive handle");
+
+ok(!$dbh->do("SELECT 1"), "implicitly reconnecting handle with 'do'");
+
+ok(!$dbh->{Active}, "checking for reactivated handle");
 }

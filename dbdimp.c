@@ -5318,6 +5318,16 @@ int mysql_db_reconnect(SV* h)
   else
     imp_dbh= (imp_dbh_t*) imp_xxh;
 
+  /* reconnect a closed connection, used in do() for implicit reconnect */
+  if (!DBIc_has(imp_dbh, DBIcf_ACTIVE) && DBIc_has(imp_dbh, DBIcf_AutoCommit)) {
+    if (my_login(aTHX_ h, imp_dbh)) {
+      DBIc_ACTIVE_on(imp_dbh);
+      DBIc_set(imp_dbh, DBIcf_AutoCommit, TRUE);
+      return TRUE;
+    }
+    return FALSE;
+  }
+
   if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR &&
           mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST)
     /* Other error */
