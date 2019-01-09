@@ -128,6 +128,8 @@ matrix:
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.3.11
     - perl: "5.20"
+      env: DB=MariaDB VERSION=10.4.1
+    - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.0.2

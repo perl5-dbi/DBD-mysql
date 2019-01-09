@@ -629,7 +629,7 @@ sub Configure {
                     $source->{ldflags} = "mysql_config";
                 }
 
-                if ($command =~ /10.3/) {
+                if ($command =~ /10.[34]/) {
                     # MariaDB's mysql_config/mariadb_config reports the compile time
                     # locations, not the install location. This results in issues for
                     # dbdeployer etc. where these are not the same.
