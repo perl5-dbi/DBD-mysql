@@ -5491,6 +5491,9 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 {
   dTHX;
   SV *result;
+#if (MYSQL_VERSION_ID < 50704) || defined(MARIADB_BASE_VERSION)
+  unsigned long rc;
+#endif
 
   if (SvGMAGICAL(str))
     mg_get(str);
@@ -5529,8 +5532,16 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
     sptr= SvPVX(result);
 
     *sptr++ = '\'';
-    sptr+= mysql_real_escape_string(imp_dbh->pmysql, sptr,
+#if (MYSQL_VERSION_ID >= 50704) && !defined(MARIADB_BASE_VERSION)
+    sptr+= mysql_real_escape_string_quote(imp_dbh->pmysql, sptr,
+                                     ptr, len, '\'');
+#else
+    rc = mysql_real_escape_string(imp_dbh->pmysql, sptr,
                                      ptr, len);
+    if (rc == -1)
+      croak("quote operation failed");
+    sptr+= rc;
+#endif
     *sptr++= '\'';
     SvPOK_on(result);
     SvCUR_set(result, sptr - SvPVX(result));
