@@ -5545,7 +5545,7 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
     *sptr++= '\'';
     SvPOK_on(result);
     SvCUR_set(result, sptr - SvPVX(result));
-    /* Never hurts NUL terminating a Per string */
+    /* Never hurts NUL terminating a Perl string */
     *sptr++= '\0';
   }
   return result;
