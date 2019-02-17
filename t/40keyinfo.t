@@ -15,7 +15,6 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
-plan tests => 7;
 
 $dbh->{mysql_server_prepare}= 0;
 
@@ -42,6 +41,16 @@ is_deeply($key_info, $expect, "Check primary_key_info results");
 is_deeply([ $dbh->primary_key(undef, undef, 'dbd_mysql_keyinfo') ], [ 'a', 'b' ],
           "Check primary_key results");
 
+$sth= $dbh->statistics_info(undef, undef, 'dbd_mysql_keyinfo', 0, 0);
+my $stats_info = $sth->fetchall_arrayref;
+my $n_unique = grep $_->[3], @$stats_info;
+$sth= $dbh->statistics_info(undef, undef, 'dbd_mysql_keyinfo', 1, 0);
+$stats_info = $sth->fetchall_arrayref;
+my $n_unique2 = grep $_->[3], @$stats_info;
+isnt($n_unique2, $n_unique, "Check statistics_info unique_only flag has an effect");
+
 ok($dbh->do("DROP TABLE dbd_mysql_keyinfo"), "Dropped table");
 
 $dbh->disconnect();
+
+done_testing;

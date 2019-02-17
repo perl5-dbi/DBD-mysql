@@ -755,6 +755,11 @@ EOF
         push @bind, $table;
     }
 
+    if ($unique_only) {
+        push @where, 'NON_UNIQUE = ?';
+        push @bind, 0;
+    }
+
     if (@where) {
         $sql .= ' WHERE ';
         $sql .= join ' AND ', @where;
