@@ -1062,16 +1062,12 @@ Example DSN:
 
 =item mysql_client_found_rows
 
-Enables (TRUE value) or disables (FALSE value) the flag CLIENT_FOUND_ROWS
-while connecting to the MySQL server. This has a somewhat funny effect:
-Without mysql_client_found_rows, if you perform a query like
+If TRUE (Default), sets the CLIENT_FOUND_ROWS flag when connecting to MySQL.
+This causes UPDATE statements to return the number of rows *matched*, not
+the number of rows actually changed.
 
-  UPDATE $table SET id = 1 WHERE id = 1;
-
-then the MySQL engine will always return 0, because no rows have changed.
-With mysql_client_found_rows however, it will return the number of rows
-that have an id 1, as some people are expecting. (At least for compatibility
-to other engines.)
+If you want the number of rows changed in response to an UPDATE statement,
+specify "mysql_client_found_rows=0" in the DSN.
 
 =item mysql_compression
 
