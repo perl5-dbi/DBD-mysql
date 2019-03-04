@@ -167,6 +167,7 @@ addons:
       - libmysqld-dev
       - libwrap0-dev
       - libstdc++5
+      - zlib1g-dev
 
 before_install:
   - if [ -z "$PERLBREW_PERL" ]; then eval $(curl https://travis-perl.github.io/init) --perl; fi
