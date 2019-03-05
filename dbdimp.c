@@ -3993,7 +3993,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
     {
       /* Out of memory */
       do_error(sth, JW_ERR_SEQUENCE,
-               "Out of memory in dbd_sescribe()",NULL);
+               "Out of memory in dbd_describe()",NULL);
       return 0;
     }
 
