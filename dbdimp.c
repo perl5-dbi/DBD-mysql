@@ -4448,8 +4448,7 @@ process:
           if (!(fields[i].flags & ZEROFILL_FLAG))
           {
             /* Coerce to double and set scalar as NV */
-            (void) SvNV(sv);
-            SvNOK_only(sv);
+            sv_setnv(sv, SvNV(sv));
           }
           break;
 
@@ -4460,13 +4459,11 @@ process:
             /* Coerce to integer and set scalar as UV resp. IV */
             if (fields[i].flags & UNSIGNED_FLAG)
             {
-              (void) SvUV(sv);
-              SvIOK_only_UV(sv);
+              sv_setuv(sv, SvUV(sv));
             }
             else
             {
-              (void) SvIV(sv);
-              SvIOK_only(sv);
+              sv_setiv(sv, SvIV(sv));
             }
           }
           break;
