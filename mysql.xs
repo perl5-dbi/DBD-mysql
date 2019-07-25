@@ -264,7 +264,7 @@ do(dbh, statement, attr=Nullsv, ...)
   STRLEN slen;
   char            *str_ptr, *buffer;
   int             has_binded;
-  int             buffer_length= slen;
+  int             buffer_length;
   int             buffer_type= 0;
   int             use_server_side_prepare= 0;
   int             disable_fallback_for_server_prepare= 0;
