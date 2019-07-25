@@ -2826,6 +2826,7 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
 
       result= sv_2mortal((newRV_noinc((SV*)hv)));
     }
+    break;
 
 #if MYSQL_VERSION_ID >= 50708
 #if MYSQL_VERSION_ID != 60000 /* Connector/C 6.0.x */
