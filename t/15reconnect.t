@@ -44,6 +44,8 @@ ok($dbh->disconnect(), "disconnecting active handle");
 
 ok(!$dbh->{Active}, "checking for inactive handle");
 
+ok( ! $dbh->ping(), 'dbh is disconnected and did not segv');
+
 ok(!$dbh->do("SELECT 1"), "implicitly reconnecting handle with 'do'");
 
 ok(!$dbh->{Active}, "checking for reactivated handle");

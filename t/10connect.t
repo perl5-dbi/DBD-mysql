@@ -62,6 +62,8 @@ my $info_hashref = $dbh->{mysql_dbd_stats};
 
 ok($dbh->disconnect(), 'Disconnected');
 
+ok( ! $dbh->ping(), 'dbh is disconnected and did not segv');
+
 # dbi docs state:
 # The username and password can also be specified using the attributes
 # Username and Password, in which case they take precedence over the $username
