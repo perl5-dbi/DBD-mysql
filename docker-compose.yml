@@ -1,0 +1,17 @@
+version: '3.3'
+
+services:
+  mysqldb:
+    image: mysql:8.0
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: 'true'
+      MYSQL_ROOT_HOST: '%'
+      MYSQL_DATABASE: test
+
+  test:
+    depends_on:
+      - mysqldb
+    build:
+      context: .
+    environment:
+      WAIT_HOSTS: mysqldb:3306
