@@ -633,8 +633,12 @@ sub Configure {
                     # MariaDB's mysql_config/mariadb_config reports the compile time
                     # locations, not the install location. This results in issues for
                     # dbdeployer etc. where these are not the same.
+                    # https://jira.mariadb.org/browse/MDEV-15820
                     my $installdir = substr(dirname($opt->{'mysql_config'}), 1, -4);
                     $str =~ s#usr/local/mysql#$installdir#g;
+
+                    # https://jira.mariadb.org/browse/MDEV-18818
+                    $str =~ s#-lzlib#-lz#g;
                 }
                 $opt->{$param} = $str;
                 $source->{$param} = "mysql_config";

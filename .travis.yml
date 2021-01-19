@@ -128,6 +128,8 @@ matrix:
     - perl: "5.20"
       env: DB=MariaDB VERSION=10.3.11
     - perl: "5.20"
+      env: DB=MariaDB VERSION=10.3.13
+    - perl: "5.20"
       env: DB=MariaDB VERSION=10.4.1
     - perl: "5.20"
       env: CONC_DB=MySQL CONC_VERSION=6.0.0-beta
@@ -183,8 +185,11 @@ before_install:
       esac ;
       SANDBOX_CACHE_FILE="$HOME/cache/$(basename "$SANDBOX_URL")" ;
     elif [ "$DB" = "MariaDB" ]; then
-      SANDBOX_URL=https://downloads.mariadb.com/MariaDB/mariadb-$VERSION/bintar-linux-x86_64/mariadb-$VERSION-linux-x86_64.tar.gz ;
-      SANDBOX_CACHE_FILE="$HOME/cache/mariadb-$VERSION-linux-x86_64.tar.gz" ;
+      case "$VERSION" in
+        10.4.*) SANDBOX_URL=https://downloads.mariadb.com/MariaDB/mariadb-$VERSION/bintar-linux-glibc_214-x86_64/mariadb-$VERSION-linux-glibc_214-x86_64.tar.gz ;;
+        *)      SANDBOX_URL=https://downloads.mariadb.com/MariaDB/mariadb-$VERSION/bintar-linux-x86_64/mariadb-$VERSION-linux-x86_64.tar.gz ;;
+      esac;
+      SANDBOX_CACHE_FILE="$HOME/cache/$(basename "$SANDBOX_URL")" ;
     elif [ -n "$DB" ]; then
       echo "Unsupported DB '$DB'"; exit 1 ;
     fi
