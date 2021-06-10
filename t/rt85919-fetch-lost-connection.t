@@ -39,10 +39,16 @@ if (not $ok) {
     # if we're connected via a local socket we receive error 2006
     # (CR_SERVER_GONE_ERROR) but if we're connected using TCP/IP we get 
     # 2013 (CR_SERVER_LOST)
+    #
+    # as of 8.0.24 MySQL writes the reason the connection was closed
+    # before closing it, so 4031 (ER_CLIENT_INTERACTION_TIMEOUT) is
+    # now an valid return code
     if ($DBI::err == 2006) {
        pass("received error 2006 (CR_SERVER_GONE_ERROR)");
     } elsif ($DBI::err == 2013) {
        pass("received error 2013 (CR_SERVER_LOST)");
+    } elsif ($DBI::err == 4031) {
+       pass("received error 4031 (ER_CLIENT_INTERACTION_TIMEOUT)");
     } else {
         fail('Should return error 2006 or 2013');
     }
