@@ -58,7 +58,6 @@ sub CLONE {
 
 sub _OdbcParse($$$) {
     my($class, $dsn, $hash, $args) = @_;
-    my($var, $val);
     if (!defined($dsn)) {
 	return;
     }
