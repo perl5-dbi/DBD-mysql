@@ -17,6 +17,7 @@
 /*
  *  Header files we use
  */
+#include <ctype.h>
 #include <DBIXS.h>  /* installed by the DBI module                        */
 #include <mysql.h>  /* Comes with MySQL-devel */
 #include <mysqld_error.h>  /* Comes MySQL */
