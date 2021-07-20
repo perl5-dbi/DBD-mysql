@@ -5,6 +5,7 @@ mysql.bs
 mysql.c
 mysql.o
 mysql.xsi
+socket.o
 pm_to_blib
 t/mysql.mtest
 MYMETA.*
