@@ -106,7 +106,12 @@
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT automatically enforce SSL mode */
 static inline bool ssl_verify_also_enforce_ssl(void) {
 #ifdef MARIADB_BASE_VERSION
-	my_ulonglong version = mysql_get_client_version();
+    /* This is documented to be an unsigned int but actually used as size_t
+     * since the initial commit of mariadb_get_infov(). */
+	size_t version;
+	/* This will fail to compile with mariadb-connector-c < v3.0.2, but such
+	   old versions are untested and unsupported anyway. */
+	mariadb_get_infov(NULL, MARIADB_CLIENT_VERSION_ID, &version);
 	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106);
 #else
 	return false;
@@ -115,10 +120,12 @@ static inline bool ssl_verify_also_enforce_ssl(void) {
 
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT is not vulnerable (CVE-2016-2047) and can be used */
 static inline bool ssl_verify_usable(void) {
-	my_ulonglong version = mysql_get_client_version();
 #ifdef MARIADB_BASE_VERSION
+	size_t version;
+	mariadb_get_infov(NULL, MARIADB_CLIENT_VERSION_ID, &version);
 	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
 #else
+	my_ulonglong version = mysql_get_client_version();
 	return ((version >= 50549 && version < 50600) || (version >= 50630 && version < 50700) || version >= 50712);
 #endif
 }
