@@ -2031,7 +2031,7 @@ signed_my_ulonglong2str(my_ulonglong val, char *buf, STRLEN *len)
 }
 #endif
 
-static SV*
+SV*
 my_ulonglong2sv(pTHX_ my_ulonglong val)
 {
 #if IVSIZE >= 8
