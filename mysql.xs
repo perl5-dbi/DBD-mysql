@@ -40,6 +40,12 @@ constant(name, arg)
   OUTPUT:
     RETVAL
 
+SV*
+client_version(pkg)
+  CODE:
+    RETVAL = my_ulonglong2sv(aTHX_ mysql_get_client_version());
+  OUTPUT:
+    RETVAL
 
 MODULE = DBD::mysql	PACKAGE = DBD::mysql::dr
 
