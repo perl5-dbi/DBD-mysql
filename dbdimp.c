@@ -475,8 +475,8 @@ static char *parse_params(
         it would be good to be able to handle any number of cases and orders
       */
       if (((*statement_ptr == ' ') || (*statement_ptr == '\n') || (*statement_ptr == '\t')) &&
-          (!strncmp(statement_ptr+1, "limit ", 5) ||
-           !strncmp(statement_ptr+1, "LIMIT ", 5)))
+          (!strncmp(statement_ptr+1, "limit ", 6) ||
+           !strncmp(statement_ptr+1, "LIMIT ", 6)))
       {
         limit_flag = 1;
       }
