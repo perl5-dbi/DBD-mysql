@@ -2115,7 +2115,7 @@ MYSQL *mysql_dr_connect(
         we turn off Mysql's auto reconnect and handle re-connecting ourselves
         so that we can keep track of when this happens.
       */
-#if MYSQL_VERSION_ID >= 50013
+#if MYSQL_VERSION_ID >= 50013 && MYSQL_VERSION_ID < 80034
       my_bool reconnect = FALSE;
       mysql_options(result, MYSQL_OPT_RECONNECT, &reconnect);
 #else
