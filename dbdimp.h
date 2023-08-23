@@ -20,7 +20,6 @@
 #include <DBIXS.h>  /* installed by the DBI module                        */
 #include <mysql.h>  /* Comes with MySQL-devel */
 #include <mysqld_error.h>  /* Comes MySQL */
-
 #include <errmsg.h> /* Comes with MySQL-devel */
 
 
@@ -336,5 +335,4 @@ extern int mysql_db_reconnect(SV*);
 int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth);
 int mysql_db_async_result(SV* h, MYSQL_RES** resp);
 int mysql_db_async_ready(SV* h);
-
 int mysql_socket_ready(my_socket fd);
