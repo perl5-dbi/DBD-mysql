@@ -1,6 +1,6 @@
 # DBD::mysql - database driver for Perl
 
-This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL databases.
+This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL 8.x databases.
 
 ## Usage
 

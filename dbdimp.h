@@ -27,35 +27,6 @@
 #define false 0
 
 /*
- * Check which SSL settings are supported by API at compile time
- */
-
-/* Use mysql_options with MYSQL_OPT_SSL_VERIFY_SERVER_CERT */
-#if MYSQL_VERSION_ID < 80000
-#define HAVE_SSL_VERIFY
-#endif
-
-/* Use mysql_options with MYSQL_OPT_SSL_ENFORCE */
-#if MYSQL_VERSION_ID < 80000
-#define HAVE_SSL_ENFORCE
-#endif
-
-/*
- * Check which SSL settings are supported by API at runtime
- */
-
-/* MYSQL_OPT_SSL_VERIFY_SERVER_CERT automatically enforce SSL mode */
-static inline bool ssl_verify_also_enforce_ssl(void) {
-	return false;
-}
-
-/* MYSQL_OPT_SSL_VERIFY_SERVER_CERT is not vulnerable (CVE-2016-2047) and can be used */
-static inline bool ssl_verify_usable(void) {
-	my_ulonglong version = mysql_get_client_version();
-	return version >= 50712;
-}
-
-/*
  *  The following are return codes passed in $h->err in case of
  *  errors by DBD::mysql.
  */

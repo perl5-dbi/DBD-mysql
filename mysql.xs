@@ -478,24 +478,18 @@ ping(dbh)
  *
  * https://bugs.mysql.com/bug.php?id=78778
  * https://bugs.mysql.com/bug.php?id=89139 */
-#if MYSQL_VERSION_ID >= 50718
       unsigned long long insertid;
-#endif
 
       D_imp_dbh(dbh);
       ASYNC_CHECK_XS(dbh);
-#if MYSQL_VERSION_ID >= 50718
       insertid = mysql_insert_id(imp_dbh->pmysql);
-#endif
       retval = (mysql_ping(imp_dbh->pmysql) == 0);
       if (!retval) {
 	if (mysql_db_reconnect(dbh)) {
 	  retval = (mysql_ping(imp_dbh->pmysql) == 0);
 	}
       }
-#if MYSQL_VERSION_ID >= 50718
       imp_dbh->pmysql->insert_id = insertid;
-#endif
       RETVAL = boolSV(retval);
     }
   OUTPUT:

@@ -1434,21 +1434,10 @@ MYSQL *mysql_dr_connect(
 	    STRLEN lna;
 	    unsigned int ssl_mode;
 	    bool ssl_verify = 0;
-  #if defined(HAVE_SSL_VERIFY)
-	    bool ssl_verify_set = 0;
-  #endif
 
             /* Verify if the hostname we connect to matches the hostname in the certificate */
 	    if ((svp = hv_fetch(hv, "mysql_ssl_verify_server_cert", 28, FALSE)) && *svp) {
-  #if defined(HAVE_SSL_VERIFY)
-	      ssl_verify_set = 1;
-  #endif
-  #if defined(HAVE_SSL_VERIFY) || defined(HAVE_SSL_MODE)
 	      ssl_verify = SvTRUE(*svp);
-  #else
-	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
-	      return NULL;
-  #endif
 	    }
 	    if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
 	      ssl_enforce = !SvTRUE(*svp);
