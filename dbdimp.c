@@ -1758,7 +1758,7 @@ MYSQL *mysql_dr_connect(
           croak("mysql_skip_secure_auth not supported");
 #endif
 #if MYSQL_VERSION_ID <= SECURE_AUTH_LAST_VERSION
-          my_bool secauth = 0;
+          bool secauth = 0;
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Skipping" \
@@ -1900,7 +1900,7 @@ MYSQL *mysql_dr_connect(
 #ifndef MARIADB_BASE_VERSION
 #ifdef MYSQL_OPT_GET_SERVER_PUBLIC_KEY
         if ((svp = hv_fetch(hv, "mysql_get_server_pubkey", 23, FALSE)) && *svp && SvTRUE(*svp)) {
-          my_bool server_get_pubkey = 1;
+          bool server_get_pubkey = 1;
           mysql_options(sock, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, &server_get_pubkey);
         }
 #endif
@@ -1916,7 +1916,7 @@ MYSQL *mysql_dr_connect(
 
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
-	    my_bool ssl_enforce = 1;
+	    bool ssl_enforce = 1;
 #if defined(DBD_MYSQL_WITH_SSL) && !defined(DBD_MYSQL_EMBEDDED) && \
     (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
 	    char *client_key = NULL;
@@ -1926,9 +1926,9 @@ MYSQL *mysql_dr_connect(
 	    char *cipher = NULL;
 	    STRLEN lna;
 	    unsigned int ssl_mode;
-	    my_bool ssl_verify = 0;
+	    bool ssl_verify = 0;
   #if defined(HAVE_SSL_VERIFY)
-	    my_bool ssl_verify_set = 0;
+	    bool ssl_verify_set = 0;
   #endif
 
             /* Verify if the hostname we connect to matches the hostname in the certificate */
@@ -2105,7 +2105,7 @@ MYSQL *mysql_dr_connect(
         so that we can keep track of when this happens.
       */
 #if MYSQL_VERSION_ID >= 50013
-      my_bool reconnect = FALSE;
+      bool reconnect = FALSE;
       mysql_options(result, MYSQL_OPT_RECONNECT, &reconnect);
 #else
       result->reconnect = 0;
@@ -3705,7 +3705,7 @@ my_ulonglong mysql_st_internal_execute41(
         if (enum_type != MYSQL_TYPE_DOUBLE && enum_type != MYSQL_TYPE_LONG && enum_type != MYSQL_TYPE_LONGLONG && enum_type != MYSQL_TYPE_BIT)
         {
             /* mysql_stmt_store_result to update MYSQL_FIELD->max_length */
-            my_bool on = 1;
+            bool on = 1;
             mysql_stmt_attr_set(stmt, STMT_ATTR_UPDATE_MAX_LENGTH, &on);
             break;
         }
@@ -3988,7 +3988,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       buffer->length= &(fbh->length);
       buffer->is_null= &(fbh->is_null);
 #if MYSQL_VERSION_ID >= NEW_DATATYPE_VERSION
-      buffer->error= (my_bool*) &(fbh->error);
+      buffer->error= (bool*) &(fbh->error);
 #endif
 
       if (fields[i].flags & ZEROFILL_FLAG)

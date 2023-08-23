@@ -1,3 +1,4 @@
+* Replace my_bool with bool
 * Remove MySQL Fabric support
 
 2018-10-25 Daniël van Eeden, Patrick Galbraith,

@@ -52,10 +52,6 @@
 #define mysql_warning_count(svsock) 0
 #endif
 
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 80001
-#define my_bool bool
-#endif
-
 /* MYSQL_TYPE_BIT is not available on MySQL 4.1 */
 #ifndef MYSQL_TYPE_BIT
 #define MYSQL_TYPE_BIT 16
@@ -249,7 +245,7 @@ typedef struct imp_sth_phb_st {
       double dval;
     } numeric_val;
     unsigned long   length;
-    my_bool         is_null;
+    bool         is_null;
 } imp_sth_phb_t;
 
 /*
@@ -261,7 +257,7 @@ typedef struct imp_sth_phb_st {
  */
 typedef struct imp_sth_fbh_st {
     unsigned long  length;
-    my_bool        is_null;
+    bool        is_null;
     bool           error;
     char           *data;
     int            charsetnr;
@@ -275,7 +271,7 @@ typedef struct imp_sth_fbh_st {
 
 typedef struct imp_sth_fbind_st {
    unsigned long   * length;
-   my_bool         * is_null;
+   bool         * is_null;
 } imp_sth_fbind_t;
 
 
