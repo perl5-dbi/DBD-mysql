@@ -24,22 +24,6 @@
 #include <errmsg.h> /* Comes with MySQL-devel */
 
 
-/*
- * This is the version of MySQL wherer
- * the server will be used to process prepare
- * statements as opposed to emulation in the driver
-*/
-#define CALL_PLACEHOLDER_VERSION 50503
-#define LIMIT_PLACEHOLDER_VERSION 50007
-#define GEO_DATATYPE_VERSION 50007
-#define NEW_DATATYPE_VERSION 50003
-#define MYSQL_VERSION_5_0 50001
-
-/* MYSQL_TYPE_BIT is not available on MySQL 4.1 */
-#ifndef MYSQL_TYPE_BIT
-#define MYSQL_TYPE_BIT 16
-#endif
-
 #define true 1
 #define false 0
 
@@ -48,7 +32,7 @@
  */
 
 /* Use mysql_options with MYSQL_OPT_SSL_VERIFY_SERVER_CERT */
-#if ((MYSQL_VERSION_ID >= 50023 && MYSQL_VERSION_ID < 50100) || MYSQL_VERSION_ID >= 50111) && (MYSQL_VERSION_ID < 80000 || defined(MARIADB_BASE_VERSION))
+#if MYSQL_VERSION_ID < 80000 || defined(MARIADB_BASE_VERSION)
 #define HAVE_SSL_VERIFY
 #endif
 
@@ -60,11 +44,6 @@
 /* Use mysql_options with MYSQL_OPT_SSL_MODE */
 #if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50711 && MYSQL_VERSION_ID != 60000
 #define HAVE_SSL_MODE
-#endif
-
-/* Use mysql_options with MYSQL_OPT_SSL_MODE, but only SSL_MODE_REQUIRED is supported */
-#if !defined(MARIADB_BASE_VERSION) && ((MYSQL_VERSION_ID >= 50636 && MYSQL_VERSION_ID < 50700) || (MYSQL_VERSION_ID >= 50555 && MYSQL_VERSION_ID < 50600))
-#define HAVE_SSL_MODE_ONLY_REQUIRED
 #endif
 
 /*
@@ -87,7 +66,7 @@ static inline bool ssl_verify_usable(void) {
 #ifdef MARIADB_BASE_VERSION
 	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
 #else
-	return ((version >= 50549 && version < 50600) || (version >= 50630 && version < 50700) || version >= 50712);
+	return version >= 50712;
 #endif
 }
 
