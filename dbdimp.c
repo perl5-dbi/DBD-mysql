@@ -1426,7 +1426,6 @@ MYSQL *mysql_dr_connect(
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
 	    bool ssl_enforce = 1;
-#if defined(DBD_MYSQL_WITH_SSL)
 	    char *client_key = NULL;
 	    char *client_cert = NULL;
 	    char *ca_file = NULL;
@@ -1481,7 +1480,6 @@ MYSQL *mysql_dr_connect(
 	      return NULL;
 	    }
 
-  #ifdef HAVE_SSL_MODE
 
         if (!ssl_enforce)
           ssl_mode = SSL_MODE_PREFERRED;
@@ -1496,80 +1494,12 @@ MYSQL *mysql_dr_connect(
 	      return NULL;
 	    }
 
-  #else
-
-        if (ssl_enforce) {
-    #if defined(HAVE_SSL_ENFORCE)
-	      if (mysql_options(sock, MYSQL_OPT_SSL_ENFORCE, &ssl_enforce) != 0) {
-	        set_ssl_error(sock, "Enforcing SSL encryption is not supported");
-	        return NULL;
-	      }
-    #elif defined(HAVE_SSL_VERIFY)
-	      if (!ssl_verify_also_enforce_ssl()) {
-	        set_ssl_error(sock, "Enforcing SSL encryption is not supported");
-	        return NULL;
-	      }
-	      if (ssl_verify_set && !ssl_verify) {
-	        set_ssl_error(sock, "Enforcing SSL encryption is not supported without mysql_ssl_verify_server_cert=1");
-	        return NULL;
-	      }
-	      ssl_verify = 1;
-    #else
-	      set_ssl_error(sock, "Enforcing SSL encryption is not supported");
-	      return NULL;
-    #endif
-        }
-
-    #ifdef HAVE_SSL_VERIFY
-        if (!ssl_enforce && ssl_verify && ssl_verify_also_enforce_ssl()) {
-            set_ssl_error(sock, "mysql_ssl_optional=1 with mysql_ssl_verify_server_cert=1 is not supported");
-            return NULL;
-        }
-    #endif
-
-	    if (ssl_verify) {
-    #ifdef HAVE_SSL_VERIFY
-	      if (!ssl_verify_usable() && ssl_enforce && ssl_verify_set) {
-    #else
-	      if (!ssl_verify_usable() && ssl_enforce) {
-    #endif
-	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is broken by current version of MySQL client");
-	        return NULL;
-	      }
-    #ifdef HAVE_SSL_VERIFY
-	      if (mysql_options(sock, MYSQL_OPT_SSL_VERIFY_SERVER_CERT, &ssl_verify) != 0) {
-	        set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
-	        return NULL;
-	      }
-    #else
-	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported");
-	      return NULL;
-    #endif
-	    }
-
-  #endif
-
 	    client_flag |= CLIENT_SSL;
-#else
-	    if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
-	      ssl_enforce = !SvTRUE(*svp);
-            if (ssl_enforce)
-            {
-	      set_ssl_error(sock, "mysql_ssl=1 is not supported and mysql_ssl_optional is not enabled.");
-	      return NULL;
-            }
-            else
-            {
-              do_warn(dbh, SL_ERR_NOTAVAILBLE, "mysql_ssl is set but SSL support is not available.");
-            }
-#endif
 	  }
 	else
 	  {
-#ifdef HAVE_SSL_MODE
 	    unsigned int ssl_mode = SSL_MODE_DISABLED;
 	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
-#endif
 	  }
 	/*
 	 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use

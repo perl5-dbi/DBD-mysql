@@ -48,8 +48,6 @@ Getopt::Long::GetOptions(
     "ps-protocol",
     "bind-type-guessing",
     "nocatchstderr",
-    "ssl",
-    "nossl",
     "nofoundrows!",
     "mysql_config=s",
     ) || die Usage();
@@ -95,7 +93,7 @@ MSG
   }
 
 for my $key (qw/testdb testhost testuser testpassword testsocket testport
-                    cflags libs nocatchstderr nossl nofoundrows
+                    cflags libs nocatchstderr nofoundrows
                     ps-protocol bind-type-guessing /)
 {
   Configure($opt, $source, $key);
@@ -120,7 +118,6 @@ I will use the following settings for compiling and testing:
 MSG
 
 delete $opt->{'help'};
-delete $opt->{'ssl'};
 my $keylen = 0;
 for my $key (keys %$opt)
 {
@@ -186,7 +183,6 @@ my $cflags = "-I\$(DBI_INSTARCH_DIR) $opt->{'cflags'}";
 if ($^O eq 'VMS') {
   $cflags = "\$(DBI_INSTARCH_DIR),$opt->{'cflags'}";
 }
-$cflags .= " -DDBD_MYSQL_WITH_SSL" if !$opt->{'nossl'};
 $cflags .= " -DDBD_MYSQL_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
 my %o = ( 'NAME' => 'DBD::mysql',
@@ -368,7 +364,6 @@ Possible options are:
                          This feature makes it so driver-emulated prepared statements
                          try to "guess" if a value being bound is numeric, in which
                          case, quotes will not be put around the value.
-  --nossl                Disable SSL support
   --help                 Print this message and exit
 
 All options may be configured on the command line. If they are
@@ -527,13 +522,6 @@ section "C Compiler flags" or type
 
   perl Makefile.PL --help
 MSG
-    }
-    elsif ($param eq "nossl") {
-      $source->{$param} = $opt->{$param} ? "User's choice" : "default";
-      $opt->{$param} = $opt->{$param} || 0;
-    }
-    elsif ($param eq "ssl") {
-        # default, for legacy reasons
     }
     else {
       die "Unknown configuration parameter: $param";

@@ -224,7 +224,6 @@ export them by putting them in your .bashrc or the like:
     export DBD_MYSQL_CONFIG=mysql_config
     export DBD_MYSQL_NOCATCHSTDERR=0
     export DBD_MYSQL_NOFOUNDROWS=0
-    export DBD_MYSQL_NOSSL=
     export DBD_MYSQL_TESTDB=test
     export DBD_MYSQL_TESTHOST=localhost
     export DBD_MYSQL_TESTPASSWORD=s3kr1+
@@ -526,12 +525,6 @@ default.
 Attempting to connect to a server that requires an encrypted connection without
 first having L<DBD::mysql> compiled with the C<--ssl> option will result in
 an error that makes things appear as if your password is incorrect.
-
-If you want to compile L<DBD::mysql> without SSL support, which you might
-probably only want if you for some reason can't install libssl headers, you
-can do this by passing the C<--nossl> option to Makefile.PL or by setting the
-DBD_MYSQL_NOSSL environment variable to '1'.
-
 
 =head1 SPECIAL SYSTEMS
 
