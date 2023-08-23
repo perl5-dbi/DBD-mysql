@@ -1285,17 +1285,7 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_skip_secure_auth", 22, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
         {
-#if LIBMYSQL_VERSION_ID > SECURE_AUTH_LAST_VERSION
           croak("mysql_skip_secure_auth not supported");
-#endif
-#if MYSQL_VERSION_ID <= SECURE_AUTH_LAST_VERSION
-          bool secauth = 0;
-          if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-            PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                          "imp_dbh->mysql_dr_connect: Skipping" \
-                          " secure auth\n");
-          mysql_options(sock, MYSQL_SECURE_AUTH, &secauth);
-#endif
         }
         if ((svp = hv_fetch(hv, "mysql_read_default_file", 23, FALSE)) &&
             *svp  &&  SvTRUE(*svp))
@@ -1370,7 +1360,6 @@ MYSQL *mysql_dr_connect(
                           imp_dbh->no_autocommit_cmd);
         }
 
-#if defined(CLIENT_MULTI_STATEMENTS)
 	if ((svp = hv_fetch(hv, "mysql_multi_statements", 22, FALSE)) && *svp)
         {
 	  if (SvTRUE(*svp))
@@ -1378,7 +1367,6 @@ MYSQL *mysql_dr_connect(
           else
             client_flag &= ~CLIENT_MULTI_STATEMENTS;
 	}
-#endif
 
 	/* took out  client_flag |= CLIENT_PROTOCOL_41; */
 	/* because libmysql.c already sets this no matter what */
@@ -1424,7 +1412,6 @@ MYSQL *mysql_dr_connect(
                          (SvTRUE(*svp) ? "utf8" : "latin1"));
         }
 
-#ifndef MARIADB_BASE_VERSION
         if ((svp = hv_fetch(hv, "mysql_get_server_pubkey", 23, FALSE)) && *svp && SvTRUE(*svp)) {
           bool server_get_pubkey = 1;
           mysql_options(sock, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, &server_get_pubkey);
@@ -1435,7 +1422,6 @@ MYSQL *mysql_dr_connect(
           char *server_pubkey = SvPV(*svp, plen);
           mysql_options(sock, MYSQL_SERVER_PUBLIC_KEY, server_pubkey);
         }
-#endif /* MARIADB_BASE_VERSION */
 
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
@@ -2247,9 +2233,6 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
     }
     break;
 
-#if MYSQL_VERSION_ID >= 50708
-#if MYSQL_VERSION_ID != 60000 /* Connector/C 6.0.x */
-#ifndef MARIADB_BASE_VERSION
 /* SESSION_TRACK_GTIDS was added in commit c4f32d662 in MySQL 5.7.8-rc */
   case 'g':
     if (strEQ(key, "gtids"))
@@ -2266,9 +2249,6 @@ SV* dbd_db_FETCH_attrib(SV *dbh, imp_dbh_t *imp_dbh, SV *keysv)
       }
     }
     break;
-#endif
-#endif
-#endif
   case 'h':
     if (strEQ(key, "hostinfo"))
     {
@@ -3338,12 +3318,7 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
         break;
 
       default:
-#if MYSQL_VERSION_ID > 100300
-        // https://jira.mariadb.org/browse/MDEV-18143
-        buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 2;
-#else
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
-#endif
         Newz(908, fbh->data, buffer->buffer_length, char);
         buffer->buffer= (char *) fbh->data;
       }
@@ -4727,9 +4702,6 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
 {
   dTHX;
   SV *result;
-#if (MYSQL_VERSION_ID < 50704) || defined(MARIADB_BASE_VERSION)
-  unsigned long rc;
-#endif
 
   if (SvGMAGICAL(str))
     mg_get(str);
@@ -4768,16 +4740,8 @@ SV* dbd_db_quote(SV *dbh, SV *str, SV *type)
     sptr= SvPVX(result);
 
     *sptr++ = '\'';
-#if (MYSQL_VERSION_ID >= 50704) && !defined(MARIADB_BASE_VERSION)
     sptr+= mysql_real_escape_string_quote(imp_dbh->pmysql, sptr,
                                      ptr, len, '\'');
-#else
-    rc = mysql_real_escape_string(imp_dbh->pmysql, sptr,
-                                     ptr, len);
-    if (rc == -1)
-      croak("quote operation failed");
-    sptr+= rc;
-#endif
     *sptr++= '\'';
     SvPOK_on(result);
     SvCUR_set(result, sptr - SvPVX(result));

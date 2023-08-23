@@ -93,9 +93,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   MYSQL mysql;
   int retval;
   MYSQL* sock;
-#if MYSQL_VERSION_ID >= 50709
   const char *shutdown = "SHUTDOWN";
-#endif
 
   /*
    *  Connect to the database, if required.
@@ -395,10 +393,6 @@ do(dbh, statement, attr=Nullsv, ...)
          no need for this as do() doesn't have a result set since
          it's for DML statements only
       */
-#if MYSQL_VERSION_ID < 50701
-      mysql_stmt_close(stmt);
-      stmt= NULL;
-#endif
 
       if (retval == -2) /* -2 means error */
       {
@@ -484,13 +478,13 @@ ping(dbh)
  *
  * https://bugs.mysql.com/bug.php?id=78778
  * https://bugs.mysql.com/bug.php?id=89139 */
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+#if MYSQL_VERSION_ID >= 50718
       unsigned long long insertid;
 #endif
 
       D_imp_dbh(dbh);
       ASYNC_CHECK_XS(dbh);
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+#if MYSQL_VERSION_ID >= 50718
       insertid = mysql_insert_id(imp_dbh->pmysql);
 #endif
       retval = (mysql_ping(imp_dbh->pmysql) == 0);
@@ -499,7 +493,7 @@ ping(dbh)
 	  retval = (mysql_ping(imp_dbh->pmysql) == 0);
 	}
       }
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50718
+#if MYSQL_VERSION_ID >= 50718
       imp_dbh->pmysql->insert_id = insertid;
 #endif
       RETVAL = boolSV(retval);

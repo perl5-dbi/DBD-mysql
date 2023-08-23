@@ -1,3 +1,5 @@
+* Only support MySQL 5.7 GA client libraries
+* Remove support for MySQL Connector/C 6.0.x
 * Cleanup ifdef's for pre-5.7 MySQL
 * Cleanup ifdef's for MySQL 4.x and earlier
 * Remove MySQL Embedded support (libmysqld)
