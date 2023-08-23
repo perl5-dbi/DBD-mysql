@@ -29,28 +29,11 @@
  * the server will be used to process prepare
  * statements as opposed to emulation in the driver
 */
-#define SQL_STATE_VERSION 40101
-#define WARNING_COUNT_VERSION 40101
-#define FIELD_CHARSETNR_VERSION 40101 /* should equivalent to 4.1.0  */
-#define MULTIPLE_RESULT_SET_VERSION 40102
-#define SERVER_PREPARE_VERSION 40103
 #define CALL_PLACEHOLDER_VERSION 50503
 #define LIMIT_PLACEHOLDER_VERSION 50007
 #define GEO_DATATYPE_VERSION 50007
 #define NEW_DATATYPE_VERSION 50003
 #define MYSQL_VERSION_5_0 50001
-/* This is to avoid the ugly #ifdef mess in dbdimp.c */
-#if MYSQL_VERSION_ID < SQL_STATE_VERSION
-#define mysql_sqlstate(svsock) (NULL)
-#endif
-
-#if MYSQL_VERSION_ID < WARNING_COUNT_VERSION
-#define mysql_warning_count(svsock) 0
-#endif
-
-#if MYSQL_VERSION_ID < WARNING_COUNT_VERSION
-#define mysql_warning_count(svsock) 0
-#endif
 
 /* MYSQL_TYPE_BIT is not available on MySQL 4.1 */
 #ifndef MYSQL_TYPE_BIT
@@ -255,9 +238,6 @@ typedef struct imp_sth_fbh_st {
     int            charsetnr;
     double         ddata;
     IV             ldata;
-#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION
-    unsigned int   flags;
-#endif
 } imp_sth_fbh_t;
 
 
@@ -280,7 +260,6 @@ typedef struct imp_sth_fbind_st {
 struct imp_sth_st {
     dbih_stc_t com;       /* MUST be first element in structure     */
 
-#if (MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION)
     MYSQL_STMT       *stmt;
     MYSQL_BIND       *bind;
     MYSQL_BIND       *buffer;
@@ -289,7 +268,6 @@ struct imp_sth_st {
     int              has_been_bound;
     int use_server_side_prepare;  /* server side prepare statements? */
     int disable_fallback_for_server_prepare;
-#endif
 
     MYSQL_RES* result;       /* result                                 */
     int currow;           /* number of current row                  */
@@ -358,7 +336,6 @@ my_ulonglong mysql_st_internal_execute(SV *,
                                        MYSQL *,
                                        int);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 my_ulonglong mysql_st_internal_execute41(SV *,
                                          int,
                                          MYSQL_RES **,
@@ -368,11 +345,8 @@ my_ulonglong mysql_st_internal_execute41(SV *,
 
 
 int mysql_st_clean_cursor(SV*, imp_sth_t*);
-#endif
 
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
 int mysql_st_next_results(SV*, imp_sth_t*);
-#endif
 
 AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);
 SV* dbd_db_quote(SV*, SV*, SV*);
