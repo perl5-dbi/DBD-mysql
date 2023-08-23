@@ -1,3 +1,4 @@
+* Remove MySQL Embedded support (libmysqld)
 * Replace my_bool with bool
 * Remove MySQL Fabric support
 

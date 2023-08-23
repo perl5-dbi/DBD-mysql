@@ -8,7 +8,6 @@ lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
 LICENSE
 Makefile.PL
-Makefile.PL.embedded
 MANIFEST			This list of files
 MANIFEST.SKIP
 myld

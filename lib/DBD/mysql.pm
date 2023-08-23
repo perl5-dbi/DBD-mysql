@@ -1301,31 +1301,6 @@ Useful when you want to be sure that statement is going to be executed as
 server side prepared. Error message and code in case of failure is propagated
 back to DBI.
 
-=item mysql_embedded_options
-
-The option <mysql_embedded_options> can be used to pass 'command-line'
-options to embedded server.
-
-Example:
-
-  use DBI;
-  $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_options=--help,--verbose";
-  $dbh = DBI->connect($testdsn,"a","b");
-
-This would cause the command line help to the embedded MySQL server library
-to be printed.
-
-
-=item mysql_embedded_groups
-
-The option <mysql_embedded_groups> can be used to specify the groups in the
-config file(I<my.cnf>) which will be used to get options for embedded server.
-If not specified [server] and [embedded] groups will be used.
-
-Example:
-
-  $testdsn="DBI:mysqlEmb:database=test;mysql_embedded_groups=embedded_server,common";
-
 =item mysql_conn_attrs
 
 The option <mysql_conn_attrs> is a hash of attribute names and values which can be
