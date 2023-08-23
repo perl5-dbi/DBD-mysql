@@ -402,15 +402,6 @@ sub table_info ($) {
   return $sth;
 }
 
-sub _ListTables {
-  my $dbh = shift;
-  if (!$DBD::mysql::QUIET) {
-    warn "_ListTables is deprecated, use \$dbh->tables()";
-  }
-  return map { $_ =~ s/.*\.//; $_ } $dbh->tables();
-}
-
-
 sub column_info {
   my ($dbh, $catalog, $schema, $table, $column) = @_;
 
@@ -1310,8 +1301,6 @@ and 'program_name' is added by DBD::mysql.
 
 You can then later read these attributes from the performance schema tables which
 can be quite helpful for profiling your database or creating statistics.
-You'll have to use a MySQL 5.6 server and libmysqlclient or newer to leverage this
-feature.
 
   my $dbh= DBI->connect($dsn, $user, $password,
     { AutoCommit => 0,

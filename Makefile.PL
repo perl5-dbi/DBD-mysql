@@ -667,7 +667,6 @@ sub WriteMakefile1 {  #Written by Alexandr Ciornii, version 0.21. Added by eumm-
   my %params=@_;
   my $eumm_version=$ExtUtils::MakeMaker::VERSION;
   $eumm_version=eval $eumm_version;
-  die "EXTRA_META is deprecated" if exists $params{EXTRA_META};
   die "License not specified" if not exists $params{LICENSE};
   if ($params{BUILD_REQUIRES} and $eumm_version < 6.5503) {
     #EUMM 6.5502 has problems with BUILD_REQUIRES

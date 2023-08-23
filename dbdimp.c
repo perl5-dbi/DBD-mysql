@@ -1122,16 +1122,6 @@ void do_warn(SV* h, int rc, char* what)
   warn("%s", what);
 }
 
-#define DBD_MYSQL_NAMESPACE "DBD::mysql::QUIET";
-
-#define doquietwarn(s) \
-  { \
-    SV* sv = perl_get_sv(DBD_MYSQL_NAMESPACE, FALSE);  \
-    if (!sv  ||  !SvTRUE(sv)) { \
-      warn s; \
-    } \
-  }
-
 static void set_ssl_error(MYSQL *sock, const char *error)
 {
   const char *prefix = "SSL connection error: ";
