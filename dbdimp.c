@@ -1528,12 +1528,6 @@ MYSQL *mysql_dr_connect(
 
     if (result)
     {
-      /*
-        we turn off Mysql's auto reconnect and handle re-connecting ourselves
-        so that we can keep track of when this happens.
-      */
-      bool reconnect = FALSE;
-      mysql_options(result, MYSQL_OPT_RECONNECT, &reconnect);
       /* connection succeeded. */
       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
          functions (_admin_internal(),_ListDBs()). */
