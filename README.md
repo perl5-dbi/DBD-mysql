@@ -6,12 +6,17 @@ This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL 
 
 Usage is described in [DBD::mysql](https://metacpan.org/pod/DBD::mysql).
 
-## Building and Testing Using Docker
+## Building and Testing
 
-We've include some basic docker support for building and testing.  This uses an Ubuntu image.  It can be used as follows:
+```
+perl Makefile.PL
+make
+make test
+```
 
-docker-compose build
-docker-compose up --abort-on-container-exit --exit-code-from test
+See the output of `perl Makefile.PL` for how to set database credentials.
+
+Testing is also done via GitHub action.
 
 ## Installation
 
