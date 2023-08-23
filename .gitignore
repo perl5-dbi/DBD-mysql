@@ -13,3 +13,4 @@ MYMETA.*
 *.old
 INSTALL.html
 /DBD-mysql-*
+socket.o
