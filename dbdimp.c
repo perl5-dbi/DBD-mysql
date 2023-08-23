@@ -3057,7 +3057,7 @@ my_ulonglong mysql_st_internal_execute41(
   }
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                  "\t<- mysql_internal_execute_41 returning %llu rows\n",
+                  "\t<- mysql_internal_execute_41 returning %lu rows\n",
                   rows);
   return(rows);
 
@@ -3218,7 +3218,7 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
       PerlIO_printf doesn't always handle imp_sth->row_num %llu 
       consistently!!
     */
-    sprintf(actual_row_num, "%llu", imp_sth->row_num);
+    sprintf(actual_row_num, "%lu", imp_sth->row_num);
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                   " <- dbd_st_execute returning imp_sth->row_num %s\n",
                   actual_row_num);
@@ -3600,7 +3600,7 @@ process:
   /* SHOW COLLATION WHERE Id = 63; -- 63 == charset binary, collation binary */
         if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fbh->charsetnr != 63)
 	  sv_utf8_decode(sv);
-          break;
+        break;
 
         }
 
@@ -3622,9 +3622,9 @@ process:
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\timp_sth->result=%p\n", imp_sth->result);
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_fields=%u\n",
                     mysql_num_fields(imp_sth->result));
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_rows=%llu\n",
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_num_rows=%lu\n",
                     mysql_num_rows(imp_sth->result));
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_affected_rows=%llu\n",
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tmysql_affected_rows=%lu\n",
                     mysql_affected_rows(imp_dbh->pmysql));
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\tdbd_st_fetch for %p, currow= %d\n",
                     sth,imp_sth->currow);
@@ -3738,7 +3738,7 @@ process:
           /* see bottom of: http://www.mysql.org/doc/refman/5.0/en/c-api-datatypes.html */
         if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fields[i].charsetnr != 63)
 	  sv_utf8_decode(sv);
-          break;
+        break;
         }
       }
       else
@@ -4225,7 +4225,7 @@ dbd_st_FETCH_internal(
       {
         /* We cannot return an IV, because the insertid is a long.  */
         if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %llu\n", imp_sth->insertid);
+          PerlIO_printf(DBIc_LOGPIO(imp_xxh), "INSERT ID %lu\n", imp_sth->insertid);
 
         return sv_2mortal(my_ulonglong2sv(aTHX_ imp_sth->insertid));
       }

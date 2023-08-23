@@ -667,7 +667,7 @@ rows(sth)
   if (imp_sth->row_num+1 ==  (my_ulonglong) -1)
     sprintf(buf, "%d", -1);
   else
-    sprintf(buf, "%llu", imp_sth->row_num);
+    sprintf(buf, "%lu", imp_sth->row_num);
 
   ST(0) = sv_2mortal(newSVpvn(buf, strlen(buf)));
 
