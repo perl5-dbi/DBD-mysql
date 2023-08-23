@@ -221,7 +221,6 @@ export them by putting them in your .bashrc or the like:
 
     export DBD_MYSQL_CFLAGS=-I/usr/local/mysql/include/mysql
     export DBD_MYSQL_LIBS="-L/usr/local/mysql/lib/mysql -lmysqlclient"
-    export DBD_MYSQL_EMBEDDED=
     export DBD_MYSQL_CONFIG=mysql_config
     export DBD_MYSQL_NOCATCHSTDERR=0
     export DBD_MYSQL_NOFOUNDROWS=0

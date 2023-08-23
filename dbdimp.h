@@ -174,17 +174,9 @@ enum av_attribs {
  *  This declares a variable called "imp_drh" of type
  *  "struct imp_drh_st *".
  */
-typedef struct imp_drh_embedded_st {
-    int state;
-    SV * args;
-    SV * groups;
-} imp_drh_embedded_t;
 
 struct imp_drh_st {
     dbih_drc_t com;         /* MUST be first element in structure   */
-#if defined(DBD_MYSQL_EMBEDDED)
-    imp_drh_embedded_t embedded;     /* */
-#endif
 };
 
 
@@ -380,15 +372,6 @@ int mysql_st_clean_cursor(SV*, imp_sth_t*);
 
 #if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
 int mysql_st_next_results(SV*, imp_sth_t*);
-#endif
-
-#if defined(DBD_MYSQL_EMBEDDED)
-int count_embedded_options(char *);
-char ** fill_out_embedded_options(PerlIO *, char *, int , int , int);
-int free_embedded_options(char **, int);
-/* We have to define dbd_discon_all method for mysqlEmb driver at least
-   to be able to stop embedded server properly */
-#define dbd_discon_all dbd_discon_all
 #endif
 
 AV* dbd_db_type_info_all (SV* dbh, imp_dbh_t* imp_dbh);

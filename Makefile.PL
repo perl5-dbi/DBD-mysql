@@ -21,7 +21,7 @@ my $TESTDB = "test";
 our $opt = { "help" => \&Usage, };
 
 {
-local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_force_embedded, $::test_mysql_config);
+local ($::test_host, $::test_port, $::test_user, $::test_socket, $::test_password, $::test_db, $::test_mysql_config);
 eval { require "./t/mysql.mtest"; 1; } || eval { require "../t/mysql.mtest"; 1; } and do {
 $opt->{'testhost'} = $::test_host;
 $opt->{'testport'} = $::test_port;
@@ -29,7 +29,6 @@ $opt->{'testuser'} = $::test_user;
 $opt->{'testsocket'} = $::test_socket;
 $opt->{'testpassword'} = $::test_password;
 $opt->{'testdb'} = $::test_db;
-$opt->{'force-embedded'} = $::test_force_embedded if $::test_force_embedded;
 $opt->{'mysql_config'} = $::test_mysql_config;
 }
 }
@@ -52,9 +51,7 @@ Getopt::Long::GetOptions(
     "ssl",
     "nossl",
     "nofoundrows!",
-    "embedded=s",
     "mysql_config=s",
-    "force-embedded",
     ) || die Usage();
 
 my $source = {};
@@ -98,8 +95,8 @@ MSG
   }
 
 for my $key (qw/testdb testhost testuser testpassword testsocket testport
-                    cflags embedded libs nocatchstderr nossl nofoundrows
-                    ps-protocol bind-type-guessing force-embedded/)
+                    cflags libs nocatchstderr nossl nofoundrows
+                    ps-protocol bind-type-guessing /)
 {
   Configure($opt, $source, $key);
 }
@@ -115,63 +112,6 @@ if ( $opt->{testport} && !$opt->{testhost} ) {
 if (-f "mysqlEmb/Makefile.PL")
 {
   move ("mysqlEmb/Makefile.PL", "mysqlEmb/Makefile.PL.old");
-}
-
-#Disable of building of dbd::mysqlEmb driver by default
-if (!$opt->{'force-embedded'})
-{
-  $opt->{'embedded'} = '';
-  $source->{ldflags} = 'guessed';
-}
-
-if ($opt->{'embedded'})
-{
-  if ($source->{'embedded'} eq 'mysql_config')
-  {
-    #We have to use libmygcc to resolve linking problem
-    # this causes problems for cygwin
-    #$opt->{'embedded'} .= " -lmygcc";
-    # Under Cygwin (at least) we have to use libstdc++ to resolve linking
-    # problem because libmysqld is built using g++ rather than gcc.
-    $opt->{'embedded'} .= " -lstdc++";
-  }
-
-  my @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-               qw(libmysqld.a);
-
-  my @dirs = $opt->{'embedded'} =~ /-L(.*?)(?:\s|$)/g;
-
-  if( !(SearchFor('lib', @files)) && !(SearchFor2(\@files,\@dirs)) )
-  {
-     warn <<"MSG";
-
-You intended to build DBD::mysqlEmb driver by using option:
---embedded=$opt->{'embedded'}.
-But we failed to determine directory of @files. Building of DBD::mysqlEmb
-driver was disabled.
-
-Please use
-
-  perl Makefile.PL --embedded="-L<dir> <flags>"
-
-to set correct directory. For details see DBD::mysql::INSTALL,
-section "Linker flags" or type
-
-  perl Makefile.PL --help
-MSG
-     $source->{'embedded'} = "guessed";
-     $opt->{'embedded'}="";
-  }
-}
-
-if ($opt->{'embedded'} && !check_include_version($opt->{'cflags'}, 40003)) {
-  die <<"MSG";
-
-WARNING: Wrong version or unable to check version of mysql include files.
-To build embedded  version of DBD you ought to be sure that you use include
-files from MySQL server >= 4.0.3.
-
-MSG
 }
 
 print <<"MSG";
@@ -208,7 +148,7 @@ MSG
 print "Checking if libs are available for compiling...\n";
 
 assert_lib(
-  LIBS => ($opt->{'embedded'} ? $opt->{'embedded'} : $opt->{libs}),
+  LIBS => $opt->{libs},
 );
 
 print "Looks good.\n\n";
@@ -236,7 +176,6 @@ my $fileName = $@ ?
 	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
               "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
-	      "\$::test_force_embedded = \$opt->{'force-embedded'} if \$opt->{'force-embedded'};\n" .
 	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
               $dsn .
 	      "} 1;\n"))  &&
@@ -264,120 +203,6 @@ my %o = ( 'NAME' => 'DBD::mysql',
 	      $opt->{'ldflags'} ? ('LDFLAGS' => $opt->{'ldflags'}) : (),
 	      'VERSION_FROM' => 'lib/DBD/mysql.pm'
 );
-
-my %embedded_files=();
-
-if ($opt->{'embedded'})
-{
-
- %embedded_files = ('mysql.xs' => { filename  => 'mysqlEmb/mysqlEmb.xs',
-                                     replace   => { ':mysql'    => ':mysqlEmb',
-                                                    'mysql.xsi' => 'mysqlEmb.xsi'
-                                                  },
-                                     makedir => 'mysqlEmb'
-                                  },
-                    'lib/DBD/mysql.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb.pm',
-                                            replace  => { ':mysql'       => ':mysqlEmb',
-                                                          '=> \'mysql\'' => '=> \'mysqlEmb\''
-                                                        },
-                                                        makedir        => 'mysqlEmb/lib/DBD'
-                                          },
-                       'lib/DBD/mysql/GetInfo.pm' => { filename => 'mysqlEmb/lib/DBD/mysqlEmb/GetInfo.pm',
-                                                       replace  => {':mysql'   => ':mysqlEmb',
-                                                                    '\'mysql\'' => '\'mysqlEmb\''
-                                                                   },
-                                                       makedir => 'mysqlEmb/lib/DBD/mysqlEmb'
-                                                     },
-                       't/mysql.dbtest' => { filename => 'mysqlEmb/t/mysqlEmb.dbtest',
-                                             makedir  => 'mysqlEmb/t'
-                                           },
-                       't/mysql.mtest' => { filename => 'mysqlEmb/t/mysqlEmb.mtest',
-                                             makedir => 'mysqlEmb/t',
-                                             replace =>  { 'DBI:mysql'=> 'DBI:mysqlEmb',
-                                                            'test_db";' => 'test_db;mysql_embedded_options=--datadir=./t,--skip-innodb";'
-                                                         }
-                                           },
-                       't/lib.pl' => { filename => 'mysqlEmb/t/lib.pl',
-                                       replace =>  { '\$mdriver =.*' => "\$mdriver =\'mysqlEmb\';"},
-                                       makedir => 'mysqlEmb/t'
-                                    },
-                       't/20createdrop.t' => { filename => 'mysqlEmb/t/20createdrop.t',
-                                               makedir => 'mysqlEmb/t'
-                                             },
-                       't/30insertfetch.t' => { filename => 'mysqlEmb/t/30insertfetch.t',
-                                                makedir => 'mysqlEmb/t'
-                                              },
-                       't/40bindparam.t' => { filename => 'mysqlEmb/t/40bindparam.t',
-                                              makedir => 'mysqlEmb/t'
-                                             },
-                       't/40blobs.t' => { filename => 'mysqlEmb/t/40blobs.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/40listfields.t' => { filename => 'mysqlEmb/t/40listfields.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/40nulls.t' => { filename => 'mysqlEmb/t/40nulls.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/40numrows.t' => { filename => 'mysqlEmb/t/40numrows.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/50chopblanks.t' => { filename => 'mysqlEmb/t/50chopblanks.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/50commit.t' => { filename => 'mysqlEmb/t/50commit.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/60leaks.t' => { filename => 'mysqlEmb/t/60leaks.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-                       't/00base.t' => { filename => 'mysqlEmb/t/00base.t',
-                                                                    makedir => 'mysqlEmb/t'
-                                                                  },
-
-                       'myld' => { filename => 'mysqlEmb/myld',
-                                   makedir => 'mysqlEmb'
-                                 },
-                       'socket.c' => { filename => 'mysqlEmb/socket.c',
-                                   makedir => 'mysqlEmb'
-                                 },
-                       'dbdimp.c' => { filename => 'mysqlEmb/dbdimp.c',
-                                   makedir => 'mysqlEmb'
-                                 },
-                       'dbdimp.h' => { filename => 'mysqlEmb/dbdimp.h',
-                                   makedir => 'mysqlEmb'
-                                 },
-                       'constants.h' => { filename => 'mysqlEmb/constants.h',
-                                   makedir => 'mysqlEmb'
-                                 },
-                       'Makefile.PL.embedded' => { filename => 'mysqlEmb/Makefile.PL',
-                                   makedir => 'mysqlEmb'
-                                 },
-            );
-
-
-  #Create embedded files from original ones
-  prepare_files(\%embedded_files);
-
-  my %e=%o;
-
-  $o{'clean'}->{'FILES'} .= " ./mysqlEmb";
-  $o{'DIR'}=['mysqlEmb'];
-
-  $e{'NAME'} = 'DBD::mysqlEmb';
-  $e{'C'} = ["dbdimp.c", "mysqlEmb.c", "socket.c"];
-  $e{'XS'} = {'mysqlEmb.xs' => 'mysqlEmb.c'};
-  $e{'VERSION_FROM'} = 'lib/DBD/mysqlEmb.pm';
-  $e{'LIBS'} = $opt->{'embedded'};
-
-  $e{'INC'} .= " -DDBD_MYSQL_EMBEDDED";
-
-  print "Preparing embedded Makefile\n";
-
-  #Create Makefile.conf for mysqlEmb Makefile.PL
-  create_makefile(Data::Dumper->Dump([\%e], ["o"]));
-
-}
 
 if (eval $ExtUtils::MakeMaker::VERSION >= 5.43) {
   $o{'CAPI'} = 'TRUE'
@@ -519,10 +344,6 @@ Possible options are:
   --libs=<libs>          Use <libs> for running the linker; defaults
                          to the value of "mysql_config --libs" or a gussed
                          value
-  --force-embedded       Build version of driver supporting mysqlEmb
-  --embedded=<libs>      Use these libs when building the embedded version of
-                         DBD (with --force-embedded). Defaults to the value of
-                         "mysql_config --embedded".
   --testdb=<db>          Use the database <db> for running the test suite;
                          defaults to $TESTDB
   --testuser=<user>      Use the username <user> for running the test suite;
@@ -556,7 +377,6 @@ it can be found):
 
   mysql_config --cflags
   mysql_config --libs
-  mysql_config --embedded
   mysql_config --testdb
 
 and so on. See DBD::mysql::INSTALL for details.
@@ -594,7 +414,7 @@ sub Configure {
 
     # First try to get options values from mysql_config
     my @mysql_config_options = qw(
-      cflags include libs libs_r plugindir socket port version libmysqld-libs embedded
+      cflags include libs libs_r plugindir socket port version
     );
     if ( grep {$_ eq $param} @mysql_config_options ) {
         my $command = $opt->{'mysql_config'} . " --$param";
@@ -690,9 +510,6 @@ perl Makefile.PL --testuser=username
       $source->{$param} = "default";
       $opt->{$param} = "";
     }
-    elsif($param eq 'force-embedded') {
-      $source->{$param} = $opt->{$param} ? "default" : 'not set';
-    }
     elsif ($param eq "cflags") {
       $source->{$param} = "guessed";
       my $dir = SearchFor('include', 'mysql.h');
@@ -707,45 +524,6 @@ Failed to determine directory of mysql.h. Use
 
 to set this directory. For details see DBD::mysql::INSTALL,
 section "C Compiler flags" or type
-
-  perl Makefile.PL --help
-MSG
-    }
-    elsif ($param eq "libs" || $param eq "embedded") {
-      $source->{$param} = "guessed";
-
-      if ($param eq "embedded" && !$opt->{'embedded'}) {
-        $opt->{$param}="";
-        return;
-      }
-
-      my @files=();
-      my $default_libs;
-      if ($param eq "embedded") {
-        $default_libs= "-lmysqld -lpthread -lz -lm -lcrypt -lnsl";
-        @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-		  	qw(libmysqld.a);
-      }
-      else {
-        $default_libs= "-lmysqlclient -lz -lm -lcrypt -lnsl";
-        @files = ($^O =~ /mswin32/i) ? qw(mysqlclient.lib) :
-	  		qw(libmysqlclient.a libmysqlclient.so);
-      }
-
-      my $dir = SearchFor('lib', @files);
-
-      if ($dir) {
-          $opt->{$param} = "-L$dir $default_libs";
-        return;
-      }
-      my $f = join("|", @files);
-      die <<"MSG";
-Failed to determine directory of $f. Use
-
-  perl Makefile.PL "--$param=-L<dir> $default_libs"
-
-to set this directory. For details see the DBD::mysql::INSTALL,
-section "Linker flags" or type
 
   perl Makefile.PL --help
 MSG
@@ -932,9 +710,6 @@ GetOptions(\%opts,
            'libs',
            'port',
            'version',
-           'libmysqld-libs',
-           'embedded',
-           'embedded-libs',
            'help',
           ) or usage();
 
@@ -958,11 +733,6 @@ SWITCH : {
     print $version;
     last SWITCH;
   };
-  ($opts{'libmysqld-libs'} or $opts{embedded} or $opts{'libmysqld-libs'} )
-    and do {
-      print $embedded_libs;
-      last SWITCH;
-    };
   usage();
 }
 
@@ -977,7 +747,6 @@ Options:
         --libs           [$libs]
         --port           [$port]
         --version        [$version]
-	--libmysqld-libs [$embedded_libs]
 EOU
     exit(1);
 }

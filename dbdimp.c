@@ -393,125 +393,6 @@ static enum enum_field_types mysql_to_perl_type(enum enum_field_types type)
   return(enum_type);
 }
 
-#if defined(DBD_MYSQL_EMBEDDED)
-/* 
-  count embedded options
-*/
-int count_embedded_options(char *st)
-{
-  int rc;
-  char c;
-  char *ptr;
-
-  ptr= st;
-  rc= 0;
-
-  if (st)
-  {
-    while ((c= *ptr++))
-    {
-      if (c == ',')
-        rc++;
-    }
-    rc++;
-  }
-
-  return rc;
-}
-
-/*
-  Free embedded options
-*/
-int free_embedded_options(char ** options_list, int options_count)
-{
-  int i;
-
-  for (i= 0; i < options_count; i++)
-  {
-    if (options_list[i])
-      free(options_list[i]);
-  }
-  free(options_list);
-
-  return 1;
-}
-
-/*
- Print out embedded option settings
-
-*/
-int print_embedded_options(PerlIO *stream, char ** options_list, int options_count)
-{
-  int i;
-
-  for (i=0; i<options_count; i++)
-  {
-    if (options_list[i])
-        PerlIO_printf(stream,
-                      "Embedded server, parameter[%d]=%s\n",
-                      i, options_list[i]);
-  }
-  return 1;
-}
-
-/*
-
-*/
-char **fill_out_embedded_options(PerlIO *stream,
-                                 char *options,
-                                 int options_type,
-                                 int slen, int cnt)
-{
-  int  ind, len;
-  char c;
-  char *ptr;
-  char **options_list= NULL;
-
-  if (!(options_list= (char **) calloc(cnt, sizeof(char *))))
-  {
-    PerlIO_printf(stream,
-                  "Initialize embedded server. Out of memory \n");
-    return NULL;
-  }
-
-  ptr= options;
-  ind= 0;
-
-  if (options_type == 0)
-  {
-    /* server_groups list NULL terminated */
-    options_list[cnt]= (char *) NULL;
-  }
-
-  if (options_type == 1)
-  {
-    /* first item in server_options list is ignored. fill it with \0 */
-    if (!(options_list[0]= calloc(1,sizeof(char))))
-      return NULL;
-
-    ind++;
-  }
-
-  while ((c= *ptr++))
-  {
-    slen--;
-    if (c == ',' || !slen)
-    {
-      len= ptr - options;
-      if (c == ',')
-        len--;
-      if (!(options_list[ind]=calloc(len+1,sizeof(char))))
-        return NULL;
-
-      strncpy(options_list[ind], options, len);
-      ind++;
-      options= ptr;
-    }
-  }
-  return options_list;
-}
-#endif
-
 /*
   constructs an SQL statement previously prepared with
   actual values replacing placeholders
@@ -1477,11 +1358,7 @@ void do_warn(SV* h, int rc, char* what)
   warn("%s", what);
 }
 
-#if defined(DBD_MYSQL_EMBEDDED)
- #define DBD_MYSQL_NAMESPACE "DBD::mysqlEmb::QUIET";
-#else
- #define DBD_MYSQL_NAMESPACE "DBD::mysql::QUIET";
-#endif
+#define DBD_MYSQL_NAMESPACE "DBD::mysql::QUIET";
 
 #define doquietwarn(s) \
   { \
@@ -1554,12 +1431,6 @@ MYSQL *mysql_dr_connect(
   dTHX;
   D_imp_xxh(dbh);
 
-  /* per Monty, already in client.c in API */
-  /* but still not exist in libmysqld.c */
-#if defined(DBD_MYSQL_EMBEDDED)
-   if (host && !*host) host = NULL;
-#endif
-
   portNr= (port && *port) ? atoi(port) : 0;
 
   /* already in client.c in API */
@@ -1576,110 +1447,6 @@ MYSQL *mysql_dr_connect(
 		  password ? password : "NULL");
 
   {
-
-#if defined(DBD_MYSQL_EMBEDDED)
-    if (imp_dbh)
-    {
-      D_imp_drh_from_dbh;
-      SV* sv = DBIc_IMP_DATA(imp_dbh);
-
-      if (sv  &&  SvROK(sv))
-      {
-        SV** svp;
-        STRLEN lna;
-        char * options;
-        int server_args_cnt= 0;
-        int server_groups_cnt= 0;
-        int rc= 0;
-
-        char ** server_args = NULL;
-        char ** server_groups = NULL;
-
-        HV* hv = (HV*) SvRV(sv);
-
-        if (SvTYPE(hv) != SVt_PVHV)
-          return NULL;
-
-        if (!imp_drh->embedded.state)
-        {
-          /* Init embedded server */
-          if ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE))  &&
-              *svp  &&  SvTRUE(*svp))
-          {
-            options = SvPV(*svp, lna);
-            imp_drh->embedded.groups=newSVsv(*svp);
-
-            if ((server_groups_cnt=count_embedded_options(options)))
-            {
-              /* number of server_groups always server_groups+1 */
-              server_groups=fill_out_embedded_options(DBIc_LOGPIO(imp_xxh), options, 0, 
-                                                      (int)lna, ++server_groups_cnt);
-              if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-              {
-                PerlIO_printf(DBIc_LOGPIO(imp_xxh),
-                              "Groups names passed to embedded server:\n");
-                print_embedded_options(DBIc_LOGPIO(imp_xxh), server_groups, server_groups_cnt);
-              }
-            }
-          }
-
-          if ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE))  &&
-              *svp  &&  SvTRUE(*svp))
-          {
-            options = SvPV(*svp, lna);
-            imp_drh->embedded.args=newSVsv(*svp);
-
-            if ((server_args_cnt=count_embedded_options(options)))
-            {
-              /* number of server_options always server_options+1 */
-              server_args=fill_out_embedded_options(DBIc_LOGPIO(imp_xxh), options, 1, (int)lna, ++server_args_cnt);
-              if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-              {
-                PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Server options passed to embedded server:\n");
-                print_embedded_options(DBIc_LOGPIO(imp_xxh), server_args, server_args_cnt);
-              }
-            }
-          }
-          if (mysql_server_init(server_args_cnt, server_args, server_groups))
-          {
-            do_warn(dbh, AS_ERR_EMBEDDED, "Embedded server was not started. \
-                    Could not initialize environment.");
-            return NULL;
-          }
-          imp_drh->embedded.state=1;
-
-          if (server_args_cnt)
-            free_embedded_options(server_args, server_args_cnt);
-          if (server_groups_cnt)
-            free_embedded_options(server_groups, server_groups_cnt);
-        }
-        else
-        {
-         /*
-          * Check if embedded parameters passed to connect() differ from
-          * first ones
-          */
-
-          if ( ((svp = hv_fetch(hv, "mysql_embedded_groups", 21, FALSE)) &&
-            *svp  &&  SvTRUE(*svp)))
-            rc =+ abs(sv_cmp(*svp, imp_drh->embedded.groups));
-
-          if ( ((svp = hv_fetch(hv, "mysql_embedded_options", 22, FALSE)) &&
-            *svp  &&  SvTRUE(*svp)) )
-            rc =+ abs(sv_cmp(*svp, imp_drh->embedded.args));
-
-          if (rc)
-          {
-            do_warn(dbh, AS_ERR_EMBEDDED,
-                    "Embedded server was already started. You cannot pass init\
-                    parameters to embedded server once");
-            return NULL;
-          }
-        }
-      }
-    }
-#endif
-
 #ifdef DBD_MYSQL_NO_CLIENT_FOUND_ROWS
     client_flag = 0;
 #else
@@ -1917,8 +1684,7 @@ MYSQL *mysql_dr_connect(
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
 	    bool ssl_enforce = 1;
-#if defined(DBD_MYSQL_WITH_SSL) && !defined(DBD_MYSQL_EMBEDDED) && \
-    (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
+#if defined(DBD_MYSQL_WITH_SSL) && (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
 	    char *client_key = NULL;
 	    char *client_cert = NULL;
 	    char *ca_file = NULL;
@@ -2423,36 +2189,9 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
   dTHR;
 #endif
   dTHX;
-#if defined(DBD_MYSQL_EMBEDDED)
-  D_imp_xxh(drh);
-#else
   PERL_UNUSED_ARG(drh);
-#endif
 
-#if defined(DBD_MYSQL_EMBEDDED)
-  if (imp_drh->embedded.state)
-  {
-    if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
-      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Stop embedded server\n");
-
-    mysql_server_end();
-    if (imp_drh->embedded.groups)
-    {
-      (void) SvREFCNT_dec(imp_drh->embedded.groups);
-      imp_drh->embedded.groups = NULL;
-    }
-
-    if (imp_drh->embedded.args)
-    {
-      (void) SvREFCNT_dec(imp_drh->embedded.args);
-      imp_drh->embedded.args = NULL;
-    }
-
-
-  }
-#else
   mysql_server_end();
-#endif
 
   /* The disconnect_all concept is flawed and needs more work */
   if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
