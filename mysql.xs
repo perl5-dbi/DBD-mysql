@@ -117,22 +117,11 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   }
 
   if (strEQ(command, "shutdown"))
-#if MYSQL_VERSION_ID < 40103
-    retval = mysql_shutdown(sock);
-#else
-#if MYSQL_VERSION_ID < 50709
-    retval = mysql_shutdown(sock, SHUTDOWN_DEFAULT);
-#else
     retval = mysql_real_query(sock, shutdown, strlen(shutdown));
-#endif
-#endif
   else if (strEQ(command, "reload"))
     retval = mysql_reload(sock);
   else if (strEQ(command, "createdb"))
   {
-#if MYSQL_VERSION_ID < 40000
-    retval = mysql_create_db(sock, dbname);
-#else
     char* buffer = malloc(strlen(dbname)+50);
     if (buffer == NULL)
     {
@@ -146,13 +135,9 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
       retval = mysql_real_query(sock, buffer, strlen(buffer));
       free(buffer);
     }
-#endif
   }
   else if (strEQ(command, "dropdb"))
   {
-#if MYSQL_VERSION_ID < 40000
-    retval = mysql_drop_db(sock, dbname);
-#else
     char* buffer = malloc(strlen(dbname)+50);
     if (buffer == NULL)
     {
@@ -166,7 +151,6 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
       retval = mysql_real_query(sock, buffer, strlen(buffer));
       free(buffer);
     }
-#endif
   }
   else
   {
@@ -257,10 +241,7 @@ do(dbh, statement, attr=Nullsv, ...)
   struct imp_sth_ph_st* params= NULL;
   MYSQL_RES* result= NULL;
   SV* async = NULL;
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
   int next_result_rc;
-#endif
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
   char            *str_ptr, *buffer;
   int             has_binded;
@@ -270,20 +251,16 @@ do(dbh, statement, attr=Nullsv, ...)
   int             disable_fallback_for_server_prepare= 0;
   MYSQL_STMT      *stmt= NULL;
   MYSQL_BIND      *bind= NULL;
-#endif
     ASYNC_CHECK_XS(dbh);
     if ((!DBIc_has(imp_dbh, DBIcf_ACTIVE)) &&
         (!mysql_db_reconnect(dbh)))
       XSRETURN_UNDEF;
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     while (mysql_next_result(imp_dbh->pmysql)==0)
     {
       MYSQL_RES* res = mysql_use_result(imp_dbh->pmysql);
       if (res)
         mysql_free_result(res);
       }
-#endif
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   /*
    * Globally enabled using of server side prepared statement
@@ -436,7 +413,6 @@ do(dbh, statement, attr=Nullsv, ...)
 
   if (! use_server_side_prepare)
   {
-#endif
     if (items > 3)
     {
       /*  Handle binding supplied values to placeholders	   */
@@ -452,9 +428,7 @@ do(dbh, statement, attr=Nullsv, ...)
     }
     retval = mysql_st_internal_execute(dbh, statement, attr, num_params,
                                        params, &result, imp_dbh->pmysql, 0);
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   }
-#endif
   if (params)
     Safefree(params);
 
@@ -463,7 +437,6 @@ do(dbh, statement, attr=Nullsv, ...)
     mysql_free_result(result);
     result= 0;
   }
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
   if (retval != -2 && !SvTRUE(async)) /* -2 means error */
     {
       /* more results? -1 = no, >0 = error, 0 = yes (keep looping) */
@@ -487,7 +460,6 @@ do(dbh, statement, attr=Nullsv, ...)
               retval= -2;
           }
     }
-#endif
   /* remember that dbd_st_execute must return <= -2 for error	*/
   if (retval == 0)		/* ok with no rows affected	*/
     XST_mPV(0, "0E0");	/* (true but zero)		*/
@@ -616,7 +588,6 @@ more_results(sth)
     SV *	sth
     CODE:
 {
-#if (MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION)
   D_imp_sth(sth);
   if (dbd_st_more_results(sth, imp_sth))
   {
@@ -626,7 +597,6 @@ more_results(sth)
   {
     RETVAL=0;
   }
-#endif
 }
     OUTPUT:
       RETVAL
@@ -639,7 +609,6 @@ dataseek(sth, pos)
   CODE:
 {
   D_imp_sth(sth);
-#if (MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION)
   if (imp_sth->use_server_side_prepare)
   {
     if (imp_sth->use_mysql_use_result || 1)
@@ -664,7 +633,6 @@ dataseek(sth, pos)
   }
   else
   {
-#endif
   if (imp_sth->result) {
     mysql_data_seek(imp_sth->result, pos);
     RETVAL = 1;
@@ -672,9 +640,7 @@ dataseek(sth, pos)
     RETVAL = 0;
     do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active" ,NULL);
   }
-#if (MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION) 
   }
-#endif
 }
   OUTPUT:
     RETVAL

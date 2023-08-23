@@ -221,7 +221,6 @@ static imp_sth_ph_t *alloc_param(int num_params)
 }
 
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /*
   allocate memory in MYSQL_BIND bind structure per
   number of placeholders
@@ -295,8 +294,6 @@ static void free_fbuffer(imp_sth_fbh_t *fbh)
   if (fbh)
     Safefree(fbh);
 }
-
-#endif
 
 /*
   free statement param structure per num_params
@@ -1324,13 +1321,11 @@ void do_error(SV* h, int rc, const char* what, const char* sqlstate)
   sv_setiv(DBIc_ERR(imp_xxh), (IV)rc);	/* set err early	*/
   sv_setpv(errstr, what);
 
-#if MYSQL_VERSION_ID >= SQL_STATE_VERSION
   if (sqlstate)
   {
     errstate= DBIc_STATE(imp_xxh);
     sv_setpvn(errstate, sqlstate, 5);
   }
-#endif
 
   /* NO EFFECT DBIh_EVENT2(h, ERROR_event, DBIc_ERR(imp_xxh), errstr); */
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -1618,7 +1613,6 @@ MYSQL *mysql_dr_connect(
 	}
 #endif
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
 	/* took out  client_flag |= CLIENT_PROTOCOL_41; */
 	/* because libmysql.c already sets this no matter what */
 	if ((svp = hv_fetch(hv, "mysql_server_prepare", 20, FALSE))
@@ -1646,7 +1640,6 @@ MYSQL *mysql_dr_connect(
           PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                         "imp_dbh->disable_fallback_for_server_prepare: %d\n",
                         imp_dbh->disable_fallback_for_server_prepare);
-#endif
 
         if ((svp = hv_fetch(hv, "mysql_enable_utf8mb4", 20, FALSE)) && *svp && SvTRUE(*svp)) {
           mysql_options(sock, MYSQL_SET_CHARSET_NAME, "utf8mb4");
@@ -1684,7 +1677,7 @@ MYSQL *mysql_dr_connect(
 	if ((svp = hv_fetch(hv, "mysql_ssl", 9, FALSE)) && *svp && SvTRUE(*svp))
           {
 	    bool ssl_enforce = 1;
-#if defined(DBD_MYSQL_WITH_SSL) && (defined(CLIENT_SSL) || (MYSQL_VERSION_ID >= 40000))
+#if defined(DBD_MYSQL_WITH_SSL)
 	    char *client_key = NULL;
 	    char *client_cert = NULL;
 	    char *ca_file = NULL;
@@ -1835,7 +1828,6 @@ MYSQL *mysql_dr_connect(
 	    mysql_options(sock, MYSQL_OPT_SSL_MODE, &ssl_mode);
 #endif
 	  }
-#if (MYSQL_VERSION_ID >= 32349)
 	/*
 	 * MySQL 3.23.49 disables LOAD DATA LOCAL by default. Use
 	 * mysql_local_infile=1 in the DSN to enable it.
@@ -1849,16 +1841,13 @@ MYSQL *mysql_dr_connect(
         " local infile %u.\n", flag);
 	  mysql_options(sock, MYSQL_OPT_LOCAL_INFILE, (const char *) &flag);
 	}
-#endif
       }
     }
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "imp_dbh->mysql_dr_connect: client_flags = %d\n",
 		    client_flag);
 
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
     client_flag|= CLIENT_MULTI_RESULTS;
-#endif
     result = mysql_real_connect(sock, host, user, password, dbname,
 				portNr, mysql_socket, client_flag);
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -1876,13 +1865,11 @@ MYSQL *mysql_dr_connect(
 #else
       result->reconnect = 0;
 #endif
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
       /* connection succeeded. */
       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
          functions (_admin_internal(),_ListDBs()). */
       if (!(result->client_flag & CLIENT_PROTOCOL_41) && imp_dbh)
         imp_dbh->use_server_side_prepare = FALSE;
-#endif
 
       if(imp_dbh) {
           imp_dbh->async_query_in_flight = NULL;
@@ -2085,11 +2072,7 @@ dbd_db_commit(SV* dbh, imp_dbh_t* imp_dbh)
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-    if (mysql_real_query(imp_dbh->pmysql, "COMMIT", 6))
-#else
     if (mysql_commit(imp_dbh->pmysql))
-#endif
     {
       do_error(dbh, mysql_errno(imp_dbh->pmysql), mysql_error(imp_dbh->pmysql)
                ,mysql_sqlstate(imp_dbh->pmysql));
@@ -2115,11 +2098,7 @@ dbd_db_rollback(SV* dbh, imp_dbh_t* imp_dbh) {
 
   if (imp_dbh->has_transactions)
   {
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-    if (mysql_real_query(imp_dbh->pmysql, "ROLLBACK", 8))
-#else
       if (mysql_rollback(imp_dbh->pmysql))
-#endif
       {
         do_error(dbh, mysql_errno(imp_dbh->pmysql),
                  mysql_error(imp_dbh->pmysql) ,mysql_sqlstate(imp_dbh->pmysql));
@@ -2230,11 +2209,7 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
     if (imp_dbh->has_transactions)
     {
       if (!DBIc_has(imp_dbh, DBIcf_AutoCommit))
-#if MYSQL_VERSION_ID < SERVER_PREPARE_VERSION
-        if ( mysql_real_query(imp_dbh->pmysql, "ROLLBACK", 8))
-#else
         if (mysql_rollback(imp_dbh->pmysql))
-#endif
             do_error(dbh, TX_ERR_ROLLBACK,"ROLLBACK failed" ,NULL);
     }
     dbd_db_disconnect(dbh, imp_dbh);
@@ -2289,13 +2264,7 @@ dbd_db_STORE_attrib(
       if (!imp_dbh->no_autocommit_cmd)
       {
         if (
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
             mysql_autocommit(imp_dbh->pmysql, bool_value)
-#else
-            mysql_real_query(imp_dbh->pmysql,
-                             bool_value ? "SET AUTOCOMMIT=1" : "SET AUTOCOMMIT=0",
-                             16)
-#endif
            )
         {
           do_error(dbh, TX_ERR_AUTOCOMMIT,
@@ -2660,7 +2629,6 @@ dbd_st_prepare(
   int i;
   SV **svp;
   dTHX;
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 #if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
   char *str_ptr, *str_last_ptr;
 #if MYSQL_VERSION_ID < LIMIT_PLACEHOLDER_VERSION
@@ -2670,7 +2638,6 @@ dbd_st_prepare(
   int prepare_retval;
   MYSQL_BIND *bind, *bind_end;
   imp_sth_phb_t *fbind;
-#endif
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
 
@@ -2679,7 +2646,6 @@ dbd_st_prepare(
                  "\t-> dbd_st_prepare MYSQL_VERSION_ID %d, SQL statement: %s\n",
                   MYSQL_VERSION_ID, statement);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
  /* Set default value of 'mysql_server_prepare' attribute for sth from dbh */
   imp_sth->use_server_side_prepare= imp_dbh->use_server_side_prepare;
   imp_sth->disable_fallback_for_server_prepare= imp_dbh->disable_fallback_for_server_prepare;
@@ -2708,8 +2674,6 @@ dbd_st_prepare(
   }
 
   imp_sth->fetch_done= 0;
-#endif
-
   imp_sth->done_desc= 0;
   imp_sth->result= NULL;
   imp_sth->currow= 0;
@@ -2728,7 +2692,7 @@ dbd_st_prepare(
   */
   mysql_st_free_result_sets(sth, imp_sth);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION && MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
+#if MYSQL_VERSION_ID < CALL_PLACEHOLDER_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -2820,7 +2784,6 @@ dbd_st_prepare(
   }
 #endif
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -2909,17 +2872,11 @@ dbd_st_prepare(
       }
     }
   }
-#endif
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   /* Count the number of parameters (driver, vs server-side) */
   if (imp_sth->use_server_side_prepare == 0)
     DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, aTHX_ statement,
                                             imp_dbh->bind_comment_placeholders);
-#else
-  DBIc_NUM_PARAMS(imp_sth) = count_params((imp_xxh_t *)imp_dbh, aTHX_ statement,
-                                          imp_dbh->bind_comment_placeholders);
-#endif
 
   /* Allocate memory for parameters */
   imp_sth->params= alloc_param(DBIc_NUM_PARAMS(imp_sth));
@@ -2951,7 +2908,6 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t>- dbd_st_free_result_sets\n");
 
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
   do
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -2991,15 +2947,6 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
              mysql_sqlstate(imp_dbh->pmysql));
   }
 
-#else
-
-  if (imp_sth->result)
-  {
-    mysql_free_result(imp_sth->result);
-    imp_sth->result=NULL;
-  }
-#endif
-
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t<- dbd_st_free_result_sets\n");
 
@@ -3007,7 +2954,6 @@ int mysql_st_free_result_sets (SV * sth, imp_sth_t * imp_sth)
 }
 
 
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
 /***************************************************************************
  * Name: dbd_st_more_results
  *
@@ -3155,7 +3101,7 @@ int dbd_st_more_results(SV* sth, imp_sth_t* imp_sth)
     return 1;
   }
 }
-#endif
+
 /**************************************************************************
  *
  *  Name:    mysql_st_internal_execute
@@ -3365,8 +3311,6 @@ my_ulonglong mysql_st_internal_execute(
  *
  **************************************************************************/
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
-
 my_ulonglong mysql_st_internal_execute41(
                                          SV *sth,
                                          int num_params,
@@ -3482,8 +3426,6 @@ error:
   return -2;
 
 }
-#endif
-
 
 /***************************************************************************
  *
@@ -3511,10 +3453,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
 #if defined (dTHR)
   dTHR;
 #endif
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   int use_server_side_prepare = imp_sth->use_server_side_prepare;
   int disable_fallback_for_server_prepare = imp_sth->disable_fallback_for_server_prepare;
-#endif
 
   ASYNC_CHECK_RETURN(sth, -2);
 
@@ -3542,7 +3482,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   */
   mysql_st_free_result_sets (sth, imp_sth);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (use_server_side_prepare)
   {
     if (imp_sth->use_mysql_use_result)
@@ -3579,7 +3518,6 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   }
 
   if (!use_server_side_prepare)
-#endif
   {
     imp_sth->row_num= mysql_st_internal_execute(
                                                 sth,
@@ -3602,10 +3540,8 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
     if (!imp_sth->result)
     {
       imp_sth->insertid= mysql_insert_id(imp_dbh->pmysql);
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
       if (mysql_more_results(imp_dbh->pmysql))
         DBIc_ACTIVE_on(imp_sth);
-#endif
     }
     else
     {
@@ -3657,8 +3593,6 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t--> dbd_describe\n");
 
-
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 
   if (imp_sth->use_server_side_prepare)
   {
@@ -3716,9 +3650,6 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
                       fields[i].charsetnr);
       }
       fbh->charsetnr = fields[i].charsetnr;
-#if MYSQL_VERSION_ID < FIELD_CHARSETNR_VERSION 
-      fbh->flags     = fields[i].flags;
-#endif
 
       buffer->buffer_type= mysql_to_perl_type(col_type);
       if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3772,7 +3703,6 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
       return 0;
     }
   }
-#endif
 
   imp_sth->done_desc= 1;
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -3809,9 +3739,7 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   MYSQL* svsock= imp_dbh->pmysql;
   imp_sth_fbh_t *fbh;
   D_imp_xxh(sth);
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   MYSQL_BIND *buffer;
-#endif
   MYSQL_FIELD *fields;
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t-> dbd_st_fetch\n");
@@ -3822,7 +3750,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       }
   }
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     if (!DBIc_ACTIVE(imp_sth) )
@@ -3847,7 +3774,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
       }
     }
   }
-#endif
 
   ChopBlanks = DBIc_is(imp_sth, DBIcf_ChopBlanks);
 
@@ -3865,7 +3791,6 @@ dbd_st_fetch(SV *sth, imp_sth_t* imp_sth)
   /* fix from 2.9008 */
   imp_dbh->pmysql->net.last_errno = 0;
 
-#if MYSQL_VERSION_ID >=SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -4020,12 +3945,8 @@ process:
 
           sv_setpvn(sv, fbh->data, len);
 
-#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION 
   /* SHOW COLLATION WHERE Id = 63; -- 63 == charset binary, collation binary */
         if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && fbh->charsetnr != 63)
-#else
-	if ((imp_dbh->enable_utf8 || imp_dbh->enable_utf8mb4) && !(fbh->flags & BINARY_FLAG))
-#endif
 	  sv_utf8_decode(sv);
           break;
 
@@ -4041,8 +3962,6 @@ process:
   }
   else
   {
-#endif
-
     imp_sth->currow++;
 
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
@@ -4070,10 +3989,7 @@ process:
                  mysql_error(imp_dbh->pmysql),
                  mysql_sqlstate(imp_dbh->pmysql));
 
-
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
       if (!mysql_more_results(svsock))
-#endif
         dbd_st_finish(sth, imp_sth);
       return Nullav;
     }
@@ -4128,11 +4044,7 @@ process:
         STRLEN len= lengths[i];
         if (ChopBlanks)
         {
-#if MYSQL_VERSION_ID >= FIELD_CHARSETNR_VERSION
           if (fields[i].charsetnr != 63)
-#else
-          if (!(fields[i].flags & BINARY_FLAG))
-#endif
           while (len && col[len-1] == ' ')
           {	--len; }
         }
@@ -4187,13 +4099,10 @@ process:
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\t<- dbd_st_fetch, %d cols\n", num_fields);
     return av;
 
-#if MYSQL_VERSION_ID  >= SERVER_PREPARE_VERSION
   }
-#endif
 
 }
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
 /*
   We have to fetch all data from stmt
   There is may be useful for 2 cases:
@@ -4208,7 +4117,6 @@ int mysql_st_clean_cursor(SV* sth, imp_sth_t* imp_sth) {
     mysql_stmt_free_result(imp_sth->stmt);
   return 1;
 }
-#endif
 
 /***************************************************************************
  *
@@ -4237,7 +4145,6 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
     mysql_db_async_result(sth, &imp_sth->result);
   }
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
   {
     PerlIO_printf(DBIc_LOGPIO(imp_xxh), "\n--> dbd_st_finish\n");
@@ -4255,7 +4162,6 @@ int dbd_st_finish(SV* sth, imp_sth_t* imp_sth) {
       }
     }
   }
-#endif
 
   /*
     Cancel further fetches from this cursor.
@@ -4302,7 +4208,6 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
 
   int i;
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   imp_sth_fbh_t *fbh;
   int n;
 
@@ -4338,8 +4243,6 @@ void dbd_st_destroy(SV *sth, imp_sth_t *imp_sth) {
     mysql_stmt_close(imp_sth->stmt);
     imp_sth->stmt= NULL;
   }
-#endif
-
 
   /* dbd_st_finish has already been called by .xs code if needed.	*/
 
@@ -4695,11 +4598,7 @@ dbd_st_FETCH_internal(
       break;
     case 20:
       if (strEQ(key, "mysql_server_prepare"))
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
         retsv= sv_2mortal(newSViv((IV) imp_sth->use_server_side_prepare));
-#else
-        retsv= boolSV(0);
-#endif
       break;
     case 23:
       if (strEQ(key, "mysql_is_auto_increment"))
@@ -4707,11 +4606,7 @@ dbd_st_FETCH_internal(
       break;
     case 37:
       if (strEQ(key, "mysql_server_prepare_disable_fallback"))
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
         retsv= sv_2mortal(newSViv((IV) imp_sth->disable_fallback_for_server_prepare));
-#else
-        retsv= boolSV(0);
-#endif
       break;
     }
     break;
@@ -4792,14 +4687,12 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
   char *err_msg;
   D_imp_xxh(sth);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   STRLEN slen;
   char *buffer= NULL;
   int buffer_is_null= 0;
   int buffer_is_unsigned= 0;
   int buffer_length= 0;
   unsigned int buffer_type= 0;
-#endif
 
   D_imp_dbh_from_sth;
   ASYNC_CHECK_RETURN(sth, FALSE);
@@ -4847,7 +4740,6 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
   rc = bind_param(&imp_sth->params[idx], value, sql_type);
 
-#if MYSQL_VERSION_ID >= SERVER_PREPARE_VERSION
   if (imp_sth->use_server_side_prepare)
   {
       switch(sql_type) {
@@ -4981,7 +4873,6 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
     imp_sth->fbind[idx].length= buffer_length;
     imp_sth->fbind[idx].is_null= buffer_is_null;
   }
-#endif
   return rc;
 }
 
@@ -5326,10 +5217,8 @@ int mysql_db_async_result(SV* h, MYSQL_RES** resp)
       if((my_ulonglong)retval+1 != (my_ulonglong)-1) {
         if(! *resp) {
           imp_sth->insertid= mysql_insert_id(svsock);
-#if MYSQL_VERSION_ID >= MULTIPLE_RESULT_SET_VERSION
           if(! mysql_more_results(svsock))
             DBIc_ACTIVE_off(imp_sth);
-#endif
         } else {
           DBIc_NUM_FIELDS(imp_sth)= mysql_num_fields(imp_sth->result);
           imp_sth->done_desc= 0;
