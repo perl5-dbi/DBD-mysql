@@ -1,3 +1,5 @@
+* Remove MySQL Fabric support
+
 2018-10-25 Daniël van Eeden, Patrick Galbraith,
 DBI/DBD community (4.050)
 * Fix SQL syntax for statements that have "...limit = ?" #288
