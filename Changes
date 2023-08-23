@@ -1,3 +1,4 @@
+* Only support MySQL 8.x as MySQL 5.7 is going EOL soon
 * Remove use of MYSQL_OPT_RECONNECT
 * Remove option to disable SSL/TLS at compile time
 * Only support MySQL 5.7 GA client libraries
