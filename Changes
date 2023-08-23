@@ -1,3 +1,4 @@
+* Remove use of MYSQL_OPT_RECONNECT
 * Remove option to disable SSL/TLS at compile time
 * Only support MySQL 5.7 GA client libraries
 * Remove support for MySQL Connector/C 6.0.x
