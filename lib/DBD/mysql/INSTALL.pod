@@ -533,26 +533,6 @@ can do this by passing the C<--nossl> option to Makefile.PL or by setting the
 DBD_MYSQL_NOSSL environment variable to '1'.
 
 
-=head1 MARIADB NATIVE CLIENT INSTALLATION
-
-The MariaDB native client is another option for connecting to a MySQL·
-database licensed LGPL 2.1. To build DBD::mysql against this client, you
-will first need to build the client. Generally, this is done with
-the following:
-
-  cd path/to/src/mariadb-native-client
-  cmake -G "Unix Makefiles'
-  make
-  sudo make install
-
-Once the client is built and installed, you can build DBD::mysql against
-it:
-
-  perl Makefile.PL --testuser=xxx --testpassword=xxx --testsocket=/path/to//mysqld.sock --mysql_config=/usr/local/bin/mariadb_config·
-  make
-  make test
-  make install
-
 =head1 SPECIAL SYSTEMS
 
 Below you find information on particular systems:

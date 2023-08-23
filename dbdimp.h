@@ -31,18 +31,13 @@
  */
 
 /* Use mysql_options with MYSQL_OPT_SSL_VERIFY_SERVER_CERT */
-#if MYSQL_VERSION_ID < 80000 || defined(MARIADB_BASE_VERSION)
+#if MYSQL_VERSION_ID < 80000
 #define HAVE_SSL_VERIFY
 #endif
 
 /* Use mysql_options with MYSQL_OPT_SSL_ENFORCE */
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50703 && MYSQL_VERSION_ID < 80000 && MYSQL_VERSION_ID != 60000
+#if MYSQL_VERSION_ID < 80000
 #define HAVE_SSL_ENFORCE
-#endif
-
-/* Use mysql_options with MYSQL_OPT_SSL_MODE */
-#if !defined(MARIADB_BASE_VERSION) && MYSQL_VERSION_ID >= 50711 && MYSQL_VERSION_ID != 60000
-#define HAVE_SSL_MODE
 #endif
 
 /*
@@ -51,22 +46,13 @@
 
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT automatically enforce SSL mode */
 static inline bool ssl_verify_also_enforce_ssl(void) {
-#ifdef MARIADB_BASE_VERSION
-	my_ulonglong version = mysql_get_client_version();
-	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106);
-#else
 	return false;
-#endif
 }
 
 /* MYSQL_OPT_SSL_VERIFY_SERVER_CERT is not vulnerable (CVE-2016-2047) and can be used */
 static inline bool ssl_verify_usable(void) {
 	my_ulonglong version = mysql_get_client_version();
-#ifdef MARIADB_BASE_VERSION
-	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
-#else
 	return version >= 50712;
-#endif
 }
 
 /*
