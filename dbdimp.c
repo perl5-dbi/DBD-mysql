@@ -1009,9 +1009,7 @@ static const sql_type_info_t *native2sql(int t)
   switch (t) {
     case FIELD_TYPE_VAR_STRING:  return &SQL_GET_TYPE_INFO_values[0];
     case FIELD_TYPE_DECIMAL:     return &SQL_GET_TYPE_INFO_values[1];
-#ifdef FIELD_TYPE_NEWDECIMAL
     case FIELD_TYPE_NEWDECIMAL:  return &SQL_GET_TYPE_INFO_values[1];
-#endif
     case FIELD_TYPE_TINY:        return &SQL_GET_TYPE_INFO_values[2];
     case FIELD_TYPE_SHORT:       return &SQL_GET_TYPE_INFO_values[3];
     case FIELD_TYPE_LONG:        return &SQL_GET_TYPE_INFO_values[4];
@@ -1427,12 +1425,10 @@ MYSQL *mysql_dr_connect(
         }
 
 #ifndef MARIADB_BASE_VERSION
-#ifdef MYSQL_OPT_GET_SERVER_PUBLIC_KEY
         if ((svp = hv_fetch(hv, "mysql_get_server_pubkey", 23, FALSE)) && *svp && SvTRUE(*svp)) {
           bool server_get_pubkey = 1;
           mysql_options(sock, MYSQL_OPT_GET_SERVER_PUBLIC_KEY, &server_get_pubkey);
         }
-#endif
 
         if ((svp = hv_fetch(hv, "mysql_server_pubkey", 19, FALSE)) && *svp) {
           STRLEN plen;
