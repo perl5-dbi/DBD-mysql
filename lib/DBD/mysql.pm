@@ -56,38 +56,30 @@ sub CLONE {
 
 sub _OdbcParse($$$) {
     my($class, $dsn, $hash, $args) = @_;
-    my($var, $val);
     if (!defined($dsn)) {
 	return;
     }
-    while (length($dsn)) {
-	if ($dsn =~ /([^:;]*\[.*]|[^:;]*)[:;](.*)/) {
-	    $val = $1;
-	    $dsn = $2;
-	    $val =~ s/\[|]//g; # Remove [] if present, the rest of the code prefers plain IPv6 addresses
-	} else {
-	    $val = $dsn;
-	    $dsn = '';
-	}
-	if ($val =~ /([^=]*)=(.*)/) {
-	    $var = $1;
-	    $val = $2;
-	    if ($var eq 'hostname'  ||  $var eq 'host') {
-		$hash->{'host'} = $val;
-	    } elsif ($var eq 'db'  ||  $var eq 'dbname') {
-		$hash->{'database'} = $val;
-	    } else {
-		$hash->{$var} = $val;
-	    }
-	} else {
-	    foreach $var (@$args) {
-		if (!defined($hash->{$var})) {
-		    $hash->{$var} = $val;
-		    last;
+
+	for my $keyval (split/[:;]/, $dsn) {
+		$keyval =~ s/\[|]//g; # Remove [] if present, the rest of the code prefers plain IPv6 addresses
+		my ($var, $val) = map {s/^\s*([^\s]*)\s*$/$1/r} split /=/, $keyval;
+		if (defined $val) {
+			if ($var eq 'hostname'  ||  $var eq 'host') {
+				$hash->{'host'} = $val;
+			} elsif ($var eq 'db'  ||  $var eq 'dbname') {
+				$hash->{'database'} = $val;
+			} else {
+				$hash->{$var} = $val;
+			}
+		} else {
+			foreach $var (@$args) {
+				if (!defined($hash->{$var})) {
+					$hash->{$var} = $val;
+					last;
+				}
+			}
 		}
-	    }
 	}
-    }
 }
 
 sub _OdbcParseHost ($$) {
