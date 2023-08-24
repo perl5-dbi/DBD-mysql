@@ -1,3 +1,5 @@
+[![.github/workflows/ci.yml](https://github.com/perl5-dbi/DBD-mysql/actions/workflows/ci.yml/badge.svg)](https://github.com/perl5-dbi/DBD-mysql/actions/workflows/ci.yml)
+
 # DBD::mysql - database driver for Perl
 
 This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL 8.x databases.

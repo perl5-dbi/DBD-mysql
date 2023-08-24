@@ -482,7 +482,8 @@ and has the proper privileges that these tests require such
 as 'drop table', 'create table', 'drop procedure', 'create procedure'
 as well as others.
 
-mysql> grant all privileges on test.* to '$user'\@'localhost' identified by 's3kr1t';
+mysql> CREATE USER '$user'\@'localhost' IDENTIFIED BY 's3kr1t';
+mysql> GRANT ALL PRIVILEGES ON test.* TO '$user'\@'localhost';
 
 You can also optionally set the user to run 'make test' with:
 
