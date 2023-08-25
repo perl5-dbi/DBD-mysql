@@ -1,0 +1,20 @@
+version: 1.0.{build}
+
+services:
+  - mysql
+
+install:
+  - cinst StrawberryPerl
+  - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
+  - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
+  - perl -V
+  - cpan App::cpanminus
+  - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
+  - cpanm -q -n Devel::CheckLib
+
+build_script:
+  - perl Makefile.PL --mysql_config=c:\strawberry\c\bin\mysql_config.bat --testuser=root --testpassword=Password12!
+
+test_script:
+  - gmake test
