@@ -101,8 +101,9 @@ for my $key (qw/testdb testhost testuser testpassword testsocket testport
 }
 
 #if we have a testport but no host, assume localhost
+#but use 127.0.0.1 instead of 'localhost' to use TCP/IP
 if ( $opt->{testport} && !$opt->{testhost} ) {
-  $opt->{testhost} = 'localhost';
+  $opt->{testhost} = '127.0.0.1';
   $source->{testhost} = 'guessed';
 }
 
