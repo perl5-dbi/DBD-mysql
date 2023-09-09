@@ -1,4 +1,5 @@
 # -*- cperl -*-
+# vim: ts=4
 
 use strict;
 use warnings;
