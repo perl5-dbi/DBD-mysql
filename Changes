@@ -1,3 +1,19 @@
+2023-10-04 Daniël van Eeden, DBI/DBD community (4.051)
+* accept 4031 as a valid return code when connection closed
+* removing some proxy bits
+* Docker support
+* fix test plan count
+* add tests for ping on disconnected handle, issue #306
+* Fix type conversions
+* Do no assign from un uninitialized slen
+* Add a missing break to 'd' case in dbd_db_FETCH_attrib()
+* Mention default and reword mysql_client_found_rows POD for clarity
+* Fix typo in comment
+* Fix quoting if NO_BACKSLASH_ESCAPES is set
+* Make type of is_null field consistent and same as in MYSQL_BIND
+* Fix "assignment from incompatible pointer type"
+* Travis: Add MariaDB 10.4.1
+
 2018-10-25 Daniël van Eeden, Patrick Galbraith,
 DBI/DBD community (4.050)
 * Fix SQL syntax for statements that have "...limit = ?" #288
