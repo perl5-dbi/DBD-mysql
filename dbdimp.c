@@ -1388,6 +1388,7 @@ MYSQL *mysql_dr_connect(
 
         if ((svp = hv_fetch(hv, "mysql_enable_utf8mb4", 20, FALSE)) && *svp && SvTRUE(*svp)) {
           mysql_options(sock, MYSQL_SET_CHARSET_NAME, "utf8mb4");
+          imp_dbh->enable_utf8mb4 = TRUE;
         }
         else if ((svp = hv_fetch(hv, "mysql_enable_utf8", 17, FALSE)) && *svp) {
           /* Do not touch imp_dbh->enable_utf8 as we are called earlier
