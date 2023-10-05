@@ -2,13 +2,15 @@
 
 # DBD::mysql - database driver for Perl
 
-This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL 8.x databases.
+This is the Perl [DBI](https://metacpan.org/pod/DBI) driver for access to MySQL and MySQL Compatible databases.
 
 ## Usage
 
 Usage is described in [DBD::mysql](https://metacpan.org/pod/DBD::mysql).
 
 ## Building and Testing
+
+For building DBD::mysql you need the MySQL 8.x client library.
 
 ```
 perl Makefile.PL
