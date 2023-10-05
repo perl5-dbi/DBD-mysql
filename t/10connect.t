@@ -45,7 +45,7 @@ like(
   'get_info SQL_DRIVER_VER like dd.dd.dddd'
 );
 
-like($driver_ver, qr/^04\./, 'SQL_DRIVER_VER starts with "04." (update for 5.x)');
+like($driver_ver, qr/^05\./, 'SQL_DRIVER_VER starts with "05." (update for 6.x)');
 
 # storage engine function is @@storage_engine in up to 5.5.03
 # at that version, @@default_storage_engine is introduced
