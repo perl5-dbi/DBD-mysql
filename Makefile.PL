@@ -95,7 +95,7 @@ MSG
 
 for my $key (qw/testdb testhost testuser testpassword testsocket testport
                     cflags libs nocatchstderr nofoundrows
-                    ps-protocol bind-type-guessing /)
+                    ps-protocol bind-type-guessing version/)
 {
   Configure($opt, $source, $key);
 }
@@ -374,7 +374,6 @@ it can be found):
 
   mysql_config --cflags
   mysql_config --libs
-  mysql_config --testdb
 
 and so on. See DBD::mysql::INSTALL for details.
 USAGE
@@ -446,13 +445,12 @@ sub Configure {
                     $source->{ldflags} = "mysql_config";
                 }
 
-                if ($command =~ /10.[34]/) {
-                    # MariaDB's mysql_config/mariadb_config reports the compile time
-                    # locations, not the install location. This results in issues for
-                    # dbdeployer etc. where these are not the same.
-                    my $installdir = substr(dirname($opt->{'mysql_config'}), 1, -4);
-                    $str =~ s#usr/local/mysql#$installdir#g;
+                if ($param eq 'version') {
+                  if ($str !~ /^8\./) {
+                    die "DBD::mysql requires MySQL 8.x for building. Version reported by $command: $str";
+                  }
                 }
+
                 $opt->{$param} = $str;
                 $source->{$param} = "mysql_config";
                 return;
@@ -570,38 +568,6 @@ sub SearchFor2 {
       }
     }
   }
-}
-
-
-sub check_include_version {
-
-  my ($dir, $ver) = @_;
-
-  my $headerfile;
-
-  $dir =~ s/-I//;
-  $dir =~ s/'//g;
-  $dir =~ s/\s.*//g;
-
-  open(HEADERFILE ,"<${dir}/mysql_version.h") or
-  (print "Unable to open header file ${dir}/mysql_version.h" && exit(0));
-  {
-    local undef $/;
-    $headerfile = <HEADERFILE>;
-  }
-  close(HEADERFILE);
-
-  my ($version_id) = ($headerfile =~ /MYSQL_VERSION_ID[\t\s]+(\d+)[\n\r]/);
-
-  if ($version_id < $ver)
-  {
-    print  <<"MSG";
-
-Version of MySQL include files in $dir - $1
-MSG
-    return 0;
-  }
-  return 1;
 }
 
 sub replace
