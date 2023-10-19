@@ -1233,11 +1233,13 @@ MYSQL *mysql_dr_connect(
         if ((svp = hv_fetch(hv, "mysql_compression", 17, FALSE))  &&
             *svp && SvTRUE(*svp))
         {
+          char* calg = SvPV(*svp, lna);
+          if (strncmp(calg,"1",1) == 0) calg="zlib";
           if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Enabling" \
-                          " compression.\n");
-          mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
+                          " compression algorithms: %s\n", calg);
+          mysql_options(sock, MYSQL_OPT_COMPRESSION_ALGORITHMS, calg);
         }
         if ((svp = hv_fetch(hv, "mysql_connect_timeout", 21, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
