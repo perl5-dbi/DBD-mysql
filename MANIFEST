@@ -15,10 +15,12 @@ mysql.xs
 README.md
 socket.c
 t/00base.t
+t/01caching_sha2_prime.t
 t/05dbcreate.t
 t/10connect.t
 t/15reconnect.t
 t/16dbi-get_info.t
+t/17quote.t
 t/20createdrop.t
 t/25lockunlock.t
 t/29warnings.t
@@ -54,6 +56,7 @@ t/53comment.t
 t/55utf8.t
 t/55utf8mb4.t
 t/56connattr.t
+t/57trackgtid.t
 t/60leaks.t
 t/65segfault.t
 t/65types.t
@@ -72,10 +75,11 @@ t/91errcheck.t
 t/92ssl_optional.t
 t/92ssl_backronym_vulnerability.t
 t/92ssl_riddle_vulnerability.t
+t/99compression.t
 t/99_bug_server_prepare_blob_null.t
+t/gh360.t
 t/lib.pl
 t/manifest.t
-t/mysql.dbtest
 t/pod.t
 t/rt110983-valid-mysqlfd.t
 t/rt118977-zerofill.t
