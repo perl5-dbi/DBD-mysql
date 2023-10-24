@@ -1,3 +1,11 @@
+2023-10-24 Daniël van Eeden, DBI/DBD community (5.002)
+* Add support for compression algorighm selection (#372)
+* Correct handling of mysql_enable_utf8mb4 (#363)
+* tests: Remove have_transactions usage from 50commit.t
+* Makefile: Clearly report that MySQL 8.x is needed and do some cleanup
+* add DBD::mysql::client_version() to have the client version without DB connections
+* Update version test for v5.x
+
 2023-10-04 Daniël van Eeden, DBI/DBD community (5.001)
 * Only support MySQL 8.x as MySQL 5.7 is going EOL soon
 * Remove use of MYSQL_OPT_RECONNECT
