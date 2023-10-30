@@ -1239,7 +1239,11 @@ MYSQL *mysql_dr_connect(
             PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                           "imp_dbh->mysql_dr_connect: Enabling" \
                           " compression algorithms: %s\n", calg);
+#if MYSQL_VERSION_ID >= 80018
           mysql_options(sock, MYSQL_OPT_COMPRESSION_ALGORITHMS, calg);
+#else
+          mysql_options(sock, MYSQL_OPT_COMPRESS, NULL);
+#endif
         }
         if ((svp = hv_fetch(hv, "mysql_connect_timeout", 21, FALSE))
             &&  *svp  &&  SvTRUE(*svp))
