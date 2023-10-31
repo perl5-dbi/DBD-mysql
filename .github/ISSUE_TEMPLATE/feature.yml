@@ -1,0 +1,14 @@
+labels: ["enhancement"]
+assignees:
+  - dveeden
+body:
+  - type: textarea
+    attributes:
+      label: What enhancement would you like in DBD::mysql?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Other information
+    validations:
+      required: false
