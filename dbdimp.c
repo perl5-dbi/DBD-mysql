@@ -1439,27 +1439,34 @@ MYSQL *mysql_dr_connect(
 	    if ((svp = hv_fetch(hv, "mysql_ssl_optional", 18, FALSE)) && *svp)
 	      ssl_enforce = !SvTRUE(*svp);
 
-	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp)
+	    if ((svp = hv_fetch(hv, "mysql_ssl_client_key", 20, FALSE)) && *svp) {
 	      client_key = SvPV(*svp, lna);
+	      mysql_options(sock, MYSQL_OPT_SSL_KEY, client_key);
+	    }
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_client_cert", 21, FALSE)) &&
-                *svp)
+                *svp) {
 	      client_cert = SvPV(*svp, lna);
+	      mysql_options(sock, MYSQL_OPT_SSL_CERT, client_cert);
+	    }
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_ca_file", 17, FALSE)) &&
-		 *svp)
+		 *svp) {
 	      ca_file = SvPV(*svp, lna);
+	      mysql_options(sock, MYSQL_OPT_SSL_CA, ca_file);
+	    }
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_ca_path", 17, FALSE)) &&
-                *svp)
+                *svp) {
 	      ca_path = SvPV(*svp, lna);
+	      mysql_options(sock, MYSQL_OPT_SSL_CAPATH, ca_path);
+	    }
 
 	    if ((svp = hv_fetch(hv, "mysql_ssl_cipher", 16, FALSE)) &&
-		*svp)
+		*svp) {
 	      cipher = SvPV(*svp, lna);
-
-	    mysql_ssl_set(sock, client_key, client_cert, ca_file,
-			  ca_path, cipher);
+	      mysql_options(sock, MYSQL_OPT_SSL_CIPHER, cipher);
+	    }
 
 	    if (ssl_verify && !(ca_file || ca_path)) {
 	      set_ssl_error(sock, "mysql_ssl_verify_server_cert=1 is not supported without mysql_ssl_ca_file or mysql_ssl_ca_path");
