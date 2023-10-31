@@ -1,0 +1,38 @@
+name: Bug Report
+description: File a bug report
+assignees:
+  - dveeden
+body:
+  - type: input
+    attributes:
+      label: DBD::mysql version
+      value: 
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: MySQL client version
+      placeholder: mysql_config --version
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: Server version
+      placeholder: SELECT VERSION()
+    validations:
+      required: false
+  - type: input
+    attributes:
+      label: Operating system version
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Other information
+    validations:
+      required: false
