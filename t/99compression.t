@@ -6,9 +6,23 @@ use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
+use vars qw($test_dsn $test_user $test_password);
+my $dbh;
+eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
+                      { RaiseError => 1, PrintError => 1, AutoCommit => 0 });};
+
+if ($@) {
+  diag $@;
+  plan skip_all => "no database connection";
+}
+
+if ($dbh->{mysql_serverversion} < 80000) {
+  diag $dbh->{mysql_serverversion};
+  plan skip_all => "test requires 8.x or newer";
+}
+
 foreach my $compression ( "zlib", "zstd", "0", "1" ) {
   my ($dbh, $sth, $row);
-  use vars qw($test_dsn $test_user $test_password);
   
   eval {$dbh = DBI->connect($test_dsn . ";mysql_compression=$compression", $test_user, $test_password,
       { RaiseError => 1, AutoCommit => 1});};
