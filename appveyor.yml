@@ -9,7 +9,6 @@ init:
   - ps: Start-Service MySQL80
 
 install:
-  - cinst StrawberryPerl
   - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
   - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
   - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
