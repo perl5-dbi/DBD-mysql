@@ -447,7 +447,11 @@ sub Configure {
 
                 if ($param eq 'version') {
                   if ($str !~ /^8\./) {
-                    die "DBD::mysql requires MySQL 8.x for building. Version reported by $command: $str";
+                    if ($^O == "Windows") { # mysql_config doesn't work the same on Windows
+                      warn "DBD::mysql requires MySQL 8.x for building. Version reported by $command: $str";
+                    } else {
+                      die "DBD::mysql requires MySQL 8.x for building. Version reported by $command: $str";
+                    }
                   }
                 }
 
