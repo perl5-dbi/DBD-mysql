@@ -9,10 +9,10 @@ init:
   - ps: Start-Service MySQL80
 
 install:
-  - path C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - path C:\Program Files\MySQL\MySQL Server 8.0\bin;C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
   - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
   - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
-  - 'C:\Program Files\MySQL\MySQL Server 8.0\bin\mysql.exe' --version
+  - mysql.exe --version
   - perl -V
   - cpan App::cpanminus
   - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
