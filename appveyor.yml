@@ -19,7 +19,7 @@ install:
   - cpanm -q -n Devel::CheckLib
 
 build_script:
-  - perl Makefile.PL --testuser=root --testpassword=Password12! --cflags="-IC:\Program Files\MySQL\MySQL Server 8.0\include" --libs="-LC:\Program Files\MySQL\MySQL Server 8.0\lib -lmysql"
+  - perl Makefile.PL --testuser=root --testpassword=Password12! --mysql_config=mysql_config.bat
 
 test_script:
   - gmake test
