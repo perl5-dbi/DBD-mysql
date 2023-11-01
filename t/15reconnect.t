@@ -16,7 +16,7 @@ eval {$dbh = DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
   plan skip_all => "no database connection";
 }
-plan tests => 28;
+plan tests => 34;
 
 for my $mysql_server_prepare (0, 1) {
 $dbh= DBI->connect("$test_dsn;mysql_server_prepare=$mysql_server_prepare;mysql_server_prepare_disable_fallback=1", $test_user, $test_password,
@@ -29,6 +29,11 @@ ok($dbh->{Active}, "checking for active handle");
 ok($dbh->{mysql_auto_reconnect} = 1, "enabling reconnect");
 
 ok($dbh->{AutoCommit} = 1, "enabling autocommit");
+
+ok ($dbh->do("SET SESSION wait_timeout=2"));
+sleep(3);
+ok($dbh->do("SELECT 1"), "implicitly reconnecting handle with 'do'");
+ok($dbh->{Active}, "checking for reactivated handle");
 
 ok($dbh->disconnect(), "disconnecting active handle");
 

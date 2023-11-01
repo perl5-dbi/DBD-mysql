@@ -4438,6 +4438,9 @@ int mysql_db_reconnect(SV* h)
   imp_dbh_t* imp_dbh;
   MYSQL save_socket;
 
+  if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+    PerlIO_printf(DBIc_LOGPIO(imp_xxh), "reconnecting\n");
+
   if (DBIc_TYPE(imp_xxh) == DBIt_ST)
   {
     imp_dbh = (imp_dbh_t*) DBIc_PARENT_COM(imp_xxh);
@@ -4457,9 +4460,14 @@ int mysql_db_reconnect(SV* h)
   }
 
   if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR &&
-          mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST)
+          mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST &&
+          mysql_errno(imp_dbh->pmysql) != ER_CLIENT_INTERACTION_TIMEOUT) {
     /* Other error */
+    if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Can't reconnect on unexpected error %d\n",
+          mysql_errno(imp_dbh->pmysql));
     return FALSE;
+  }
 
   if (!DBIc_has(imp_dbh, DBIcf_AutoCommit) || !imp_dbh->auto_reconnect)
   {
@@ -4467,6 +4475,8 @@ int mysql_db_reconnect(SV* h)
      * Otherwise we might get an inconsistent transaction
      * state.
      */
+    if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
+      PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Can't reconnect as AutoCommit is turned off\n");
     return FALSE;
   }
 
