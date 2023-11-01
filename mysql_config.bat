@@ -1,10 +1,12 @@
 @echo off
 rem mysql_config replacement for use with appveyor
 rem based on https://github.com/StrawberryPerl/build-extlibs/blob/master/mysql.special/mysql_config.bat
-set ROOT="C:\Program Files\MySQL\MySQL Server 8.0"
+rem set ROOT=C:\Program Files\MySQL\MySQL Server 8.0
+rem avoid spaces/quoting/etc
+set ROOT=C:\PROGRA~1\MySQL\MYSQLS~1.0
 
 set XCFLAGS=-I%ROOT%\include
-set XLIBS=-L%ROOT%\lib -lmysql
+set XLIBS="-L%ROOT%\lib -lmysql
 set XVERSION=8.0.34
 set XPREFIX=%ROOT%..\
 
