@@ -19,8 +19,7 @@ install:
   - cpanm -q -n Devel::CheckLib
 
 build_script:
-  - type c:\strawberry\c\bin\mysql_config.bat
-  - perl Makefile.PL --mysql_config=c:\strawberry\c\bin\mysql_config.bat --testuser=root --testpassword=Password12!
+  - perl Makefile.PL --testuser=root --testpassword=Password12! --cflags="-IC:\Program Files\MySQL\MySQL Server 8.0\include" --libs="-LC:\Program Files\MySQL\MySQL Server 8.0\lib -lmysql"
 
 test_script:
   - gmake test
