@@ -774,16 +774,10 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpvn("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
-        /* net_buffer_length macro is not defined in MySQL 5.7 and some MariaDB
-        versions - if it is not available, use newer mysql_get_option */
-#if !defined(net_buffer_length)
-            ;
+	    ; /* avoid "a label can only be part of a statement and a declaration is not a statement" */
 	    unsigned long buffer_len;
 	    mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &buffer_len);
 	    retsv = newSViv(buffer_len);
-#else
-	    retsv = newSViv(net_buffer_length);
-#endif
 	    break;
 	case SQL_MAXIMUM_TABLES_IN_SELECT:
 	    /* newSViv((sizeof(int) > 32) ? sizeof(int)-1 : 31 ); in general? */

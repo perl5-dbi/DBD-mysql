@@ -3968,12 +3968,8 @@ dbd_st_FETCH_internal(
         break;
 
       case AV_ATTRIB_IS_AUTO_INCREMENT:
-#if defined(AUTO_INCREMENT_FLAG)
         sv= boolSV(IS_AUTO_INCREMENT(curField->flags));
         break;
-#else
-        croak("AUTO_INCREMENT_FLAG is not supported on this machine");
-#endif
 
       case AV_ATTRIB_IS_KEY:
         sv= boolSV(IS_KEY(curField->flags));
