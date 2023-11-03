@@ -774,6 +774,7 @@ dbd_mysql_get_info(dbh, sql_info_type)
 	    retsv = newSVpvn("`", 1);
 	    break;
 	case SQL_MAXIMUM_STATEMENT_LENGTH:
+	    ; /* avoid "a label can only be part of a statement and a declaration is not a statement" */
 	    unsigned long buffer_len;
 	    mysql_get_option(NULL, MYSQL_OPT_NET_BUFFER_LENGTH, &buffer_len);
 	    retsv = newSViv(buffer_len);
