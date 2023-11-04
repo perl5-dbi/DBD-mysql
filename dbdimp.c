@@ -2977,6 +2977,11 @@ dbd_st_prepare(
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
 
+  if (!DBIc_ACTIVE(imp_dbh)) {
+    do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active" ,NULL);
+    return FALSE;
+  }
+
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
     PerlIO_printf(DBIc_LOGPIO(imp_xxh),
                  "\t-> dbd_st_prepare MYSQL_VERSION_ID %d, SQL statement: %s\n",
