@@ -6,6 +6,8 @@ use DBI;
 use lib 't', '.';
 require 'lib.pl';
 
+# https://github.com/perl5-dbi/DBD-mysql/issues/360
+
 my ($dbhA, $dbhB);
 use vars qw($test_dsn $test_user $test_password);
 
