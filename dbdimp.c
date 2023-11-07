@@ -1206,6 +1206,7 @@ MYSQL *mysql_dr_connect(
 #else
     client_flag = CLIENT_FOUND_ROWS;
 #endif
+    mysql_library_init(0, NULL, NULL);
     mysql_init(sock);
 
     if (imp_dbh)
@@ -1870,6 +1871,7 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
+  mysql_library_end();
   Safefree(imp_dbh->pmysql);
 
   /* Tell DBI, that dbh->destroy must no longer be called */
