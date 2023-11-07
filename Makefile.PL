@@ -168,12 +168,12 @@ my $fileName = $@ ?
 	      "\$::test_host = \$opt->{'testhost'};\n" .
 	      "\$::test_port = \$opt->{'testport'};\n" .
 	      "\$::test_user = \$opt->{'testuser'};\n" .
-              "\$::test_socket = \$opt->{'testsocket'};\n" .
+	      "\$::test_socket = \$opt->{'testsocket'};\n" .
 	      "\$::test_password = \$opt->{'testpassword'};\n" .
 	      "\$::test_db = \$opt->{'testdb'};\n" .
 	      "\$::test_dsn = \"DBI:mysql:\$::test_db\";\n" .
 	      "\$::test_dsn .= \";mysql_socket=\$::test_socket\" if \$::test_socket;\n" .
-              "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
+	      "\$::test_dsn .= \":\$::test_host\" if \$::test_host;\n" .
 	      "\$::test_dsn .= \":\$::test_port\" if \$::test_port;\n".
 	      "\$::test_mysql_config = \$opt->{'mysql_config'};\n" .
               $dsn .
@@ -353,6 +353,7 @@ Possible options are:
   --testport=<port>      Use <port> as the port number of the database;
                          by default the port number is chosen from the
                          mysqlclient library
+  --testsocket=<socket>  Use <socket> as the socket for the test database
   --mysql_config=<path>  Specify <path> for mysql_config script
   --nocatchstderr        Suppress using the "myld" script that redirects
                          STDERR while running the linker.

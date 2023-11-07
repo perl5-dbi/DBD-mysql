@@ -335,6 +335,10 @@ Host name or IP number of the test database; defaults to localhost.
 
 Port number of the test database
 
+=item testsocket
+
+Socket for connecting to the test database
+
 =item ps-protcol=1 or 0
 
 Whether to run the test suite using server prepared statements or driver
