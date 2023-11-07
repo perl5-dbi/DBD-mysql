@@ -52,7 +52,7 @@ to find exact package names). These are sufficient, if the MySQL
 server is located on a foreign machine.  You may also create client
 files by compiling from the MySQL source distribution and using
 
-  configure --without-server
+  cmake -DWITHOUT_SERVER=ON
 
 If you are using Windows and need to compile from sources
 (which is only the case if you are not using ActivePerl or
@@ -581,11 +581,11 @@ test against a MySQL server on a remote host.
 =head3 Build MySQL clients under Cygwin:
 
 download the MySQL LINUX source from
-L<https://www.mysql.com/downloads>,
+L<https://dev.mysql.com/downloads>,
 unpack mysql-<version>.tar.gz into some tmp location and from this directory
 run configure:
 
-  ./configure --prefix=/usr/local/mysql --without-server
+  cmake -DWITHOUT_SERVER=ON -DCMAKE_INSTALL_PREFIX=/usr/local/mysql
 
 This prepares the Makefile with the installed Cygwin features. It
 takes some time, but should finish without error. The 'prefix', as
