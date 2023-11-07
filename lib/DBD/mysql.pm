@@ -1526,7 +1526,7 @@ etc) will have the UTF-8 flag turned on if necessary.  This enables
 character semantics on that string.  You will also need to ensure that
 your database / table / column is configured to use UTF8. See for more
 information the chapter on character set support in the MySQL manual:
-L<http://dev.mysql.com/doc/refman/5.7/en/charset.html>
+L<http://dev.mysql.com/doc/refman/8.0/en/charset.html>
 
 Additionally, turning on this flag tells MySQL that incoming data should
 be treated as UTF-8.  This will only take effect if used as part of the
