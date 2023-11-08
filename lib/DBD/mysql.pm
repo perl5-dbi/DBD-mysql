@@ -2097,7 +2097,7 @@ Please report bugs, including all the information needed
 such as DBD::mysql version, MySQL version, OS type/version, etc
 to this link:
 
-L<https://rt.cpan.org/Dist/Display.html?Name=DBD-mysql>
+L<https://github.com/perl5-dbi/DBD-mysql/issues/new/choose>
 
 Note: until recently, MySQL/Sun/Oracle responded to bugs and assisted in
 fixing bugs which many thanks should be given for their help!
