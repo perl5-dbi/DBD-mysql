@@ -4059,6 +4059,9 @@ int dbd_describe(SV* sth, imp_sth_t* imp_sth)
 #if MYSQL_VERSION_ID > 100300
         // https://jira.mariadb.org/browse/MDEV-18143
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 2;
+        if (fields[i].length > buffer->buffer_length)
+          buffer->buffer_length= fields[i].length + 1;
+
 #else
         buffer->buffer_length= fields[i].max_length ? fields[i].max_length : 1;
 #endif
