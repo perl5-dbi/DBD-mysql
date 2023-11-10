@@ -15,6 +15,11 @@ my $dsnA = $test_dsn . ';mysql_enable_utf8mb4=1';
 eval {$dbhA = DBI->connect($dsnA, $test_user, $test_password,
     { RaiseError => 1, AutoCommit => 1});};
 
+if ($@) {
+  diag $@;
+  plan skip_all => "no database connection";
+}
+
 my $dsnB = $test_dsn;
 $dsnB =~ s/DBI:mysql/DBI:mysql(mysql_enable_utf8mb4=1)/;
 eval {$dbhB = DBI->connect($dsnB . ';mysql_enable_utf8mb4=1', $test_user, $test_password,
