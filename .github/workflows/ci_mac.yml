@@ -1,0 +1,22 @@
+name: CI on MacOS
+
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Install dependencies"
+        run: |
+          brew install cpanminus mysql@8.0 mysql-client@8.0
+          cpanm Devel::CheckLib
+          cpanm Test::More
+          cpanm Test::Deep
+          cpanm DBI
+      - name: "Run build"
+        run: |
+          export PATH="/usr/local/opt/mysql@8.0/bin:$PATH"
+          perl Makefile.PL --testhost=127.0.0.1 --testuser=root
+          make
+      - name: "Run test"
+        run: make test
