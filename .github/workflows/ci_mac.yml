@@ -18,5 +18,8 @@ jobs:
           export PATH="/usr/local/opt/mysql@8.0/bin:$PATH"
           perl Makefile.PL --testhost=127.0.0.1 --testuser=root
           make
+      - name: "Start MySQL"
+        run: |
+          brew services start mysql@8.0
       - name: "Run test"
         run: make test
