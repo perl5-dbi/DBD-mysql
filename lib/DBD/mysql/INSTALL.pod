@@ -542,7 +542,14 @@ mysql client libs. The easiest way to install these is using Homebrew
 
 Once you have Homebrew set up, you can simply install the dependencies using
 
-    brew install openssl mysql-connector-c
+    brew install openssl@3 mysql-client
+
+Then make sure to add the path for L<mysql_config> to your path:
+
+    export PATH=/usr/local/Cellar/mysql-client/8.1.0/bin:$PATH
+
+Make sure to use the correct path for your installation. Check the output of L<brew list mysql-client>
+to see the correct path. You can use L<~/.zshrc> to set the path for future sessions as well.
 
 Then you can install DBD::mysql using your cpan client.
 
