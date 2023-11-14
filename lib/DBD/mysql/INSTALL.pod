@@ -540,9 +540,15 @@ For installing DBD::mysql you need to have the libssl header files and the
 mysql client libs. The easiest way to install these is using Homebrew
 (L<https://brew.sh/>).
 
+It is recommended to use a Perl version that is installed with brew as well
+as the system version might not come with header files in the expected locations.
+
 Once you have Homebrew set up, you can simply install the dependencies using
 
-    brew install openssl@3 mysql-client
+    brew install perl openssl@3 mysql-client
+
+After installing components with brew you might have to logout and login for
+your shell to pick up the newly installed software.
 
 Then make sure to add the path for L<mysql_config> to your path:
 
