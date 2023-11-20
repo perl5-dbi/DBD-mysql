@@ -4463,8 +4463,10 @@ int mysql_db_reconnect(SV* h)
   }
 
   if (mysql_errno(imp_dbh->pmysql) != CR_SERVER_GONE_ERROR &&
-          mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST &&
-          mysql_errno(imp_dbh->pmysql) != ER_CLIENT_INTERACTION_TIMEOUT) {
+#ifdef ER_CLIENT_INTERACTION_TIMEOUT /* Added in 8.0.24 */
+          mysql_errno(imp_dbh->pmysql) != ER_CLIENT_INTERACTION_TIMEOUT &&
+#endif
+          mysql_errno(imp_dbh->pmysql) != CR_SERVER_LOST) {
     /* Other error */
     if (DBIc_DBISTATE(imp_xxh)->debug >= 2)
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Can't reconnect on unexpected error %d\n",
