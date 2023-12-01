@@ -1,3 +1,7 @@
+2023-12-01 Daniël van Eeden, DBI/DBD community (4.052)
+* Check if handle is active when calling prepare
+* Work around MariaDB bug with zerofill field
+
 2023-10-04 Daniël van Eeden, DBI/DBD community (4.051)
 * accept 4031 as a valid return code when connection closed
 * removing some proxy bits

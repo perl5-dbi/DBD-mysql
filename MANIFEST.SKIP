@@ -17,3 +17,7 @@ mysql.bs
 appveyor.yml
 .mailmap
 .travis.yml
+.github/workflows/ci.yml
+.github/workflows/ci_mac.yml
+docker-compose.yml
+Dockerfile
