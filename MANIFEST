@@ -2,7 +2,6 @@ Changes
 constants.h
 dbdimp.c
 dbdimp.h
-lib/Bundle/DBD/mysql.pm
 lib/DBD/mysql.pm
 lib/DBD/mysql/GetInfo.pm
 lib/DBD/mysql/INSTALL.pod
