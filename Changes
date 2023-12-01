@@ -1,3 +1,20 @@
+2023-12-01 Daniël van Eeden, DBI/DBD community (5.003)
+* Add ifdef for ER_CLIENT_INTERACTION_TIMEOUT
+* Fix for issue 251. Also fixed case of "e<single int>"
+* Docs: Update macOS docs
+* CI: Add macOS
+* Call mysql_library_init() and mysql_library_end()
+* Update bug report address
+* Check if handle is active when calling prepare
+* Add missing testsocket option to the docs
+* Add Dockerfile (#390)
+* More cleanups of unneeded ifdefs (#385)
+* Enable auto reconnect for ER_CLIENT_INTERACTION_TIMEOUT
+* Try out issue template for GitHub
+* 99compression.t: Only test on 8.x
+* Only use MYSQL_OPT_COMPRESSION_ALGORITHMS on >=8.0.18
+* Replace `mysql_ssl_set()` with `mysql_options()`
+
 2023-10-24 Daniël van Eeden, DBI/DBD community (5.002)
 * Add support for compression algorighm selection (#372)
 * Correct handling of mysql_enable_utf8mb4 (#363)

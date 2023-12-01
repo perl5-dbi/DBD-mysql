@@ -77,6 +77,7 @@ t/92ssl_backronym_vulnerability.t
 t/92ssl_riddle_vulnerability.t
 t/99compression.t
 t/99_bug_server_prepare_blob_null.t
+t/gh352.t
 t/gh360.t
 t/lib.pl
 t/manifest.t

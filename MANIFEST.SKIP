@@ -18,3 +18,4 @@ appveyor.yml
 .mailmap
 .travis.yml
 .github
+Dockerfile
