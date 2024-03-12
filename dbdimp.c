@@ -2793,7 +2793,23 @@ my_ulonglong mysql_st_internal_execute(
     }
     *sbuf++= '\0';
 
-    *result= mysql_list_fields(svsock, table, NULL);
+    char* buffer = malloc(strlen(table)+20);
+    if (buffer == NULL)
+    {
+      do_error(h, JW_ERR_MEM, "Out of memory" ,NULL);
+      return -2;
+    }
+    else
+    {
+      strcpy(buffer, "SHOW COLUMNS FROM ");
+      strcat(buffer, table);
+      if (mysql_real_query(svsock, buffer, strlen(buffer)) != 0) {
+        do_error(h, JW_ERR_QUERY, "Query for columns failed" ,NULL);
+        return -2;
+      }
+      *result = mysql_store_result(svsock);
+      free(buffer);
+    }
 
     free(table);
 

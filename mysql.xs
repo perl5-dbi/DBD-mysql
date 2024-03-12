@@ -100,6 +100,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   int retval;
   MYSQL* sock;
   const char *shutdown = "SHUTDOWN";
+  const char *reload = "FLUSH PRIVILEGES";
 
   /*
    *  Connect to the database, if required.
@@ -123,7 +124,7 @@ _admin_internal(drh,dbh,command,dbname=NULL,host=NULL,port=NULL,user=NULL,passwo
   if (strEQ(command, "shutdown"))
     retval = mysql_real_query(sock, shutdown, strlen(shutdown));
   else if (strEQ(command, "reload"))
-    retval = mysql_reload(sock);
+    retval = mysql_real_query(sock, reload, strlen(reload));
   else if (strEQ(command, "createdb"))
   {
     char* buffer = malloc(strlen(dbname)+50);
