@@ -2767,6 +2767,9 @@ my_ulonglong mysql_st_internal_execute(
   if (slen >= 11 && (!strncmp(sbuf, "listfields ", 11) ||
                      !strncmp(sbuf, "LISTFIELDS ", 11)))
   {
+    do_warn(h, JW_ERR_LIST_FIELDS,
+		    "LISTFIELDS support is deprecated and will be removed in an upcoming release");
+
     /* remove pre-space */
     slen-= 10;
     sbuf+= 10;
