@@ -1533,6 +1533,40 @@ be treated as UTF-8.  This will only take effect if used as part of the
 call to connect().  If you turn the flag on after connecting, you will
 need to issue the command C<SET NAMES utf8> to get the same effect.
 
+This flag's implementation suffers the "Unicode Bug" on passed statements and
+input bind parameters, and cannot be fixed for historical reasons. In order to
+pass strings with Unicode characters consistently through DBD::mysql, you can
+use a "hack" workaround of calling the C<utf8::upgrade()> function on scalars
+immediately before passing them to DBD::mysql.  Calling the C<utf8::upgrade()>
+function has absolutely no effect on (correctly written) Perl code, but forces
+DBD::mysql to interpret it correctly as text data to be encoded.  In the same
+way, binary (byte) data can be passed through DBD::mysql without being encoded
+as text data by calling the C<utf8::downgrade()> function (it dies on wide
+Unicode strings with codepoints above U+FF).  See the following example:
+
+  # check that last name contains LATIN CAPITAL LETTER O WITH STROKE (U+D8)
+  my $statement = "SELECT * FROM users WHERE last_name LIKE '%\x{D8}%' AND first_name = ? AND data = ?";
+
+  my $wide_string_param = "Andr\x{E9}"; # Andre with LATIN SMALL LETTER E WITH ACUTE (U+E9)
+
+  my $byte_param = "\x{D8}\x{A0}\x{39}\x{F8}"; # some bytes (binary data)
+
+  my $dbh = DBI->connect('DBI:mysql:database', 'username', 'pass', { mysql_enable_utf8mb4 => 1 });
+
+  utf8::upgrade($statement); # UTF-8 fix for DBD::mysql
+  my $sth = $dbh->prepare($statement);
+
+  utf8::upgrade($wide_string_param); # UTF-8 fix for DBD::mysql
+  $sth->bind_param(1, $wide_string_param);
+
+  utf8::downgrade($byte_param); # byte fix for DBD::mysql
+  $sth->bind_param(2, $byte_param, DBI::SQL_BINARY); # set correct binary type
+
+  $sth->execute();
+
+  my $output = $sth->fetchall_arrayref();
+  # returned data in $output reference should be already UTF-8 decoded as appropriate
+
 =item mysql_enable_utf8mb4
 
 This is similar to mysql_enable_utf8, but is capable of handling 4-byte
