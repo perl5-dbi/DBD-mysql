@@ -188,6 +188,8 @@ sub admin {
     my($user) = shift || '';
     my($password) = shift || '';
 
+    warn 'admin() is deprecated and will be removed in an upcoming version';
+
     $drh->func(undef, $command,
 	       $dbname || '',
 	       $host || '',
