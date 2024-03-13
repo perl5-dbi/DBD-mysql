@@ -1524,7 +1524,7 @@ MYSQL *mysql_dr_connect(
     {
       /* connection succeeded. */
       /* imp_dbh == NULL when mysql_dr_connect() is called from mysql.xs
-         functions (_admin_internal(),_ListDBs()). */
+         function _ListDBs(). */
       if (!(result->client_flag & CLIENT_PROTOCOL_41) && imp_dbh)
         imp_dbh->use_server_side_prepare = FALSE;
 
@@ -2696,7 +2696,6 @@ my_ulonglong mysql_st_internal_execute(
   bool bind_comment_placeholders= TRUE;
   STRLEN slen;
   char *sbuf = SvPV(statement, slen);
-  char *table;
   char *salloc;
   int htype;
   bool async = FALSE;
@@ -2762,68 +2761,6 @@ my_ulonglong mysql_st_internal_execute(
     sbuf= salloc;
     if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
       PerlIO_printf(DBIc_LOGPIO(imp_xxh), "Binding parameters: %s\n", sbuf);
-  }
-
-  if (slen >= 11 && (!strncmp(sbuf, "listfields ", 11) ||
-                     !strncmp(sbuf, "LISTFIELDS ", 11)))
-  {
-    do_warn(h, JW_ERR_LIST_FIELDS,
-		    "LISTFIELDS support is deprecated and will be removed in an upcoming release");
-
-    /* remove pre-space */
-    slen-= 10;
-    sbuf+= 10;
-    while (slen && isspace(*sbuf)) { --slen;  ++sbuf; }
-
-    if (!slen)
-    {
-      do_error(h, JW_ERR_QUERY, "Missing table name" ,NULL);
-      return -2;
-    }
-    if (!(table= malloc(slen+1)))
-    {
-      do_error(h, JW_ERR_MEM, "Out of memory" ,NULL);
-      return -2;
-    }
-
-    strncpy(table, sbuf, slen);
-    sbuf= table;
-
-    while (slen && !isspace(*sbuf))
-    {
-      --slen;
-      ++sbuf;
-    }
-    *sbuf++= '\0';
-
-    char* buffer = malloc(strlen(table)+20);
-    if (buffer == NULL)
-    {
-      do_error(h, JW_ERR_MEM, "Out of memory" ,NULL);
-      return -2;
-    }
-    else
-    {
-      strcpy(buffer, "SHOW COLUMNS FROM ");
-      strcat(buffer, table);
-      if (mysql_real_query(svsock, buffer, strlen(buffer)) != 0) {
-        do_error(h, JW_ERR_QUERY, "Query for columns failed" ,NULL);
-        return -2;
-      }
-      *result = mysql_store_result(svsock);
-      free(buffer);
-    }
-
-    free(table);
-
-    if (!(*result))
-    {
-      do_error(h, mysql_errno(svsock), mysql_error(svsock)
-               ,mysql_sqlstate(svsock));
-      return -2;
-    }
-
-    return 0;
   }
 
   if(async) {
