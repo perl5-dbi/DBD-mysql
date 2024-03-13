@@ -179,24 +179,6 @@ sub data_sources {
     @dsn;
 }
 
-sub admin {
-    my($drh) = shift;
-    my($command) = shift;
-    my($dbname) = ($command eq 'createdb'  ||  $command eq 'dropdb') ?
-	shift : '';
-    my($host, $port) = DBD::mysql->_OdbcParseHost(shift(@_) || '');
-    my($user) = shift || '';
-    my($password) = shift || '';
-
-    warn 'admin() is deprecated and will be removed in an upcoming version';
-
-    $drh->func(undef, $command,
-	       $dbname || '',
-	       $host || '',
-	       $port || '',
-	       $user, $password, '_admin_internal');
-}
-
 package DBD::mysql::db; # ====== DATABASE ======
 use strict;
 use DBI qw(:sql_types);
@@ -257,19 +239,6 @@ sub ANSI2db {
     my $self = shift;
     my $type = shift;
     return $DBD::mysql::db::ANSI2db{"$type"};
-}
-
-sub admin {
-    my($dbh) = shift;
-    my($command) = shift;
-    my($dbname) = ($command eq 'createdb'  ||  $command eq 'dropdb') ?
-	shift : '';
-    $dbh->{'Driver'}->func($dbh, $command, $dbname, '', '', '',
-			   '_admin_internal');
-}
-
-sub _SelectDB ($$) {
-    die "_SelectDB is removed from this module; use DBI->connect instead.";
 }
 
 sub table_info ($) {
@@ -1377,29 +1346,6 @@ This returns:
   };
 
 =back
-
-=back
-
-
-=head2 Private MetaData Methods
-
-=over
-
-=item B<ListDBs>
-
-    my $drh = DBI->install_driver("mysql");
-    @dbs = $drh->func("$hostname:$port", '_ListDBs');
-    @dbs = $drh->func($hostname, $port, '_ListDBs');
-    @dbs = $dbh->func('_ListDBs');
-
-Returns a list of all databases managed by the MySQL server
-running on C<$hostname>, port C<$port>. This is a legacy
-method.  Instead, you should use the portable method
-
-    @dbs = DBI->data_sources("mysql");
-
-=back
-
 
 =head1 DATABASE HANDLES
 
