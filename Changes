@@ -1,3 +1,10 @@
+2024-03-19 Daniël van Eeden, DBI/DBD community (5.004)
+* Add deprecation warning for LISTFIELDS support
+* Remove calls to mysql_reload() and mysql_list_fields()
+* (ci_update) Update mysql-apt-config to 0.8.29-1
+* Re-add documentation on how to workaround UTF-8 bug
+* Remove legacy Bundle::DBD::mysql
+
 2023-12-01 Daniël van Eeden, DBI/DBD community (5.003)
 * Add ifdef for ER_CLIENT_INTERACTION_TIMEOUT
 * Fix for issue 251. Also fixed case of "e<single int>"
