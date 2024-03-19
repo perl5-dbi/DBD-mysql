@@ -2924,7 +2924,11 @@ my_ulonglong mysql_st_internal_execute41(
 
   if (num_params > 0 && !(*has_been_bound))
   {
+#if MYSQL_VERSION_ID >= 80300
+    if (mysql_stmt_bind_named_param(stmt,bind,num_params, NULL))
+#else
     if (mysql_stmt_bind_param(stmt,bind))
+#endif
       goto error;
 
     *has_been_bound= 1;
