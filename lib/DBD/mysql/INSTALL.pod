@@ -47,7 +47,7 @@ or L<Strawberry Perl|http://www.strawberryperl.com>.
 You need not install the actual MySQL database server, the
 client files and the development files are sufficient. For
 example, Fedora Linux distribution comes with RPM files
-(using YUM) B<mysql> and B<mysql-server> (use "yum search"
+(using DNF) B<mysql> and B<mysql-server> (use "dnf search"
 to find exact package names). These are sufficient, if the MySQL
 server is located on a foreign machine.  You may also create client
 files by compiling from the MySQL source distribution and using
@@ -134,7 +134,9 @@ CentOS, and Fedora come with MySQL and DBD::mysql.
 
 Use the following command to install DBD::mysql:
 
-    yum install "perl(DBD::mysql)"
+    dnf install "perl(DBD::mysql)"
+
+Previous name of installation command was C<yum>.
 
 
 =head2 Debian and Ubuntu
@@ -208,8 +210,8 @@ will work just as well.
 In this example we install and start a local server for running the
 tests against.
 
-    yum -y install make gcc mariadb-devel mariadb-libs mariadb-server
-    yum -y install "perl(Test::Deep)" "perl(Test::More)"
+    dnf -y install make gcc mariadb-devel mariadb-libs mariadb-server
+    dnf -y install "perl(Test::Deep)" "perl(Test::More)"
     systemctl start mariadb.service
 
 
