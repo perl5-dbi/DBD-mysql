@@ -204,15 +204,12 @@ To run the tests that ship with the module, you'll need access to a
 running MySQL server. This can be running on localhost, but it can also
 be on a remote machine.
 
-On Fedora the process is as follows. Please note that Fedora actually
-ships with MariaDB but not with MySQL. This is not a problem, it
-will work just as well.
-In this example we install and start a local server for running the
-tests against.
+On Fedora the process is as follows. In this example we install and
+start a local server for running the tests against.
 
-    dnf -y install make gcc mariadb-devel mariadb-libs mariadb-server
+    dnf -y install make gcc community-mysql-devel community-mysql-libs community-mysql-server
     dnf -y install "perl(Test::Deep)" "perl(Test::More)"
-    systemctl start mariadb.service
+    systemctl start mysqld.service
 
 
 =head2 Environment Variables
