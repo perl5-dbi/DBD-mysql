@@ -1376,19 +1376,19 @@ against:
 
   print "$dbh->{mysql_clientinfo}\n";
 
-  5.2.0-MariaDB
+  8.3.0
 
 =item mysql_clientversion
 
   print "$dbh->{mysql_clientversion}\n";
 
-  50200
+  80300
 
 =item mysql_serverversion
 
   print "$dbh->{mysql_serverversion}\n";
 
-  50200
+  80300
 
 =item mysql_dbd_stats
 
@@ -1537,7 +1537,7 @@ character column, if this column is indexed, if you query that
 column with the integer value not being quoted, it will not
 use the index:
 
-    MariaDB [test]> explain select * from test where value0 = '3' \G
+    mysql> explain select * from test where value0 = '3' \G
     *************************** 1. row ***************************
                id: 1
       select_type: SIMPLE
@@ -1551,7 +1551,7 @@ use the index:
             Extra: Using index condition
     1 row in set (0.00 sec)
 
-    MariaDB [test]> explain select * from test where value0 = 3
+    mysql> explain select * from test where value0 = 3
         -> \G
     *************************** 1. row ***************************
                id: 1
