@@ -12,12 +12,12 @@ jobs:
             server: "8.0"
           - os: ubuntu-20.04
             client: "8.0"
-            server: "8.3"
+            server: "8.4"
           - os: ubuntu-22.04
-            client: "8.3"
-            server: "8.3"
+            client: "8.4"
+            server: "8.4"
           - os: ubuntu-22.04
-            client: "8.3"
+            client: "8.4"
             server: "8.0"
     runs-on: ${{ matrix.os }}
     services:
@@ -40,15 +40,15 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.0
           EOF
-      - if: matrix.client == '8.3'
+      - if: matrix.client == '8.4'
         run: |
           sudo debconf-set-selections <<EOF
-          mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
+          mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
       - name: "Setup mysql libs"
         run: |
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.29-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.29-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.30-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.30-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
