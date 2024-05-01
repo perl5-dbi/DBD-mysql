@@ -13,6 +13,9 @@ my $have_ssl = eval { $dbh->selectrow_hashref("SHOW VARIABLES WHERE Variable_nam
 $dbh->disconnect();
 plan skip_all => 'Server supports SSL connections, cannot test fallback to plain text' if $have_ssl and $have_ssl->{Value} eq 'YES';
 
+# `have_ssl` has been deprecated in 8.0.26 and removed in 8.4.0...
+plan skip_all => 'Server might support SSL connections, cannot test false-positive enforcement' if not $have_ssl;
+
 plan tests => 2;
 
 $dbh = DBI->connect($test_dsn, $test_user, $test_password, { PrintError => 1, RaiseError => 0, mysql_ssl => 1, mysql_ssl_optional => 1 });
