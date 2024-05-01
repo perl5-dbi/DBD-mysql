@@ -1,3 +1,10 @@
+2024-05-01 Daniël van Eeden, DBI/DBD community (5.005)
+* docs: Update package names and MariaDB related things
+* Rewrite yum name to dnf
+* CI: Test against MySQL 8.3
+* Replace mysql_stmt_bind_param() with mysql_stmt_bind_named_param()
+* Cleanup deprecated functionality
+
 2024-03-19 Daniël van Eeden, DBI/DBD community (5.004)
 * Add deprecation warning for LISTFIELDS support
 * Remove calls to mysql_reload() and mysql_list_fields()
