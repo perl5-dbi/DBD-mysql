@@ -30,11 +30,20 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
-          sudo apt install -y gcc make libdbi-perl libdevel-checklib-perl libtest-deep-perl wget lsb-release gnupg
+          sudo apt install -y \
+          gcc \
+          gnupg \
+          libdbi-perl \
+          libdevel-checklib-perl \
+          libtest-deep-perl \
+          libtest-pod-perl \
+          lsb-release \
+          make \
+          wget \
       - if: matrix.client == '8.0'
         run: |
           sudo debconf-set-selections <<EOF
