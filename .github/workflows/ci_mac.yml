@@ -5,17 +5,18 @@ jobs:
   test:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Install dependencies"
         run: |
           brew install cpanminus mysql@8.0 mysql-client@8.0
-          cpanm Devel::CheckLib
-          cpanm Test::More
-          cpanm Test::Deep
           cpanm DBI
+          cpanm Devel::CheckLib
+          cpanm Test::Deep
+          cpanm Test::More
+          cpanm Test::Pod
       - name: "Run build"
         run: |
-          export PATH="/usr/local/opt/mysql@8.0/bin:$PATH"
+          export PATH="/usr/local/opt/mysql@8.0/bin:/opt/homebrew/opt/mysql-client@8.0/bin:/opt/homebrew/opt/mysql@8.0/bin:$PATH"
           perl Makefile.PL --testhost=127.0.0.1 --testuser=root
           make
       - name: "Start MySQL"

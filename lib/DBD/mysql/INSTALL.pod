@@ -207,10 +207,11 @@ be on a remote machine.
 On Fedora the process is as follows. In this example we install and
 start a local server for running the tests against.
 
-    dnf -y install make gcc community-mysql-devel community-mysql-libs community-mysql-server
-    dnf -y install "perl(Test::Deep)" "perl(Test::More)"
+    dnf -y install make gcc mysql-devel mysql-libs mysql-server mysql
+    dnf -y install "perl(Test::Deep)" "perl(Test::More)" "perl(Test::Pod)" \
+                   "perl(bigint)" "perl(DBI)" "perl(ExtUtils::MakeMaker)" \
+                   "perl(Devel::CheckLib)"
     systemctl start mysqld.service
-
 
 =head2 Environment Variables
 

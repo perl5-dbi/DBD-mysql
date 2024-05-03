@@ -1347,6 +1347,8 @@ This returns:
 
 =back
 
+=back
+
 =head1 DATABASE HANDLES
 
 The DBD::mysql driver supports the following attributes of database
