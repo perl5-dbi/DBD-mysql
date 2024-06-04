@@ -1,3 +1,8 @@
+2024-06-01 Daniël van Eeden, DBI/DBD community (5.006)
+* Fix pod and ensure Test::Pod is installed
+* CI: Test with MySQL 8.4
+* Update test for `have_ssl` removal
+
 2024-05-01 Daniël van Eeden, DBI/DBD community (5.005)
 * docs: Update package names and MariaDB related things
 * Rewrite yum name to dnf
