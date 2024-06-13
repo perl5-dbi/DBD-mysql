@@ -1827,7 +1827,7 @@ int dbd_discon_all (SV *drh, imp_drh_t *imp_drh) {
   dTHX;
   PERL_UNUSED_ARG(drh);
 
-  mysql_server_end();
+  mysql_library_end();
 
   /* The disconnect_all concept is flawed and needs more work */
   if (!PL_dirty && !SvTRUE(perl_get_sv("DBI::PERL_ENDING",0))) {
@@ -1871,7 +1871,6 @@ void dbd_db_destroy(SV* dbh, imp_dbh_t* imp_dbh) {
     }
     dbd_db_disconnect(dbh, imp_dbh);
   }
-  mysql_library_end();
   Safefree(imp_dbh->pmysql);
 
   /* Tell DBI, that dbh->destroy must no longer be called */
