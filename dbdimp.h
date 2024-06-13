@@ -237,6 +237,7 @@ struct imp_sth_st {
 #define dbd_db_destroy		mysql_db_destroy
 #define dbd_db_STORE_attrib	mysql_db_STORE_attrib
 #define dbd_db_FETCH_attrib	mysql_db_FETCH_attrib
+#define dbd_discon_all		mysql_discon_all
 #define dbd_st_prepare		mysql_st_prepare
 #define dbd_st_execute		mysql_st_execute
 #define dbd_st_fetch		mysql_st_fetch
