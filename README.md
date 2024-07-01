@@ -10,7 +10,7 @@ Usage is described in [DBD::mysql](https://metacpan.org/pod/DBD::mysql).
 
 ## Building and Testing
 
-For building DBD::mysql you need the MySQL 8.x client library.
+For building DBD::mysql you need a MySQL 8.x or newer client library.
 
 ```
 perl Makefile.PL

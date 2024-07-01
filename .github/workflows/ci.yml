@@ -19,6 +19,9 @@ jobs:
           - os: ubuntu-22.04
             client: "8.4"
             server: "8.0"
+          - os: ubuntu-22.04
+            client: "9.0"
+            server: "8.4"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
@@ -53,6 +56,10 @@ jobs:
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
+      - if: matrix.client == '9.0'
+        run: |
+          sudo debconf-set-selections <<EOF
+          mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
           EOF
       - name: "Setup mysql libs"
         run: |
