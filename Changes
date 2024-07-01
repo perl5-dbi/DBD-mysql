@@ -1,3 +1,7 @@
+2024-07-01 Daniël van Eeden, DBI/DBD community (5.007)
+* Fix calls to mysql_server_end()/mysql_library_end()
+* Dockerfile: Update mysql-apt-config
+
 2024-06-01 Daniël van Eeden, DBI/DBD community (5.006)
 * Fix pod and ensure Test::Pod is installed
 * CI: Test with MySQL 8.4
