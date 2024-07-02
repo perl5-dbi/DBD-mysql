@@ -135,7 +135,11 @@ for my $i (0 .. 11) {
         eval {
             $rows = $sts[1]->execute($val, $i);
         };
-        like ($@, qr{Data truncated for column}, $t);
+        if ($dbh->{mysql_serverversion} < 90000) {
+            like ($@, qr{Data truncated for column}, $t);
+        } else {
+            like ($@, qr{Incorrect DOUBLE value}, $t);
+        }
         $rows= $sts[1]->execute(0, $i);
     }
     else {
