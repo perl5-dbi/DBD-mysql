@@ -22,12 +22,16 @@ jobs:
           - os: ubuntu-22.04
             client: "9.0"
             server: "8.4"
+          - os: ubuntu-22.04
+            client: "9.0"
+            server: "9.0"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
-        image: mysql:${{ matrix.server }}
+        image: container-registry.oracle.com/mysql/community-server:${{ matrix.server }}
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_HOST: "%"
           MYSQL_DATABASE: test
         ports:
           - 3306:3306
