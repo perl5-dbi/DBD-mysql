@@ -1,0 +1,18 @@
+@echo off
+rem mysql_config replacement for use with appveyor
+rem based on https://github.com/StrawberryPerl/build-extlibs/blob/master/mysql.special/mysql_config.bat
+rem set ROOT=C:\Program Files\MySQL\MySQL Server 8.0
+rem avoid spaces/quoting/etc
+set ROOT=C:\PROGRA~1\MySQL\MYSQLS~1.0
+
+set XCFLAGS=-I%ROOT%\include
+set XLIBS="-L%ROOT%\lib -lmysql
+set XVERSION=8.0.34
+set XPREFIX=%ROOT%..\
+
+for %%p in (%*) do (
+  if x%%p == x--cflags     echo %XCFLAGS%
+  if x%%p == x--libs       echo %XLIBS%
+  if x%%p == x--version    echo %XVERSION%
+  if x%%p == x--prefix     echo %XPREFIX%
+)
