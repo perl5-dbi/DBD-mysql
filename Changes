@@ -1,7 +1,7 @@
 2024-07-30 Daniël van Eeden, DBI/DBD community (5.008)
 * CI: Use Oracle MySQL containers
 * 51bind_type_guessing.t: Update for 9.0.0 errorcodes
-* MySQL 9.0.0 client libarary support
+* MySQL 9.0.0 client library support
 
 2024-07-01 Daniël van Eeden, DBI/DBD community (5.007)
 * Fix calls to mysql_server_end()/mysql_library_end()
