@@ -404,7 +404,7 @@ sub column_info {
 
   local $dbh->{FetchHashKeyName} = 'NAME_lc';
   # only ignore ER_NO_SUCH_TABLE in internal_execute if issued from here
-  my $desc_sth = $dbh->prepare("DESCRIBE $table_id " . $dbh->quote($column));
+  my $desc_sth = $dbh->prepare("SHOW COLUMNS FROM $table_id LIKE " . $dbh->quote($column));
   my $desc = $dbh->selectall_arrayref($desc_sth, { Columns=>{} });
 
   #return $desc_sth if $desc_sth->err();
