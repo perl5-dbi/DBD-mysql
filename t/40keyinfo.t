@@ -43,11 +43,16 @@ is_deeply([ $dbh->primary_key(undef, undef, 'dbd_mysql_keyinfo') ], [ 'a', 'b' ]
 
 $sth= $dbh->statistics_info(undef, undef, 'dbd_mysql_keyinfo', 0, 0);
 my $stats_info = $sth->fetchall_arrayref;
+my $n_catalogs = @$stats_info;
 my $n_unique = grep $_->[3], @$stats_info;
 $sth= $dbh->statistics_info(undef, undef, 'dbd_mysql_keyinfo', 1, 0);
 $stats_info = $sth->fetchall_arrayref;
 my $n_unique2 = grep $_->[3], @$stats_info;
 isnt($n_unique2, $n_unique, "Check statistics_info unique_only flag has an effect");
+$sth= $dbh->statistics_info('nonexist', undef, 'dbd_mysql_keyinfo', 0, 0);
+$stats_info = $sth->fetchall_arrayref;
+my $n_catalogs2 = @$stats_info;
+isnt($n_catalogs2, $n_catalogs, "Check statistics_info catalog arg has an effect");
 
 ok($dbh->do("DROP TABLE dbd_mysql_keyinfo"), "Dropped table");
 
