@@ -738,12 +738,10 @@ EOF
     my @where;
     my @bind;
 
-    # catalogs are not yet supported by MySQL
-
-#    if (defined $catalog) {
-#        push @where, 'TABLE_CATALOG = ?';
-#        push @bind, $catalog;
-#    }
+    if (defined $catalog) {
+        push @where, 'TABLE_CATALOG = ?';
+        push @bind, $catalog;
+    }
 
     if (defined $schema) {
         push @where, 'TABLE_SCHEMA = ?';
