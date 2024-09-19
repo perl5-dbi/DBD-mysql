@@ -1,3 +1,10 @@
+2024-09-19 Daniël van Eeden, DBI/DBD community (5.009)
+* Cleanup obsolete mysql_errmsg and mysql_stats
+* fix some queries with columns beginning with limit would fail
+* implement statistics_info $unique_only
+* fix(column_info): use show columns to describe
+* Update Dockerfile
+
 2024-07-30 Daniël van Eeden, DBI/DBD community (5.008)
 * CI: Use Oracle MySQL containers
 * 51bind_type_guessing.t: Update for 9.0.0 errorcodes
