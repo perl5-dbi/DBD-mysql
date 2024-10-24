@@ -447,7 +447,7 @@ sub Configure {
                 }
 
                 if ($param eq 'version') {
-                  if ($str !~ /^[89]\./) {
+                  if ((split(/\./, $str, 2))[0] < 8) {
                     die "DBD::mysql requires MySQL 8.x or newer for building. Version reported by $command: $str";
                   }
                 }
