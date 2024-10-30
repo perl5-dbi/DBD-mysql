@@ -4026,9 +4026,16 @@ dbd_st_FETCH_internal(
             I32 keylen;
             for (n= 0; n < DBIc_NUM_PARAMS(imp_sth); n++)
             {
-                keylen= sprintf(key, "%d", n);
-                (void)hv_store(pvhv, key,
-                         keylen, newSVsv(imp_sth->params[n].value), 0);
+                // https://metacpan.org/pod/DBI#ParamValues says keys
+                // are typically integers starting at 1
+                // values should be undef if not yet bound
+                keylen= sprintf(key, "%d", n+1);
+                if (imp_sth->params[n].value) {
+                    (void)hv_store(pvhv, key,
+                             keylen, newSVsv(imp_sth->params[n].value), 0);
+                } else {
+                    (void)hv_store(pvhv, key, keylen, &PL_sv_undef, 0);
+                }
             }
         }
         retsv= sv_2mortal(newRV_noinc((SV*)pvhv));
