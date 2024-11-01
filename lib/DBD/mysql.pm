@@ -1675,6 +1675,24 @@ to DBD::mysql. The attribute list includes:
 
 =over
 
+=item ParamValues
+
+This attribute is supported as described in the DBI documentation.
+
+It returns a hashref, the keys of which are the 'names' of the 
+placeholders: integers starting at 1.  It returns an empty hashref if 
+the statement has no placeholders.
+
+The values for these keys are initially undef; they are populated when 
+the C<bind_param> or C<execute> method is called.  Supplying the 
+parameter values in the arguments to C<execute> will override any 
+previously bound values.  
+
+After execution, it is possible to use C<bind_param> to change a single 
+value in the statement and C<execute> again, with other values 
+unchanged.  The attribute remains properly populated after the C<finish> 
+method is called, with the values from the last execution.
+
 =item ChopBlanks
 
 this attribute determines whether a I<fetchrow> will chop preceding
