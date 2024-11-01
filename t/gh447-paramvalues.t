@@ -31,6 +31,14 @@ END {
     }
 }
 
+# this is the starting index for the placeholder keys
+# in the ParamValues attribute hashref.  gh#447 showed
+# the keys begin counting with 0, but DBI requires they
+# start counting at 1.
+# so, if this value is 0, tests pass under DBD::mysql 4.050.
+# but the value should be 1, when the issue is fixed.
+my $ofs = 1;
+
 # ------ set up
 ok(defined $dbh, "Connected to database");
 $dbh->do("DROP TABLE IF EXISTS $table");
@@ -50,8 +58,6 @@ undef $sth;
 
 
 # test prepare/execute statement with a placeholder
-my $ofs = 0;
-
 $sth = $dbh->prepare("INSERT INTO $table values (?, ?)");
 is_deeply($sth->{ParamValues}, {0+$ofs => undef, 1+$ofs => undef},
     "ParamValues is correct hashref before INSERT")
