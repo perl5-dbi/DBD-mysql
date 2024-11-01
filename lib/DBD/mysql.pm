@@ -1670,34 +1670,60 @@ header of table names together with all rows:
   }
 
 For portable applications you should restrict yourself to attributes with
-capitalized or mixed case names. Lower case attribute names are private
-to DBD::mysql. The attribute list includes:
+capitalized or mixed case names. Uppercase attribute names are in the 
+statement handle interface described by L<DBI>, while lower case attribute 
+names are private to DBD::mysql. The attribute list includes:
 
 =over
 
-=item ParamValues
+=item NAME
 
-This attribute is supported as described in the DBI documentation.
+A reference to an array of column names, as per DBI docs.
 
-It returns a hashref, the keys of which are the 'names' of the 
-placeholders: integers starting at 1.  It returns an empty hashref if 
-the statement has no placeholders.
+=item NULLABLE
 
-The values for these keys are initially undef; they are populated when 
-the C<bind_param> or C<execute> method is called.  Supplying the 
-parameter values in the arguments to C<execute> will override any 
-previously bound values.  
+A reference to an array of boolean values; TRUE indicates that this column
+may contain NULL's.
 
-After execution, it is possible to use C<bind_param> to change a single 
-value in the statement and C<execute> again, with other values 
-unchanged.  The attribute remains properly populated after the C<finish> 
-method is called, with the values from the last execution.
+=item NUM_OF_FIELDS
+
+Number of fields returned by a I<SELECT> or I<LISTFIELDS> statement.
+You may use this for checking whether a statement returned a result:
+A zero value indicates a non-SELECT statement like I<INSERT>,
+I<DELETE> or I<UPDATE>.
+
+=item TYPE
+
+A reference to an array of column types. The engine's native column
+types are mapped to portable types like DBI::SQL_INTEGER() or
+DBI::SQL_VARCHAR(), as good as possible. Not all native types have
+a meaningful equivalent, for example DBD::mysql::FIELD_TYPE_INTERVAL
+is mapped to DBI::SQL_VARCHAR().
+If you need the native column types, use I<mysql_type>. See below.
 
 =item ChopBlanks
 
 this attribute determines whether a I<fetchrow> will chop preceding
 and trailing blanks off the column values. Chopping blanks does not
 have impact on the I<max_length> attribute.
+
+=item ParamValues
+
+This attribute is supported as described in the DBI documentation.
+
+It returns a hashref, the keys of which are the 'names' of the 
+placeholders: integers starting at 1. It returns an empty hashref if 
+the statement has no placeholders.
+
+The values for these keys are initially undef; they are populated with 
+C<bind_param>, or when C<execute> method is called with parameters.  
+(Supplying the parameter values in the arguments to C<execute> will 
+override any previously bound values.)
+
+After execution, it is possible to use C<bind_param> to change a single 
+parameter value and C<execute> the statement again, with other values 
+unchanged. The attribute remains properly populated after the C<finish> 
+method is called, with the values from the last execution.
 
 =item mysql_gtids
 
@@ -1750,34 +1776,9 @@ the maximum physically present in the result table, I<length> gives
 the theoretically possible maximum. I<max_length> is valid for MySQL
 only.
 
-=item NAME
-
-A reference to an array of column names.
-
-=item NULLABLE
-
-A reference to an array of boolean values; TRUE indicates that this column
-may contain NULL's.
-
-=item NUM_OF_FIELDS
-
-Number of fields returned by a I<SELECT> or I<LISTFIELDS> statement.
-You may use this for checking whether a statement returned a result:
-A zero value indicates a non-SELECT statement like I<INSERT>,
-I<DELETE> or I<UPDATE>.
-
 =item mysql_table
 
 A reference to an array of table names, useful in a I<JOIN> result.
-
-=item TYPE
-
-A reference to an array of column types. The engine's native column
-types are mapped to portable types like DBI::SQL_INTEGER() or
-DBI::SQL_VARCHAR(), as good as possible. Not all native types have
-a meaningful equivalent, for example DBD::mysql::FIELD_TYPE_INTERVAL
-is mapped to DBI::SQL_VARCHAR().
-If you need the native column types, use I<mysql_type>. See below.
 
 =item mysql_type
 
