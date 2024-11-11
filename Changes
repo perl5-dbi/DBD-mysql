@@ -1,3 +1,15 @@
+2024-11-11 Daniël van Eeden, DBI/DBD community (5.010)
+* doc: reorder mentioned sth attributes
+* doc: POD for ParamValues sth attribute
+* set index offset for when gh#447 is fixed
+* tests for $sth->{ParamValues} attrib (gh #447)
+* Make ParamValues follow expectations
+* it seems catalogs *are* now supported - make statistics_info use them
+* Warn that MariaDB's client library does not work
+* Carefully compare library version numbers
+* Correct email address
+* correct keyword name MEDIUMBLOB
+
 2024-09-19 Daniël van Eeden, DBI/DBD community (5.009)
 * Cleanup obsolete mysql_errmsg and mysql_stats
 * fix some queries with columns beginning with limit would fail

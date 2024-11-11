@@ -78,6 +78,7 @@ t/99compression.t
 t/99_bug_server_prepare_blob_null.t
 t/gh352.t
 t/gh360.t
+t/gh447-paramvalues.t
 t/lib.pl
 t/manifest.t
 t/pod.t
