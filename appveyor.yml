@@ -1,0 +1,25 @@
+version: 1.0.{build}
+
+image: Visual Studio 2022
+
+services:
+  - mysql
+
+init:
+  - ps: Start-Service MySQL80
+
+install:
+  - path C:\Program Files\MySQL\MySQL Server 8.0\bin;C:\strawberry\perl\bin;C:\strawberry\perl\site\bin;C:\strawberry\c\bin;%PATH%
+  - mkdir %APPVEYOR_BUILD_FOLDER%\tmp
+  - set TMPDIR=%APPVEYOR_BUILD_FOLDER%\tmp
+  - mysql.exe --version
+  - perl -V
+  - cpan App::cpanminus
+  - cpanm -q --showdeps --with-develop --with-suggests . | findstr /v "^perl\>" | cpanm -n
+  - cpanm -q -n Devel::CheckLib
+
+build_script:
+  - perl Makefile.PL --testuser=root --testpassword=Password12! --mysql_config=CI\mysql_config.bat
+
+test_script:
+  - gmake test
