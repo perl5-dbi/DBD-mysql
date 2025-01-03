@@ -8,47 +8,42 @@ jobs:
       matrix:
         include:
           - os: ubuntu-20.04
-            client: "8.0"
-            server: "8.0"
-          - os: ubuntu-20.04
-            client: "8.0"
-            server: "8.1"
           - os: ubuntu-22.04
-            client: "8.1"
-            server: "8.1"
-          - os: ubuntu-22.04
-            client: "8.1"
-            server: "8.0"
+          - os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     services:
       mysql:
-        image: mysql:${{ matrix.server }}
+        image: container-registry.oracle.com/mysql/community-server:8.0
         env:
           MYSQL_ALLOW_EMPTY_PASSWORD: yes
+          MYSQL_ROOT_HOST: "%"
           MYSQL_DATABASE: test
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
-          sudo apt install -y gcc make libdbi-perl libdevel-checklib-perl libtest-deep-perl wget lsb-release gnupg
-      - if: matrix.client == '8.0'
-        run: |
+          sudo apt install -y \
+          gcc \
+          gnupg \
+          libdbi-perl \
+          libdevel-checklib-perl \
+          libtest-deep-perl \
+          libtest-pod-perl \
+          lsb-release \
+          make \
+          wget
+      - run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.0
           EOF
-      - if: matrix.client == '8.1'
-        run: |
-          sudo debconf-set-selections <<EOF
-          mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
-          EOF
       - name: "Setup mysql libs"
         run: |
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.26-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.26-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.30-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.30-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
