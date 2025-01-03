@@ -23,13 +23,19 @@ my @results_ansi = (qw/ 'foo' 'foo\'bar' 'foo\\\\bar'/);
 my @results_no_backlslash = (qw/ 'foo' 'foo''bar' 'foo\\bar'/);
 my @results = (\@results_empty, \@results_ansi, \@results_no_backlslash);
 
-plan tests => (@sqlmodes * @words * 2 + 1);
+plan tests => (@sqlmodes * @words * 3 + 1);
 
 while (my ($i, $sqlmode) = each @sqlmodes) {
   $dbh->do("SET sql_mode=?", undef,  $sqlmode eq "empty" ? "" : $sqlmode);
   for my $j (0..@words-1) {
     ok $dbh->quote($words[$j]);
     cmp_ok($dbh->quote($words[$j]), "eq", $results[$i][$j], "$sqlmode $words[$j]");
+
+    is(
+        $dbh->selectrow_array('SELECT ?', undef, $words[$j]),
+        $words[$j],
+        "Round-tripped '$words[$j]' through a placeholder query"
+    );
   }
 }
 
