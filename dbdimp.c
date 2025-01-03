@@ -766,7 +766,7 @@ static char *parse_params(
             if (!is_num)
             {
               *ptr++ = '\'';
-              ptr += mysql_real_escape_string(sock, ptr, valbuf, vallen);
+              ptr += mysql_real_escape_string_quote(sock, ptr, valbuf, vallen, '\'');
               *ptr++ = '\'';
             }
             else
