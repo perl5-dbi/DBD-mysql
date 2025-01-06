@@ -1,3 +1,8 @@
+2025-01-06 Daniël van Eeden, DBI/DBD community (5.011)
+* CI: Update for MySQL 9.1
+* Use safer quoting for placeholders
+* Use ANSI path names on Windows
+
 2024-11-11 Daniël van Eeden, DBI/DBD community (5.010)
 * doc: reorder mentioned sth attributes
 * doc: POD for ParamValues sth attribute
