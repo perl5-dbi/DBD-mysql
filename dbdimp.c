@@ -766,7 +766,11 @@ static char *parse_params(
             if (!is_num)
             {
               *ptr++ = '\'';
+#if (MYSQL_VERSION_ID >= 50704) && !defined(MARIADB_BASE_VERSION)
               ptr += mysql_real_escape_string_quote(sock, ptr, valbuf, vallen, '\'');
+#else
+              ptr += mysql_real_escape_string(sock, ptr, valbuf, vallen);
+#endif
               *ptr++ = '\'';
             }
             else
