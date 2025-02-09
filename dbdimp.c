@@ -57,6 +57,21 @@ typedef struct sql_type_info_s
     int is_num;
 } sql_type_info_t;
 
+/*
+  Ensure we only call mysql_library_init once, since that is not threadsafe.
+  Not doing this before had lead to crashes in Apache MPM workers.
+*/ 
+pthread_once_t once_mysql_initialized = PTHREAD_ONCE_INIT;
+
+static void init_mysql_library(void)
+{
+  mysql_library_init(0, NULL, NULL);
+}
+
+static void ensure_mysql_initialized()
+{
+  pthread_once(&once_mysql_initialized, init_mysql_library);
+}
 
 /*
 
@@ -1206,7 +1221,7 @@ MYSQL *mysql_dr_connect(
 #else
     client_flag = CLIENT_FOUND_ROWS;
 #endif
-    mysql_library_init(0, NULL, NULL);
+    ensure_mysql_initialized();
     mysql_init(sock);
 
     if (imp_dbh)
