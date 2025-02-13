@@ -7,10 +7,10 @@ jobs:
       # https://www.mysql.com/support/supportedplatforms/database.html
       matrix:
         include:
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             client: "8.0"
             server: "8.0"
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             client: "8.0"
             server: "8.4"
           - os: ubuntu-22.04
@@ -20,14 +20,14 @@ jobs:
             client: "8.4"
             server: "8.0"
           - os: ubuntu-22.04
-            client: "9.1"
+            client: "9.2"
             server: "8.4"
           - os: ubuntu-22.04
-            client: "9.1"
-            server: "9.1"
+            client: "9.2"
+            server: "9.2"
           - os: ubuntu-24.04
-            client: "9.1"
-            server: "9.1"
+            client: "9.2"
+            server: "9.2"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
@@ -63,7 +63,7 @@ jobs:
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
-      - if: matrix.client == '9.1'
+      - if: matrix.client == '9.2'
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
