@@ -59,19 +59,58 @@ typedef struct sql_type_info_s
 
 /*
   Ensure we only call mysql_library_init once, since that is not threadsafe.
-  Not doing this before had lead to crashes in Apache MPM workers.
+  Not doing this before had lead to crashes and deadlocks in Apache MPM workers.
 */ 
-pthread_once_t once_mysql_initialized = PTHREAD_ONCE_INIT;
 
 static void init_mysql_library(void)
 {
   mysql_library_init(0, NULL, NULL);
 }
 
-static void ensure_mysql_initialized()
+#ifdef DBD_MYSQL_HAS_PTHREADS
+
+#include <pthread.h>
+static pthread_once_t once_mysql_initialized = PTHREAD_ONCE_INIT;
+
+static void ensure_mysql_initialized(void)
 {
   pthread_once(&once_mysql_initialized, init_mysql_library);
 }
+
+#elif defined(_WIN32)
+
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+static INIT_ONCE once_mysql_initialized = INIT_ONCE_STATIC_INIT;
+
+static BOOL init_mysql_library_thunk(PINIT_ONCE once, PVOID param, PVOID *context)
+{
+  init_mysql_library();
+  return TRUE;
+}
+
+static void ensure_mysql_initialized(void)
+{
+  InitOnceExecuteOnce(&once_mysql_initialized, init_mysql_library_thunk, NULL, NULL);
+}
+
+#else
+static int is_mysql_initialized = 0;
+
+static void ensure_mysql_initialized(void)
+{
+  /* Thread-unsafe fallback
+   * In practice, this will only be used for perls not compiled with threads
+   * anyway, so it's very unlikely that this would be a problem.
+   */
+  if (!is_mysql_initialized)
+  {
+    is_mysql_initialized = 1;
+    mysql_library_init(0, NULL, NULL);
+  }
+}
+
+#endif
 
 /*
 

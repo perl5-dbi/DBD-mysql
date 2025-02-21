@@ -22,7 +22,6 @@
 #include <mysql.h>  /* Comes with MySQL-devel */
 #include <mysqld_error.h>  /* Comes MySQL */
 #include <errmsg.h> /* Comes with MySQL-devel */
-#include <pthread.h>
 
 #define true 1
 #define false 0
