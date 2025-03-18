@@ -53,6 +53,8 @@ t/51bind_type_guessing.t
 t/52comment.t
 t/53comment.t
 t/55utf8.t
+t/55utf8_errors.t
+t/55utf8_identifiers.t
 t/55utf8mb4.t
 t/56connattr.t
 t/57trackgtid.t
