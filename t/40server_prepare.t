@@ -88,13 +88,13 @@ my $dbname = $dbh->selectrow_arrayref("SELECT DATABASE()")->[0];
 $dbh->{mysql_server_prepare_disable_fallback} = 1;
 my $error_handler_called = 0;
 $dbh->{HandleError} = sub { $error_handler_called = 1; die $_[0]; };
-eval { $dbh->prepare("USE $dbname") };
+eval { $dbh->prepare('PREPARE stmt FROM "SELECT 1"') };
 $dbh->{HandleError} = undef;
-ok($error_handler_called, 'USE is not supported with mysql_server_prepare_disable_fallback=1');
+ok($error_handler_called, 'PREPARE statement is not supported with mysql_server_prepare_disable_fallback=1');
 
 $dbh->{mysql_server_prepare_disable_fallback} = 0;
 my $sth4;
-ok($sth4 = $dbh->prepare("USE $dbname"), 'USE is supported with mysql_server_prepare_disable_fallback=0');
+ok($sth4 = $dbh->prepare('PREPARE stmt FROM "SELECT 1"'), 'PREPARE statement is supported with mysql_server_prepare_disable_fallback=0');
 ok($sth4->execute());
 ok($sth4->finish());
 

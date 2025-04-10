@@ -21,6 +21,10 @@ if ($dbh->{mysql_serverversion} < 80000) {
   plan skip_all => "test requires 8.x or newer";
 }
 
+if ($dbh->{'mysql_serverinfo'} =~ 'MariaDB') {
+  plan skip_all => "No zstd or Compression_algorithm on MariaDB";
+}
+
 foreach my $compression ( "zlib", "zstd", "0", "1" ) {
   my ($dbh, $sth, $row);
   
