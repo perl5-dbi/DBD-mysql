@@ -1,3 +1,9 @@
+2025-04-11 Daniël van Eeden, DBI/DBD community (5.012)
+* Fix tests failing on MariaDB
+* Correct SQL_DRIVER_NAME
+* Add tests for UTF8 characters in table definition and errors
+* CI: Update to MySQL 9.2, replace Ubuntu 20.04
+
 2025-01-06 Daniël van Eeden, DBI/DBD community (5.011)
 * CI: Update for MySQL 9.1
 * Use safer quoting for placeholders
