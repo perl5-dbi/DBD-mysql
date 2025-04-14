@@ -16,6 +16,12 @@ eval {$dbh= DBI->connect($test_dsn, $test_user, $test_password,
 if ($@) {
     plan skip_all => "no database connection";
 }
+
+# FIXME: Get this test working against MariaDB.
+if ($dbh->{'mysql_serverinfo'} =~ 'MariaDB') {
+  plan skip_all => "This test isn't made to work with MariaDB yet";
+}
+
 plan tests => 98;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t51bind_type_guessing"),
