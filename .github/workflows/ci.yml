@@ -2,7 +2,7 @@ name: CI
 
 on: [push, pull_request, workflow_dispatch]
 jobs:
-  test:
+  test-mysql:
     strategy:
       # https://www.mysql.com/support/supportedplatforms/database.html
       matrix:
@@ -63,6 +63,7 @@ jobs:
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
+          EOF
       - if: matrix.client == '9.2'
         run: |
           sudo debconf-set-selections <<EOF
@@ -70,6 +71,45 @@ jobs:
           EOF
       - name: "Setup mysql libs"
         run: |
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
+          sudo apt update
+          sudo apt install -y libmysqlclient-dev
+      - name: "Run build"
+        run: |
+          perl Makefile.PL --testhost=127.0.0.1 --testuser=root
+          make
+      - name: "Run test"
+        run: make test
+
+  test-mariadb:
+    runs-on: 'ubuntu-latest'
+    services:
+      mariadb:
+        image: 'mariadb:latest'
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 1
+        ports:
+          - 3306:3306
+        options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Setup generic dependencies"
+        run: |
+          sudo apt update
+          sudo apt install -y \
+          gcc \
+          gnupg \
+          libdbi-perl \
+          libdevel-checklib-perl \
+          libtest-deep-perl \
+          libtest-pod-perl \
+          lsb-release \
+          make \
+          wget
+          sudo debconf-set-selections <<EOF
+          mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
+          EOF
           wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
           DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
           sudo apt update
