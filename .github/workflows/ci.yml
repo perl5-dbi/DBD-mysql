@@ -20,14 +20,14 @@ jobs:
             client: "8.4"
             server: "8.0"
           - os: ubuntu-22.04
-            client: "9.2"
+            client: "9.3"
             server: "8.4"
           - os: ubuntu-22.04
-            client: "9.2"
-            server: "9.2"
+            client: "9.3"
+            server: "9.3"
           - os: ubuntu-24.04
-            client: "9.2"
-            server: "9.2"
+            client: "9.3"
+            server: "9.3"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
@@ -64,7 +64,7 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-      - if: matrix.client == '9.2'
+      - if: matrix.client == '9.3'
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
