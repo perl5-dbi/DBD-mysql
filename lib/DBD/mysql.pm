@@ -459,7 +459,7 @@ sub column_info {
 	  my @type_attr= split / /, $attr||'';
 
   	$info->{DATA_TYPE}= SQL_VARCHAR();
-    if ($basetype =~ /^(char|varchar|\w*text|\w*blob)/)
+    if ($basetype =~ /^(char|varchar|\w*text|\w*blob|json)/)
     {
       $info->{DATA_TYPE}= SQL_CHAR() if $basetype eq 'char';
       if ($type_params[0])
@@ -471,7 +471,7 @@ sub column_info {
         $info->{COLUMN_SIZE} = 65535;
         $info->{COLUMN_SIZE} = 255        if $basetype =~ /^tiny/;
         $info->{COLUMN_SIZE} = 16777215   if $basetype =~ /^medium/;
-        $info->{COLUMN_SIZE} = 4294967295 if $basetype =~ /^long/;
+        $info->{COLUMN_SIZE} = 4294967295 if $basetype =~ /^(long|json)/;
       }
     }
 	  elsif ($basetype =~ /^(binary|varbinary)/)
