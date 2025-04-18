@@ -22,6 +22,13 @@ if ($dbh->{mysql_serverversion} < 50000) {
     plan skip_all =>
         "SKIP TEST: You must have MySQL version 5.0 and greater for this test to run";
 }
+
+# Tested with TiDB v8.5.1.
+if ($dbh->{'mysql_serverinfo'} =~ 'TiDB') {
+    plan skip_all =>
+        "SKIP TEST: TiDB doesn't support GEOMETRY data type";
+}
+
 plan tests => 16 * 2;
 
 for my $mysql_server_prepare (0, 1) {

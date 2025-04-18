@@ -120,3 +120,39 @@ jobs:
           make
       - name: "Run test"
         run: make test
+
+  test-tidb:
+    runs-on: 'ubuntu-latest'
+    services:
+      mariadb:
+        image: 'pingcap/tidb:v8.5.1'
+        ports:
+          - 4000:4000
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Setup generic dependencies"
+        run: |
+          sudo apt update
+          sudo apt install -y \
+          gcc \
+          gnupg \
+          libdbi-perl \
+          libdevel-checklib-perl \
+          libtest-deep-perl \
+          libtest-pod-perl \
+          lsb-release \
+          make \
+          wget
+          sudo debconf-set-selections <<EOF
+          mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
+          EOF
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
+          sudo apt update
+          sudo apt install -y libmysqlclient-dev
+      - name: "Run build"
+        run: |
+          perl Makefile.PL --testhost=127.0.0.1 --testuser=root --testport=4000
+          make
+      - name: "Run test"
+        run: make test

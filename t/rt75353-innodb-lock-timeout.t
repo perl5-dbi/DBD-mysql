@@ -10,6 +10,12 @@ require "t/lib.pl";
 my $dbh1 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
 plan skip_all => "no database connection" if $@ or not $dbh1;
 
+if ($dbh1->{'mysql_serverinfo'} =~ 'TiDB') {
+    plan skip_all =>
+        # https://docs.pingcap.com/tidb/stable/pessimistic-transaction/#difference-with-mysql-innodb
+        "SKIP TEST: locking behavior on TiDB is different";
+}
+
 my $dbh2 = eval { DBI->connect($test_dsn, $test_user, $test_password, { RaiseError => 1, AutoCommit => 0 }) };
 plan skip_all => "no database connection" if $@ or not $dbh2;
 
