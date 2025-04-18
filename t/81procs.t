@@ -25,6 +25,12 @@ if ($dbh->{mysql_serverversion} < 50000) {
         "You must have MySQL version 5.0 and greater for this test to run";
 }
 
+# Tested with TiDB v8.5.1.
+if ($dbh->{'mysql_serverinfo'} =~ 'TiDB') {
+    plan skip_all =>
+        "SKIP TEST: TiDB doesn't support stored procedures";
+}
+
 if (!CheckRoutinePerms($dbh)) {
     plan skip_all =>
         "Your test user does not have ALTER_ROUTINE privileges.";

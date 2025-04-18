@@ -21,6 +21,13 @@ eval {
 if ($@) {
     plan skip_all => "no database connection";
 }
+
+# Tested with TiDB v8.5.1.
+if ($dbh->{'mysql_serverinfo'} =~ 'TiDB') {
+    plan skip_all =>
+        "SKIP TEST: lc_messages not supported on TiDB";
+}
+
 $dbh->disconnect();
 
 plan tests => 10 * 3;

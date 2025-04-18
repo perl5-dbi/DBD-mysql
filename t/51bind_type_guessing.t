@@ -22,6 +22,13 @@ if ($dbh->{'mysql_serverinfo'} =~ 'MariaDB') {
   plan skip_all => "This test isn't made to work with MariaDB yet";
 }
 
+# Tested with TiDB v8.5.1.
+# https://github.com/pingcap/tidb/issues/60671
+if ($dbh->{'mysql_serverinfo'} =~ 'TiDB') {
+    plan skip_all =>
+        "SKIP TEST: test disabled on TiDB";
+}
+
 plan tests => 98;
 
 ok $dbh->do("DROP TABLE IF EXISTS dbd_mysql_t51bind_type_guessing"),
