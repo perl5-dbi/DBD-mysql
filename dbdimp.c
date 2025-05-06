@@ -4209,6 +4209,23 @@ int dbd_bind_ph(SV *sth, imp_sth_t *imp_sth, SV *param, SV *value,
 
   if (param_num <= 0  ||  param_num > DBIc_NUM_PARAMS(imp_sth))
   {
+    if (!looks_like_number(param))
+    {
+      STRLEN len;
+      char *paramstring;
+      paramstring = SvPV(param, len);
+      if(paramstring[len] == 0 && strlen(paramstring) == len)
+      {
+        do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, form("named parameters are unsupported: %s", paramstring), NULL);
+        return FALSE;
+      }
+      else
+      {
+        do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, "<param> could not be coerced to a C string", NULL);
+        return FALSE;
+      }
+    }
+
     do_error(sth, JW_ERR_ILLEGAL_PARAM_NUM, "Illegal parameter number", NULL);
     return FALSE;
   }
