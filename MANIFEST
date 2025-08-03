@@ -12,6 +12,7 @@ MANIFEST.SKIP
 myld
 mysql.xs
 README.md
+SECURITY.md
 socket.c
 t/00base.t
 t/01caching_sha2_prime.t

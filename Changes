@@ -1,3 +1,10 @@
+2025-08-03 Daniël van Eeden, DBI/DBD community (5.013)
+* Add security policy
+* Add support for JSON column in column_info()
+* CI: test against TiDB
+* CI: Test with MySQL 9.3
+* CI: Add testing against MariaDB server
+
 2025-04-11 Daniël van Eeden, DBI/DBD community (5.012)
 * Fix tests failing on MariaDB
 * Correct SQL_DRIVER_NAME
