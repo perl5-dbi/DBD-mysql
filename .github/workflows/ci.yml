@@ -20,14 +20,14 @@ jobs:
             client: "8.4"
             server: "8.0"
           - os: ubuntu-22.04
-            client: "9.3"
+            client: "9.4"
             server: "8.4"
           - os: ubuntu-22.04
-            client: "9.3"
-            server: "9.3"
+            client: "9.4"
+            server: "9.4"
           - os: ubuntu-24.04
-            client: "9.3"
-            server: "9.3"
+            client: "9.4"
+            server: "9.4"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
@@ -64,15 +64,15 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-      - if: matrix.client == '9.3'
+      - if: matrix.client == '9.4'
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
           EOF
       - name: "Setup mysql libs"
         run: |
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
@@ -110,8 +110,8 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
@@ -125,7 +125,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     services:
       mariadb:
-        image: 'pingcap/tidb:v8.5.1'
+        image: 'pingcap/tidb:v8.5.2'
         ports:
           - 4000:4000
     steps:
@@ -146,8 +146,8 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.33-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.33-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
