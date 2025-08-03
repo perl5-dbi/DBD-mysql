@@ -1,3 +1,6 @@
+2025-08-03 Daniël van Eeden, DBI/DBD community (4.054)
+* Fix build issue with MariaDB related to mysql_real_escape_string_quote()
+
 2025-01-06 Daniël van Eeden, DBI/DBD community (4.053)
 * Use safer quoting for placeholders
 * CI: v4 mac update
