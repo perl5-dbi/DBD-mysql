@@ -20,14 +20,14 @@ jobs:
             client: "8.4"
             server: "8.0"
           - os: ubuntu-22.04
-            client: "9.4"
+            client: "9.5"
             server: "8.4"
           - os: ubuntu-22.04
-            client: "9.4"
-            server: "9.4"
+            client: "9.5"
+            server: "9.5"
           - os: ubuntu-24.04
-            client: "9.4"
-            server: "9.4"
+            client: "9.5"
+            server: "9.5"
     runs-on: ${{ matrix.os }}
     services:
       mysql:
@@ -40,7 +40,7 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
@@ -64,15 +64,15 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-      - if: matrix.client == '9.4'
+      - if: matrix.client == '9.5'
         run: |
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-innovation
           EOF
       - name: "Setup mysql libs"
         run: |
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.36-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
@@ -93,7 +93,7 @@ jobs:
           - 3306:3306
         options: --health-cmd="healthcheck.sh --connect --innodb_initialized" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
@@ -110,8 +110,8 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.36-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
@@ -124,12 +124,12 @@ jobs:
   test-tidb:
     runs-on: 'ubuntu-latest'
     services:
-      mariadb:
-        image: 'pingcap/tidb:v8.5.2'
+      tidb:
+        image: 'pingcap/tidb:v8.5.3'
         ports:
           - 4000:4000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
@@ -146,8 +146,8 @@ jobs:
           sudo debconf-set-selections <<EOF
           mysql-apt-config      mysql-apt-config/select-server  select  mysql-8.4-lts
           EOF
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.34-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.34-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.36-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
