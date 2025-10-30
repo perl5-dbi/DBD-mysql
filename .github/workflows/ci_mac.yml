@@ -2,10 +2,10 @@ name: CI on MacOS
 
 on: [push, pull_request, workflow_dispatch]
 jobs:
-  test:
+  macos-mysql80:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: "Install dependencies"
         run: |
           brew install cpanminus mysql@8.0 mysql-client@8.0
@@ -19,8 +19,60 @@ jobs:
           export PATH="/usr/local/opt/mysql@8.0/bin:/opt/homebrew/opt/mysql-client@8.0/bin:/opt/homebrew/opt/mysql@8.0/bin:$PATH"
           perl Makefile.PL --testhost=127.0.0.1 --testuser=root
           make
-      - name: "Start MySQL"
+      - name: "Start MySQL and run test"
         run: |
           brew services start mysql@8.0
-      - name: "Run test"
-        run: make test
+          sleep 10
+          make test
+
+  macos-mysql84:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Install dependencies"
+        run: |
+          brew install cpanminus mysql@8.4 mysql-client@8.4
+          cpanm DBI
+          cpanm Devel::CheckLib
+          cpanm Test::Deep
+          cpanm Test::More
+          cpanm Test::Pod
+      - name: "Run build"
+        run: |
+          export PATH="/usr/local/opt/mysql@8.4/bin:/opt/homebrew/opt/mysql-client@8.4/bin:/opt/homebrew/opt/mysql@8.4/bin:$PATH"
+          export LDFLAGS="-L$(brew --prefix openssl@3)/lib -L$(brew --prefix zstd)/lib"
+          export CFLAGS="-I$(brew --prefix openssl@3)/include -I$(brew --prefix zstd)/include" 
+          export LIBRARY_PATH="$LIBRARY_PATH:$(brew --prefix zstd)/lib:$(brew --prefix openssl@3)/lib"
+          perl Makefile.PL --testhost=127.0.0.1 --testuser=root
+          make
+      - name: "Start MySQL and run test"
+        run: |
+          brew services start mysql@8.4
+          sleep 10
+          make test
+
+  macos-mysql-latest:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: "Install dependencies"
+        run: |
+          brew install cpanminus mysql mysql-client
+          cpanm DBI
+          cpanm Devel::CheckLib
+          cpanm Test::Deep
+          cpanm Test::More
+          cpanm Test::Pod
+      - name: "Run build"
+        run: |
+          export PATH="/usr/local/opt/mysql/bin:/opt/homebrew/opt/mysql-client/bin:/opt/homebrew/opt/mysql/bin:$PATH"
+          export LDFLAGS="-L$(brew --prefix openssl@3)/lib -L$(brew --prefix zstd)/lib"
+          export CFLAGS="-I$(brew --prefix openssl@3)/include -I$(brew --prefix zstd)/include" 
+          export LIBRARY_PATH="$LIBRARY_PATH:$(brew --prefix zstd)/lib:$(brew --prefix openssl@3)/lib"
+          perl Makefile.PL --testhost=127.0.0.1 --testuser=root
+          make
+      - name: "Start MySQL and run test"
+        run: |
+          brew services start mysql
+          sleep 10
+          make test
