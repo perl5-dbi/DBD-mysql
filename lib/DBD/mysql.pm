@@ -1725,6 +1725,10 @@ parameter value and C<execute> the statement again, with other values
 unchanged. The attribute remains properly populated after the C<finish> 
 method is called, with the values from the last execution.
 
+MySQL does not support named place holders in C<bind_param>.  If a
+string is passed to C<bind_param> as the parameter index then a
+"named parameters are unsupported" error is reported.
+
 =item mysql_gtids
 
 Returns GTID(s) if GTID session tracking is ensabled in the server via
