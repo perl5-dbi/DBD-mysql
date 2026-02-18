@@ -23,7 +23,6 @@
 #include <mysqld_error.h>  /* Comes MySQL */
 #include <errmsg.h> /* Comes with MySQL-devel */
 
-
 #define true 1
 #define false 0
 

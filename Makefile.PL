@@ -198,6 +198,16 @@ if ($^O eq 'VMS') {
 }
 $cflags .= " -DDBD_MYSQL_NO_CLIENT_FOUND_ROWS" if $opt->{'nofoundrows'};
 $cflags .= " -g ";
+
+unless ($^O eq 'MSWin32') {
+  if ($Config{usethreads} || $Config{osname} =~ /darwin|linux/i || $Config{libs} =~ /-l?pthread\b/ || $Config{ldflags} =~ /-l?pthread\b/) {
+    $cflags .= " -DDBD_MYSQL_HAS_PTHREADS";
+  } else {
+    print "*** This module may crash or deadlock on startup in multi-threaded scenarios ***\n",
+          "    To avoid this, make sure your Perl is compiled with pthreads.\n\n",
+  }
+}
+
 my %o = ( 'NAME' => 'DBD::mysql',
 	      'INC' => $cflags,
 	      'dist'=> { 'SUFFIX'       => ".gz",
