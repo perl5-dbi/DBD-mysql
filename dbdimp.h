@@ -107,7 +107,9 @@
 static inline bool ssl_verify_also_enforce_ssl(void) {
 #ifdef MARIADB_BASE_VERSION
 	my_ulonglong version = mysql_get_client_version();
-	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106);
+	// MariaDB server versions: >=50000
+	// MariaDB Connector/C versions: <50000
+	return ((version >= 50544 && version < 50600) || (version >= 100020 && version < 100100) || version >= 100106 || version <50000);
 #else
 	return false;
 #endif
@@ -117,7 +119,9 @@ static inline bool ssl_verify_also_enforce_ssl(void) {
 static inline bool ssl_verify_usable(void) {
 	my_ulonglong version = mysql_get_client_version();
 #ifdef MARIADB_BASE_VERSION
-	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110);
+	// MariaDB server versions: >=50000
+	// MariaDB Connector/C versions: <50000
+	return ((version >= 50547 && version < 50600) || (version >= 100023 && version < 100100) || version >= 100110 || version < 50000);
 #else
 	return ((version >= 50549 && version < 50600) || (version >= 50630 && version < 50700) || version >= 50712);
 #endif
