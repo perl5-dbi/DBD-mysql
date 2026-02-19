@@ -7,7 +7,6 @@ jobs:
       # https://www.mysql.com/support/supportedplatforms/database.html
       matrix:
         include:
-          - os: ubuntu-20.04
           - os: ubuntu-22.04
           - os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
@@ -22,7 +21,7 @@ jobs:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: "Setup generic dependencies"
         run: |
           sudo apt update
@@ -42,8 +41,8 @@ jobs:
           EOF
       - name: "Setup mysql libs"
         run: |
-          wget https://dev.mysql.com/get/mysql-apt-config_0.8.30-1_all.deb
-          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.30-1_all.deb
+          wget https://dev.mysql.com/get/mysql-apt-config_0.8.36-1_all.deb
+          DEBIAN_FRONTEND="noninteractive" sudo dpkg -i mysql-apt-config_0.8.36-1_all.deb
           sudo apt update
           sudo apt install -y libmysqlclient-dev
       - name: "Run build"
