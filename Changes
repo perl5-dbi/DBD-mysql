@@ -1,3 +1,8 @@
+2026-02-23 Daniël van Eeden, DBI/DBD community (4.055)
+* Fix auto reconnect
+* Fix SSL/TLS version check issue with MariaDB Connector/C
+* CI: Update v4 CI
+
 2025-08-03 Daniël van Eeden, DBI/DBD community (4.054)
 * Fix build issue with MariaDB related to mysql_real_escape_string_quote()
 
