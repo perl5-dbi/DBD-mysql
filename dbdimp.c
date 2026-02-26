@@ -1206,8 +1206,10 @@ MYSQL *mysql_dr_connect(
 #else
     client_flag = CLIENT_FOUND_ROWS;
 #endif
-    mysql_library_init(0, NULL, NULL);
-    mysql_init(sock);
+    if (mysql_library_init(0, NULL, NULL))
+      croak("failed to initialize client library");
+    if (!mysql_init(sock))
+      croak("mysql_init failed");
 
     if (imp_dbh)
     {
