@@ -7,22 +7,22 @@ jobs:
       # https://www.mysql.com/support/supportedplatforms/database.html
       matrix:
         include:
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "8.0"
             server: "8.0"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "8.0"
             server: "8.4"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "8.4"
             server: "8.4"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "8.4"
             server: "8.0"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "9.7"
             server: "8.4"
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             client: "9.7"
             server: "9.7"
           - os: ubuntu-24.04
