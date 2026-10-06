@@ -2982,6 +2982,18 @@ int dbd_st_execute(SV* sth, imp_sth_t* imp_sth)
   if (!SvROK(sth)  ||  SvTYPE(SvRV(sth)) != SVt_PVHV)
     croak("Expected hash array");
 
+  /* The connection may have been closed by $dbh->disconnect after prepare.
+   * Server side prepared statements are lost with the connection, so only
+   * reconnect for client side prepared statements. */
+  if (!DBIc_ACTIVE(imp_dbh)) {
+    if (!imp_dbh->auto_reconnect || use_server_side_prepare ||
+        !mysql_db_reconnect(sth)) {
+      if (!SvTRUE(DBIc_ERR(imp_xxh)))
+        do_error(sth, JW_ERR_NOT_ACTIVE, "Database handle not active", NULL);
+      return -2;
+    }
+  }
+
   /* Free cached array attributes */
   for (i= 0;  i < AV_ATTRIB_LAST;  i++)
   {
