@@ -83,6 +83,7 @@ t/gh352.t
 t/gh360.t
 t/gh447-paramvalues.t
 t/gh486-autocommit-off.t
+t/gh486.t
 t/lib.pl
 t/manifest.t
 t/pod.t
