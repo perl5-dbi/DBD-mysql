@@ -81,6 +81,7 @@ t/99compression.t
 t/99_bug_server_prepare_blob_null.t
 t/gh352.t
 t/gh360.t
+t/execute-after-disconnect.t
 t/gh447-paramvalues.t
 t/gh486-autocommit-off.t
 t/gh486.t
