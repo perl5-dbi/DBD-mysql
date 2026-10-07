@@ -2280,13 +2280,10 @@ dbd_st_prepare(
   D_imp_xxh(sth);
   D_imp_dbh_from_sth;
 
-  if (!DBIc_ACTIVE(imp_dbh)) {
-    if (imp_dbh->auto_reconnect) {
-      mysql_db_reconnect(sth);
-    } else {
-      do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active" ,NULL);
-      return FALSE;
-    }
+  if (!DBIc_ACTIVE(imp_dbh) &&
+      (!imp_dbh->auto_reconnect || !mysql_db_reconnect(sth))) {
+    do_error(sth, JW_ERR_NOT_ACTIVE, "Statement not active" ,NULL);
+    return FALSE;
   }
 
   if (DBIc_TRACE_LEVEL(imp_xxh) >= 2)
