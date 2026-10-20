@@ -1,3 +1,18 @@
+2026-10-20 Daniël van Eeden, DBI/DBD community (5.014)
+* t/57trackgtid.t: Fix test for MariaDB
+* Fix segfault on execute after disconnect
+* Add test for GitHub issue #486
+* Fail prepare when auto reconnect fails
+* Fix auto reconnect
+* CI: Also test on ARM64
+* CI: Update Ubuntu version
+* CI: Update to MySQL 9.7
+* mysql_dr_connect: check return value of init functions
+* Dockerfile: update mysql-apt-config and base image
+* CI: Test against MySQL 9.6
+* CI: Update various depencencies
+* CI: Update MySQL, MySQL APT and TiDB versions
+
 2025-08-03 Daniël van Eeden, DBI/DBD community (5.013)
 * Add security policy
 * Add support for JSON column in column_info()
